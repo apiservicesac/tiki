@@ -1,4 +1,6 @@
+import type { AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../../src/ai";
 import type {
+  AiProviderStatus,
   CaptureIntent,
   HitArea,
   CaptureOutcome,
@@ -7,6 +9,8 @@ import type {
   TikiBackend,
   UserPreferences,
 } from "../../src/backend/contracts";
+import { AI_PROVIDERS } from "../../src/backend/contracts";
+import { FakeShell } from "./FakeShell";
 
 /**
  * Test double for the Rust core: serves a fixed sample day, records what the interface
@@ -16,7 +20,11 @@ export class FakeBackend implements TikiBackend {
   readonly capturedSentences: string[] = [];
   readonly movedTasks: Array<{ taskId: number; status: TaskStatus }> = [];
   readonly hitAreas: HitArea[] = [];
-  savedPreferences: UserPreferences = { locale: "spanish", islandPlacement: "top" };
+  readonly confirmedCaptures: InterpretedCapture[] = [];
+  savedPreferences: UserPreferences = { locale: "spanish", islandPlacement: "top", aiProvider: "anthropic", aiModel: null };
+  readonly aiKeys = new Map<AiProviderName, string>();
+  /** Plays the AI provider: what the official SDK receives back through the shell. */
+  aiShell = new FakeShell(() => ({}));
   private readonly listeners = new Map<string, () => void>();
 
   constructor(private readonly snapshot: IslandSnapshot = FakeBackend.sampleSnapshot()) {}
@@ -47,6 +55,30 @@ export class FakeBackend implements TikiBackend {
 
   async updatePreferences(preferences: UserPreferences): Promise<void> {
     this.savedPreferences = preferences;
+  }
+
+  async saveConfirmedCapture(capture: InterpretedCapture): Promise<void> {
+    this.confirmedCaptures.push(capture);
+  }
+
+  async clientNames(): Promise<string[]> {
+    return ["Altamira", "Andeanvet", "Vapestation"];
+  }
+
+  async aiStatus(): Promise<AiProviderStatus[]> {
+    return AI_PROVIDERS.map((provider) => ({ provider, configured: this.aiKeys.has(provider) }));
+  }
+
+  async saveAiKey(provider: AiProviderName, apiKey: string): Promise<void> {
+    this.aiKeys.set(provider, apiKey);
+  }
+
+  async removeAiKey(provider: AiProviderName): Promise<void> {
+    this.aiKeys.delete(provider);
+  }
+
+  aiFetch(request: ProxiedRequest): Promise<ProxiedResponse> {
+    return this.aiShell.send(request);
   }
 
   async setHitArea(area: HitArea): Promise<void> {

@@ -44,6 +44,8 @@ impl TikiDesktopApp {
                 commands::island_commands::preview_capture,
                 commands::island_commands::capture,
                 commands::island_commands::move_task,
+                commands::island_commands::save_confirmed_capture,
+                commands::island_commands::client_names,
                 commands::settings_commands::preferences,
                 commands::settings_commands::update_preferences,
                 commands::window_commands::set_island_hit_area,

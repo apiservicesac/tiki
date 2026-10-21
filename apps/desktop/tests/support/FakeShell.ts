@@ -4,12 +4,15 @@ import type { ProxiedRequest, ProxiedResponse } from "../../src/ai";
 export class FakeShell {
   readonly requests: ProxiedRequest[] = [];
 
-  constructor(private readonly answer: (request: ProxiedRequest) => unknown) {}
+  constructor(
+    private readonly answer: (request: ProxiedRequest) => unknown,
+    private readonly status = 200,
+  ) {}
 
   readonly send = async (request: ProxiedRequest): Promise<ProxiedResponse> => {
     this.requests.push(request);
     return {
-      status: 200,
+      status: this.status,
       headers: [["content-type", "application/json"]],
       body: JSON.stringify(this.answer(request)),
     };

@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import type { AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
 import type {
+  AiProviderStatus,
   CaptureIntent,
   HitArea,
   CaptureOutcome,
@@ -34,6 +36,30 @@ export class TauriBackend implements TikiBackend {
 
   async updatePreferences(preferences: UserPreferences): Promise<void> {
     await invoke("update_preferences", { preferences });
+  }
+
+  async saveConfirmedCapture(capture: InterpretedCapture): Promise<void> {
+    await invoke("save_confirmed_capture", { capture });
+  }
+
+  clientNames(): Promise<string[]> {
+    return invoke<string[]>("client_names");
+  }
+
+  aiStatus(): Promise<AiProviderStatus[]> {
+    return invoke<AiProviderStatus[]>("ai_status");
+  }
+
+  async saveAiKey(provider: AiProviderName, apiKey: string): Promise<void> {
+    await invoke("save_ai_key", { provider, apiKey });
+  }
+
+  async removeAiKey(provider: AiProviderName): Promise<void> {
+    await invoke("remove_ai_key", { provider });
+  }
+
+  aiFetch(request: ProxiedRequest): Promise<ProxiedResponse> {
+    return invoke<ProxiedResponse>("ai_fetch", { request });
   }
 
   async setHitArea(area: HitArea): Promise<void> {

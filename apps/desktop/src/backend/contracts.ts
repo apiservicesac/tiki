@@ -2,6 +2,7 @@
  * Shapes the Rust core sends to the interface (see `tiki_core`).
  * Field names are camelCase because the core serializes them that way.
  */
+import type { AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
 import type { LocaleCode } from "../i18n/LocaleCode";
 
 export type MoodName =
@@ -80,6 +81,16 @@ export interface HitArea {
 export interface UserPreferences {
   locale: LocaleName;
   islandPlacement: IslandPlacement;
+  aiProvider: AiProviderName;
+  /** `null` uses the provider's default model. */
+  aiModel: string | null;
+}
+
+export const AI_PROVIDERS = Object.freeze(["anthropic", "openai"] as const);
+
+export interface AiProviderStatus {
+  provider: AiProviderName;
+  configured: boolean;
 }
 
 /** Maps the core's locale names to the interface's catalog codes. */
@@ -96,6 +107,15 @@ export interface TikiBackend {
   moveTask(taskId: number, status: TaskStatus): Promise<void>;
   preferences(): Promise<UserPreferences>;
   updatePreferences(preferences: UserPreferences): Promise<void>;
+  /** Saves a task exactly as the user confirmed it after the assistant read their sentence. */
+  saveConfirmedCapture(capture: InterpretedCapture): Promise<void>;
+  clientNames(): Promise<string[]>;
+  /** Which providers have a key; the keys themselves never leave the shell. */
+  aiStatus(): Promise<AiProviderStatus[]>;
+  saveAiKey(provider: AiProviderName, apiKey: string): Promise<void>;
+  removeAiKey(provider: AiProviderName): Promise<void>;
+  /** The transport the official AI SDKs use: the shell adds the key and sends the request. */
+  aiFetch(request: ProxiedRequest): Promise<ProxiedResponse>;
   /** Tells the shell which part of the window is the island; the rest lets clicks through. */
   setHitArea(area: HitArea): Promise<void>;
   /** Calls `handler` whenever the shell emits `eventName`; returns a function that stops listening. */
