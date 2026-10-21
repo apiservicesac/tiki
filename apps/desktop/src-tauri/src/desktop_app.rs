@@ -4,6 +4,7 @@ use tauri::{App, Manager};
 use tauri_plugin_autostart::MacosLauncher;
 use tiki_core::i18n::Translator;
 
+use crate::ai::{AiCredentials, AiProxy};
 use crate::app_state::AppState;
 use crate::click_through::ClickThrough;
 use crate::commands;
@@ -46,6 +47,10 @@ impl TikiDesktopApp {
                 commands::settings_commands::preferences,
                 commands::settings_commands::update_preferences,
                 commands::window_commands::set_island_hit_area,
+                commands::ai_commands::ai_status,
+                commands::ai_commands::save_ai_key,
+                commands::ai_commands::remove_ai_key,
+                commands::ai_commands::ai_fetch,
             ])
             .setup(|app| Self::setup(app))
             .run(tauri::generate_context!())
@@ -54,8 +59,10 @@ impl TikiDesktopApp {
 
     fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         let state = AppState::open(&app.path().app_data_dir()?)?;
-        let preferences = state.with_workspace(|workspace| Ok(workspace.preferences()))?;
+        let preferences = state.with_workspace(|workspace| Ok(workspace.preferences().clone()))?;
         app.manage(state);
+        AiCredentials::use_system_store()?;
+        app.manage(AiProxy::new());
 
         IslandTray::install(app, &Translator::new(preferences.locale)?)?;
         app.handle().plugin(GlobalShortcuts::plugin()?)?;

@@ -1,6 +1,7 @@
 //! Tiki desktop shell. It owns the operating-system pieces (island window, tray,
 //! global shortcuts, notifications) and delegates every decision to `tiki-core`.
 
+mod ai;
 mod app_state;
 mod click_through;
 mod commands;
