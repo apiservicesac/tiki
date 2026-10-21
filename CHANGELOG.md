@@ -6,6 +6,12 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1-rc.3] - 2026-10-21
+
+### Fixed
+- Settings no longer scroll on the left and right edges: the narrow island shows them
+  without the big mascot, which the notch already shows.
+
 ## [0.2.1-rc.2] - 2026-10-21
 
 ### Fixed
