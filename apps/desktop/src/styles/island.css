@@ -656,3 +656,51 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   scrollbar-width: thin;
   scrollbar-color: var(--island-soft) transparent;
 }
+
+/* Task editing */
+button.island-row-text {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.edit-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.edit-field {
+  display: grid;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--island-muted);
+}
+
+.edit-field-wide { grid-column: 1 / -1; }
+
+.edit-notes {
+  resize: none;
+  padding: 7px 12px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: 12px;
+  background: var(--island-soft);
+  color: var(--island-text);
+  font: 12.5px var(--font-body);
+  outline: none;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+[data-orientation="vertical"] .edit-form { grid-template-columns: minmax(0, 1fr); }

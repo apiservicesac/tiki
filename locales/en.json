@@ -104,6 +104,15 @@
     "capture.field.due": "Due",
     "capture.field.status": "Status",
 
+    "edit.title": "Edit task",
+    "edit.field.title": "Task",
+    "edit.field.notes": "Notes",
+    "edit.notes_placeholder": "Details, links or what is missing",
+    "edit.no_client": "No client",
+    "edit.save": "Save",
+    "edit.cancel": "Cancel",
+    "island.row.edit": "Edit task",
+
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"
   },

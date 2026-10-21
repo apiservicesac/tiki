@@ -11,6 +11,13 @@ export interface HeaderHandlers {
 
 /** Top row of the expanded island: tabs on the left, actions on the right. */
 export class HeaderView {
+  private static readonly PANEL_TITLES: Readonly<Record<IslandPanel, string>> = Object.freeze({
+    tasks: "island.tab.today",
+    capture: "island.action.capture",
+    settings: "settings.title",
+    edit: "edit.title",
+  });
+
   constructor(private readonly translator: Translator) {}
 
   render(panel: IslandPanel, activeTab: IslandTab, handlers: HeaderHandlers): HTMLElement {
@@ -49,7 +56,7 @@ export class HeaderView {
   }
 
   private backButton(panel: IslandPanel, onOpenPanel: (panel: IslandPanel) => void): HTMLElement {
-    const titleKey = panel === "settings" ? "settings.title" : "island.action.capture";
+    const titleKey = HeaderView.PANEL_TITLES[panel];
     return ElementFactory.create("div", {
       className: "island-head-title",
       children: [

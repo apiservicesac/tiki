@@ -111,6 +111,37 @@ describe("IslandController", () => {
     await vi.waitFor(() => expect(notch()?.dataset.mood).toBe("happy"));
   });
 
+  it("opens a task for editing and saves the changes", async () => {
+    controller.setMode("expanded");
+    root.querySelector<HTMLButtonElement>('[data-task-id="1"] .island-row-text')?.click();
+    await vi.waitFor(() => expect(root.querySelector("#edit-title")).not.toBeNull());
+    expect(root.querySelector<HTMLSelectElement>("#edit-client")?.value).toBe("Altamira");
+
+    const title = root.querySelector<HTMLInputElement>("#edit-title");
+    const status = root.querySelector<HTMLSelectElement>("#edit-status");
+    if (title && status) {
+      title.value = "Tracking de formularios";
+      status.value = "waiting_on_others";
+    }
+    await controller.refresh();
+    expect(root.querySelector<HTMLInputElement>("#edit-title")?.value).toBe("Tracking de formularios");
+
+    root.querySelector<HTMLFormElement>(".edit-form")?.requestSubmit();
+    await vi.waitFor(() => expect(backend.editedTasks).toHaveLength(1));
+    expect(backend.editedTasks[0]).toEqual({
+      taskId: 1,
+      edit: {
+        title: "Tracking de formularios",
+        notes: "",
+        clientName: "Altamira",
+        dueDate: "2026-10-22",
+        priority: "normal",
+        status: "waiting_on_others",
+      },
+    });
+    await vi.waitFor(() => expect(controller.currentState.panel).toBe("tasks"));
+  });
+
   it("switches tabs and shows the empty state of Tickets", () => {
     controller.setMode("expanded");
     root.querySelector<HTMLButtonElement>('[data-tab="tickets"]')?.click();

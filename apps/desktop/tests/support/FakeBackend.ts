@@ -5,6 +5,8 @@ import type {
   HitArea,
   CaptureOutcome,
   IslandSnapshot,
+  TaskDetails,
+  TaskEdit,
   TaskStatus,
   TikiBackend,
   UserPreferences,
@@ -21,6 +23,7 @@ export class FakeBackend implements TikiBackend {
   readonly movedTasks: Array<{ taskId: number; status: TaskStatus }> = [];
   readonly hitAreas: HitArea[] = [];
   readonly confirmedCaptures: InterpretedCapture[] = [];
+  readonly editedTasks: Array<{ taskId: number; edit: TaskEdit }> = [];
   savedPreferences: UserPreferences = { locale: "spanish", islandPlacement: "top", aiProvider: "anthropic", aiModel: null };
   readonly aiKeys = new Map<AiProviderName, string>();
   /** Plays the AI provider: what the official SDK receives back through the shell. */
@@ -63,6 +66,23 @@ export class FakeBackend implements TikiBackend {
 
   async clientNames(): Promise<string[]> {
     return ["Altamira", "Andeanvet", "Vapestation"];
+  }
+
+  async taskDetails(taskId: number): Promise<TaskDetails> {
+    const item = this.snapshot.sections.flatMap((section) => section.items).find((line) => line.taskId === taskId);
+    return {
+      taskId,
+      title: item?.title ?? "",
+      notes: "",
+      clientName: item?.clientName ?? null,
+      dueDate: "2026-10-22",
+      priority: "normal",
+      status: "to_do",
+    };
+  }
+
+  async editTask(taskId: number, edit: TaskEdit): Promise<void> {
+    this.editedTasks.push({ taskId, edit });
   }
 
   async aiStatus(): Promise<AiProviderStatus[]> {

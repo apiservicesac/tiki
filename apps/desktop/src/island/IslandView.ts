@@ -9,16 +9,17 @@ import { HeaderView, type HeaderHandlers } from "./HeaderView";
 import type { IslandMode, IslandState } from "./islandState";
 import { NotchView } from "./NotchView";
 import { SettingsView } from "./SettingsView";
-import { TaskListView } from "./TaskListView";
+import { TaskEditView, type TaskEditHandlers } from "./TaskEditView";
+import { TaskListView, type TaskListHandlers } from "./TaskListView";
 import type { HitArea } from "../backend/contracts";
 import { ContentTransition, type ContentSize } from "./ContentTransition";
 
-export interface IslandViewHandlers extends HeaderHandlers, AiSettingsHandlers {
+export interface IslandViewHandlers extends HeaderHandlers, AiSettingsHandlers, TaskListHandlers {
   onExpand: () => void;
   onPointerEnter: () => void;
   onPointerLeave: () => void;
-  onDeliverTask: (taskId: number) => void;
   capture: CaptureViewHandlers;
+  edit: TaskEditHandlers;
 }
 
 /**
@@ -31,6 +32,7 @@ export class IslandView {
   private readonly header: HeaderView;
   private readonly taskList: TaskListView;
   private readonly settings: SettingsView;
+  private readonly taskEdit: TaskEditView;
   private readonly notch: HTMLElement;
   private readonly clip: HTMLElement;
   private readonly contentTransition: ContentTransition;
@@ -49,6 +51,7 @@ export class IslandView {
     this.header = new HeaderView(translator);
     this.taskList = new TaskListView(translator);
     this.settings = new SettingsView(translator);
+    this.taskEdit = new TaskEditView(translator);
     this.clip = ElementFactory.create("div", { className: "island-clip" });
     this.notch = this.createNotch();
     this.contentTransition = new ContentTransition(this.clip);
@@ -74,6 +77,7 @@ export class IslandView {
     const panelKey = `${state.mode}:${state.panel}`;
     if (panelKey !== this.shownPanel) {
       this.captureView.reset();
+      this.taskEdit.reset();
     }
     this.shownMode = state.mode;
     this.shownPanel = panelKey;
@@ -181,6 +185,10 @@ export class IslandView {
         return this.captureView.render(handlers.capture);
       case "settings":
         return this.settings.render(preferences, state.aiSettings, handlers);
+      case "edit":
+        return state.editing
+          ? this.taskEdit.render(state.editing.task, state.editing.clientNames, handlers.edit)
+          : this.tabContent(state, handlers);
       case "tasks":
         return this.tabContent(state, handlers);
     }
@@ -189,8 +197,8 @@ export class IslandView {
   private tabContent(state: IslandState, handlers: IslandViewHandlers): HTMLElement {
     const subtitle = ElementFactory.create("p", { className: "island-subtitle", text: state.snapshot.todaySubtitle });
     const list = state.tab === "today"
-      ? this.taskList.render(state.snapshot.sections, this.translator.text("island.today.empty"), handlers.onDeliverTask)
-      : this.taskList.render([], this.translator.text(`island.${state.tab}.empty`), handlers.onDeliverTask);
+      ? this.taskList.render(state.snapshot.sections, this.translator.text("island.today.empty"), handlers)
+      : this.taskList.render([], this.translator.text(`island.${state.tab}.empty`), handlers);
     return ElementFactory.create("div", { className: "island-tab-content", children: [subtitle, list] });
   }
 }

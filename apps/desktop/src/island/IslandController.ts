@@ -1,6 +1,13 @@
 import type { AiProviderName, InterpretedCapture } from "../ai";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
-import { LOCALE_CODES, type IslandSnapshot, type MoodName, type TikiBackend, type UserPreferences } from "../backend/contracts";
+import {
+  LOCALE_CODES,
+  type IslandSnapshot,
+  type MoodName,
+  type TaskEdit,
+  type TikiBackend,
+  type UserPreferences,
+} from "../backend/contracts";
 import type { CaptureView } from "../capture/CaptureView";
 import type { Translator } from "../i18n/Translator";
 import { SHELL_EVENTS, UI_CONFIG } from "../config/uiConfig";
@@ -41,6 +48,7 @@ export class IslandController {
       snapshot: initialSnapshot,
       reactionMood: null,
       aiSettings: { configured: { anthropic: false, openai: false }, models: [] },
+      editing: null,
     };
   }
 
@@ -125,6 +133,19 @@ export class IslandController {
     } catch {
       await this.captureWithRules(sentence);
     }
+  }
+
+  /** Opens a task in the edit panel. */
+  async openTask(taskId: number): Promise<void> {
+    const [task, clientNames] = await Promise.all([this.backend.taskDetails(taskId), this.backend.clientNames()]);
+    this.update({ mode: "expanded", panel: "edit", editing: { task, clientNames } });
+  }
+
+  async saveTask(taskId: number, edit: TaskEdit): Promise<void> {
+    await this.backend.editTask(taskId, edit);
+    await this.refresh();
+    this.update({ panel: "tasks", editing: null });
+    this.react(edit.status === "done" ? "happy" : "curious");
   }
 
   async deliverTask(taskId: number): Promise<void> {
@@ -260,9 +281,14 @@ export class IslandController {
       onOpenPanel: (panel) => this.openPanel(panel),
       onClose: () => this.setMode("hidden"),
       onDeliverTask: (taskId) => void this.deliverTask(taskId),
+      onOpenTask: (taskId) => void this.openTask(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
       onSaveKey: (provider, apiKey) => void this.saveAiKey(provider, apiKey),
       onRemoveKey: (provider) => void this.removeAiKey(provider),
+      edit: {
+        onSave: (taskId, edit) => void this.saveTask(taskId, edit),
+        onCancel: () => this.update({ panel: "tasks", editing: null }),
+      },
       capture: {
         onInput: (sentence) => this.previewCapture(sentence),
         onSubmit: (sentence) => void this.submitCapture(sentence),

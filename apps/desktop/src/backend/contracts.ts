@@ -17,7 +17,11 @@ export type MoodName =
 
 export type Urgency = "critical" | "soon" | "waiting" | "normal";
 
-export type TaskStatus = "to_do" | "in_progress" | "testing" | "waiting_on_others" | "done";
+export const TASK_STATUSES = Object.freeze(["to_do", "in_progress", "testing", "waiting_on_others", "done"] as const);
+export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export const PRIORITIES = Object.freeze(["low", "normal", "high", "urgent"] as const);
+export type Priority = (typeof PRIORITIES)[number];
 
 export const ISLAND_PLACEMENTS = Object.freeze(["top", "bottom", "left", "right"] as const);
 export type IslandPlacement = (typeof ISLAND_PLACEMENTS)[number];
@@ -70,6 +74,21 @@ export type CaptureIntent =
 
 export type CaptureOutcome = { kind: "task" | "client"; id: number };
 
+/** The editable fields of a saved task; the client comes by name. */
+export interface TaskEdit {
+  title: string;
+  notes: string;
+  clientName: string | null;
+  /** ISO date, for example `2026-10-23`. */
+  dueDate: string | null;
+  priority: Priority;
+  status: TaskStatus;
+}
+
+export interface TaskDetails extends TaskEdit {
+  taskId: number;
+}
+
 /** A rectangle in logical pixels, relative to the island window. */
 export interface HitArea {
   x: number;
@@ -110,6 +129,8 @@ export interface TikiBackend {
   /** Saves a task exactly as the user confirmed it after the assistant read their sentence. */
   saveConfirmedCapture(capture: InterpretedCapture): Promise<void>;
   clientNames(): Promise<string[]>;
+  taskDetails(taskId: number): Promise<TaskDetails>;
+  editTask(taskId: number, edit: TaskEdit): Promise<void>;
   /** Which providers have a key; the keys themselves never leave the shell. */
   aiStatus(): Promise<AiProviderStatus[]>;
   saveAiKey(provider: AiProviderName, apiKey: string): Promise<void>;

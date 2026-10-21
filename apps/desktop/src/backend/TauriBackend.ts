@@ -7,6 +7,8 @@ import type {
   HitArea,
   CaptureOutcome,
   IslandSnapshot,
+  TaskDetails,
+  TaskEdit,
   TaskStatus,
   TikiBackend,
   UserPreferences,
@@ -44,6 +46,14 @@ export class TauriBackend implements TikiBackend {
 
   clientNames(): Promise<string[]> {
     return invoke<string[]>("client_names");
+  }
+
+  taskDetails(taskId: number): Promise<TaskDetails> {
+    return invoke<TaskDetails>("task_details", { taskId });
+  }
+
+  async editTask(taskId: number, edit: TaskEdit): Promise<void> {
+    await invoke("edit_task", { taskId, edit });
   }
 
   aiStatus(): Promise<AiProviderStatus[]> {

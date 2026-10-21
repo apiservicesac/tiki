@@ -3,11 +3,17 @@ import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
 
-/** Draws grouped task lines, each with its client color and a button to deliver it. */
+export interface TaskListHandlers {
+  onDeliverTask: (taskId: number) => void;
+  onOpenTask: (taskId: number) => void;
+}
+
+/** Draws grouped task lines, each with its client color and a button to deliver it;
+ * clicking a line opens it for editing. */
 export class TaskListView {
   constructor(private readonly translator: Translator) {}
 
-  render(sections: SnapshotSection[], emptyMessage: string, onDeliver: (taskId: number) => void): HTMLElement {
+  render(sections: SnapshotSection[], emptyMessage: string, handlers: TaskListHandlers): HTMLElement {
     if (sections.length === 0) {
       return ElementFactory.create("p", { className: "island-empty", text: emptyMessage });
     }
@@ -19,32 +25,39 @@ export class TaskListView {
           text: section.title,
           attributes: { "data-section": section.key },
         }),
-        ...section.items.map((item) => this.row(item, onDeliver)),
+        ...section.items.map((item) => this.row(item, handlers)),
       ]),
     });
   }
 
-  private row(item: SnapshotItem, onDeliver: (taskId: number) => void): HTMLElement {
+  private row(item: SnapshotItem, handlers: TaskListHandlers): HTMLElement {
     const colorBar = ElementFactory.create("span", { className: "island-row-bar" });
     colorBar.style.background = item.clientColor ?? "var(--island-faint)";
 
     const deliverButton = ElementFactory.iconButton(
       ICONS.check,
       this.translator.text("island.row.done"),
-      () => onDeliver(item.taskId),
+      () => handlers.onDeliverTask(item.taskId),
     );
     deliverButton.classList.add("island-row-done");
+
+    const text = ElementFactory.create("button", {
+      className: "island-row-text",
+      text: item.title,
+      attributes: { type: "button", title: this.translator.text("island.row.edit") },
+      children: item.clientName ? [ElementFactory.create("small", { text: item.clientName })] : [],
+    });
+    text.addEventListener("click", (event) => {
+      event.stopPropagation();
+      handlers.onOpenTask(item.taskId);
+    });
 
     return ElementFactory.create("div", {
       className: "island-row",
       attributes: { "data-task-id": String(item.taskId) },
       children: [
         colorBar,
-        ElementFactory.create("span", {
-          className: "island-row-text",
-          text: item.title,
-          children: item.clientName ? [ElementFactory.create("small", { text: item.clientName })] : [],
-        }),
+        text,
         ElementFactory.create("span", {
           className: `island-when island-when-${item.urgency}`,
           text: item.detailLabel,

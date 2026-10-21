@@ -104,6 +104,15 @@
     "capture.field.due": "Fecha",
     "capture.field.status": "Estado",
 
+    "edit.title": "Editar tarea",
+    "edit.field.title": "Tarea",
+    "edit.field.notes": "Notas",
+    "edit.notes_placeholder": "Detalles, enlaces o lo que falta",
+    "edit.no_client": "Sin cliente",
+    "edit.save": "Guardar",
+    "edit.cancel": "Cancelar",
+    "island.row.edit": "Editar tarea",
+
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"
   },
