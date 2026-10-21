@@ -13,6 +13,7 @@ pub mod i18n;
 pub mod mood;
 pub mod plugins;
 pub mod preferences;
+pub mod reminders;
 pub mod settings;
 pub mod storage;
 pub mod workspace;

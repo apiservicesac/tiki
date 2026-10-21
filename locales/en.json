@@ -113,6 +113,14 @@
     "edit.cancel": "Cancel",
     "island.row.edit": "Edit task",
 
+    "notify.morning.title": "Good morning · your day with Tiki",
+    "notify.evening.title": "End of the day",
+    "notify.counts": "Overdue: {overdue} · Due soon: {due} · Waiting: {waiting}",
+    "notify.all_clear": "Nothing overdue or due soon. Have a good day!",
+    "notify.start_with": "Start with: {item}",
+    "notify.follow_up": "Follow up: {items}",
+    "notify.tomorrow": "Due tomorrow: {items}",
+
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"
   },

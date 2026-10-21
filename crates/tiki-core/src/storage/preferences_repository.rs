@@ -1,7 +1,8 @@
+use chrono::NaiveTime;
 use rusqlite::{Connection, OptionalExtension, params};
 
 use crate::ai::AiProvider;
-use crate::error::TikiResult;
+use crate::error::{TikiError, TikiResult};
 use crate::i18n::Locale;
 use crate::preferences::{IslandPlacement, UserPreferences};
 
@@ -38,6 +39,18 @@ impl<'connection> PreferencesRepository<'connection> {
             island_placement,
             ai_provider,
             ai_model,
+            morning_brief_time: self
+                .time(UserPreferences::MORNING_BRIEF_TIME_KEY)?
+                .unwrap_or(defaults.morning_brief_time),
+            evening_brief_time: self
+                .time(UserPreferences::EVENING_BRIEF_TIME_KEY)?
+                .unwrap_or(defaults.evening_brief_time),
+            notifications_enabled: self
+                .flag(UserPreferences::NOTIFICATIONS_ENABLED_KEY)?
+                .unwrap_or(defaults.notifications_enabled),
+            focus_mode: self
+                .flag(UserPreferences::FOCUS_MODE_KEY)?
+                .unwrap_or(defaults.focus_mode),
         })
     }
 
@@ -54,7 +67,51 @@ impl<'connection> PreferencesRepository<'connection> {
         self.store(
             UserPreferences::AI_MODEL_KEY,
             preferences.ai_model.as_deref().unwrap_or_default(),
+        )?;
+        for (key, time) in [
+            (
+                UserPreferences::MORNING_BRIEF_TIME_KEY,
+                preferences.morning_brief_time,
+            ),
+            (
+                UserPreferences::EVENING_BRIEF_TIME_KEY,
+                preferences.evening_brief_time,
+            ),
+        ] {
+            self.store(key, &time.format(UserPreferences::TIME_FORMAT).to_string())?;
+        }
+        self.store(
+            UserPreferences::NOTIFICATIONS_ENABLED_KEY,
+            &preferences.notifications_enabled.to_string(),
+        )?;
+        self.store(
+            UserPreferences::FOCUS_MODE_KEY,
+            &preferences.focus_mode.to_string(),
         )
+    }
+
+    fn time(&self, key: &str) -> TikiResult<Option<NaiveTime>> {
+        self.value(key)?
+            .map(|text| {
+                NaiveTime::parse_from_str(&text, UserPreferences::TIME_FORMAT).map_err(|_| {
+                    TikiError::UnknownValue {
+                        kind: "time",
+                        value: text,
+                    }
+                })
+            })
+            .transpose()
+    }
+
+    fn flag(&self, key: &str) -> TikiResult<Option<bool>> {
+        self.value(key)?
+            .map(|text| {
+                text.parse::<bool>().map_err(|_| TikiError::UnknownValue {
+                    kind: "flag",
+                    value: text,
+                })
+            })
+            .transpose()
     }
 
     fn value(&self, key: &str) -> TikiResult<Option<String>> {

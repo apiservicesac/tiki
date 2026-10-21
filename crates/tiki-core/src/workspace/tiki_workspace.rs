@@ -1,6 +1,7 @@
 use super::{Clock, IslandSnapshot, SnapshotPresenter};
-use crate::ai::AiProvider;
-use crate::briefing::DailyBriefBuilder;
+use chrono::NaiveDateTime;
+
+use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
 use crate::capture::{
     CaptureIntent, CaptureIntentReader, CaptureOutcome, ConfirmedCapture, QuickCaptureParser,
 };
@@ -9,7 +10,8 @@ use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
 use crate::mood::{MoodResolver, MoodSignals};
-use crate::preferences::{IslandPlacement, UserPreferences};
+use crate::preferences::UserPreferences;
+use crate::reminders::{BriefNotification, NotificationComposer, ReminderPlanner};
 use crate::settings::TikiSettings;
 use crate::storage::Database;
 
@@ -20,7 +22,6 @@ pub struct TikiWorkspace {
     preferences: UserPreferences,
     translator: Translator,
     clock: Box<dyn Clock>,
-    focus_mode: bool,
 }
 
 impl TikiWorkspace {
@@ -29,13 +30,9 @@ impl TikiWorkspace {
         settings: TikiSettings,
         clock: Box<dyn Clock>,
     ) -> TikiResult<Self> {
-        let defaults = UserPreferences {
-            locale: settings.locale,
-            island_placement: IslandPlacement::default(),
-            ai_provider: AiProvider::default(),
-            ai_model: None,
-        };
-        let preferences = database.preferences().load(defaults)?;
+        let preferences = database
+            .preferences()
+            .load(UserPreferences::defaults(&settings))?;
         let translator = Translator::new(preferences.locale)?;
         Ok(Self {
             database,
@@ -43,7 +40,6 @@ impl TikiWorkspace {
             preferences,
             translator,
             clock,
-            focus_mode: false,
         })
     }
 
@@ -73,22 +69,50 @@ impl TikiWorkspace {
         })
     }
 
-    pub fn set_focus_mode(&mut self, enabled: bool) {
-        self.focus_mode = enabled;
+    /// Turns focus mode on or off and remembers it.
+    pub fn set_focus_mode(&mut self, enabled: bool) -> TikiResult<()> {
+        self.update_preferences(UserPreferences {
+            focus_mode: enabled,
+            ..self.preferences.clone()
+        })
     }
 
     /// What the island shows right now.
     pub fn island_snapshot(&self) -> TikiResult<IslandSnapshot> {
-        let today = self.clock.today();
-        let tasks = self.database.tasks().list_open()?;
         let clients = self.client_directory()?;
-        let brief = DailyBriefBuilder::new(&self.settings).build(&tasks, &clients, today);
+        let brief = self.brief(&clients)?;
         let mood = MoodResolver::new(&self.settings).resolve(&MoodSignals {
             brief: &brief,
             minutes_to_next_meeting: None,
-            focus_mode: self.focus_mode,
+            focus_mode: self.preferences.focus_mode,
         });
         Ok(SnapshotPresenter::new(&self.translator, &clients).present(&brief, mood))
+    }
+
+    /// The brief notification due at `now`, if any; it is marked as sent so it arrives once
+    /// a day. Nothing is due while notifications are off or focus mode is on.
+    pub fn take_due_notification(
+        &self,
+        now: NaiveDateTime,
+    ) -> TikiResult<Option<BriefNotification>> {
+        if !self.preferences.allows_notifications() {
+            return Ok(None);
+        }
+        let log = self.database.reminder_log();
+        let moment = ReminderPlanner::new(&self.preferences)
+            .due_moment(now, |moment| log.last_sent(moment).ok().flatten());
+        let Some(moment) = moment else {
+            return Ok(None);
+        };
+        log.mark_sent(moment, now.date())?;
+        if moment == BriefMoment::Evening {
+            // A late start skips the morning brief instead of sending both at once.
+            log.mark_sent(BriefMoment::Morning, now.date())?;
+        }
+        let brief = self.brief(&self.client_directory()?)?;
+        Ok(Some(
+            NotificationComposer::new(&self.translator).compose(&brief, moment),
+        ))
     }
 
     /// Reads a quick-capture sentence without saving it, so the user can confirm it.
@@ -161,6 +185,11 @@ impl TikiWorkspace {
             .clients()
             .find_by_name(name)?
             .and_then(|client| client.id))
+    }
+
+    fn brief(&self, clients: &ClientDirectory) -> TikiResult<DailyBrief> {
+        let tasks = self.database.tasks().list_open()?;
+        Ok(DailyBriefBuilder::new(&self.settings).build(&tasks, clients, self.clock.today()))
     }
 
     fn client_directory(&self) -> TikiResult<ClientDirectory> {

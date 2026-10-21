@@ -1,5 +1,7 @@
 mod support;
 
+use chrono::NaiveTime;
+
 use support::{SampleWorkspace, TestDay};
 use tiki_core::TikiSettings;
 use tiki_core::ai::AiProvider;
@@ -90,7 +92,7 @@ fn delivering_the_overdue_task_calms_tiki_down_to_hurry() {
 #[test]
 fn focus_mode_puts_tiki_to_sleep() {
     let mut workspace = sample_workspace();
-    workspace.set_focus_mode(true);
+    workspace.set_focus_mode(true).unwrap();
     assert_eq!(workspace.island_snapshot().unwrap().mood_label, "ZZZ");
 }
 
@@ -125,6 +127,9 @@ fn preferences_are_saved_and_applied() {
             island_placement: IslandPlacement::Right,
             ai_provider: AiProvider::OpenAi,
             ai_model: Some("gpt-5.5".into()),
+            morning_brief_time: NaiveTime::from_hms_opt(9, 15, 0).unwrap(),
+            notifications_enabled: false,
+            ..UserPreferences::defaults(&TikiSettings::default())
         })
         .unwrap();
 
@@ -135,6 +140,7 @@ fn preferences_are_saved_and_applied() {
         IslandPlacement::Right
     );
     assert_eq!(workspace.island_snapshot().unwrap().mood_label, "LATE");
+    assert!(!workspace.preferences().allows_notifications());
 }
 
 #[test]

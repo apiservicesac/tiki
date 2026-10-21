@@ -113,6 +113,14 @@
     "edit.cancel": "Cancelar",
     "island.row.edit": "Editar tarea",
 
+    "notify.morning.title": "Buenos días · tu día con Tiki",
+    "notify.evening.title": "Cierre del día",
+    "notify.counts": "Atrasado: {overdue} · Vence pronto: {due} · Esperando: {waiting}",
+    "notify.all_clear": "Nada atrasado ni por vencer. ¡Buen día!",
+    "notify.start_with": "Empieza por: {item}",
+    "notify.follow_up": "Haz seguimiento: {items}",
+    "notify.tomorrow": "Mañana vence: {items}",
+
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"
   },

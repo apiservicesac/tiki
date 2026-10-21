@@ -5,7 +5,11 @@ pub struct SchemaMigrations;
 
 impl SchemaMigrations {
     pub fn all() -> Migrations<'static> {
-        Migrations::new(vec![M::up(Self::INITIAL_SCHEMA), M::up(Self::PREFERENCES)])
+        Migrations::new(vec![
+            M::up(Self::INITIAL_SCHEMA),
+            M::up(Self::PREFERENCES),
+            M::up(Self::REMINDER_LOG),
+        ])
     }
 
     const INITIAL_SCHEMA: &'static str = "
@@ -37,6 +41,13 @@ impl SchemaMigrations {
         CREATE UNIQUE INDEX tasks_by_external_record
             ON tasks(origin_plugin, origin_connection, origin_record)
             WHERE origin_plugin IS NOT NULL;
+    ";
+
+    const REMINDER_LOG: &'static str = "
+        CREATE TABLE reminder_log (
+            moment  TEXT PRIMARY KEY,
+            sent_on TEXT NOT NULL
+        );
     ";
 
     const PREFERENCES: &'static str = "

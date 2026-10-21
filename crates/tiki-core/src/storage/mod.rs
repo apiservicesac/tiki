@@ -3,6 +3,7 @@
 mod client_repository;
 mod database;
 mod preferences_repository;
+mod reminder_log_repository;
 mod schema_migrations;
 mod task_repository;
 mod task_row_mapper;
@@ -10,4 +11,5 @@ mod task_row_mapper;
 pub use client_repository::ClientRepository;
 pub use database::Database;
 pub use preferences_repository::PreferencesRepository;
+pub use reminder_log_repository::ReminderLogRepository;
 pub use task_repository::TaskRepository;
