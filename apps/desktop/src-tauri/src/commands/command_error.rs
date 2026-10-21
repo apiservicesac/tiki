@@ -16,4 +16,14 @@ impl From<TikiError> for CommandError {
     }
 }
 
+impl CommandError {
+    /// Wraps an error from the operating system or a plugin.
+    pub fn new(error: &impl std::fmt::Display) -> Self {
+        tracing::warn!(%error, "command failed");
+        Self {
+            message: error.to_string(),
+        }
+    }
+}
+
 pub type CommandResult<T> = Result<T, CommandError>;

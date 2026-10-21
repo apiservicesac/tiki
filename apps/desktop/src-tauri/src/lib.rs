@@ -3,6 +3,7 @@
 
 mod ai;
 mod app_state;
+mod brief_reminders;
 mod click_through;
 mod commands;
 mod desktop_app;

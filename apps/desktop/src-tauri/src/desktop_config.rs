@@ -13,6 +13,8 @@ impl DesktopConfig {
     pub const VERTICAL_WINDOW_SIZE: (f64, f64) = (440.0, 720.0);
     /// How often the shell checks whether the pointer is over the island.
     pub const CURSOR_POLL_INTERVAL: Duration = Duration::from_millis(30);
+    /// How often the shell asks the core whether a brief notification is due.
+    pub const REMINDER_CHECK_INTERVAL: Duration = Duration::from_secs(60);
     /// SQLite file inside the app data folder.
     pub const DATABASE_FILE_NAME: &'static str = "tiki.db";
     pub const TRAY_ID: &'static str = "tiki-tray";

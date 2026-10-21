@@ -7,6 +7,8 @@ pub enum ShellEvent {
     OpenCapture,
     OpenSettings,
     ToggleIsland,
+    /// A brief notification was just shown; the island peeks out to go with it.
+    BriefReady,
 }
 
 impl ShellEvent {
@@ -15,6 +17,7 @@ impl ShellEvent {
             ShellEvent::OpenCapture => "tiki://open-capture",
             ShellEvent::OpenSettings => "tiki://open-settings",
             ShellEvent::ToggleIsland => "tiki://toggle-island",
+            ShellEvent::BriefReady => "tiki://brief-ready",
         }
     }
 

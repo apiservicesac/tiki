@@ -6,6 +6,7 @@ use tiki_core::i18n::Translator;
 
 use crate::ai::{AiCredentials, AiProxy};
 use crate::app_state::AppState;
+use crate::brief_reminders::BriefReminders;
 use crate::click_through::ClickThrough;
 use crate::commands;
 use crate::island_window::IslandWindow;
@@ -51,6 +52,8 @@ impl TikiDesktopApp {
                 commands::settings_commands::preferences,
                 commands::settings_commands::update_preferences,
                 commands::window_commands::set_island_hit_area,
+                commands::system_commands::autostart_enabled,
+                commands::system_commands::set_autostart,
                 commands::ai_commands::ai_status,
                 commands::ai_commands::save_ai_key,
                 commands::ai_commands::remove_ai_key,
@@ -77,6 +80,7 @@ impl TikiDesktopApp {
         let click_through = Arc::new(ClickThrough::default());
         app.manage(Arc::clone(&click_through));
         ClickThrough::start(app.handle().clone(), click_through);
+        BriefReminders::start(app.handle().clone());
         Ok(())
     }
 }
