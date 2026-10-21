@@ -66,7 +66,16 @@ The `Windows installer` GitHub workflow builds the same installer natively on Wi
   `apps/desktop/package.json` and `apps/desktop/src-tauri/tauri.conf.json`.
 - Release candidates are tagged `vX.Y.Z-rc.N` and published as GitHub pre-releases titled
   `Tiki vX.Y.Z-rc.N`; the final release is tagged `vX.Y.Z` and titled `Tiki vX.Y.Z`.
+- Release candidates carry the suffix in the app version too (`0.2.0-rc.1`), so installed
+  copies see each new candidate as an update.
 - Every release adds its entry to `CHANGELOG.md`; release notes reuse that entry.
+- Updates are signed. The private key lives outside the repository in
+  `~/.tauri/tiki-updater.key` (back it up: without it, installed copies cannot be updated);
+  the public key is in `tauri.conf.json`. Release steps:
+  1. `make windows-installer` builds and signs the installer.
+  2. `make update-manifest VERSION=X.Y.Z-rc.N NOTES='…'` writes `updates/latest.json`.
+  3. Publish the GitHub release with the installer, then commit and push `updates/latest.json`
+     (installed copies read it from `main`).
 - Everything in the repository is written in English: code, comments, commits, changelog
   and release notes. Only the interface texts in `locales/` are translated.
 

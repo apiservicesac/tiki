@@ -4,9 +4,10 @@ export HOST_GID := $(shell id -g)
 
 COMPOSE := docker compose run --rm
 
-.PHONY: help images test test-core test-ui lint lint-core lint-ui format ui-install ui-build windows-check windows-installer clean
+.PHONY: help images test test-core test-ui lint lint-core lint-ui format ui-install ui-build windows-check windows-installer update-manifest clean
 
 help:
+	@echo "make update-manifest    Write updates/latest.json after building the installer"
 	@echo "make images             Build the Docker images"
 	@echo "make test               Run every test (Rust core + TypeScript interface)"
 	@echo "make lint               Check formatting, clippy and TypeScript types"
@@ -56,6 +57,11 @@ windows-installer:
 	TAURI_SIGNING_PRIVATE_KEY="$$(cat $(UPDATER_KEY))" TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" \
 		$(COMPOSE) windows npm run tauri build -- --runner cargo-xwin --target $(WINDOWS_TARGET)
 	@echo "Installer: target/$(WINDOWS_TARGET)/release/bundle/nsis/"
+
+# After `make windows-installer`: writes updates/latest.json for installed copies to find.
+update-manifest:
+	@test -n "$(VERSION)" || (echo "Usage: make update-manifest VERSION=0.2.0-rc.1 NOTES='...'" && exit 1)
+	$(COMPOSE) -w /workspace ui node tools/update-manifest.mjs "$(VERSION)" "$(NOTES)"
 
 clean:
 	rm -rf target apps/desktop/dist
