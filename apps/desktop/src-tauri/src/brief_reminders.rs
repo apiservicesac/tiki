@@ -9,7 +9,8 @@ use crate::app_state::AppState;
 use crate::desktop_config::DesktopConfig;
 use crate::shell_events::ShellEvent;
 
-/// Sends the morning brief and the end-of-day close as Windows notifications. The core
+/// Delivers the morning brief and the end-of-day close: always to the island, which shows
+/// them in the notch, and as a Windows notification when the user wants that too. The core
 /// decides when each one is due and what it says; this loop only asks it every minute.
 pub struct BriefReminders;
 
@@ -24,7 +25,7 @@ impl BriefReminders {
     }
 
     /// Shows a brief as a Windows notification.
-    pub fn show(
+    fn show(
         app: &AppHandle,
         notification: &BriefNotification,
     ) -> tauri_plugin_notification::Result<()> {
@@ -37,16 +38,18 @@ impl BriefReminders {
 
     fn send_due(app: &AppHandle) {
         let now = Local::now().naive_local();
-        let due = app
-            .state::<AppState>()
-            .with_workspace(|workspace| workspace.take_due_notification(now));
+        let due = app.state::<AppState>().with_workspace(|workspace| {
+            let notification = workspace.take_due_notification(now)?;
+            Ok(notification
+                .map(|notification| (notification, workspace.preferences().windows_notifications)))
+        });
         match due {
-            Ok(Some(notification)) => {
-                tracing::info!(moment = ?notification.moment, %now, "brief due, showing it");
-                if let Err(error) = Self::show(app, &notification) {
-                    tracing::warn!(%error, "could not show the brief notification");
+            Ok(Some((notification, also_in_windows))) => {
+                tracing::info!(moment = ?notification.moment, %now, also_in_windows, "brief due");
+                if also_in_windows && let Err(error) = Self::show(app, &notification) {
+                    tracing::warn!(%error, "could not show the Windows notification");
                 }
-                ShellEvent::BriefReady.emit(app);
+                ShellEvent::BriefReady.emit_with(app, &notification);
             }
             Ok(None) => {}
             Err(error) => tracing::warn!(%error, "could not prepare the brief notification"),

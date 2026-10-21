@@ -56,7 +56,6 @@ impl TikiDesktopApp {
                 commands::system_commands::autostart_enabled,
                 commands::system_commands::set_autostart,
                 commands::system_commands::app_version,
-                commands::system_commands::send_test_notification,
                 commands::system_commands::check_for_update,
                 commands::system_commands::install_update,
                 commands::ai_commands::ai_status,

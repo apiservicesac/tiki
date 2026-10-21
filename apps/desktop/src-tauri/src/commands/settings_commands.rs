@@ -24,6 +24,8 @@ pub fn update_preferences(
         evening = %preferences.evening_brief_time,
         notifications = preferences.notifications_enabled,
         focus = preferences.focus_mode,
+        sound = preferences.alert_sound,
+        windows = preferences.windows_notifications,
         "preferences saved"
     );
     state.with_workspace(|workspace| workspace.update_preferences(preferences))?;

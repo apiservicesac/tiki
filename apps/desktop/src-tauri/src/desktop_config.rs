@@ -6,6 +6,10 @@ pub struct DesktopConfig;
 impl DesktopConfig {
     /// Label of the island window in `tauri.conf.json`.
     pub const ISLAND_WINDOW_LABEL: &'static str = "island";
+    /// `WebView2` flags: Tauri's defaults plus sound without a click, for the island's chime.
+    /// Every window must use the same flags (they share one `WebView2` profile), so this must
+    /// match `additionalBrowserArgs` of the island in `tauri.conf.json`.
+    pub const BROWSER_ARGS: &'static str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required";
     /// The advanced settings window and the page it loads.
     pub const SETTINGS_WINDOW_LABEL: &'static str = "settings";
     pub const SETTINGS_PAGE: &'static str = "settings.html";

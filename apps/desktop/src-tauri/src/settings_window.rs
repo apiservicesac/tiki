@@ -29,6 +29,7 @@ impl SettingsWindow {
         .title(title)
         .inner_size(width, height)
         .min_inner_size(min_width, min_height)
+        .additional_browser_args(DesktopConfig::BROWSER_ARGS)
         .decorations(false)
         // The island's notch color, so the window never flashes white while it loads.
         .background_color(Color(10, 10, 13, 255))

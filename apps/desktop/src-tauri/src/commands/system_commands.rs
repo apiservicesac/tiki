@@ -1,13 +1,8 @@
 use tauri::AppHandle;
 use tauri_plugin_autostart::ManagerExt;
 
-use tauri::State;
-use tiki_core::briefing::BriefMoment;
-
 use super::command_error::{CommandError, CommandResult};
-use crate::app_state::AppState;
 use crate::app_updates::{AppUpdates, AvailableUpdate};
-use crate::brief_reminders::BriefReminders;
 
 /// The installed version, shown in Settings.
 #[tauri::command]
@@ -47,12 +42,4 @@ pub fn set_autostart(app: AppHandle, enabled: bool) -> CommandResult<()> {
         launcher.disable()
     };
     result.map_err(|error| CommandError::new(&error))
-}
-
-/// Shows the morning brief now, without using up today's: checks that Windows lets Tiki notify.
-#[tauri::command]
-pub fn send_test_notification(app: AppHandle, state: State<'_, AppState>) -> CommandResult<()> {
-    let notification =
-        state.with_workspace(|workspace| workspace.preview_notification(BriefMoment::Morning))?;
-    BriefReminders::show(&app, &notification).map_err(|error| CommandError::new(&error))
 }
