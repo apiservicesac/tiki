@@ -5,5 +5,6 @@
  */
 export { AiError } from "./AiError";
 export { CaptureInterpreter, type CaptureContext, type InterpretedCapture } from "./CaptureInterpreter";
+export { DayAdvisor, type AdvisorContext, type AdvisorLanguage, type AdvisorTask } from "./DayAdvisor";
 export type { AiModelOption, AiProviderName, ProxiedRequest, ProxiedResponse, StructuredModel } from "./contracts";
 export { TikiAi } from "./TikiAi";
