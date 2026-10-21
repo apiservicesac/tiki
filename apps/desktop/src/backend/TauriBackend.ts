@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type {
   CaptureIntent,
+  HitArea,
   CaptureOutcome,
   IslandSnapshot,
   TaskStatus,
@@ -35,8 +36,8 @@ export class TauriBackend implements TikiBackend {
     await invoke("update_preferences", { preferences });
   }
 
-  async fitWindow(width: number, height: number): Promise<void> {
-    await invoke("fit_island_window", { width, height });
+  async setHitArea(area: HitArea): Promise<void> {
+    await invoke("set_island_hit_area", { area });
   }
 
   listen(eventName: string, handler: () => void): Promise<() => void> {

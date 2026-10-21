@@ -1,5 +1,6 @@
 import type {
   CaptureIntent,
+  HitArea,
   CaptureOutcome,
   IslandSnapshot,
   TaskStatus,
@@ -14,7 +15,7 @@ import type {
 export class FakeBackend implements TikiBackend {
   readonly capturedSentences: string[] = [];
   readonly movedTasks: Array<{ taskId: number; status: TaskStatus }> = [];
-  readonly windowSizes: Array<{ width: number; height: number }> = [];
+  readonly hitAreas: HitArea[] = [];
   savedPreferences: UserPreferences = { locale: "spanish", islandPlacement: "top" };
   private readonly listeners = new Map<string, () => void>();
 
@@ -48,8 +49,8 @@ export class FakeBackend implements TikiBackend {
     this.savedPreferences = preferences;
   }
 
-  async fitWindow(width: number, height: number): Promise<void> {
-    this.windowSizes.push({ width, height });
+  async setHitArea(area: HitArea): Promise<void> {
+    this.hitAreas.push(area);
   }
 
   async listen(eventName: string, handler: () => void): Promise<() => void> {

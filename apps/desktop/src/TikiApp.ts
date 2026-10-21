@@ -4,19 +4,19 @@ import { CaptureView } from "./capture/CaptureView";
 import { Translator } from "./i18n/Translator";
 import { IslandController, type LocaleChangedListener } from "./island/IslandController";
 import { IslandView } from "./island/IslandView";
-import { WindowFitter } from "./island/WindowFitter";
+import { HitAreaReporter } from "./island/HitAreaReporter";
 import { MascotRenderer } from "./mascot/MascotRenderer";
 
 /** Wires the backend, the translator and the island together. */
 export class TikiApp {
-  private readonly windowFitter: WindowFitter;
+  private readonly hitAreaReporter: HitAreaReporter;
 
   constructor(
     private readonly root: HTMLElement,
     private readonly backend: TikiBackend = new TauriBackend(),
     private readonly onLocaleChanged: LocaleChangedListener = () => window.location.reload(),
   ) {
-    this.windowFitter = new WindowFitter(backend);
+    this.hitAreaReporter = new HitAreaReporter(backend);
   }
 
   async start(): Promise<IslandController> {
@@ -33,7 +33,7 @@ export class TikiApp {
       this.backend,
       view,
       captureView,
-      this.windowFitter,
+      this.hitAreaReporter,
       snapshot,
       preferences,
       this.onLocaleChanged,

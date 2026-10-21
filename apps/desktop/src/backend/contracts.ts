@@ -63,6 +63,14 @@ export type CaptureIntent =
 
 export type CaptureOutcome = { kind: "task" | "client"; id: number };
 
+/** A rectangle in logical pixels, relative to the island window. */
+export interface HitArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface UserPreferences {
   locale: LocaleName;
   islandPlacement: IslandPlacement;
@@ -82,8 +90,8 @@ export interface TikiBackend {
   moveTask(taskId: number, status: TaskStatus): Promise<void>;
   preferences(): Promise<UserPreferences>;
   updatePreferences(preferences: UserPreferences): Promise<void>;
-  /** Resizes the desktop window to the island, in logical pixels. */
-  fitWindow(width: number, height: number): Promise<void>;
+  /** Tells the shell which part of the window is the island; the rest lets clicks through. */
+  setHitArea(area: HitArea): Promise<void>;
   /** Calls `handler` whenever the shell emits `eventName`; returns a function that stops listening. */
   listen(eventName: string, handler: () => void): Promise<() => void>;
 }

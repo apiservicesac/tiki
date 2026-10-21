@@ -3,7 +3,7 @@ import type { CaptureView } from "../capture/CaptureView";
 import { SHELL_EVENTS, UI_CONFIG } from "../config/uiConfig";
 import type { IslandMode, IslandPanel, IslandState, IslandTab } from "./islandState";
 import type { IslandView, IslandViewHandlers } from "./IslandView";
-import type { WindowFitter } from "./WindowFitter";
+import type { HitAreaReporter } from "./HitAreaReporter";
 
 /** Called when the user picks another language; the app reloads its translations. */
 export type LocaleChangedListener = () => void;
@@ -20,7 +20,7 @@ export class IslandController {
     private readonly backend: TikiBackend,
     private readonly view: IslandView,
     private readonly captureView: CaptureView,
-    private readonly windowFitter: WindowFitter,
+    private readonly hitAreaReporter: HitAreaReporter,
     initialSnapshot: IslandSnapshot,
     initialPreferences: UserPreferences,
     private readonly onLocaleChanged: LocaleChangedListener,
@@ -55,7 +55,8 @@ export class IslandController {
   stop(): void {
     this.timers.forEach((timer) => clearTimeout(timer));
     this.timers.clear();
-    this.windowFitter.stop();
+    this.hitAreaReporter.stop();
+    this.view.stop();
     if (this.refreshTimer) {
       clearInterval(this.refreshTimer);
     }
@@ -173,7 +174,7 @@ export class IslandController {
 
   private render(): void {
     this.view.render(this.state, this.preferences, this.handlers());
-    this.windowFitter.request(this.view.windowSize());
+    this.hitAreaReporter.report(this.view.hitArea());
   }
 
   private handlers(): IslandViewHandlers {
