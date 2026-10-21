@@ -1,4 +1,4 @@
-use super::{Clock, IslandSnapshot, SnapshotPresenter};
+use super::{AssistantContext, Clock, IslandSnapshot, SnapshotPresenter};
 use chrono::NaiveDateTime;
 
 use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
@@ -87,6 +87,16 @@ impl TikiWorkspace {
             focus_mode: self.preferences.focus_mode,
         });
         Ok(SnapshotPresenter::new(&self.translator, &clients).present(&brief, mood))
+    }
+
+    /// Open tasks in the shape the assistant needs to summarize the day or answer questions.
+    pub fn assistant_context(&self) -> TikiResult<AssistantContext> {
+        let tasks = self.database.tasks().list_open()?;
+        Ok(AssistantContext::build(
+            &tasks,
+            &self.client_directory()?,
+            self.clock.today(),
+        ))
     }
 
     /// The brief notification due at `now`, if any; it is marked as sent so it arrives once

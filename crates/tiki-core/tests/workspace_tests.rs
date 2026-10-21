@@ -175,3 +175,21 @@ fn an_unknown_client_name_is_left_out_instead_of_failing() {
     });
     assert!(saved.is_ok());
 }
+
+#[test]
+fn the_assistant_sees_open_tasks_without_ids_or_notes() {
+    let context = sample_workspace().assistant_context().unwrap();
+
+    assert_eq!(context.today, TestDay::today());
+    assert_eq!(context.open_tasks.len(), 7);
+    let waiting = context
+        .open_tasks
+        .iter()
+        .find(|task| task.status == TaskStatus::WaitingOnOthers)
+        .unwrap();
+    assert!(waiting.waiting_days.is_some());
+
+    let json = serde_json::to_string(&context).unwrap();
+    assert!(!json.contains("\"id\""));
+    assert!(!json.contains("notes"));
+}
