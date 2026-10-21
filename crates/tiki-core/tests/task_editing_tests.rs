@@ -1,8 +1,8 @@
 mod support;
 
 use support::{SampleWorkspace, TestDay};
-use tiki_core::TikiSettings;
 use tiki_core::TikiError;
+use tiki_core::TikiSettings;
 use tiki_core::domain::{Priority, TaskId, TaskStatus};
 use tiki_core::editing::TaskEdit;
 use tiki_core::workspace::{FixedClock, TikiWorkspace};

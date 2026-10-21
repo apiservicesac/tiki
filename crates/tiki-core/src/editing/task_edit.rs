@@ -30,7 +30,7 @@ impl TaskEdit {
             return Err(TikiError::EmptyTaskTitle);
         }
         title.clone_into(&mut task.title);
-        task.notes = self.notes.trim().to_owned();
+        self.notes.trim().clone_into(&mut task.notes);
         task.client_id = client_id;
         task.due_date = self.due_date;
         task.priority = self.priority;
