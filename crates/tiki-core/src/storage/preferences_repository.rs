@@ -51,6 +51,12 @@ impl<'connection> PreferencesRepository<'connection> {
             focus_mode: self
                 .flag(UserPreferences::FOCUS_MODE_KEY)?
                 .unwrap_or(defaults.focus_mode),
+            alert_sound: self
+                .flag(UserPreferences::ALERT_SOUND_KEY)?
+                .unwrap_or(defaults.alert_sound),
+            windows_notifications: self
+                .flag(UserPreferences::WINDOWS_NOTIFICATIONS_KEY)?
+                .unwrap_or(defaults.windows_notifications),
         })
     }
 
@@ -80,10 +86,19 @@ impl<'connection> PreferencesRepository<'connection> {
         ] {
             self.store(key, &time.format(UserPreferences::TIME_FORMAT).to_string())?;
         }
-        self.store(
-            UserPreferences::NOTIFICATIONS_ENABLED_KEY,
-            &preferences.notifications_enabled.to_string(),
-        )?;
+        for (key, flag) in [
+            (
+                UserPreferences::NOTIFICATIONS_ENABLED_KEY,
+                preferences.notifications_enabled,
+            ),
+            (UserPreferences::ALERT_SOUND_KEY, preferences.alert_sound),
+            (
+                UserPreferences::WINDOWS_NOTIFICATIONS_KEY,
+                preferences.windows_notifications,
+            ),
+        ] {
+            self.store(key, &flag.to_string())?;
+        }
         self.store(
             UserPreferences::FOCUS_MODE_KEY,
             &preferences.focus_mode.to_string(),

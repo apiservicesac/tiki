@@ -7,6 +7,8 @@ use crate::i18n::Locale;
 use crate::settings::TikiSettings;
 
 /// Everything the user can change in Settings.
+// Each flag is an independent switch in Settings, not a hidden state machine.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserPreferences {
@@ -19,7 +21,12 @@ pub struct UserPreferences {
     pub morning_brief_time: NaiveTime,
     /// When the end-of-day close arrives as a notification.
     pub evening_brief_time: NaiveTime,
+    /// Master switch for reminders: the island alert, and Windows notifications if chosen.
     pub notifications_enabled: bool,
+    /// The island plays a soft chime when it shows an alert.
+    pub alert_sound: bool,
+    /// Also send each reminder as a Windows notification (it stays in the Windows history).
+    pub windows_notifications: bool,
     /// Silences notifications and lets Tiki sleep while the user concentrates.
     pub focus_mode: bool,
 }
@@ -34,6 +41,8 @@ impl UserPreferences {
     pub const EVENING_BRIEF_TIME_KEY: &'static str = "evening_brief_time";
     pub const NOTIFICATIONS_ENABLED_KEY: &'static str = "notifications_enabled";
     pub const FOCUS_MODE_KEY: &'static str = "focus_mode";
+    pub const ALERT_SOUND_KEY: &'static str = "alert_sound";
+    pub const WINDOWS_NOTIFICATIONS_KEY: &'static str = "windows_notifications";
     /// How times are written in storage.
     pub const TIME_FORMAT: &'static str = "%H:%M";
 
@@ -47,6 +56,8 @@ impl UserPreferences {
             morning_brief_time: settings.morning_brief_time,
             evening_brief_time: settings.evening_close_time,
             notifications_enabled: true,
+            alert_sound: true,
+            windows_notifications: true,
             focus_mode: false,
         }
     }

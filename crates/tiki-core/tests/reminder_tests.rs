@@ -112,6 +112,8 @@ fn brief_times_survive_a_restart() {
         morning_brief_time: NaiveTime::from_hms_opt(7, 45, 0).unwrap(),
         evening_brief_time: NaiveTime::from_hms_opt(17, 30, 0).unwrap(),
         focus_mode: true,
+        alert_sound: false,
+        windows_notifications: false,
         ..UserPreferences::defaults(&TikiSettings::default())
     };
     sample.database.preferences().save(&custom).unwrap();
@@ -195,20 +197,5 @@ fn moving_a_brief_to_a_time_already_past_waits_for_tomorrow() {
             .take_due_notification(today_at(17, 31))
             .unwrap()
             .is_none()
-    );
-}
-
-#[test]
-fn the_test_notification_does_not_use_up_the_brief() {
-    let workspace = sample_workspace();
-    let preview = workspace
-        .preview_notification(BriefMoment::Morning)
-        .unwrap();
-    assert!(preview.body.contains("Vence pronto"));
-    assert!(
-        workspace
-            .take_due_notification(today_at(9, 0))
-            .unwrap()
-            .is_some()
     );
 }

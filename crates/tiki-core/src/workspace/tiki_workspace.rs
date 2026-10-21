@@ -63,13 +63,6 @@ impl TikiWorkspace {
         Ok(())
     }
 
-    /// The brief for `moment` with today's tasks, without marking it as sent: for the
-    /// "test notification" button.
-    pub fn preview_notification(&self, moment: BriefMoment) -> TikiResult<BriefNotification> {
-        let brief = self.brief(&self.client_directory()?)?;
-        Ok(NotificationComposer::new(&self.translator).compose(&brief, moment))
-    }
-
     /// Switches the language and remembers it.
     pub fn change_locale(&mut self, locale: Locale) -> TikiResult<()> {
         self.update_preferences(UserPreferences {
