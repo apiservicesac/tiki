@@ -103,6 +103,12 @@ export interface UserPreferences {
   aiProvider: AiProviderName;
   /** `null` uses the provider's default model. */
   aiModel: string | null;
+  /** "08:30" or "08:30:00". */
+  morningBriefTime: string;
+  eveningBriefTime: string;
+  notificationsEnabled: boolean;
+  /** Silences notifications and lets Tiki sleep. */
+  focusMode: boolean;
 }
 
 export const AI_PROVIDERS = Object.freeze(["anthropic", "openai"] as const);
@@ -137,6 +143,8 @@ export interface TikiBackend {
   removeAiKey(provider: AiProviderName): Promise<void>;
   /** The transport the official AI SDKs use: the shell adds the key and sends the request. */
   aiFetch(request: ProxiedRequest): Promise<ProxiedResponse>;
+  autostartEnabled(): Promise<boolean>;
+  setAutostart(enabled: boolean): Promise<void>;
   /** Tells the shell which part of the window is the island; the rest lets clicks through. */
   setHitArea(area: HitArea): Promise<void>;
   /** Calls `handler` whenever the shell emits `eventName`; returns a function that stops listening. */

@@ -121,6 +121,13 @@
     "notify.follow_up": "Follow up: {items}",
     "notify.tomorrow": "Due tomorrow: {items}",
 
+    "settings.reminders": "Reminders",
+    "settings.notifications": "Notifications",
+    "settings.focus_mode": "Focus mode",
+    "settings.autostart": "Start with Windows",
+    "settings.morning_brief": "Morning brief",
+    "settings.evening_brief": "End-of-day close",
+
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"
   },

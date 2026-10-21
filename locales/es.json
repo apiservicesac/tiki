@@ -121,6 +121,13 @@
     "notify.follow_up": "Haz seguimiento: {items}",
     "notify.tomorrow": "Mañana vence: {items}",
 
+    "settings.reminders": "Recordatorios",
+    "settings.notifications": "Notificaciones",
+    "settings.focus_mode": "Modo enfoque",
+    "settings.autostart": "Iniciar con Windows",
+    "settings.morning_brief": "Resumen de la mañana",
+    "settings.evening_brief": "Cierre del día",
+
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"
   },

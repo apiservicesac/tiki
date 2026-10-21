@@ -4,17 +4,16 @@ import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
-import type { AiSettingsHandlers } from "./AiSettingsView";
 import { HeaderView, type HeaderHandlers } from "./HeaderView";
 import type { IslandMode, IslandState } from "./islandState";
 import { NotchView } from "./NotchView";
-import { SettingsView } from "./SettingsView";
+import { SettingsView, type SettingsHandlers } from "./SettingsView";
 import { TaskEditView, type TaskEditHandlers } from "./TaskEditView";
 import { TaskListView, type TaskListHandlers } from "./TaskListView";
 import type { HitArea } from "../backend/contracts";
 import { ContentTransition, type ContentSize } from "./ContentTransition";
 
-export interface IslandViewHandlers extends HeaderHandlers, AiSettingsHandlers, TaskListHandlers {
+export interface IslandViewHandlers extends HeaderHandlers, SettingsHandlers, TaskListHandlers {
   onExpand: () => void;
   onPointerEnter: () => void;
   onPointerLeave: () => void;
@@ -184,7 +183,7 @@ export class IslandView {
       case "capture":
         return this.captureView.render(handlers.capture);
       case "settings":
-        return this.settings.render(preferences, state.aiSettings, handlers);
+        return this.settings.render(preferences, { ai: state.aiSettings, autostart: state.autostart }, handlers);
       case "edit":
         return state.editing
           ? this.taskEdit.render(state.editing.task, state.editing.clientNames, handlers.edit)

@@ -72,6 +72,14 @@ export class TauriBackend implements TikiBackend {
     return invoke<ProxiedResponse>("ai_fetch", { request });
   }
 
+  autostartEnabled(): Promise<boolean> {
+    return invoke<boolean>("autostart_enabled");
+  }
+
+  async setAutostart(enabled: boolean): Promise<void> {
+    await invoke("set_autostart", { enabled });
+  }
+
   async setHitArea(area: HitArea): Promise<void> {
     await invoke("set_island_hit_area", { area });
   }

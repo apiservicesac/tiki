@@ -704,3 +704,7 @@ button.island-row-text {
 }
 
 [data-orientation="vertical"] .edit-form { grid-template-columns: minmax(0, 1fr); }
+
+/* Reminders */
+.settings-row-label { flex: 1; }
+.settings-time { flex: 0 0 auto; width: 108px; }

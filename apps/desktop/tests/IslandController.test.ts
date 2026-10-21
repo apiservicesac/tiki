@@ -181,6 +181,34 @@ describe("IslandController", () => {
     expect(document.documentElement.lang).toBe("en");
   });
 
+  it("changes reminder settings: focus mode, brief time and start with Windows", async () => {
+    controller.openPanel("settings");
+    root.querySelector<HTMLButtonElement>('[data-setting="settings.focus_mode"]')?.click();
+    await vi.waitFor(() => expect(backend.savedPreferences.focusMode).toBe(true));
+
+    const morning = root.querySelector<HTMLInputElement>("#setting-morningBriefTime");
+    expect(morning?.value).toBe("08:30");
+    if (morning) {
+      morning.value = "07:45";
+      morning.dispatchEvent(new Event("change"));
+    }
+    await vi.waitFor(() => expect(backend.savedPreferences.morningBriefTime).toBe("07:45"));
+
+    root.querySelector<HTMLButtonElement>('[data-setting="settings.autostart"]')?.click();
+    await vi.waitFor(() => expect(backend.autostart).toBe(true));
+    await vi.waitFor(() =>
+      expect(root.querySelector('[data-setting="settings.autostart"]')?.getAttribute("aria-checked")).toBe("true"));
+  });
+
+  it("peeks out with the summary when a brief notification arrives", async () => {
+    vi.useFakeTimers();
+    backend.emit(SHELL_EVENTS.briefReady);
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("compact"));
+
+    vi.advanceTimersByTime(UI_CONFIG.briefPeekDurationMs);
+    expect(notch()?.dataset.mode).toBe("hidden");
+  });
+
   it("switches tabs instantly, without fading the card", () => {
     controller.setMode("expanded");
     root.querySelector<HTMLButtonElement>('[data-tab="agenda"]')?.click();

@@ -49,6 +49,7 @@ export class IslandController {
       reactionMood: null,
       aiSettings: { configured: { anthropic: false, openai: false }, models: [] },
       editing: null,
+      autostart: false,
     };
   }
 
@@ -63,10 +64,11 @@ export class IslandController {
       await this.backend.listen(SHELL_EVENTS.openCapture, () => this.openPanel("capture")),
       await this.backend.listen(SHELL_EVENTS.openSettings, () => this.openPanel("settings")),
       await this.backend.listen(SHELL_EVENTS.toggleIsland, () => this.toggle()),
+      await this.backend.listen(SHELL_EVENTS.briefReady, () => this.announceBrief()),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
     window.addEventListener("resize", this.redrawOnResize);
-    await this.loadAiSettings();
+    await Promise.all([this.loadAiSettings(), this.loadAutostart()]);
   }
 
   /** Stops timers and shell listeners. */
@@ -100,6 +102,7 @@ export class IslandController {
     this.update({ mode: "expanded", panel });
     if (panel === "settings") {
       void this.loadAiSettings();
+      void this.loadAutostart();
     }
   }
 
@@ -154,6 +157,11 @@ export class IslandController {
     this.react("happy");
   }
 
+  async setAutostart(enabled: boolean): Promise<void> {
+    await this.backend.setAutostart(enabled);
+    await this.loadAutostart();
+  }
+
   async saveAiKey(provider: AiProviderName, apiKey: string): Promise<void> {
     await this.backend.saveAiKey(provider, apiKey);
     await this.loadAiSettings();
@@ -178,6 +186,32 @@ export class IslandController {
     await this.refresh();
     if (providerChanged) {
       await this.loadAiSettings();
+    }
+  }
+
+  /**
+   * A brief notification was just shown: the hidden island peeks out with the day's summary
+   * for a moment, then hides again unless the user is already on it.
+   */
+  private async announceBrief(): Promise<void> {
+    await this.refresh();
+    if (this.state.mode !== "hidden") {
+      return;
+    }
+    this.update({ mode: "compact" });
+    this.react("curious");
+    this.schedule("fold", UI_CONFIG.briefPeekDurationMs, () => {
+      if (this.state.mode === "compact") {
+        this.update({ mode: "hidden" });
+      }
+    });
+  }
+
+  private async loadAutostart(): Promise<void> {
+    try {
+      this.update({ autostart: await this.backend.autostartEnabled() });
+    } catch {
+      this.update({ autostart: false });
     }
   }
 
@@ -285,6 +319,7 @@ export class IslandController {
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
       onSaveKey: (provider, apiKey) => void this.saveAiKey(provider, apiKey),
       onRemoveKey: (provider) => void this.removeAiKey(provider),
+      onSetAutostart: (enabled) => void this.setAutostart(enabled),
       edit: {
         onSave: (taskId, edit) => void this.saveTask(taskId, edit),
         onCancel: () => this.update({ panel: "tasks", editing: null }),

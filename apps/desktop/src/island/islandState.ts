@@ -26,6 +26,8 @@ export interface IslandState {
   /** A short-lived mood (happy after capturing) that overrides the snapshot's mood. */
   reactionMood: MoodName | null;
   aiSettings: AiSettingsState;
+  /** Whether Tiki starts with Windows; the shell owns this setting. */
+  autostart: boolean;
   /** The task open in the edit panel, with the clients it can be assigned to. */
   editing: { task: TaskDetails; clientNames: string[] } | null;
 }

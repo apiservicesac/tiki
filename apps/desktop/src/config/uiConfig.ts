@@ -13,6 +13,8 @@ export const UI_CONFIG = Object.freeze({
    * compact notch to finish opening and rest for a moment, so the two steps read clearly.
    */
   unfoldDelayMs: 800,
+  /** After a brief notification, the island shows its compact summary this long. */
+  briefPeekDurationMs: 8_000,
   /** The island folds back this long after the pointer leaves it. */
   foldDelayMs: 650,
   motion: Object.freeze({
@@ -31,4 +33,5 @@ export const SHELL_EVENTS = Object.freeze({
   openCapture: "tiki://open-capture",
   openSettings: "tiki://open-settings",
   toggleIsland: "tiki://toggle-island",
+  briefReady: "tiki://brief-ready",
 });

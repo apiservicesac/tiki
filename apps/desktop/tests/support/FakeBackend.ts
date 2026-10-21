@@ -24,7 +24,17 @@ export class FakeBackend implements TikiBackend {
   readonly hitAreas: HitArea[] = [];
   readonly confirmedCaptures: InterpretedCapture[] = [];
   readonly editedTasks: Array<{ taskId: number; edit: TaskEdit }> = [];
-  savedPreferences: UserPreferences = { locale: "spanish", islandPlacement: "top", aiProvider: "anthropic", aiModel: null };
+  savedPreferences: UserPreferences = {
+    locale: "spanish",
+    islandPlacement: "top",
+    aiProvider: "anthropic",
+    aiModel: null,
+    morningBriefTime: "08:30:00",
+    eveningBriefTime: "18:00:00",
+    notificationsEnabled: true,
+    focusMode: false,
+  };
+  autostart = false;
   readonly aiKeys = new Map<AiProviderName, string>();
   /** Plays the AI provider: what the official SDK receives back through the shell. */
   aiShell = new FakeShell(() => ({}));
@@ -99,6 +109,14 @@ export class FakeBackend implements TikiBackend {
 
   aiFetch(request: ProxiedRequest): Promise<ProxiedResponse> {
     return this.aiShell.send(request);
+  }
+
+  async autostartEnabled(): Promise<boolean> {
+    return this.autostart;
+  }
+
+  async setAutostart(enabled: boolean): Promise<void> {
+    this.autostart = enabled;
   }
 
   async setHitArea(area: HitArea): Promise<void> {

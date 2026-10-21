@@ -1,17 +1,31 @@
 import { ISLAND_PLACEMENTS, LOCALE_NAMES, type IslandPlacement, type UserPreferences } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import { AiSettingsView, type AiSettingsHandlers, type AiSettingsState } from "./AiSettingsView";
+import { ReminderSettingsView, type ReminderSettingsHandlers } from "./ReminderSettingsView";
 import type { Translator } from "../i18n/Translator";
 
-/** Settings card: where the island hangs, which language Tiki speaks and its AI assistant. */
+export type SettingsHandlers = AiSettingsHandlers & ReminderSettingsHandlers;
+
+/** What the settings card shows besides the preferences themselves. */
+export interface SettingsState {
+  ai: AiSettingsState;
+  autostart: boolean;
+}
+
+/**
+ * Settings card: where the island hangs, which language Tiki speaks, when it reminds the
+ * user and its AI assistant.
+ */
 export class SettingsView {
   private readonly aiSettings: AiSettingsView;
+  private readonly reminderSettings: ReminderSettingsView;
 
   constructor(private readonly translator: Translator) {
     this.aiSettings = new AiSettingsView(translator);
+    this.reminderSettings = new ReminderSettingsView(translator);
   }
 
-  render(preferences: UserPreferences, aiState: AiSettingsState, handlers: AiSettingsHandlers): HTMLElement {
+  render(preferences: UserPreferences, state: SettingsState, handlers: SettingsHandlers): HTMLElement {
     const onChange = handlers.onChangePreferences;
     return ElementFactory.create("div", {
       className: "settings",
@@ -35,7 +49,8 @@ export class SettingsView {
               () => onChange({ ...preferences, locale }),
             )),
         ),
-        this.aiSettings.render(preferences, aiState, handlers),
+        this.reminderSettings.render(preferences, state.autostart, handlers),
+        this.aiSettings.render(preferences, state.ai, handlers),
       ],
     });
   }
