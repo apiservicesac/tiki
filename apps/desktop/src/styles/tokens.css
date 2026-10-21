@@ -1,0 +1,67 @@
+/* Design tokens, matching the dooai island. Dark by default; light follows the system theme. */
+:root {
+  --island-notch: #0a0a0d;
+  --island-notch-edge: rgba(255, 255, 255, 0.05);
+  --island-notch-shadow: 0 26px 60px rgba(0, 0, 0, 0.5);
+  --island-card: #141518;
+  --island-card-edge: rgba(255, 255, 255, 0.045);
+  --island-text: #ffffff;
+  --island-muted: #a5abb5;
+  --island-faint: #5f646d;
+  --island-soft: rgba(255, 255, 255, 0.09);
+  --island-soft-hover: rgba(255, 255, 255, 0.16);
+  --island-active: rgba(255, 255, 255, 0.12);
+  --island-primary: #f5f6f8;
+  --island-on-primary: #0b0c0e;
+  --island-good: #7ee0b9;
+  --island-wash-strength: 1;
+
+  --urgency-critical-background: rgba(244, 80, 94, 0.18);
+  --urgency-critical-text: #ff8d97;
+  --urgency-soon-background: rgba(245, 165, 36, 0.2);
+  --urgency-soon-text: #f5a524;
+  --urgency-waiting-background: rgba(168, 85, 247, 0.2);
+  --urgency-waiting-text: #c9a3ff;
+  --urgency-normal-background: rgba(255, 255, 255, 0.07);
+  --urgency-normal-text: #a5abb5;
+
+  --font-body: "Onest", "Segoe UI Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+
+  --ease: cubic-bezier(0.45, 0, 0.2, 1);
+  --spring: cubic-bezier(0.32, 1.22, 0.42, 1);
+
+  /* Notch measures, as in dooai (`island_config.js`). */
+  --notch-hidden-length: 168px;
+  --notch-hidden-thickness: 32px;
+  --notch-compact-width: 420px;
+  --notch-head-height: 46px;
+  --notch-expanded-width: 640px;
+  --notch-ear: 14px;
+  --notch-shadow-room: 26px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --island-notch: #f3f4f7;
+    --island-notch-edge: rgba(15, 20, 30, 0.1);
+    --island-notch-shadow: 0 24px 50px rgba(20, 25, 40, 0.24);
+    --island-card: #ffffff;
+    --island-card-edge: rgba(15, 20, 30, 0.08);
+    --island-text: #12161c;
+    --island-muted: #566071;
+    --island-faint: #9aa2af;
+    --island-soft: rgba(15, 20, 30, 0.07);
+    --island-soft-hover: rgba(15, 20, 30, 0.13);
+    --island-active: rgba(15, 20, 30, 0.09);
+    --island-primary: #14171c;
+    --island-on-primary: #ffffff;
+    --island-good: #0f7a52;
+    --island-wash-strength: 0.5;
+    --urgency-critical-text: #b02a37;
+    --urgency-soon-text: #a8650a;
+    --urgency-waiting-text: #7c3aed;
+    --urgency-normal-background: rgba(15, 20, 30, 0.06);
+    --urgency-normal-text: #566071;
+  }
+}

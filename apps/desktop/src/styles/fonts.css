@@ -1,0 +1,14 @@
+/* Same faces as the dooai island; both are under the SIL Open Font License. */
+@font-face {
+  font-family: "Onest";
+  src: url("../assets/fonts/Onest-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../assets/fonts/JetBrainsMono-latin.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+}
