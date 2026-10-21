@@ -37,6 +37,8 @@ describe("IslandController", () => {
   it("lays the island out vertically on the left and right edges", async () => {
     await controller.changePreferences({ locale: "spanish", islandPlacement: "left" });
     expect(root.dataset.orientation).toBe("vertical");
+    const bubbles = [...root.querySelectorAll(".notch-count")].map((bubble) => bubble.textContent);
+    expect(bubbles).toEqual(["3", "2"]);
 
     await controller.changePreferences({ locale: "spanish", islandPlacement: "bottom" });
     expect(root.dataset.orientation).toBe("horizontal");

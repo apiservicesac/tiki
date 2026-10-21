@@ -459,9 +459,34 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 .settings-screen-left { left: 0; top: 5px; width: 4px; height: 10px; }
 .settings-screen-right { right: 0; top: 5px; width: 4px; height: 10px; }
 
+/* Count bubbles: used instead of the text summary on the left and right edges. */
+.notch-counts {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.notch-count {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  padding: 0 5px;
+  border-radius: 99px;
+  font: 700 11px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.notch-count-due { background: var(--urgency-soon-background); color: var(--urgency-soon-text); }
+[data-mood="worried"] .notch-count-due { background: var(--urgency-critical-background); color: var(--urgency-critical-text); }
+.notch-count-waiting { background: var(--urgency-waiting-background); color: var(--urgency-waiting-text); }
+
 /*
- * Left and right edges: the island is a column. The folded notch stacks Tiki and a
- * vertical summary, and the expanded island becomes a narrow, tall panel.
+ * Left and right edges: the island is a column. The folded notch stacks Tiki and the count
+ * bubbles (rotated text is hard to read at a glance), and the expanded island becomes a
+ * narrow, tall panel.
  */
 [data-orientation="vertical"] {
   --notch-expanded-width: 380px;
@@ -475,26 +500,34 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 [data-orientation="vertical"] .notch-hidden-busy,
 [data-orientation="vertical"] .notch-compact {
   flex-direction: column;
+  justify-content: center;
   height: auto;
   min-width: 0;
   min-height: var(--notch-hidden-length);
   padding: 12px 0;
+  gap: 10px;
 }
 
 [data-orientation="vertical"] .notch-compact {
   width: var(--notch-head-height);
-  gap: 10px;
 }
 
 [data-orientation="vertical"] .notch-name,
-[data-orientation="vertical"] .notch-summary,
-[data-orientation="vertical"] .notch-chip {
-  flex: none;
-  writing-mode: vertical-rl;
+[data-orientation="vertical"] .notch-summary {
+  display: none;
+}
+
+[data-orientation="vertical"] .notch-counts {
+  display: flex;
 }
 
 [data-orientation="vertical"] .notch-chip {
-  padding: 8px 1px;
+  max-width: 40px;
+  padding: 2px 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 9px;
+  letter-spacing: 0.02em;
 }
 
 [data-orientation="vertical"] .island-card {
