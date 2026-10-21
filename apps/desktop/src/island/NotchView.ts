@@ -39,6 +39,7 @@ export class NotchView {
         ElementFactory.create("span", {
           className: `notch-chip notch-chip-${mood}`,
           text: snapshot.moodLabel,
+          attributes: { title: snapshot.moodLabel },
         }),
       ],
     });

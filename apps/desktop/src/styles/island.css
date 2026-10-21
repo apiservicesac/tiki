@@ -521,13 +521,13 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   display: flex;
 }
 
+/* The mood word does not fit the narrow column (Tiki's tag already says it): a status dot. */
 [data-orientation="vertical"] .notch-chip {
-  max-width: 40px;
-  padding: 2px 5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 9px;
-  letter-spacing: 0.02em;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  font-size: 0;
+  background: currentColor;
 }
 
 [data-orientation="vertical"] .island-card {

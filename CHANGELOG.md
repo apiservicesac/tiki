@@ -6,6 +6,10 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- On the left and right edges the compact island shows the mood as a colored dot instead of
+  a cramped "200 OK" label; the word stays on Tiki's tag and in the tooltip.
+
 ## [0.1.2-rc.3] - 2026-10-21
 
 ### Changed
