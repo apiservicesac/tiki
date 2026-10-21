@@ -33,12 +33,12 @@ export class TikiApp {
       this.backend,
       view,
       captureView,
+      this.windowFitter,
       snapshot,
       preferences,
       this.onLocaleChanged,
     );
     await controller.start();
-    this.windowFitter.observe(this.root);
     return controller;
   }
 }

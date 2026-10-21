@@ -2,7 +2,8 @@
 :root {
   --island-notch: #0a0a0d;
   --island-notch-edge: rgba(255, 255, 255, 0.05);
-  --island-notch-shadow: 0 26px 60px rgba(0, 0, 0, 0.5);
+  /* Kept within --notch-shadow-room so the window edge never cuts it. */
+  --island-notch-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   --island-card: #141518;
   --island-card-edge: rgba(255, 255, 255, 0.045);
   --island-text: #ffffff;
@@ -38,14 +39,14 @@
   --notch-head-height: 46px;
   --notch-expanded-width: 640px;
   --notch-ear: 14px;
-  --notch-shadow-room: 26px;
+  --notch-shadow-room: 18px;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
     --island-notch: #f3f4f7;
     --island-notch-edge: rgba(15, 20, 30, 0.1);
-    --island-notch-shadow: 0 24px 50px rgba(20, 25, 40, 0.24);
+    --island-notch-shadow: 0 4px 12px rgba(20, 25, 40, 0.18);
     --island-card: #ffffff;
     --island-card-edge: rgba(15, 20, 30, 0.08);
     --island-text: #12161c;

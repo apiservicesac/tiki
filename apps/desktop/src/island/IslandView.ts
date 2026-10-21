@@ -9,6 +9,7 @@ import type { IslandState } from "./islandState";
 import { NotchView } from "./NotchView";
 import { SettingsView } from "./SettingsView";
 import { TaskListView } from "./TaskListView";
+import type { IslandSize } from "./WindowFitter";
 
 export interface IslandViewHandlers extends HeaderHandlers {
   onExpand: () => void;
@@ -19,12 +20,19 @@ export interface IslandViewHandlers extends HeaderHandlers {
   capture: CaptureViewHandlers;
 }
 
-/** Draws the whole island for a given state; it holds no state of its own. */
+/**
+ * Draws the island for a given state. The notch element lives for the whole session and
+ * only its content changes, so its size and corners animate between states like dooai.
+ */
 export class IslandView {
-  private readonly notch: NotchView;
+  private readonly notchView: NotchView;
   private readonly header: HeaderView;
   private readonly taskList: TaskListView;
   private readonly settings: SettingsView;
+  private readonly notch: HTMLElement;
+  private readonly clip: HTMLElement;
+  private handlers: IslandViewHandlers | null = null;
+  private notchSize: IslandSize = { width: 0, height: 0 };
 
   constructor(
     private readonly root: HTMLElement,
@@ -32,32 +40,65 @@ export class IslandView {
     private readonly mascot: MascotRenderer,
     private readonly captureView: CaptureView,
   ) {
-    this.notch = new NotchView(mascot);
+    this.notchView = new NotchView(mascot);
     this.header = new HeaderView(translator);
     this.taskList = new TaskListView(translator);
     this.settings = new SettingsView(translator);
+    this.clip = ElementFactory.create("div", { className: "island-clip" });
+    this.notch = this.createNotch();
+    root.style.setProperty("--island-transition", `${UI_CONFIG.islandTransitionMs}ms`);
+    root.replaceChildren(this.notch);
   }
 
   render(state: IslandState, preferences: UserPreferences, handlers: IslandViewHandlers): void {
+    this.handlers = handlers;
     const mood = state.reactionMood ?? state.snapshot.mood;
+    this.root.dataset.placement = state.placement;
+    this.root.ownerDocument.body.dataset.placement = state.placement;
+    this.notch.dataset.mode = state.mode;
+    this.notch.dataset.mood = mood;
+
+    const content = this.content(state, mood, preferences, handlers);
+    content.classList.add("island-content");
+    this.clip.replaceChildren(content);
+    this.resizeNotchTo(content);
+  }
+
+  /** Size the window needs: the notch at its target size plus the room around it. */
+  windowSize(): IslandSize {
+    const padding = getComputedStyle(this.root);
+    const horizontal = parseFloat(padding.paddingLeft) + parseFloat(padding.paddingRight);
+    const vertical = parseFloat(padding.paddingTop) + parseFloat(padding.paddingBottom);
+    return {
+      width: Math.ceil(this.notchSize.width + (horizontal || 0)),
+      height: Math.ceil(this.notchSize.height + (vertical || 0)),
+    };
+  }
+
+  private createNotch(): HTMLElement {
     const notch = ElementFactory.create("div", {
       className: "island-notch",
-      attributes: { "data-mode": state.mode, "data-mood": mood },
       children: [
         ElementFactory.create("span", { className: "island-ear island-ear-start" }),
         ElementFactory.create("span", { className: "island-ear island-ear-end" }),
-        this.content(state, mood, preferences, handlers),
+        this.clip,
       ],
     });
+    notch.addEventListener("pointerenter", () => this.handlers?.onPointerEnter());
+    notch.addEventListener("pointerleave", () => this.handlers?.onPointerLeave());
+    notch.addEventListener("click", () => {
+      if (notch.dataset.mode !== "expanded") {
+        this.handlers?.onExpand();
+      }
+    });
+    return notch;
+  }
 
-    if (state.mode !== "expanded") {
-      notch.addEventListener("click", handlers.onExpand);
-      notch.addEventListener("pointerenter", handlers.onPointerEnter);
-      notch.addEventListener("pointerleave", handlers.onPointerLeave);
-    }
-
-    this.root.dataset.placement = state.placement;
-    this.root.replaceChildren(notch);
+  /** Gives the notch the natural size of its new content; CSS animates the change. */
+  private resizeNotchTo(content: HTMLElement): void {
+    this.notchSize = { width: content.offsetWidth, height: content.offsetHeight };
+    this.notch.style.width = `${this.notchSize.width}px`;
+    this.notch.style.height = `${this.notchSize.height}px`;
   }
 
   private content(
@@ -67,10 +108,10 @@ export class IslandView {
     handlers: IslandViewHandlers,
   ): HTMLElement {
     if (state.mode === "hidden") {
-      return this.notch.hidden(state.snapshot, mood);
+      return this.notchView.hidden(state.snapshot, mood);
     }
     if (state.mode === "compact") {
-      return this.notch.compact(state.snapshot, mood);
+      return this.notchView.compact(state.snapshot, mood);
     }
     return ElementFactory.create("div", {
       className: "island-expanded",
