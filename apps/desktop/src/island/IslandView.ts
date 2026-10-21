@@ -5,7 +5,7 @@ import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
 import { HeaderView, type HeaderHandlers } from "./HeaderView";
-import type { IslandState } from "./islandState";
+import type { IslandMode, IslandState } from "./islandState";
 import { NotchView } from "./NotchView";
 import { SettingsView } from "./SettingsView";
 import { TaskListView } from "./TaskListView";
@@ -36,7 +36,8 @@ export class IslandView {
   private readonly contentTransition: ContentTransition;
   private handlers: IslandViewHandlers | null = null;
   private notchSize: ContentSize = { width: 0, height: 0 };
-  private shownView = "";
+  private shownMode: IslandMode | null = null;
+  private shownPanel = "";
 
   constructor(
     private readonly root: HTMLElement,
@@ -62,15 +63,19 @@ export class IslandView {
     const mood = state.reactionMood ?? state.snapshot.mood;
     this.root.dataset.placement = state.placement;
     this.root.ownerDocument.body.dataset.placement = state.placement;
+    this.root.ownerDocument.documentElement.lang = this.translator.localeCode;
     this.notch.dataset.mode = state.mode;
     this.notch.dataset.mood = mood;
 
-    const view = state.mode === "expanded" ? `expanded:${state.panel}:${state.tab}` : state.mode;
-    const animate = this.shownView !== "" && view !== this.shownView;
-    if (view !== this.shownView) {
+    // Content cross-fades only when the island changes shape (hidden, compact, expanded).
+    // Tabs and panels swap instantly, so switching them never flashes an empty card.
+    const animate = this.shownMode !== null && state.mode !== this.shownMode;
+    const panelKey = `${state.mode}:${state.panel}`;
+    if (panelKey !== this.shownPanel) {
       this.captureView.reset();
     }
-    this.shownView = view;
+    this.shownMode = state.mode;
+    this.shownPanel = panelKey;
 
     const content = this.content(state, mood, preferences, handlers);
     this.resizeNotch(this.contentTransition.swap(content, animate));

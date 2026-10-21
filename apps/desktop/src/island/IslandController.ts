@@ -1,12 +1,10 @@
-import type { IslandSnapshot, MoodName, TikiBackend, UserPreferences } from "../backend/contracts";
+import { LOCALE_CODES, type IslandSnapshot, type MoodName, type TikiBackend, type UserPreferences } from "../backend/contracts";
 import type { CaptureView } from "../capture/CaptureView";
+import type { Translator } from "../i18n/Translator";
 import { SHELL_EVENTS, UI_CONFIG } from "../config/uiConfig";
 import type { IslandMode, IslandPanel, IslandState, IslandTab } from "./islandState";
 import type { IslandView, IslandViewHandlers } from "./IslandView";
 import type { HitAreaReporter } from "./HitAreaReporter";
-
-/** Called when the user picks another language; the app reloads its translations. */
-export type LocaleChangedListener = () => void;
 
 /** Owns the island state, reacts to the user and the shell, and asks the view to redraw. */
 export class IslandController {
@@ -23,7 +21,7 @@ export class IslandController {
     private readonly hitAreaReporter: HitAreaReporter,
     initialSnapshot: IslandSnapshot,
     initialPreferences: UserPreferences,
-    private readonly onLocaleChanged: LocaleChangedListener,
+    private readonly translator: Translator,
   ) {
     this.preferences = initialPreferences;
     this.state = {
@@ -98,15 +96,17 @@ export class IslandController {
     this.react("happy");
   }
 
+  /** Saves the preferences and applies them in place, without closing the island. */
   async changePreferences(preferences: UserPreferences): Promise<void> {
     const localeChanged = preferences.locale !== this.preferences.locale;
     await this.backend.updatePreferences(preferences);
     this.preferences = preferences;
     if (localeChanged) {
-      this.onLocaleChanged();
-      return;
+      this.translator.use(LOCALE_CODES[preferences.locale]);
+      this.captureView.reset();
     }
     this.update({ placement: preferences.islandPlacement });
+    await this.refresh();
   }
 
   /**

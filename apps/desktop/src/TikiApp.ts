@@ -2,7 +2,7 @@ import { LOCALE_CODES, type TikiBackend } from "./backend/contracts";
 import { TauriBackend } from "./backend/TauriBackend";
 import { CaptureView } from "./capture/CaptureView";
 import { Translator } from "./i18n/Translator";
-import { IslandController, type LocaleChangedListener } from "./island/IslandController";
+import { IslandController } from "./island/IslandController";
 import { IslandView } from "./island/IslandView";
 import { HitAreaReporter } from "./island/HitAreaReporter";
 import { MascotRenderer } from "./mascot/MascotRenderer";
@@ -14,7 +14,6 @@ export class TikiApp {
   constructor(
     private readonly root: HTMLElement,
     private readonly backend: TikiBackend = new TauriBackend(),
-    private readonly onLocaleChanged: LocaleChangedListener = () => window.location.reload(),
   ) {
     this.hitAreaReporter = new HitAreaReporter(backend);
   }
@@ -25,7 +24,6 @@ export class TikiApp {
       this.backend.islandSnapshot(),
     ]);
     const translator = new Translator(LOCALE_CODES[preferences.locale]);
-    document.documentElement.lang = translator.localeCode;
 
     const captureView = new CaptureView(translator);
     const view = new IslandView(this.root, translator, new MascotRenderer(), captureView);
@@ -36,7 +34,7 @@ export class TikiApp {
       this.hitAreaReporter,
       snapshot,
       preferences,
-      this.onLocaleChanged,
+      translator,
     );
     await controller.start();
     return controller;

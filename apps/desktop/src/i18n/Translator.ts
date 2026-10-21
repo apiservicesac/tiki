@@ -13,10 +13,15 @@ export class Translator {
     en: english,
   };
 
-  constructor(private readonly locale: LocaleCode) {}
+  constructor(private locale: LocaleCode) {}
 
   get localeCode(): LocaleCode {
     return this.locale;
+  }
+
+  /** Switches language; views pick it up the next time they draw. */
+  use(locale: LocaleCode): void {
+    this.locale = locale;
   }
 
   /** Text for a key; the key itself when missing, so gaps are visible but harmless. */

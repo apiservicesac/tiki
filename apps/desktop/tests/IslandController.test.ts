@@ -8,7 +8,6 @@ describe("IslandController", () => {
   let root: HTMLElement;
   let backend: FakeBackend;
   let controller: IslandController;
-  let localeChanges: number;
 
   const notch = () => root.querySelector<HTMLElement>(".island-notch");
 
@@ -16,8 +15,7 @@ describe("IslandController", () => {
     root = document.createElement("div");
     document.body.replaceChildren(root);
     backend = new FakeBackend();
-    localeChanges = 0;
-    controller = await new TikiApp(root, backend, () => localeChanges++).start();
+    controller = await new TikiApp(root, backend).start();
   });
 
   afterEach(() => {
@@ -124,11 +122,21 @@ describe("IslandController", () => {
 
     await vi.waitFor(() => expect(backend.savedPreferences.islandPlacement).toBe("right"));
     expect(root.dataset.placement).toBe("right");
-    expect(localeChanges).toBe(0);
   });
 
-  it("reloads the translations when the language changes", async () => {
+  it("switches language in place, keeping Settings open", async () => {
+    controller.openPanel("settings");
     await controller.changePreferences({ locale: "english", islandPlacement: "top" });
-    expect(localeChanges).toBe(1);
+
+    expect(controller.currentState.mode).toBe("expanded");
+    expect(controller.currentState.panel).toBe("settings");
+    expect(root.querySelector(".island-head-title strong")?.textContent).toBe("Settings");
+    expect(document.documentElement.lang).toBe("en");
+  });
+
+  it("switches tabs instantly, without fading the card", () => {
+    controller.setMode("expanded");
+    root.querySelector<HTMLButtonElement>('[data-tab="agenda"]')?.click();
+    expect(root.querySelector(".island-content-leaving")).toBeNull();
   });
 });
