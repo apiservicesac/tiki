@@ -1,3 +1,4 @@
+use tauri::window::Color;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
 use crate::desktop_config::DesktopConfig;
@@ -29,6 +30,8 @@ impl SettingsWindow {
         .inner_size(width, height)
         .min_inner_size(min_width, min_height)
         .decorations(false)
+        // The island's notch color, so the window never flashes white while it loads.
+        .background_color(Color(10, 10, 13, 255))
         .shadow(true)
         .center()
         .focused(true)

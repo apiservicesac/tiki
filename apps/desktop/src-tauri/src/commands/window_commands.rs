@@ -16,8 +16,11 @@ pub fn set_island_hit_area(click_through: State<'_, Arc<ClickThrough>>, area: Is
 }
 
 /// Opens the advanced settings window, optionally on one section (`ai`, `plugins`…).
+///
+/// Async on purpose: on Windows, creating a window from a synchronous command deadlocks
+/// `WebView2` and the new window stays blank.
 #[tauri::command]
-pub fn open_advanced_settings(
+pub async fn open_advanced_settings(
     app: AppHandle,
     state: State<'_, AppState>,
     section: Option<String>,
