@@ -6,6 +6,19 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1-rc.5] - 2026-10-21
+
+### Added
+- Reminders appear in the notch: it grows a little, Tiki hops, and the title shows with a
+  one-line preview. Resting on it or clicking opens the island with the full reminder above
+  the Today list. Untouched, it folds after a few seconds and leaves a dot until opened.
+- The island plays its own soft chime with each reminder, so alerts work even when Windows
+  hides notification banners ("Do not disturb", full-screen apps).
+- Reminder settings: Sound, and Also in Windows to keep sending Windows notifications.
+
+### Removed
+- The "Test notification" button: the notch alert replaces it.
+
 ## [0.2.1-rc.4] - 2026-10-21
 
 ### Fixed
