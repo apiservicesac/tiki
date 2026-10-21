@@ -2,7 +2,7 @@ use tauri::State;
 use tiki_core::capture::{CaptureIntent, CaptureOutcome, ConfirmedCapture};
 use tiki_core::domain::{TaskId, TaskStatus};
 use tiki_core::editing::{TaskDetails, TaskEdit};
-use tiki_core::workspace::IslandSnapshot;
+use tiki_core::workspace::{AssistantContext, IslandSnapshot};
 
 use super::command_error::CommandResult;
 use crate::app_state::AppState;
@@ -59,4 +59,10 @@ pub fn task_details(state: State<'_, AppState>, task_id: i64) -> CommandResult<T
 #[tauri::command]
 pub fn edit_task(state: State<'_, AppState>, task_id: i64, edit: TaskEdit) -> CommandResult<()> {
     Ok(state.with_workspace(|workspace| workspace.edit_task(TaskId(task_id), edit))?)
+}
+
+/// Open tasks for the assistant to summarize the day or answer a question.
+#[tauri::command]
+pub fn assistant_context(state: State<'_, AppState>) -> CommandResult<AssistantContext> {
+    Ok(state.with_workspace(|workspace| workspace.assistant_context())?)
 }

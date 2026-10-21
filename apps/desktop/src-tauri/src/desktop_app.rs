@@ -49,6 +49,7 @@ impl TikiDesktopApp {
                 commands::island_commands::client_names,
                 commands::island_commands::task_details,
                 commands::island_commands::edit_task,
+                commands::island_commands::assistant_context,
                 commands::settings_commands::preferences,
                 commands::settings_commands::update_preferences,
                 commands::window_commands::set_island_hit_area,
