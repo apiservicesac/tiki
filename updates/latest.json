@@ -1,11 +1,11 @@
 {
-  "version": "0.2.1-rc.1",
-  "notes": "Advanced settings window, island settings trimmed to the island's own, dark lists and pickers, switches.",
-  "pub_date": "2026-10-21T22:11:27.129Z",
+  "version": "0.2.1-rc.2",
+  "notes": "The advanced settings window no longer opens blank, and the island folds to its notch when it opens.",
+  "pub_date": "2026-10-21T22:23:16.006Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbW1KWHZNMWdINWN3VnBXRHlVTU40VUZ1WXdnTXNCTTR3T2FpMU1XRjZ3T1llbCtnblJKMXZTY3VoM0VFZFN3cmZHdE1FOER4bkp6TzNSNXROUlpqM3dRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjIwNjc3CWZpbGU6VGlraV8wLjIuMS1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMS1yYy4xCnlKajZXRzRyZ1VBZ1dxVGJuMUZuVDlxcUNldkFlQXhUSTNYY204MFlKSFc3MWE0U0V3NVpqYS9Dc1hsaHVCd1NmME1ONE5yUS8rRjBYTS9RN0NSTEJRPT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.1-rc.1/Tiki_0.2.1-rc.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbWloVDRxV1V5MVRSRXNwbVZ0ODYxN3RtTkFTLzE4UmJ4eWlneEF2Qm1FOEVHMlZCWnk1Vm5kR2tsN0ZpOVJmczB6SUx3S0dqZ292d0x5L0RGK3RoM1FZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjIxMzg3CWZpbGU6VGlraV8wLjIuMS1yYy4yX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMS1yYy4yCmdISWVFSzlKSzFpY05JSXhVSW4rZ1V0L09vRlo2bk41eEhFelorc3dReFdUci9HRnhwQ29jK1E1b1VwSVpDelowdmhhYlBpTTljbHM3ZVNUYTBkeUFBPT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.1-rc.2/Tiki_0.2.1-rc.2_x64-setup.exe"
     }
   }
 }
