@@ -1,0 +1,27 @@
+name: Windows installer
+
+# Builds the installer natively on Windows; locally use `make windows-installer` instead.
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install interface dependencies
+        working-directory: apps/desktop
+        run: npm ci
+      - name: Build the installer
+        working-directory: apps/desktop
+        run: npm run tauri build
+      - uses: actions/upload-artifact@v5
+        with:
+          name: tiki-windows-installer
+          path: target/release/bundle/nsis/*.exe
