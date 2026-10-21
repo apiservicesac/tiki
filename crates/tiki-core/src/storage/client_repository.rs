@@ -1,7 +1,7 @@
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::domain::{Client, ClientId};
-use crate::error::TikiResult;
+use crate::error::{TikiError, TikiResult};
 
 /// Reads and writes clients.
 pub struct ClientRepository<'connection> {
@@ -19,6 +19,31 @@ impl<'connection> ClientRepository<'connection> {
             params![client.name, client.color],
         )?;
         Ok(ClientId(self.connection.last_insert_rowid()))
+    }
+
+    pub fn update(&self, client: &Client) -> TikiResult<()> {
+        let client_id = client.id.ok_or(TikiError::NotFound {
+            entity: "client",
+            id: 0,
+        })?;
+        let changed_rows = self.connection.execute(
+            "UPDATE clients SET name = ?2, color = ?3 WHERE id = ?1",
+            params![client_id.0, client.name, client.color],
+        )?;
+        if changed_rows == 0 {
+            return Err(TikiError::NotFound {
+                entity: "client",
+                id: client_id.0,
+            });
+        }
+        Ok(())
+    }
+
+    /// Removes a client; the database leaves their tasks without client.
+    pub fn delete(&self, client_id: ClientId) -> TikiResult<()> {
+        self.connection
+            .execute("DELETE FROM clients WHERE id = ?1", params![client_id.0])?;
+        Ok(())
     }
 
     pub fn find_by_name(&self, name: &str) -> TikiResult<Option<Client>> {

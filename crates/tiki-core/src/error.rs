@@ -27,6 +27,9 @@ pub enum TikiError {
     #[error("a client needs a name")]
     EmptyClientName,
 
+    #[error("a client named {0} already exists")]
+    DuplicateClientName(String),
+
     #[error("a task needs a title")]
     EmptyTaskTitle,
 
