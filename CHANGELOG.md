@@ -6,6 +6,11 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1-rc.6] - 2026-10-21
+
+### Fixed
+- The notch showing a reminder had square corners; it is rounded like the other states.
+
 ## [0.2.1-rc.5] - 2026-10-21
 
 ### Added
