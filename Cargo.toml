@@ -1,0 +1,30 @@
+[workspace]
+resolver = "3"
+members = ["crates/tiki-core", "apps/desktop/src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT"
+authors = ["API Service SAC"]
+
+[workspace.dependencies]
+tiki-core = { path = "crates/tiki-core" }
+chrono = { version = "0.4.45", features = ["serde"] }
+rusqlite = { version = "0.40.2", features = ["bundled", "chrono"] }
+rusqlite_migration = "2.6.0"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0.21"
+tracing = "0.1.44"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+# Every fallible function returns the single TikiError type, documented in error.rs.
+missing_errors_doc = "allow"
