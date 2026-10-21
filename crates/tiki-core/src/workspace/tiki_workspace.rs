@@ -5,6 +5,7 @@ use crate::capture::{
     CaptureIntent, CaptureIntentReader, CaptureOutcome, ConfirmedCapture, QuickCaptureParser,
 };
 use crate::domain::{Client, ClientDirectory, ClientId, Task, TaskId, TaskStatus};
+use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
 use crate::mood::{MoodResolver, MoodSignals};
@@ -112,14 +113,22 @@ impl TikiWorkspace {
     pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
         let mut task = Task::new(capture.title)?.with_priority(capture.priority);
         task.due_date = capture.due_date;
-        if let Some(name) = capture.client_name {
-            task.client_id = self
-                .database
-                .clients()
-                .find_by_name(&name)?
-                .and_then(|client| client.id);
-        }
+        task.client_id = self.client_id_by_name(capture.client_name.as_deref())?;
         self.database.tasks().insert(&task)
+    }
+
+    /// A saved task as the edit form shows it.
+    pub fn task_details(&self, task_id: TaskId) -> TikiResult<TaskDetails> {
+        let task = self.database.tasks().find(task_id)?;
+        TaskDetails::from_task(&task, &self.client_directory()?)
+    }
+
+    /// Saves the user's changes to a task; an unknown client name leaves it without client.
+    pub fn edit_task(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
+        let mut task = self.database.tasks().find(task_id)?;
+        let client_id = self.client_id_by_name(edit.client_name.as_deref())?;
+        edit.apply_to(&mut task, client_id, self.clock.today())?;
+        self.database.tasks().update(&task)
     }
 
     pub fn clients(&self) -> TikiResult<Vec<Client>> {
@@ -141,6 +150,17 @@ impl TikiWorkspace {
             .cloned()
             .unwrap_or_default();
         self.database.clients().insert(&Client::new(name, color))
+    }
+
+    fn client_id_by_name(&self, name: Option<&str>) -> TikiResult<Option<ClientId>> {
+        let Some(name) = name.map(str::trim).filter(|name| !name.is_empty()) else {
+            return Ok(None);
+        };
+        Ok(self
+            .database
+            .clients()
+            .find_by_name(name)?
+            .and_then(|client| client.id))
     }
 
     fn client_directory(&self) -> TikiResult<ClientDirectory> {

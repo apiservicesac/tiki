@@ -7,6 +7,7 @@ pub mod ai;
 pub mod briefing;
 pub mod capture;
 pub mod domain;
+pub mod editing;
 pub mod error;
 pub mod i18n;
 pub mod mood;
