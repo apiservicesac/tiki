@@ -2,8 +2,9 @@ import type { AiProviderName } from "../ai";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
 import type { TikiBackend } from "../backend/contracts";
 import type { IslandStore } from "./IslandStore";
+import type { UpdateState } from "./UpdateSettingsView";
 
-/** Loads and changes the settings the shell owns: AI keys, models and start with Windows. */
+/** Loads and changes the settings the shell owns: AI keys, models, start with Windows and updates. */
 export class SettingsActions {
   /** Counts AI settings loads, so a slow older load never overwrites a newer one. */
   private aiLoads = 0;
@@ -15,7 +16,28 @@ export class SettingsActions {
   ) {}
 
   async load(): Promise<void> {
-    await Promise.all([this.loadAi(), this.loadAutostart()]);
+    await Promise.all([this.loadAi(), this.loadAutostart(), this.loadVersion()]);
+  }
+
+  async checkForUpdate(): Promise<void> {
+    this.setUpdates({ status: "checking" });
+    try {
+      const update = await this.backend.checkForUpdate();
+      this.setUpdates(update
+        ? { status: "available", availableVersion: update.version }
+        : { status: "up_to_date", availableVersion: null });
+    } catch {
+      this.setUpdates({ status: "failed" });
+    }
+  }
+
+  async installUpdate(): Promise<void> {
+    this.setUpdates({ status: "installing" });
+    try {
+      await this.backend.installUpdate();
+    } catch {
+      this.setUpdates({ status: "failed" });
+    }
   }
 
   /** Which providers have a key and which models the current one offers. */
@@ -41,6 +63,16 @@ export class SettingsActions {
   async setAutostart(enabled: boolean): Promise<void> {
     await this.backend.setAutostart(enabled);
     await this.loadAutostart();
+  }
+
+  private async loadVersion(): Promise<void> {
+    if (this.store.state().updates.currentVersion === "") {
+      this.setUpdates({ currentVersion: await this.backend.appVersion() });
+    }
+  }
+
+  private setUpdates(changes: Partial<UpdateState>): void {
+    this.store.update({ updates: { ...this.store.state().updates, ...changes } });
   }
 
   private async loadAutostart(): Promise<void> {

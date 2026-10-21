@@ -1,5 +1,6 @@
 import type { IslandPlacement, IslandSnapshot, MoodName, TaskDetails } from "../backend/contracts";
 import type { AiSettingsState } from "./AiSettingsView";
+import type { UpdateState } from "./UpdateSettingsView";
 
 /** How much of the island is visible, like the notch of dooai. */
 export type IslandMode = "hidden" | "compact" | "expanded";
@@ -28,6 +29,7 @@ export interface IslandState {
   aiSettings: AiSettingsState;
   /** Whether Tiki starts with Windows; the shell owns this setting. */
   autostart: boolean;
+  updates: UpdateState;
   /** The AI brief of the day, shown above the Today list when there is one. */
   dayBrief: string | null;
   /** The task open in the edit panel, with the clients it can be assigned to. */

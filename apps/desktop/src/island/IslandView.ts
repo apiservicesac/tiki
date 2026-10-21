@@ -189,7 +189,7 @@ export class IslandView {
       case "capture":
         return this.captureView.render(handlers.capture);
       case "settings":
-        return this.settings.render(preferences, { ai: state.aiSettings, autostart: state.autostart }, handlers);
+        return this.settings.render(preferences, { ai: state.aiSettings, autostart: state.autostart, updates: state.updates }, handlers);
       case "ask":
         return this.askView.render(this.assistantReady, handlers.ask);
       case "edit":

@@ -2,14 +2,16 @@ import { ISLAND_PLACEMENTS, LOCALE_NAMES, type IslandPlacement, type UserPrefere
 import { ElementFactory } from "../dom/ElementFactory";
 import { AiSettingsView, type AiSettingsHandlers, type AiSettingsState } from "./AiSettingsView";
 import { ReminderSettingsView, type ReminderSettingsHandlers } from "./ReminderSettingsView";
+import { UpdateSettingsView, type UpdateSettingsHandlers, type UpdateState } from "./UpdateSettingsView";
 import type { Translator } from "../i18n/Translator";
 
-export type SettingsHandlers = AiSettingsHandlers & ReminderSettingsHandlers;
+export type SettingsHandlers = AiSettingsHandlers & ReminderSettingsHandlers & UpdateSettingsHandlers;
 
 /** What the settings card shows besides the preferences themselves. */
 export interface SettingsState {
   ai: AiSettingsState;
   autostart: boolean;
+  updates: UpdateState;
 }
 
 /**
@@ -19,10 +21,12 @@ export interface SettingsState {
 export class SettingsView {
   private readonly aiSettings: AiSettingsView;
   private readonly reminderSettings: ReminderSettingsView;
+  private readonly updateSettings: UpdateSettingsView;
 
   constructor(private readonly translator: Translator) {
     this.aiSettings = new AiSettingsView(translator);
     this.reminderSettings = new ReminderSettingsView(translator);
+    this.updateSettings = new UpdateSettingsView(translator);
   }
 
   render(preferences: UserPreferences, state: SettingsState, handlers: SettingsHandlers): HTMLElement {
@@ -51,6 +55,7 @@ export class SettingsView {
         ),
         this.reminderSettings.render(preferences, state.autostart, handlers),
         this.aiSettings.render(preferences, state.ai, handlers),
+        this.updateSettings.render(state.updates, handlers),
       ],
     });
   }

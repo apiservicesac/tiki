@@ -67,6 +67,7 @@ export class IslandController {
       editing: null,
       autostart: false,
       dayBrief: null,
+      updates: { currentVersion: "", status: "idle", availableVersion: null },
     };
     const store = this.store();
     this.settingsActions = new SettingsActions(store, backend, assistant);
@@ -317,6 +318,8 @@ export class IslandController {
       onSaveKey: (provider, apiKey) => void this.settingsActions.saveAiKey(provider, apiKey),
       onRemoveKey: (provider) => void this.settingsActions.removeAiKey(provider),
       onSetAutostart: (enabled) => void this.settingsActions.setAutostart(enabled),
+      onCheckUpdate: () => void this.settingsActions.checkForUpdate(),
+      onInstallUpdate: () => void this.settingsActions.installUpdate(),
       ask: {
         onAsk: (question) => void this.assistantActions.ask(question),
         onSummarize: () => void this.assistantActions.summarize(),

@@ -200,6 +200,18 @@ describe("IslandController", () => {
       expect(root.querySelector('[data-setting="settings.autostart"]')?.getAttribute("aria-checked")).toBe("true"));
   });
 
+  it("shows the version, finds a new one and installs it from Settings", async () => {
+    controller.openPanel("settings");
+    await vi.waitFor(() => expect(root.querySelector(".settings-updates")?.textContent).toContain("Versión 0.2.0"));
+
+    backend.availableUpdate = { version: "0.2.1", notes: null };
+    root.querySelector<HTMLButtonElement>("#update-action")?.click();
+    await vi.waitFor(() => expect(root.querySelector("#update-action")?.textContent).toBe("Instalar 0.2.1"));
+
+    root.querySelector<HTMLButtonElement>("#update-action")?.click();
+    await vi.waitFor(() => expect(backend.installedUpdates).toBe(1));
+  });
+
   it("peeks out with the summary when a brief notification arrives", async () => {
     vi.useFakeTimers();
     backend.emit(SHELL_EVENTS.briefReady);

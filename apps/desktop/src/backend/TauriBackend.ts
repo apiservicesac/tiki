@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
 import type {
   AiProviderStatus,
+  AvailableUpdate,
   CaptureIntent,
   HitArea,
   CaptureOutcome,
@@ -78,6 +79,18 @@ export class TauriBackend implements TikiBackend {
 
   autostartEnabled(): Promise<boolean> {
     return invoke<boolean>("autostart_enabled");
+  }
+
+  appVersion(): Promise<string> {
+    return invoke<string>("app_version");
+  }
+
+  checkForUpdate(): Promise<AvailableUpdate | null> {
+    return invoke<AvailableUpdate | null>("check_for_update");
+  }
+
+  async installUpdate(): Promise<void> {
+    await invoke("install_update");
   }
 
   async setAutostart(enabled: boolean): Promise<void> {

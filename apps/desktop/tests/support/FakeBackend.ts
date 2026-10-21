@@ -1,6 +1,7 @@
 import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../../src/ai";
 import type {
   AiProviderStatus,
+  AvailableUpdate,
   CaptureIntent,
   HitArea,
   CaptureOutcome,
@@ -35,6 +36,8 @@ export class FakeBackend implements TikiBackend {
     focusMode: false,
   };
   autostart = false;
+  availableUpdate: AvailableUpdate | null = null;
+  installedUpdates = 0;
   readonly aiKeys = new Map<AiProviderName, string>();
   /** Plays the AI provider: what the official SDK receives back through the shell. */
   aiShell = new FakeShell(() => ({}));
@@ -122,6 +125,18 @@ export class FakeBackend implements TikiBackend {
 
   async autostartEnabled(): Promise<boolean> {
     return this.autostart;
+  }
+
+  async appVersion(): Promise<string> {
+    return "0.2.0";
+  }
+
+  async checkForUpdate(): Promise<AvailableUpdate | null> {
+    return this.availableUpdate;
+  }
+
+  async installUpdate(): Promise<void> {
+    this.installedUpdates += 1;
   }
 
   async setAutostart(enabled: boolean): Promise<void> {

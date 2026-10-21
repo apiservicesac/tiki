@@ -89,6 +89,11 @@ export interface TaskDetails extends TaskEdit {
   taskId: number;
 }
 
+export interface AvailableUpdate {
+  version: string;
+  notes: string | null;
+}
+
 /** A rectangle in logical pixels, relative to the island window. */
 export interface HitArea {
   x: number;
@@ -146,6 +151,11 @@ export interface TikiBackend {
   /** The transport the official AI SDKs use: the shell adds the key and sends the request. */
   aiFetch(request: ProxiedRequest): Promise<ProxiedResponse>;
   autostartEnabled(): Promise<boolean>;
+  appVersion(): Promise<string>;
+  /** A newer signed version on GitHub, or `null` when Tiki is up to date. */
+  checkForUpdate(): Promise<AvailableUpdate | null>;
+  /** Installs the latest version; Tiki restarts when it finishes. */
+  installUpdate(): Promise<void>;
   setAutostart(enabled: boolean): Promise<void>;
   /** Tells the shell which part of the window is the island; the rest lets clicks through. */
   setHitArea(area: HitArea): Promise<void>;
