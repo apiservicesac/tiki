@@ -22,6 +22,9 @@ impl DesktopConfig {
     pub const REMINDER_CHECK_INTERVAL: Duration = Duration::from_secs(60);
     /// How often Tiki looks for a new signed version.
     pub const UPDATE_CHECK_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
+    /// Diagnostics log in the app's log folder, rewritten on every launch.
+    pub const LOG_FILE_NAME: &'static str = "tiki.log";
+    pub const LOG_LEVEL: &'static str = "info";
     /// SQLite file inside the app data folder.
     pub const DATABASE_FILE_NAME: &'static str = "tiki.db";
     pub const TRAY_ID: &'static str = "tiki-tray";

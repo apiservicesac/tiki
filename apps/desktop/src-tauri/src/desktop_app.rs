@@ -10,6 +10,7 @@ use crate::app_updates::AppUpdates;
 use crate::brief_reminders::BriefReminders;
 use crate::click_through::ClickThrough;
 use crate::commands;
+use crate::diagnostics_log::DiagnosticsLog;
 use crate::island_window::IslandWindow;
 use crate::shortcuts::GlobalShortcuts;
 use crate::tray::IslandTray;
@@ -24,10 +25,6 @@ impl TikiDesktopApp {
     ///
     /// When the operating system refuses to create the window or the tray.
     pub fn run() {
-        tracing_subscriber::fmt()
-            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-            .init();
-
         tauri::Builder::default()
             .plugin(tauri_plugin_single_instance::init(
                 |app, _arguments, _working_folder| {
@@ -73,6 +70,8 @@ impl TikiDesktopApp {
     }
 
     fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
+        DiagnosticsLog::start(&app.path().app_log_dir()?)?;
+        tracing::info!(version = %app.package_info().version, "Tiki started");
         let state = AppState::open(&app.path().app_data_dir()?)?;
         let preferences = state.with_workspace(|workspace| Ok(workspace.preferences().clone()))?;
         app.manage(state);

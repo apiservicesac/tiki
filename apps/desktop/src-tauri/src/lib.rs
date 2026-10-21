@@ -9,6 +9,7 @@ mod click_through;
 mod commands;
 mod desktop_app;
 mod desktop_config;
+mod diagnostics_log;
 mod island_window;
 mod settings_window;
 mod shell_events;

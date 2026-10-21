@@ -42,6 +42,7 @@ impl BriefReminders {
             .with_workspace(|workspace| workspace.take_due_notification(now));
         match due {
             Ok(Some(notification)) => {
+                tracing::info!(moment = ?notification.moment, %now, "brief due, showing it");
                 if let Err(error) = Self::show(app, &notification) {
                     tracing::warn!(%error, "could not show the brief notification");
                 }
