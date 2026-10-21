@@ -3,6 +3,7 @@ use std::thread;
 use chrono::Local;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_notification::NotificationExt;
+use tiki_core::reminders::BriefNotification;
 
 use crate::app_state::AppState;
 use crate::desktop_config::DesktopConfig;
@@ -22,6 +23,18 @@ impl BriefReminders {
         });
     }
 
+    /// Shows a brief as a Windows notification.
+    pub fn show(
+        app: &AppHandle,
+        notification: &BriefNotification,
+    ) -> tauri_plugin_notification::Result<()> {
+        app.notification()
+            .builder()
+            .title(&notification.title)
+            .body(&notification.body)
+            .show()
+    }
+
     fn send_due(app: &AppHandle) {
         let now = Local::now().naive_local();
         let due = app
@@ -29,13 +42,7 @@ impl BriefReminders {
             .with_workspace(|workspace| workspace.take_due_notification(now));
         match due {
             Ok(Some(notification)) => {
-                let shown = app
-                    .notification()
-                    .builder()
-                    .title(&notification.title)
-                    .body(&notification.body)
-                    .show();
-                if let Err(error) = shown {
+                if let Err(error) = Self::show(app, &notification) {
                     tracing::warn!(%error, "could not show the brief notification");
                 }
                 ShellEvent::BriefReady.emit(app);
