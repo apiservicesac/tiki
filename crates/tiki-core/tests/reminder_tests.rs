@@ -122,3 +122,16 @@ fn brief_times_survive_a_restart() {
         .unwrap();
     assert_eq!(loaded, custom);
 }
+
+#[test]
+fn preferences_accept_times_as_the_time_picker_writes_them() {
+    let mut json =
+        serde_json::to_value(UserPreferences::defaults(&TikiSettings::default())).unwrap();
+    json["morningBriefTime"] = "07:15".into();
+
+    let preferences: UserPreferences = serde_json::from_value(json).unwrap();
+    assert_eq!(
+        preferences.morning_brief_time,
+        NaiveTime::from_hms_opt(7, 15, 0).unwrap()
+    );
+}
