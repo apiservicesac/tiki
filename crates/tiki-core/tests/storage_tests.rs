@@ -1,0 +1,87 @@
+mod support;
+
+use support::{SampleWorkspace, TestDay};
+use tiki_core::TikiError;
+use tiki_core::domain::{ExternalReference, Task, TaskId, TaskOrigin, TaskStatus};
+use tiki_core::storage::Database;
+
+#[test]
+fn tasks_survive_a_round_trip() {
+    let workspace = SampleWorkspace::create();
+    let original = Task::new("Revisar acta CAPEX")
+        .unwrap()
+        .with_client(workspace.altamira)
+        .with_due_date(TestDay::october(23))
+        .with_notes("Ajustar generación del acta")
+        .with_origin(TaskOrigin::External(ExternalReference {
+            plugin_id: "odoo".into(),
+            connection_id: "altamira".into(),
+            record_id: "42".into(),
+            url: Some("https://altamira.example/odoo/helpdesk/42".into()),
+        }));
+
+    let task_id = workspace.database.tasks().insert(&original).unwrap();
+    let stored = workspace.database.tasks().find(task_id).unwrap();
+
+    assert_eq!(stored.id, Some(task_id));
+    assert_eq!(stored.title, original.title);
+    assert_eq!(stored.notes, original.notes);
+    assert_eq!(stored.client_id, original.client_id);
+    assert_eq!(stored.due_date, original.due_date);
+    assert_eq!(stored.origin, original.origin);
+}
+
+#[test]
+fn updating_a_task_changes_its_status() {
+    let workspace = SampleWorkspace::create();
+    let task_id = workspace
+        .database
+        .tasks()
+        .insert(&Task::new("Probar").unwrap())
+        .unwrap();
+
+    let mut task = workspace.database.tasks().find(task_id).unwrap();
+    task.move_to(TaskStatus::Done, TestDay::today());
+    workspace.database.tasks().update(&task).unwrap();
+
+    assert_eq!(
+        workspace.database.tasks().find(task_id).unwrap().status,
+        TaskStatus::Done
+    );
+}
+
+#[test]
+fn open_tasks_come_sorted_by_due_date_and_exclude_delivered_ones() {
+    let workspace = SampleWorkspace::create();
+    let open_tasks = workspace.database.tasks().list_open().unwrap();
+
+    assert_eq!(open_tasks.len(), 7);
+    assert_eq!(open_tasks[0].due_date, Some(TestDay::october(20)));
+    assert!(open_tasks.iter().all(|task| task.status.is_open()));
+}
+
+#[test]
+fn finding_a_missing_task_reports_not_found() {
+    let database = Database::open_in_memory().unwrap();
+    assert!(matches!(
+        database.tasks().find(TaskId(999)),
+        Err(TikiError::NotFound {
+            entity: "task",
+            id: 999
+        })
+    ));
+}
+
+#[test]
+fn clients_are_found_by_name_ignoring_case() {
+    let workspace = SampleWorkspace::create();
+    let client = workspace
+        .database
+        .clients()
+        .find_by_name("andeanvet")
+        .unwrap();
+    assert_eq!(
+        client.and_then(|client| client.id),
+        Some(workspace.andeanvet)
+    );
+}
