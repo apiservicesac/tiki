@@ -1,0 +1,11 @@
+{
+  "version": "0.2.0-rc.1",
+  "notes": "Task editing, brief notifications, reminder settings, Ask Tiki, AI capture and signed updates.",
+  "pub_date": "2026-10-21T21:53:51.320Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXIyeTNLeUM5c25Qd0lvZ25NaDNnaTBuNjdYVTFIaXdhS09HWUE1NmxsUmZMTlhNblJBSnlRWU9ublJxNW1PcEFvT25UOEZGYVNEZmx0TWxRQ09KbGdNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjE5NjI0CWZpbGU6VGlraV8wLjIuMC1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMC1yYy4xCm9YWjhTcWFtZnpjQlNlZHQyQ0hZcE9Ba3psL3dwcU1GUTh6RmxYUWZYVnpvakNFQ2FkbklpekNDN3djMERKOFRjelM4THdyN2t5T1phMlk0T3JoWUN3PT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.0-rc.1/Tiki_0.2.0-rc.1_x64-setup.exe"
+    }
+  }
+}
