@@ -187,6 +187,9 @@
     "advanced.window.minimize": "Minimize",
     "advanced.window.maximize": "Maximize",
 
+    "settings.test_notification": "Test notification",
+    "settings.test_notification_hint": "Shows the brief now, without using up today's",
+
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"
   },

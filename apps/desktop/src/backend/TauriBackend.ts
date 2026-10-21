@@ -81,6 +81,10 @@ export class TauriBackend implements TikiBackend {
     await invoke("open_advanced_settings", { section: section ?? null });
   }
 
+  async sendTestNotification(): Promise<void> {
+    await invoke("send_test_notification");
+  }
+
   autostartEnabled(): Promise<boolean> {
     return invoke<boolean>("autostart_enabled");
   }

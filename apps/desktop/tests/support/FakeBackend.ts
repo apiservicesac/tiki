@@ -128,6 +128,12 @@ export class FakeBackend implements TikiBackend {
     return this.autostart;
   }
 
+  testNotifications = 0;
+
+  async sendTestNotification(): Promise<void> {
+    this.testNotifications += 1;
+  }
+
   async openAdvancedSettings(section?: string): Promise<void> {
     this.openedSettings.push(section);
   }

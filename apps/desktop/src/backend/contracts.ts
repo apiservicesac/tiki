@@ -152,6 +152,8 @@ export interface TikiBackend {
   aiFetch(request: ProxiedRequest): Promise<ProxiedResponse>;
   /** Opens the advanced settings window, optionally on one section. */
   openAdvancedSettings(section?: string): Promise<void>;
+  /** Shows the morning brief now, to check that Windows lets Tiki notify. */
+  sendTestNotification(): Promise<void>;
   autostartEnabled(): Promise<boolean>;
   appVersion(): Promise<string>;
   /** A newer signed version on GitHub, or `null` when Tiki is up to date. */

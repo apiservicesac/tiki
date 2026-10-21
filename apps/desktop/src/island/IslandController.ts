@@ -325,6 +325,7 @@ export class IslandController {
       onOpenTask: (taskId) => void this.openTask(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
       onOpenAdvancedSettings: () => this.openAdvancedSettings(),
+      onTestNotification: () => void this.backend.sendTestNotification(),
       ask: {
         onAsk: (question) => void this.assistantActions.ask(question),
         onSummarize: () => void this.assistantActions.summarize(),

@@ -4,6 +4,7 @@ import type { Translator } from "../i18n/Translator";
 
 export interface ReminderSettingsHandlers {
   onChangePreferences: (preferences: UserPreferences) => void;
+  onTestNotification: () => void;
 }
 
 type BriefTimeField = "morningBriefTime" | "eveningBriefTime";
@@ -29,6 +30,7 @@ export class ReminderSettingsView {
         }),
         this.timeRow("settings.morning_brief", "morningBriefTime", preferences, onChange),
         this.timeRow("settings.evening_brief", "eveningBriefTime", preferences, onChange),
+        this.testRow(handlers.onTestNotification),
       ],
     });
   }
@@ -44,6 +46,25 @@ export class ReminderSettingsView {
       onToggle(!enabled);
     });
     return button;
+  }
+
+  private testRow(onTest: () => void): HTMLElement {
+    const button = ElementFactory.create("button", {
+      className: "settings-button settings-button-quiet",
+      text: this.translator.text("settings.test_notification"),
+      attributes: { type: "button", id: "test-notification" },
+    });
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      onTest();
+    });
+    return ElementFactory.create("div", {
+      className: "settings-row",
+      children: [
+        ElementFactory.create("span", { className: "settings-row-label", text: this.translator.text("settings.test_notification_hint") }),
+        button,
+      ],
+    });
   }
 
   private timeRow(
