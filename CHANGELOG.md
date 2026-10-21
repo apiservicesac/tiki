@@ -6,7 +6,21 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0-rc.1] - 2026-10-21
+
 ### Added
+- Edit a task by clicking it in the list: title, client, due date, priority, status and notes.
+- Morning brief and end-of-day close as Windows notifications, at times you choose in
+  Settings. Each arrives once a day; if the computer was off, the morning brief comes when
+  it starts. The brief says what to start with and who to follow up after three days of
+  waiting, and the island peeks out with the day's summary.
+- Reminder settings: notifications on or off, focus mode (Tiki sleeps and stays quiet), the
+  brief times, and start with Windows.
+- Ask Tiki: ask about your pending work ("what is pending with Altamira?") or summarize
+  your day. The AI brief also appears on the Today tab. Titles, clients and dates of open
+  tasks are sent; notes never are.
+- Signed automatic updates: Tiki checks GitHub every few hours, announces a new version and
+  installs it from Settings › Updates. Updates are verified with Tiki's signing key.
 - AI assistant settings: choose Anthropic or OpenAI, store the API key in the Windows
   credential store (never in Tiki's database or interface) and pick the model from a list.
   With a key the list comes from the provider; without one, a curated list is shown.
