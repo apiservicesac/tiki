@@ -1,24 +1,12 @@
-use tauri::{AppHandle, State};
+use std::sync::Arc;
 
-use super::command_error::CommandResult;
-use crate::app_state::AppState;
-use crate::island_window::IslandWindow;
+use tauri::State;
+use tiki_core::preferences::IslandHitArea;
 
-/// Makes the window exactly as big as the island, so the transparent space around it
-/// never blocks clicks on other applications.
+use crate::click_through::ClickThrough;
+
+/// Tells the shell where the island is, so the rest of the window lets clicks through.
 #[tauri::command]
-pub fn fit_island_window(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    width: f64,
-    height: f64,
-) -> CommandResult<()> {
-    let placement =
-        state.with_workspace(|workspace| Ok(workspace.preferences().island_placement))?;
-    if let Some(island) = IslandWindow::find(&app)
-        && let Err(error) = island.fit(width, height, placement)
-    {
-        tracing::warn!(%error, "could not resize the island");
-    }
-    Ok(())
+pub fn set_island_hit_area(click_through: State<'_, Arc<ClickThrough>>, area: IslandHitArea) {
+    click_through.update(area);
 }

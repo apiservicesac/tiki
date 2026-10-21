@@ -1,5 +1,5 @@
 use tauri::{AppHandle, LogicalSize, Manager, PhysicalPosition, WebviewWindow};
-use tiki_core::preferences::{IslandGeometry, IslandPlacement, ScreenRect};
+use tiki_core::preferences::{IslandGeometry, IslandHitArea, IslandPlacement, ScreenRect};
 
 use crate::desktop_config::DesktopConfig;
 
@@ -14,9 +14,12 @@ impl IslandWindow {
             .map(|window| Self { window })
     }
 
-    /// Resizes the window to the island (in logical pixels) and moves it to its edge.
-    pub fn fit(&self, width: f64, height: f64, placement: IslandPlacement) -> tauri::Result<()> {
-        self.window.set_size(LogicalSize::new(width, height))?;
+    /// Gives the window its fixed size and moves it to the chosen edge.
+    pub fn prepare(&self, placement: IslandPlacement) -> tauri::Result<()> {
+        self.window.set_size(LogicalSize::new(
+            DesktopConfig::ISLAND_WINDOW_WIDTH,
+            DesktopConfig::ISLAND_WINDOW_HEIGHT,
+        ))?;
         self.place(placement)
     }
 
@@ -40,6 +43,21 @@ impl IslandWindow {
             Self::signed(window_size.height),
         );
         self.window.set_position(PhysicalPosition::new(x, y))
+    }
+
+    /// Whether the pointer is over the island part of the window.
+    pub fn pointer_is_over(&self, hit_area: &IslandHitArea) -> tauri::Result<bool> {
+        let cursor = self.window.cursor_position()?;
+        let window_origin = self.window.outer_position()?;
+        let scale = self.window.scale_factor()?;
+        let x = (cursor.x - f64::from(window_origin.x)) / scale;
+        let y = (cursor.y - f64::from(window_origin.y)) / scale;
+        Ok(hit_area.contains(x, y))
+    }
+
+    /// When enabled, clicks go to whatever is behind the window.
+    pub fn set_click_through(&self, enabled: bool) -> tauri::Result<()> {
+        self.window.set_ignore_cursor_events(enabled)
     }
 
     /// Shows the window and gives it the keyboard focus.

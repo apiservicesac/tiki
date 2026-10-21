@@ -2,6 +2,7 @@
 //! global shortcuts, notifications) and delegates every decision to `tiki-core`.
 
 mod app_state;
+mod click_through;
 mod commands;
 mod desktop_app;
 mod desktop_config;

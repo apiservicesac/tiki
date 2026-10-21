@@ -1,8 +1,11 @@
+use std::sync::Arc;
+
 use tauri::{App, Manager};
 use tauri_plugin_autostart::MacosLauncher;
 use tiki_core::i18n::Translator;
 
 use crate::app_state::AppState;
+use crate::click_through::ClickThrough;
 use crate::commands;
 use crate::island_window::IslandWindow;
 use crate::shortcuts::GlobalShortcuts;
@@ -42,7 +45,7 @@ impl TikiDesktopApp {
                 commands::island_commands::move_task,
                 commands::settings_commands::preferences,
                 commands::settings_commands::update_preferences,
-                commands::window_commands::fit_island_window,
+                commands::window_commands::set_island_hit_area,
             ])
             .setup(|app| Self::setup(app))
             .run(tauri::generate_context!())
@@ -58,8 +61,11 @@ impl TikiDesktopApp {
         app.handle().plugin(GlobalShortcuts::plugin()?)?;
 
         if let Some(island) = IslandWindow::find(app.handle()) {
-            island.place(preferences.island_placement)?;
+            island.prepare(preferences.island_placement)?;
         }
+        let click_through = Arc::new(ClickThrough::default());
+        app.manage(Arc::clone(&click_through));
+        ClickThrough::start(app.handle().clone(), click_through);
         Ok(())
     }
 }
