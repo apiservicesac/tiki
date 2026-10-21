@@ -2,6 +2,7 @@ mod support;
 
 use support::{SampleWorkspace, TestDay};
 use tiki_core::TikiSettings;
+use tiki_core::ai::AiProvider;
 use tiki_core::capture::{CaptureIntent, CaptureOutcome, ConfirmedCapture};
 use tiki_core::domain::{Priority, TaskStatus};
 use tiki_core::i18n::Locale;
@@ -122,9 +123,13 @@ fn preferences_are_saved_and_applied() {
         .update_preferences(UserPreferences {
             locale: Locale::English,
             island_placement: IslandPlacement::Right,
+            ai_provider: AiProvider::OpenAi,
+            ai_model: Some("gpt-5.5".into()),
         })
         .unwrap();
 
+    assert_eq!(workspace.preferences().ai_provider, AiProvider::OpenAi);
+    assert_eq!(workspace.preferences().ai_model.as_deref(), Some("gpt-5.5"));
     assert_eq!(
         workspace.preferences().island_placement,
         IslandPlacement::Right

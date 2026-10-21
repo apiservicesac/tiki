@@ -30,6 +30,9 @@ pub enum TikiError {
     #[error("a task needs a title")]
     EmptyTaskTitle,
 
+    #[error("AI request failed: {0}")]
+    Ai(String),
+
     #[error("plugin error: {0}")]
     Plugin(String),
 }

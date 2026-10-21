@@ -1,4 +1,5 @@
 use super::{Clock, IslandSnapshot, SnapshotPresenter};
+use crate::ai::AiProvider;
 use crate::briefing::DailyBriefBuilder;
 use crate::capture::{
     CaptureIntent, CaptureIntentReader, CaptureOutcome, ConfirmedCapture, QuickCaptureParser,
@@ -30,6 +31,8 @@ impl TikiWorkspace {
         let defaults = UserPreferences {
             locale: settings.locale,
             island_placement: IslandPlacement::default(),
+            ai_provider: AiProvider::default(),
+            ai_model: None,
         };
         let preferences = database.preferences().load(defaults)?;
         let translator = Translator::new(preferences.locale)?;
@@ -47,8 +50,8 @@ impl TikiWorkspace {
         &self.settings
     }
 
-    pub fn preferences(&self) -> UserPreferences {
-        self.preferences
+    pub fn preferences(&self) -> &UserPreferences {
+        &self.preferences
     }
 
     /// Saves new preferences; a new language applies to briefs, labels and quick capture.
@@ -56,7 +59,7 @@ impl TikiWorkspace {
         if preferences.locale != self.preferences.locale {
             self.translator = Translator::new(preferences.locale)?;
         }
-        self.database.preferences().save(preferences)?;
+        self.database.preferences().save(&preferences)?;
         self.preferences = preferences;
         Ok(())
     }
@@ -65,7 +68,7 @@ impl TikiWorkspace {
     pub fn change_locale(&mut self, locale: Locale) -> TikiResult<()> {
         self.update_preferences(UserPreferences {
             locale,
-            ..self.preferences
+            ..self.preferences.clone()
         })
     }
 

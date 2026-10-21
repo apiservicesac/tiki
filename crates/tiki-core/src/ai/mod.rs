@@ -1,5 +1,5 @@
-//! Rules shared by every client that talks to the AI assistant.
+//! Rules shared by every client that talks to an AI provider.
 
-mod ai_endpoint_policy;
+mod ai_provider;
 
-pub use ai_endpoint_policy::AiEndpointPolicy;
+pub use ai_provider::AiProvider;

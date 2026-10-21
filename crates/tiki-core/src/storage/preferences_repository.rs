@@ -1,5 +1,6 @@
 use rusqlite::{Connection, OptionalExtension, params};
 
+use crate::ai::AiProvider;
 use crate::error::TikiResult;
 use crate::i18n::Locale;
 use crate::preferences::{IslandPlacement, UserPreferences};
@@ -24,17 +25,35 @@ impl<'connection> PreferencesRepository<'connection> {
             Some(key) => IslandPlacement::from_key(&key)?,
             None => defaults.island_placement,
         };
+        let ai_provider = match self.value(UserPreferences::AI_PROVIDER_KEY)? {
+            Some(key) => AiProvider::from_key(&key)?,
+            None => defaults.ai_provider,
+        };
+        let ai_model = self
+            .value(UserPreferences::AI_MODEL_KEY)?
+            .filter(|model| !model.is_empty())
+            .or(defaults.ai_model);
         Ok(UserPreferences {
             locale,
             island_placement,
+            ai_provider,
+            ai_model,
         })
     }
 
-    pub fn save(&self, preferences: UserPreferences) -> TikiResult<()> {
+    pub fn save(&self, preferences: &UserPreferences) -> TikiResult<()> {
         self.store(UserPreferences::LOCALE_KEY, preferences.locale.code())?;
         self.store(
             UserPreferences::ISLAND_PLACEMENT_KEY,
             preferences.island_placement.key(),
+        )?;
+        self.store(
+            UserPreferences::AI_PROVIDER_KEY,
+            preferences.ai_provider.key(),
+        )?;
+        self.store(
+            UserPreferences::AI_MODEL_KEY,
+            preferences.ai_model.as_deref().unwrap_or_default(),
         )
     }
 
