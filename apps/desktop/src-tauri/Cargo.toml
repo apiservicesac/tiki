@@ -1,0 +1,31 @@
+[package]
+name = "tiki-desktop"
+description = "Tiki desktop shell: the island window, tray, shortcuts and notifications."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+name = "tiki_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.4", features = [] }
+
+[dependencies]
+tiki-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+tauri = { version = "2.12.5", features = ["tray-icon"] }
+tauri-plugin-notification = "2.7.0"
+tauri-plugin-global-shortcut = "2.4.1"
+tauri-plugin-autostart = "2.7.0"
+tauri-plugin-single-instance = "2.5.4"
+
+[lints]
+workspace = true
