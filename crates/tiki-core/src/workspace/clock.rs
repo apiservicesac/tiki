@@ -1,32 +1,41 @@
-use chrono::{Local, NaiveDate};
+use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 
-/// Tells the workspace what day it is, so tests can freeze time.
+/// Tells the workspace what day and time it is, so tests can freeze time.
 pub trait Clock: Send + Sync {
-    fn today(&self) -> NaiveDate;
-}
+    fn now(&self) -> NaiveDateTime;
 
-/// The computer's local date.
-pub struct SystemClock;
-
-impl Clock for SystemClock {
     fn today(&self) -> NaiveDate {
-        Local::now().date_naive()
+        self.now().date()
     }
 }
 
-/// Always returns the same day.
+/// The computer's local date and time.
+pub struct SystemClock;
+
+impl Clock for SystemClock {
+    fn now(&self) -> NaiveDateTime {
+        Local::now().naive_local()
+    }
+}
+
+/// Always returns the same moment.
 pub struct FixedClock {
-    day: NaiveDate,
+    moment: NaiveDateTime,
 }
 
 impl FixedClock {
+    /// The start of `day`.
     pub fn new(day: NaiveDate) -> Self {
-        Self { day }
+        Self::at(day.and_time(NaiveTime::MIN))
+    }
+
+    pub fn at(moment: NaiveDateTime) -> Self {
+        Self { moment }
     }
 }
 
 impl Clock for FixedClock {
-    fn today(&self) -> NaiveDate {
-        self.day
+    fn now(&self) -> NaiveDateTime {
+        self.moment
     }
 }

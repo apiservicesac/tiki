@@ -25,6 +25,15 @@ impl<'connection> ReminderLogRepository<'connection> {
             .optional()?)
     }
 
+    /// Forgets that a brief was sent, so it arrives again at its (new) time.
+    pub fn clear(&self, moment: BriefMoment) -> TikiResult<()> {
+        self.connection.execute(
+            "DELETE FROM reminder_log WHERE moment = ?1",
+            params![moment.key()],
+        )?;
+        Ok(())
+    }
+
     pub fn mark_sent(&self, moment: BriefMoment, day: NaiveDate) -> TikiResult<()> {
         self.connection.execute(
             "INSERT INTO reminder_log (moment, sent_on) VALUES (?1, ?2)

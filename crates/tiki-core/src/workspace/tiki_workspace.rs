@@ -52,13 +52,22 @@ impl TikiWorkspace {
     }
 
     /// Saves new preferences; a new language applies to briefs, labels and quick capture.
+    /// A brief moved to a time still ahead today arrives today, even if it already did.
     pub fn update_preferences(&mut self, preferences: UserPreferences) -> TikiResult<()> {
         if preferences.locale != self.preferences.locale {
             self.translator = Translator::new(preferences.locale)?;
         }
         self.database.preferences().save(&preferences)?;
+        self.reschedule_moved_briefs(&preferences)?;
         self.preferences = preferences;
         Ok(())
+    }
+
+    /// The brief for `moment` with today's tasks, without marking it as sent: for the
+    /// "test notification" button.
+    pub fn preview_notification(&self, moment: BriefMoment) -> TikiResult<BriefNotification> {
+        let brief = self.brief(&self.client_directory()?)?;
+        Ok(NotificationComposer::new(&self.translator).compose(&brief, moment))
     }
 
     /// Switches the language and remembers it.
@@ -195,6 +204,28 @@ impl TikiWorkspace {
             .clients()
             .find_by_name(name)?
             .and_then(|client| client.id))
+    }
+
+    fn reschedule_moved_briefs(&self, preferences: &UserPreferences) -> TikiResult<()> {
+        let now = self.clock.now().time();
+        let moves = [
+            (
+                BriefMoment::Morning,
+                self.preferences.morning_brief_time,
+                preferences.morning_brief_time,
+            ),
+            (
+                BriefMoment::Evening,
+                self.preferences.evening_brief_time,
+                preferences.evening_brief_time,
+            ),
+        ];
+        for (moment, old_time, new_time) in moves {
+            if new_time != old_time && new_time > now {
+                self.database.reminder_log().clear(moment)?;
+            }
+        }
+        Ok(())
     }
 
     fn brief(&self, clients: &ClientDirectory) -> TikiResult<DailyBrief> {
