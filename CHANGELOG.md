@@ -6,6 +6,13 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.2-rc.3] - 2026-10-21
+
+### Changed
+- On the left and right edges the folded island shows Tiki with count bubbles (what is due
+  and what is waiting) instead of rotated text, so it reads at a glance. The expanded
+  island stays a narrow, tall panel; top and bottom stay horizontal.
+
 ## [0.1.2-rc.2] - 2026-10-21
 
 ### Changed
@@ -56,7 +63,8 @@ All notable changes to Tiki are documented here. The format follows
 - Tray icon and `Ctrl+Alt+N` to open or close the island.
 - Windows installer cross-compiled from Linux with Docker.
 
-[Unreleased]: https://github.com/apiservicesac/tiki/compare/v0.1.2-rc.2...HEAD
+[Unreleased]: https://github.com/apiservicesac/tiki/compare/v0.1.2-rc.3...HEAD
+[0.1.2-rc.3]: https://github.com/apiservicesac/tiki/compare/v0.1.2-rc.2...v0.1.2-rc.3
 [0.1.2-rc.2]: https://github.com/apiservicesac/tiki/compare/v0.1.2-rc.1...v0.1.2-rc.2
 [0.1.2-rc.1]: https://github.com/apiservicesac/tiki/compare/v0.1.1-rc.1...v0.1.2-rc.1
 [0.1.1-rc.1]: https://github.com/apiservicesac/tiki/compare/v0.1.0-rc.1...v0.1.1-rc.1
