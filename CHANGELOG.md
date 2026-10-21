@@ -6,6 +6,10 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- Opening on hover now pauses on the compact notch before unfolding, and the expanded
+  content appears a third of the way through the growth, so the two steps read clearly.
+
 ## [0.1.2-rc.1] - 2026-10-21
 
 ### Changed

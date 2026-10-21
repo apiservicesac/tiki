@@ -8,17 +8,20 @@ export const UI_CONFIG = Object.freeze({
   capturePreviewDelayMs: 250,
   /** Resting the pointer this long on the hidden notch starts opening it. */
   peekDelayMs: 90,
-  /** After the compact step, the island unfolds completely after this long. */
-  unfoldDelayMs: 260,
+  /**
+   * After the compact step, the island unfolds completely after this long: enough for the
+   * compact notch to finish opening and rest for a moment, so the two steps read clearly.
+   */
+  unfoldDelayMs: 800,
   /** The island folds back this long after the pointer leaves it. */
   foldDelayMs: 650,
   motion: Object.freeze({
     /** Growing the notch: a long, soft ease-out. */
-    openMs: 520,
+    openMs: 560,
     /** Shrinking the notch: shorter, so closing never feels slow. */
     closeMs: 360,
-    /** The previous content fades out this fast before the new one appears. */
-    contentOutMs: 120,
+    /** The previous content fades out this fast while the new one starts to appear. */
+    contentOutMs: 180,
   }),
   mascotSize: Object.freeze({ hidden: 24, compact: 30, card: 72 }),
 });
