@@ -1,3 +1,5 @@
+import { TikiAi } from "./ai";
+import { TikiAssistant } from "./assistant/TikiAssistant";
 import { LOCALE_CODES, type TikiBackend } from "./backend/contracts";
 import { TauriBackend } from "./backend/TauriBackend";
 import { CaptureView } from "./capture/CaptureView";
@@ -35,6 +37,7 @@ export class TikiApp {
       snapshot,
       preferences,
       translator,
+      new TikiAssistant(this.backend, new TikiAi((request) => this.backend.aiFetch(request))),
     );
     await controller.start();
     return controller;

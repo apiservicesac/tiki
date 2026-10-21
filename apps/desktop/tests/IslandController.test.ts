@@ -3,6 +3,7 @@ import { SHELL_EVENTS, UI_CONFIG } from "../src/config/uiConfig";
 import type { IslandController } from "../src/island/IslandController";
 import { TikiApp } from "../src/TikiApp";
 import { FakeBackend } from "./support/FakeBackend";
+import { FakeShell } from "./support/FakeShell";
 
 describe("IslandController", () => {
   let root: HTMLElement;
@@ -35,12 +36,12 @@ describe("IslandController", () => {
   });
 
   it("lays the island out vertically on the left and right edges", async () => {
-    await controller.changePreferences({ locale: "spanish", islandPlacement: "left" });
+    await controller.changePreferences({ ...backend.savedPreferences, islandPlacement: "left" });
     expect(root.dataset.orientation).toBe("vertical");
     const bubbles = [...root.querySelectorAll(".notch-count")].map((bubble) => bubble.textContent);
     expect(bubbles).toEqual(["3", "2"]);
 
-    await controller.changePreferences({ locale: "spanish", islandPlacement: "bottom" });
+    await controller.changePreferences({ ...backend.savedPreferences, islandPlacement: "bottom" });
     expect(root.dataset.orientation).toBe("horizontal");
   });
 
@@ -141,7 +142,7 @@ describe("IslandController", () => {
 
   it("switches language in place, keeping Settings open", async () => {
     controller.openPanel("settings");
-    await controller.changePreferences({ locale: "english", islandPlacement: "top" });
+    await controller.changePreferences({ ...backend.savedPreferences, locale: "english" });
 
     expect(controller.currentState.mode).toBe("expanded");
     expect(controller.currentState.panel).toBe("settings");
@@ -162,5 +163,103 @@ describe("IslandController", () => {
 
     expect(root.querySelector(".notch-hidden-busy")).toBeNull();
     expect(root.querySelector(".notch-hidden .notch-mascot")).not.toBeNull();
+  });
+});
+
+describe("IslandController with the AI assistant", () => {
+  let root: HTMLElement;
+  let backend: FakeBackend;
+  let controller: IslandController;
+
+  const claudeReads = (task: object) => () => ({
+    id: "msg_test",
+    type: "message",
+    role: "assistant",
+    model: "claude-opus-5-5",
+    content: [{ type: "text", text: JSON.stringify(task) }],
+    stop_reason: "end_turn",
+    stop_sequence: null,
+    usage: { input_tokens: 10, output_tokens: 10 },
+  });
+
+  beforeEach(async () => {
+    root = document.createElement("div");
+    document.body.replaceChildren(root);
+    backend = new FakeBackend();
+    backend.aiKeys.set("anthropic", "sk-test");
+    controller = await new TikiApp(root, backend).start();
+  });
+
+  afterEach(() => controller.stop());
+
+  it("shows what Tiki understood and saves it on the second Enter", async () => {
+    backend.aiShell = new FakeShell(claudeReads({
+      title: "Revisar acceso de facturas",
+      clientName: "andeanvet",
+      dueDate: "2026-10-23",
+      priority: "high",
+    }));
+    controller.openPanel("capture");
+
+    await controller.submitCapture("revisar acceso facturas andeanvet viernes, importante");
+    const chips = [...root.querySelectorAll(".capture-chip")].map((chip) => chip.textContent);
+    expect(chips).toContain("Cliente Andeanvet");
+    expect(chips).toContain("Prioridad Alta");
+    expect(backend.confirmedCaptures).toHaveLength(0);
+
+    await controller.submitCapture("revisar acceso facturas andeanvet viernes, importante");
+    expect(backend.confirmedCaptures).toEqual([
+      { title: "Revisar acceso de facturas", clientName: "Andeanvet", dueDate: "2026-10-23", priority: "high" },
+    ]);
+    expect(backend.capturedSentences).toHaveLength(0);
+    expect(controller.currentState.panel).toBe("tasks");
+  });
+
+  it("never sends the key to the interface's requests", async () => {
+    backend.aiShell = new FakeShell(claudeReads({ title: "Llamar", clientName: null, dueDate: null, priority: "normal" }));
+    await controller.submitCapture("llamar");
+
+    const sent = JSON.stringify(backend.aiShell.requests);
+    expect(sent).not.toContain("sk-test");
+  });
+
+  it("falls back to the core's rules when the assistant fails", async () => {
+    backend.aiShell = new FakeShell(() => ({ type: "error", error: { type: "invalid_request_error", message: "bad" } }), 400);
+
+    await controller.submitCapture("llamar a altamira");
+    expect(backend.capturedSentences).toEqual(["llamar a altamira"]);
+  });
+
+  it("creates clients with the rules, without asking the assistant", async () => {
+    const requestsBefore = backend.aiShell.requests.length;
+    await controller.submitCapture("+Nuevo Cliente");
+    expect(backend.capturedSentences).toEqual(["+Nuevo Cliente"]);
+    expect(backend.aiShell.requests).toHaveLength(requestsBefore);
+  });
+
+  it("shows the provider, the stored key and the model list in Settings", async () => {
+    controller.openPanel("settings");
+    await vi.waitFor(() => expect(root.querySelector(".settings-connected")).not.toBeNull());
+
+    const models = [...root.querySelectorAll<HTMLOptionElement>("#ai-model-select option")].map((option) => option.value);
+    expect(models).toContain("claude-opus-5-5");
+
+    root.querySelector<HTMLButtonElement>(".settings-ai .settings-button-quiet")?.click();
+    await vi.waitFor(() => expect(root.querySelector("#ai-key-input")).not.toBeNull());
+    expect(backend.aiKeys.has("anthropic")).toBe(false);
+  });
+
+  it("saves a pasted key through the shell", async () => {
+    backend.aiKeys.clear();
+    controller.openPanel("settings");
+    await vi.waitFor(() => expect(root.querySelector("#ai-key-input")).not.toBeNull());
+
+    const input = root.querySelector<HTMLInputElement>("#ai-key-input");
+    if (input) {
+      input.value = "sk-new";
+    }
+    root.querySelector<HTMLButtonElement>(".settings-ai .settings-button")?.click();
+    await vi.waitFor(() => expect(backend.aiKeys.get("anthropic")).toBe("sk-new"));
+    await vi.waitFor(() => expect(root.querySelector(".settings-connected")).not.toBeNull());
   });
 });

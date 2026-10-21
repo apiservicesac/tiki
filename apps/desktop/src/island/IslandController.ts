@@ -1,3 +1,5 @@
+import type { AiProviderName, InterpretedCapture } from "../ai";
+import type { TikiAssistant } from "../assistant/TikiAssistant";
 import { LOCALE_CODES, type IslandSnapshot, type MoodName, type TikiBackend, type UserPreferences } from "../backend/contracts";
 import type { CaptureView } from "../capture/CaptureView";
 import type { Translator } from "../i18n/Translator";
@@ -12,6 +14,10 @@ export class IslandController {
   private preferences: UserPreferences;
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
+  /** What the assistant understood from the sentence in the box, waiting for a second Enter. */
+  private pendingCapture: { sentence: string; capture: InterpretedCapture } | null = null;
+  /** Counts AI settings loads, so a slow older load never overwrites a newer one. */
+  private aiSettingsLoads = 0;
   private readonly stopListening: Array<() => void> = [];
   /** The window changes size when the island moves to another orientation. */
   private readonly redrawOnResize = () => this.render();
@@ -24,6 +30,7 @@ export class IslandController {
     initialSnapshot: IslandSnapshot,
     initialPreferences: UserPreferences,
     private readonly translator: Translator,
+    private readonly assistant: TikiAssistant,
   ) {
     this.preferences = initialPreferences;
     this.state = {
@@ -33,6 +40,7 @@ export class IslandController {
       placement: initialPreferences.islandPlacement,
       snapshot: initialSnapshot,
       reactionMood: null,
+      aiSettings: { configured: { anthropic: false, openai: false }, models: [] },
     };
   }
 
@@ -50,6 +58,7 @@ export class IslandController {
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
     window.addEventListener("resize", this.redrawOnResize);
+    await this.loadAiSettings();
   }
 
   /** Stops timers and shell listeners. */
@@ -81,17 +90,41 @@ export class IslandController {
 
   openPanel(panel: IslandPanel): void {
     this.update({ mode: "expanded", panel });
+    if (panel === "settings") {
+      void this.loadAiSettings();
+    }
   }
 
   selectTab(tab: IslandTab): void {
     this.update({ tab, panel: "tasks", mode: "expanded" });
   }
 
+  /**
+   * With an AI key, the first Enter shows what the assistant understood and the second one
+   * saves it. Without a key, for `+Name`, or when the assistant fails, the core's own rules
+   * save the sentence directly.
+   */
   async submitCapture(sentence: string): Promise<void> {
-    await this.backend.capture(sentence);
-    await this.refresh();
-    this.openPanel("tasks");
-    this.react("happy");
+    const pending = this.pendingCapture;
+    if (pending?.sentence === sentence) {
+      this.pendingCapture = null;
+      await this.backend.saveConfirmedCapture(pending.capture);
+      await this.finishCapture();
+      return;
+    }
+    if (sentence.trim().startsWith("+") || !this.assistant.isReady(this.preferences)) {
+      await this.captureWithRules(sentence);
+      return;
+    }
+    this.cancel("preview");
+    this.captureView.showThinking();
+    try {
+      const capture = await this.assistant.interpret(sentence, this.preferences);
+      this.pendingCapture = { sentence, capture };
+      this.captureView.showInterpreted(capture);
+    } catch {
+      await this.captureWithRules(sentence);
+    }
   }
 
   async deliverTask(taskId: number): Promise<void> {
@@ -100,9 +133,20 @@ export class IslandController {
     this.react("happy");
   }
 
+  async saveAiKey(provider: AiProviderName, apiKey: string): Promise<void> {
+    await this.backend.saveAiKey(provider, apiKey);
+    await this.loadAiSettings();
+  }
+
+  async removeAiKey(provider: AiProviderName): Promise<void> {
+    await this.backend.removeAiKey(provider);
+    await this.loadAiSettings();
+  }
+
   /** Saves the preferences and applies them in place, without closing the island. */
   async changePreferences(preferences: UserPreferences): Promise<void> {
     const localeChanged = preferences.locale !== this.preferences.locale;
+    const providerChanged = preferences.aiProvider !== this.preferences.aiProvider;
     await this.backend.updatePreferences(preferences);
     this.preferences = preferences;
     if (localeChanged) {
@@ -111,6 +155,31 @@ export class IslandController {
     }
     this.update({ placement: preferences.islandPlacement });
     await this.refresh();
+    if (providerChanged) {
+      await this.loadAiSettings();
+    }
+  }
+
+  private async captureWithRules(sentence: string): Promise<void> {
+    await this.backend.capture(sentence);
+    await this.finishCapture();
+  }
+
+  private async finishCapture(): Promise<void> {
+    this.captureView.reset();
+    await this.refresh();
+    this.openPanel("tasks");
+    this.react("happy");
+  }
+
+  /** Which providers have a key and which models the current one offers. */
+  private async loadAiSettings(): Promise<void> {
+    const load = ++this.aiSettingsLoads;
+    const configured = await this.assistant.loadStatus();
+    const models = await this.assistant.models(this.preferences.aiProvider);
+    if (load === this.aiSettingsLoads) {
+      this.update({ aiSettings: { configured, models } });
+    }
   }
 
   /**
@@ -139,6 +208,7 @@ export class IslandController {
   }
 
   private previewCapture(sentence: string): void {
+    this.pendingCapture = null;
     if (sentence.trim() === "") {
       this.cancel("preview");
       this.captureView.showIntent(null);
@@ -191,10 +261,15 @@ export class IslandController {
       onClose: () => this.setMode("hidden"),
       onDeliverTask: (taskId) => void this.deliverTask(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
+      onSaveKey: (provider, apiKey) => void this.saveAiKey(provider, apiKey),
+      onRemoveKey: (provider) => void this.removeAiKey(provider),
       capture: {
         onInput: (sentence) => this.previewCapture(sentence),
         onSubmit: (sentence) => void this.submitCapture(sentence),
-        onCancel: () => this.openPanel("tasks"),
+        onCancel: () => {
+          this.pendingCapture = null;
+          this.openPanel("tasks");
+        },
       },
     };
   }

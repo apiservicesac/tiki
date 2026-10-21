@@ -1,3 +1,4 @@
+import type { InterpretedCapture } from "../ai";
 import type { CaptureDraft, CaptureIntent } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
@@ -14,6 +15,7 @@ export interface CaptureViewHandlers {
  */
 export class CaptureView {
   private chipsContainer: HTMLElement | null = null;
+  private hint: HTMLElement | null = null;
   private element: HTMLElement | null = null;
 
   constructor(private readonly translator: Translator) {}
@@ -28,6 +30,7 @@ export class CaptureView {
   reset(): void {
     this.element = null;
     this.chipsContainer = null;
+    this.hint = null;
   }
 
   private build(handlers: CaptureViewHandlers): HTMLElement {
@@ -52,19 +55,34 @@ export class CaptureView {
     });
 
     this.chipsContainer = ElementFactory.create("div", { className: "capture-chips" });
+    this.hint = ElementFactory.create("p", { className: "island-hint", text: this.defaultHint() });
     queueMicrotask(() => input.focus());
 
     return ElementFactory.create("div", {
       className: "capture",
-      children: [
-        input,
-        this.chipsContainer,
-        ElementFactory.create("p", {
-          className: "island-hint",
-          text: `${this.translator.text("capture.hint")} · ${this.translator.text("capture.client_tip")}`,
-        }),
-      ],
+      children: [input, this.chipsContainer, this.hint],
     });
+  }
+
+  /** The assistant is reading the sentence. */
+  showThinking(): void {
+    this.chipsContainer?.replaceChildren(
+      ElementFactory.create("span", { className: "capture-thinking", text: this.translator.text("capture.thinking") }),
+    );
+  }
+
+  /** What the assistant understood; a second Enter saves it. */
+  showInterpreted(capture: InterpretedCapture): void {
+    const chips = [this.chip("capture.field.title", capture.title)];
+    if (capture.clientName) {
+      chips.push(this.chip("capture.field.client", capture.clientName));
+    }
+    if (capture.dueDate) {
+      chips.push(this.chip("capture.field.due", this.formatDate(capture.dueDate)));
+    }
+    chips.push(this.chip("capture.field.priority", this.translator.text(`priority.${capture.priority}`)));
+    this.chipsContainer?.replaceChildren(...chips);
+    this.setHint(`${this.translator.text("capture.confirm")} · ${this.translator.text("capture.edit_tip")}`);
   }
 
   /** Replaces the chips with what the core understood from the current sentence. */
@@ -78,6 +96,17 @@ export class CaptureView {
         ? [this.chip("capture.new_client", intent.name)]
         : this.taskChips(intent);
     this.chipsContainer.replaceChildren(...chips);
+    this.setHint(this.defaultHint());
+  }
+
+  private defaultHint(): string {
+    return `${this.translator.text("capture.hint")} · ${this.translator.text("capture.client_tip")}`;
+  }
+
+  private setHint(text: string): void {
+    if (this.hint) {
+      this.hint.textContent = text;
+    }
   }
 
   private taskChips(draft: CaptureDraft): HTMLElement[] {
