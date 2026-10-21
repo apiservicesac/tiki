@@ -1,11 +1,11 @@
 {
-  "version": "0.2.1-rc.4",
-  "notes": "Test notification button, briefs moved later today arrive today, and a diagnostics log.",
-  "pub_date": "2026-10-21T22:45:14.070Z",
+  "version": "0.2.1-rc.5",
+  "notes": "Reminders in the notch with a chime and an unread dot; Windows notifications optional.",
+  "pub_date": "2026-10-21T23:16:59.638Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXBzZm4zQjV2bnBSSVlxdWNMNGFIZ1QwcUIvZlJzUm9YZ0xHend3NysrU0ZNVWp2am9rVHoyL0Y1dVFZR054aG1Oemdxcm05alh4Ky82cjNJcUY5WlFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjIyNzA1CWZpbGU6VGlraV8wLjIuMS1yYy40X3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMS1yYy40CjFCSGNqU3EwOEl5QUNWbWlxTFpBWWlLWWNxazN1Q0NLSVVvSEN4Y25VV2tJVFhuVC8zZFVFSVVqLzAyWTNtSzdtb08wbVFIZmxaWWhpNlh4T2l2aEN3PT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.1-rc.4/Tiki_0.2.1-rc.4_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXFkUnRMVUlrL1NXN3hyakpJV05CTk94OFgyQkZUWEZGb29JNXF6eVBETjFHdnc5MGlBREFHbHlaRkloM1ltd3kvOGNBaFRLK1JxVFE4UnhIN1pvUmc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjI0NjEwCWZpbGU6VGlraV8wLjIuMS1yYy41X3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMS1yYy41ClBrcC9JQ2ZmTVF3cEtFaXZ5NXQvVTdLeml2MWwwVWZxck1rc3FEUWpoUU01TGZiRSsxd01tNEU3eUtxVngwVzJIaVRsWGJvdUhmTmVnZnFsK25rbkJnPT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.1-rc.5/Tiki_0.2.1-rc.5_x64-setup.exe"
     }
   }
 }
