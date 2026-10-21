@@ -1,11 +1,11 @@
 {
-  "version": "0.2.1-rc.2",
-  "notes": "The advanced settings window no longer opens blank, and the island folds to its notch when it opens.",
-  "pub_date": "2026-10-21T22:23:16.006Z",
+  "version": "0.2.1-rc.3",
+  "notes": "Settings fit on the left and right edges without scrolling.",
+  "pub_date": "2026-10-21T22:29:57.774Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbWloVDRxV1V5MVRSRXNwbVZ0ODYxN3RtTkFTLzE4UmJ4eWlneEF2Qm1FOEVHMlZCWnk1Vm5kR2tsN0ZpOVJmczB6SUx3S0dqZ292d0x5L0RGK3RoM1FZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjIxMzg3CWZpbGU6VGlraV8wLjIuMS1yYy4yX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMS1yYy4yCmdISWVFSzlKSzFpY05JSXhVSW4rZ1V0L09vRlo2bk41eEhFelorc3dReFdUci9HRnhwQ29jK1E1b1VwSVpDelowdmhhYlBpTTljbHM3ZVNUYTBkeUFBPT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.1-rc.2/Tiki_0.2.1-rc.2_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXFLUmpkck5Ua0JqajhySEZta0lGN3FiWHpaWmVEdDRFRjRCa3BqZlkybnpHWUlrbUZkM0RRU1Y1Sm5qYmRjS2UxRGtyOGtXendZQUg5TEp1cksvOWcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjIxNzg5CWZpbGU6VGlraV8wLjIuMS1yYy4zX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMS1yYy4zClI3UnMzcWkzS1NFZ3pnRkk1VXNlY0lud05qUXF3Qjdzd2Z2ci9icUJLREZIUEZDY0lrSFNXdkxJUEgyMnI3NkFydnBtNXVXWUVSMG5CdUlKYXFuZ0JBPT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.1-rc.3/Tiki_0.2.1-rc.3_x64-setup.exe"
     }
   }
 }
