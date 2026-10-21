@@ -4,7 +4,7 @@ import type { AskView } from "../assistant/AskView";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
 import {
   LOCALE_CODES,
-  type BriefNotification,
+  type TikiAlert,
   type IslandSnapshot,
   type MoodName,
   type TaskEdit,
@@ -63,6 +63,11 @@ export class IslandController {
       tab: "today",
       placement: initialPreferences.islandPlacement,
       snapshot: initialSnapshot,
+      clients: [],
+      clientColors: [],
+      delivered: [],
+      tasksView: "pending",
+      creatingClient: false,
       reactionMood: null,
       editing: null,
       dayBrief: null,
@@ -83,12 +88,14 @@ export class IslandController {
       await this.backend.listen(SHELL_EVENTS.openCapture, () => this.openPanel("capture")),
       await this.backend.listen(SHELL_EVENTS.openSettings, () => this.openPanel("settings")),
       await this.backend.listen(SHELL_EVENTS.toggleIsland, () => this.toggle()),
-      await this.backend.onBriefReady((brief) => void this.announceBrief(brief)),
+      await this.backend.onAlert((brief) => void this.announceAlert(brief)),
       await this.backend.listen(SHELL_EVENTS.preferencesChanged, () => void this.reloadPreferences()),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
     window.addEventListener("resize", this.redrawOnResize);
     await this.loadAssistantStatus();
+    this.update({ clientColors: await this.backend.clientColors() });
+    await this.refresh();
   }
 
   /** Stops timers and shell listeners. */
@@ -104,8 +111,14 @@ export class IslandController {
     window.removeEventListener("resize", this.redrawOnResize);
   }
 
+  /** The day, the clients and the history, fresh from the core. */
   async refresh(): Promise<void> {
-    this.update({ snapshot: await this.backend.islandSnapshot() });
+    const [snapshot, clients, delivered] = await Promise.all([
+      this.backend.islandSnapshot(),
+      this.backend.clientSummaries(),
+      this.backend.deliveredTasks(),
+    ]);
+    this.update({ snapshot, clients, delivered });
   }
 
   toggle(): void {
@@ -157,8 +170,8 @@ export class IslandController {
 
   /** Opens a task in the edit panel. */
   async openTask(taskId: number): Promise<void> {
-    const [task, clientNames] = await Promise.all([this.backend.taskDetails(taskId), this.backend.clientNames()]);
-    this.update({ mode: "expanded", panel: "edit", editing: { task, clientNames } });
+    const task = await this.backend.taskDetails(taskId);
+    this.update({ mode: "expanded", panel: "edit", editing: task });
   }
 
   async saveTask(taskId: number, edit: TaskEdit): Promise<void> {
@@ -172,6 +185,30 @@ export class IslandController {
     await this.backend.moveTask(taskId, "done");
     await this.refresh();
     this.react("happy");
+  }
+
+  /**
+   * Opens what an alert is about: the task of a task reminder, or the brief drawn as a
+   * receipt for the morning brief and the end-of-day close.
+   */
+  async openAlert(): Promise<void> {
+    const alert = this.state.alert;
+    this.cancel("alert");
+    if (alert?.kind === "task" && alert.taskId !== null) {
+      await this.openTask(alert.taskId);
+      return;
+    }
+    this.update({ mode: "expanded", panel: alert ? "brief" : "tasks" });
+  }
+
+  /** Creates, changes or removes a client, then shows the result; a taken name is ignored. */
+  private async clientAction(action: () => Promise<unknown>): Promise<void> {
+    try {
+      await action();
+    } catch {
+      this.react("worried");
+    }
+    await this.refresh();
   }
 
   /** Folds the island back to its notch, so it never covers the advanced settings window. */
@@ -215,7 +252,7 @@ export class IslandController {
    * chimes. It folds back after a moment, leaving a dot until the island is opened. If the
    * user already has the island open, the reminder just appears above the Today list.
    */
-  async announceBrief(brief: BriefNotification): Promise<void> {
+  async announceAlert(brief: TikiAlert): Promise<void> {
     await this.refresh();
     void this.assistantActions.prepareDayBrief();
     const alreadyOpen = this.state.mode === "expanded";
@@ -273,7 +310,7 @@ export class IslandController {
   private fold(): void {
     this.cancel("peek");
     this.cancel("unfold");
-    if (this.state.mode === "hidden" || this.state.panel !== "tasks") {
+    if (this.state.mode === "hidden" || this.state.panel !== "tasks" || this.view.isTyping()) {
       return;
     }
     this.schedule("fold", UI_CONFIG.foldDelayMs, () => this.update({ mode: "hidden", panel: "tasks" }));
@@ -341,7 +378,14 @@ export class IslandController {
 
   private handlers(): IslandViewHandlers {
     return {
-      onExpand: () => this.setMode("expanded"),
+      onExpand: () => (this.state.mode === "alert" ? void this.openAlert() : this.setMode("expanded")),
+      onOpenAlert: () => void this.openAlert(),
+      onShowDelivered: () => this.update({ panel: "tasks", tab: "all_tasks", tasksView: "delivered" }),
+      onSelectTasksView: (tasksView) => this.update({ tasksView }),
+      onManageClients: (creatingClient) => this.update({ mode: "expanded", panel: "clients", creatingClient }),
+      onCreateClient: (name) => void this.clientAction(() => this.backend.createClient(name)),
+      onChangeClient: (clientId, change) => void this.clientAction(() => this.backend.changeClient(clientId, change)),
+      onRemoveClient: (clientId) => void this.clientAction(() => this.backend.removeClient(clientId)),
       onPointerEnter: () => this.peek(),
       onPointerLeave: () => this.fold(),
       onSelectTab: (tab) => this.selectTab(tab),

@@ -8,6 +8,7 @@ const capturedTask = {
   clientName: "andeanvet",
   dueDate: "2026-10-23",
   priority: "high",
+  remindAt: "2026-10-23T09:00",
 };
 
 const context = { clientNames: ["Altamira", "Andeanvet"], today: new Date(2026, 9, 21) };
@@ -39,7 +40,7 @@ describe("TikiAi with Anthropic", () => {
     expect(body.fallbacks).toBe("default");
     expect(body.output_config).toMatchObject({ effort: "low", format: { type: "json_schema" } });
 
-    expect(capture).toEqual({ ...capturedTask, clientName: "Andeanvet" });
+    expect(capture).toEqual({ ...capturedTask, clientName: "Andeanvet", remindAt: "2026-10-23T09:00:00" });
   });
 
   it("rejects an answer the model refused", async () => {
@@ -86,11 +87,17 @@ describe("TikiAi with OpenAI", () => {
 describe("CaptureInterpreter", () => {
   it("drops unknown clients and malformed dates", async () => {
     const model = {
-      extract: async () => ({ title: " Llamar ", clientName: "Desconocido", dueDate: "viernes", priority: "normal" }),
+      extract: async () => ({
+        title: " Llamar ",
+        clientName: "Desconocido",
+        dueDate: "viernes",
+        priority: "normal",
+        remindAt: "mañana a las 9",
+      }),
     };
     const capture = await new CaptureInterpreter(model as never).interpret("llamar", context);
 
-    expect(capture).toEqual({ title: "Llamar", clientName: null, dueDate: null, priority: "normal" });
+    expect(capture).toEqual({ title: "Llamar", clientName: null, dueDate: null, priority: "normal", remindAt: null });
   });
 });
 

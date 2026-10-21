@@ -1,6 +1,7 @@
-import { PRIORITIES, TASK_STATUSES, type TaskDetails, type TaskEdit } from "../backend/contracts";
+import { PRIORITIES, TASK_STATUSES, type ClientSummary, type TaskDetails, type TaskEdit } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
+import { ClientPicker } from "./ClientPicker";
 
 export interface TaskEditHandlers {
   onSave: (taskId: number, edit: TaskEdit) => void;
@@ -9,8 +10,10 @@ export interface TaskEditHandlers {
 
 interface TaskEditFields {
   title: HTMLInputElement;
-  client: HTMLSelectElement;
+  /** The chosen client's name, or `null` for no client. */
+  client: { value: string | null };
   dueDate: HTMLInputElement;
+  remindAt: HTMLInputElement;
   priority: HTMLSelectElement;
   status: HTMLSelectElement;
   notes: HTMLTextAreaElement;
@@ -26,10 +29,10 @@ export class TaskEditView {
 
   constructor(private readonly translator: Translator) {}
 
-  render(task: TaskDetails, clientNames: readonly string[], handlers: TaskEditHandlers): HTMLElement {
+  render(task: TaskDetails, clients: readonly ClientSummary[], handlers: TaskEditHandlers): HTMLElement {
     this.handlers = handlers;
     if (this.shown?.taskId !== task.taskId) {
-      this.shown = { taskId: task.taskId, element: this.build(task, clientNames) };
+      this.shown = { taskId: task.taskId, element: this.build(task, clients) };
     }
     return this.shown.element;
   }
@@ -39,15 +42,30 @@ export class TaskEditView {
     this.shown = null;
   }
 
-  private build(task: TaskDetails, clientNames: readonly string[]): HTMLElement {
+  private build(task: TaskDetails, clients: readonly ClientSummary[]): HTMLElement {
+    const client = { value: task.clientName };
+    const picker = new ClientPicker();
+    const drawPicker = () => picker.update({
+      id: "edit-client",
+      options: [
+        { value: null, label: this.translator.text("edit.no_client"), color: null },
+        ...clients.map((summary) => ({ value: summary.name, label: summary.name, color: summary.color })),
+      ],
+      selected: client.value,
+      searchPlaceholder: this.translator.text("tasks.search_client"),
+      emptyText: this.translator.text("tasks.no_client_match"),
+      onSelect: (value) => {
+        client.value = value;
+        drawPicker();
+      },
+    });
+    drawPicker();
     const fields: TaskEditFields = {
       title: this.input("text", "edit-title", task.title),
-      client: this.select(
-        "edit-client",
-        [["", this.translator.text("edit.no_client")], ...clientNames.map((name): [string, string] => [name, name])],
-        task.clientName ?? "",
-      ),
+      client,
       dueDate: this.input("date", "edit-due", task.dueDate ?? ""),
+      // The picker shows minutes; the core sends seconds too.
+      remindAt: this.input("datetime-local", "edit-remind", task.remindAt?.slice(0, 16) ?? ""),
       priority: this.select(
         "edit-priority",
         PRIORITIES.map((priority): [string, string] => [priority, this.translator.text(`priority.${priority}`)]),
@@ -69,8 +87,9 @@ export class TaskEditView {
       className: "edit-form",
       children: [
         this.field("edit.field.title", fields.title, "edit-field-wide"),
-        this.field("capture.field.client", fields.client),
+        this.field("capture.field.client", picker.element, "", "div"),
         this.field("capture.field.due", fields.dueDate),
+        this.field("edit.field.remind", fields.remindAt),
         this.field("capture.field.priority", fields.priority),
         this.field("capture.field.status", fields.status),
         this.field("edit.field.notes", fields.notes, "edit-field-wide"),
@@ -98,8 +117,9 @@ export class TaskEditView {
     this.handlers?.onSave(taskId, {
       title: fields.title.value.trim(),
       notes: fields.notes.value.trim(),
-      clientName: fields.client.value || null,
+      clientName: fields.client.value,
       dueDate: fields.dueDate.value || null,
+      remindAt: fields.remindAt.value ? `${fields.remindAt.value}:00` : null,
       priority: fields.priority.value as TaskEdit["priority"],
       status: fields.status.value as TaskEdit["status"],
     });
@@ -124,8 +144,12 @@ export class TaskEditView {
     return ElementFactory.create("div", { className: "edit-actions edit-field-wide", children: [cancel, save] });
   }
 
-  private field(labelKey: string, control: HTMLElement, extraClass = ""): HTMLElement {
-    return ElementFactory.create("label", {
+  /**
+   * A label and its control. The client picker goes in a plain block instead of a label:
+   * a label would forward clicks inside the open list back to the picker's button.
+   */
+  private field(labelKey: string, control: HTMLElement, extraClass = "", tag: "label" | "div" = "label"): HTMLElement {
+    return ElementFactory.create(tag, {
       className: `edit-field ${extraClass}`.trim(),
       children: [ElementFactory.create("span", { text: this.translator.text(labelKey) }), control],
     });

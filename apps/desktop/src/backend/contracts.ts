@@ -53,6 +53,8 @@ export interface IslandSnapshot {
   dueCount: number;
   /** Waiting on others. */
   waitingCount: number;
+  /** Delivered today. */
+  deliveredToday: number;
   closedSummary: string;
   todaySubtitle: string;
   sections: SnapshotSection[];
@@ -65,6 +67,8 @@ export interface CaptureDraft {
   clientName: string | null;
   /** ISO date, for example `2026-10-23`. */
   dueDate: string | null;
+  /** When to remind, for example `2026-10-23T09:00:00`. */
+  remindAt: string | null;
 }
 
 /** What the core understood from a quick-capture sentence. */
@@ -83,18 +87,47 @@ export interface TaskEdit {
   dueDate: string | null;
   priority: Priority;
   status: TaskStatus;
+  /** When to remind, for example `2026-10-23T09:00:00`; `null` for no reminder. */
+  remindAt: string | null;
 }
 
 export interface TaskDetails extends TaskEdit {
   taskId: number;
 }
 
-/** A reminder already written in the user's language (see `BriefNotification` in the core). */
-export interface BriefNotification {
-  moment: "morning" | "evening";
+/** An alert already written in the user's language (see `TikiAlert` in the core). */
+export interface TikiAlert {
+  kind: "morning" | "evening" | "task";
   title: string;
   /** Lines separated by line breaks. */
   body: string;
+  /** The task a task reminder is about. */
+  taskId: number | null;
+}
+
+/** One client with their workload, busiest first (see `ClientSummary` in the core). */
+export interface ClientSummary {
+  clientId: number;
+  name: string;
+  color: string;
+  openCount: number;
+  /** Open tasks overdue or due soon. */
+  pressingCount: number;
+}
+
+export interface ClientChange {
+  name: string;
+  color: string;
+}
+
+/** One delivered task in the history. */
+export interface DeliveredItem {
+  taskId: number;
+  title: string;
+  clientName: string | null;
+  clientColor: string | null;
+  /** "hoy", "ayer" or a short date. */
+  deliveredLabel: string;
 }
 
 export interface AvailableUpdate {
@@ -154,6 +187,15 @@ export interface TikiBackend {
   saveConfirmedCapture(capture: InterpretedCapture): Promise<void>;
   clientNames(): Promise<string[]>;
   taskDetails(taskId: number): Promise<TaskDetails>;
+  clientSummaries(): Promise<ClientSummary[]>;
+  /** Creates a client; returns its id. */
+  createClient(name: string): Promise<number>;
+  changeClient(clientId: number, change: ClientChange): Promise<void>;
+  /** Removes a client; their tasks stay, without client. */
+  removeClient(clientId: number): Promise<void>;
+  clientColors(): Promise<string[]>;
+  /** Delivered tasks, most recent first. */
+  deliveredTasks(): Promise<DeliveredItem[]>;
   /** Open tasks without ids or notes: what the assistant may read. */
   assistantContext(): Promise<AdvisorContext>;
   editTask(taskId: number, edit: TaskEdit): Promise<void>;
@@ -174,8 +216,8 @@ export interface TikiBackend {
   setAutostart(enabled: boolean): Promise<void>;
   /** Tells the shell which part of the window is the island; the rest lets clicks through. */
   setHitArea(area: HitArea): Promise<void>;
-  /** Calls `handler` with each brief the shell delivers; returns a function that stops listening. */
-  onBriefReady(handler: (brief: BriefNotification) => void): Promise<() => void>;
+  /** Calls `handler` with each alert the shell delivers; returns a function that stops listening. */
+  onAlert(handler: (brief: TikiAlert) => void): Promise<() => void>;
   /** Calls `handler` whenever the shell emits `eventName`; returns a function that stops listening. */
   listen(eventName: string, handler: () => void): Promise<() => void>;
 }

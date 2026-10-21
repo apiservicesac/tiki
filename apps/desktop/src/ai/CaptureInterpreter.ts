@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AI_CONFIG } from "./aiConfig";
 import type { StructuredModel } from "./contracts";
 
 const PRIORITIES = ["low", "normal", "high", "urgent"] as const;
@@ -10,6 +11,8 @@ export interface InterpretedCapture {
   /** ISO date, for example `2026-10-23`. */
   dueDate: string | null;
   priority: (typeof PRIORITIES)[number];
+  /** When to remind, for example `2026-10-23T09:00:00`; `null` when not asked. */
+  remindAt: string | null;
 }
 
 export interface CaptureContext {
@@ -25,6 +28,7 @@ export class CaptureInterpreter {
     clientName: z.string().nullable(),
     dueDate: z.string().nullable(),
     priority: z.enum(PRIORITIES),
+    remindAt: z.string().nullable(),
   });
 
   constructor(private readonly model: StructuredModel) {}
@@ -41,6 +45,7 @@ export class CaptureInterpreter {
       clientName: CaptureInterpreter.knownClient(answer.clientName, context.clientNames),
       dueDate: answer.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(answer.dueDate) ? answer.dueDate : null,
       priority: answer.priority,
+      remindAt: answer.remindAt && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(answer.remindAt) ? `${answer.remindAt}:00` : null,
     };
   }
 
@@ -60,13 +65,15 @@ export class CaptureInterpreter {
       String(today.getDate()).padStart(2, "0"),
     ].join("-");
     const weekday = today.toLocaleDateString("en-US", { weekday: "long" });
+    const time = [today.getHours(), today.getMinutes()].map((part) => String(part).padStart(2, "0")).join(":");
     const clients = context.clientNames.length > 0 ? context.clientNames.join(", ") : "none yet";
     return [
       "You turn one sentence that a support consultant typed into a task for their to-do list.",
-      `Today is ${weekday}, ${isoToday}. Known clients: ${clients}.`,
+      `Now is ${weekday}, ${isoToday} ${time}. Known clients: ${clients}.`,
       "- title: a short task title in the same language as the sentence, without the client name and without the date words.",
       "- clientName: one of the known clients, written exactly as listed, or null when none is mentioned.",
       "- dueDate: YYYY-MM-DD when the sentence mentions a day; resolve words like tomorrow or Friday against today (a weekday means its next occurrence). Otherwise null.",
+      `- remindAt: YYYY-MM-DDTHH:MM when the sentence asks to be reminded (remind me, avísame, recuérdame) or says a time; use the due day, or today, and ${AI_CONFIG.defaultReminderTime} when no time is given; if that moment has already passed and no day was named, use tomorrow. Otherwise null. The words of the reminder are not part of the title.`,
       "- priority: urgent only when the sentence says it is urgent; high for words like important or as soon as possible; low when it says there is no hurry; otherwise normal.",
     ].join("\n");
   }

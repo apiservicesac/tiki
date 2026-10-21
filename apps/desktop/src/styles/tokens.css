@@ -16,6 +16,8 @@
   --island-on-primary: #0b0c0e;
   --island-good: #7ee0b9;
   --switch-on: #17a398;
+  --receipt-paper: #1d1a14;
+  --receipt-line: #3a3324;
   --kind-ticket-background: rgba(106, 155, 240, 0.16);
   --kind-ticket-text: #8fb4f5;
   --kind-instance-background: rgba(59, 179, 171, 0.18);
@@ -67,6 +69,8 @@
     --island-on-primary: #ffffff;
     --island-good: #0f7a52;
     --switch-on: #17837d;
+    --receipt-paper: #fffbf2;
+    --receipt-line: #e8dcc2;
     --kind-ticket-background: rgba(47, 107, 216, 0.12);
     --kind-ticket-text: #2f6bd8;
     --kind-instance-background: rgba(23, 131, 125, 0.13);

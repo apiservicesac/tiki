@@ -10,12 +10,20 @@ import type { IslandMode, IslandState } from "./islandState";
 import { NotchView } from "./NotchView";
 import { SettingsView, type SettingsHandlers } from "./SettingsView";
 import { TaskEditView, type TaskEditHandlers } from "./TaskEditView";
-import { TaskListView, type TaskListHandlers } from "./TaskListView";
+import { ClientsPanelView, type ClientsPanelHandlers } from "./ClientsPanelView";
+import { ReceiptView } from "./ReceiptView";
+import { TaskListView } from "./TaskListView";
+import { TasksTabView, type TasksTabHandlers } from "./TasksTabView";
 import type { HitArea } from "../backend/contracts";
 import { ContentTransition, type ContentSize } from "./ContentTransition";
+import { FocusKeeper } from "../dom/FocusKeeper";
 
-export interface IslandViewHandlers extends HeaderHandlers, SettingsHandlers, TaskListHandlers {
+export interface IslandViewHandlers extends HeaderHandlers, SettingsHandlers, TasksTabHandlers, ClientsPanelHandlers {
   onExpand: () => void;
+  /** "Delivered today" at the end of Today: opens Tasks › Delivered. */
+  onShowDelivered: () => void;
+  /** Opens what the latest alert is about: its task, or the brief as a receipt. */
+  onOpenAlert: () => void;
   onPointerEnter: () => void;
   onPointerLeave: () => void;
   capture: CaptureViewHandlers;
@@ -34,6 +42,11 @@ export class IslandView {
   private readonly taskList: TaskListView;
   private readonly settings: SettingsView;
   private readonly taskEdit: TaskEditView;
+  private readonly tasksTab: TasksTabView;
+  private readonly clientsPanel: ClientsPanelView;
+  private readonly receipt: ReceiptView;
+  /** The views kept between frames are rebuilt when the language changes. */
+  private shownLocale = "";
   private readonly notch: HTMLElement;
   private readonly clip: HTMLElement;
   private readonly contentTransition: ContentTransition;
@@ -55,6 +68,9 @@ export class IslandView {
     this.taskList = new TaskListView(translator);
     this.settings = new SettingsView(translator);
     this.taskEdit = new TaskEditView(translator);
+    this.tasksTab = new TasksTabView(translator, this.taskList);
+    this.clientsPanel = new ClientsPanelView(translator);
+    this.receipt = new ReceiptView(translator);
     this.clip = ElementFactory.create("div", { className: "island-clip" });
     this.notch = this.createNotch();
     this.contentTransition = new ContentTransition(this.clip);
@@ -83,12 +99,19 @@ export class IslandView {
       this.captureView.reset();
       this.taskEdit.reset();
       this.askView.reset();
+      this.clientsPanel.reset();
+    }
+    if (this.translator.localeCode !== this.shownLocale) {
+      this.tasksTab.reset();
+      this.shownLocale = this.translator.localeCode;
     }
     this.shownMode = state.mode;
     this.shownPanel = panelKey;
 
+    const focus = FocusKeeper.remember(this.root.ownerDocument);
     const content = this.content(state, mood, preferences, handlers);
     this.resizeNotch(this.contentTransition.swap(content, animate));
+    focus.restore();
   }
 
   /** Where the island is inside the window, so the shell can let other clicks through. */
@@ -111,6 +134,14 @@ export class IslandView {
       default:
         return { x: centeredX, y: 0, width, height };
     }
+  }
+
+  /** Whether the user is typing in the island (a search box, a name), so it must not fold. */
+  isTyping(): boolean {
+    const focused = this.root.ownerDocument.activeElement;
+    return focused instanceof HTMLElement
+      && this.notch.contains(focused)
+      && (focused instanceof HTMLInputElement || focused instanceof HTMLTextAreaElement);
   }
 
   stop(): void {
@@ -171,7 +202,7 @@ export class IslandView {
         this.header.render(state.panel, state.tab, handlers),
         ElementFactory.create("div", {
           className: "island-card",
-          attributes: { "data-mood": mood, "data-panel": state.panel },
+          attributes: { "data-mood": mood, "data-panel": state.panel, "data-tab": state.tab },
           children: [
             ElementFactory.fromTrustedMarkup(
               "island-card-mascot",
@@ -197,24 +228,34 @@ export class IslandView {
         return this.askView.render(this.assistantReady, handlers.ask);
       case "edit":
         return state.editing
-          ? this.taskEdit.render(state.editing.task, state.editing.clientNames, handlers.edit)
+          ? this.taskEdit.render(state.editing, state.clients, handlers.edit)
           : this.tabContent(state, handlers);
+      case "clients":
+        return this.clientsPanel.render(state.clients, state.clientColors, state.creatingClient, handlers);
+      case "brief":
+        return this.receipt.render(state.snapshot, state.alert, state.dayBrief);
       case "tasks":
         return this.tabContent(state, handlers);
     }
   }
 
-  /** The latest reminder and the AI brief, above the Today list. */
-  private notices(state: IslandState): HTMLElement[] {
+  /** The latest reminder (it opens what it is about) and the AI brief, above the Today list. */
+  private notices(state: IslandState, handlers: IslandViewHandlers): HTMLElement[] {
     const notices: HTMLElement[] = [];
     if (state.alert) {
-      notices.push(ElementFactory.create("div", {
+      const notice = ElementFactory.create("button", {
         className: "island-notice",
+        attributes: { type: "button", title: this.translator.text("island.alert.open") },
         children: [
           ElementFactory.create("strong", { text: state.alert.title }),
           ElementFactory.create("p", { text: state.alert.body }),
         ],
-      }));
+      });
+      notice.addEventListener("click", (event) => {
+        event.stopPropagation();
+        handlers.onOpenAlert();
+      });
+      notices.push(notice);
     }
     if (state.dayBrief) {
       notices.push(ElementFactory.create("p", { className: "island-brief", text: state.dayBrief }));
@@ -223,11 +264,46 @@ export class IslandView {
   }
 
   private tabContent(state: IslandState, handlers: IslandViewHandlers): HTMLElement {
+    switch (state.tab) {
+      case "today":
+        return this.todayContent(state, handlers);
+      case "all_tasks":
+        return this.tasksTab.render(
+          { sections: state.snapshot.sections, delivered: state.delivered, clients: state.clients, view: state.tasksView },
+          handlers,
+        );
+      case "tickets":
+      case "agenda":
+        return ElementFactory.create("div", {
+          className: "island-tab-content",
+          children: [this.taskList.render([], this.translator.text(`island.${state.tab}.empty`), handlers)],
+        });
+    }
+  }
+
+  private todayContent(state: IslandState, handlers: IslandViewHandlers): HTMLElement {
     const subtitle = ElementFactory.create("p", { className: "island-subtitle", text: state.snapshot.todaySubtitle });
-    const notices = state.tab === "today" ? this.notices(state) : [];
-    const list = state.tab === "today"
-      ? this.taskList.render(state.snapshot.sections, this.translator.text("island.today.empty"), handlers)
-      : this.taskList.render([], this.translator.text(`island.${state.tab}.empty`), handlers);
-    return ElementFactory.create("div", { className: "island-tab-content", children: [subtitle, ...notices, list] });
+    const list = this.taskList.render(state.snapshot.sections, this.translator.text("island.today.empty"), handlers);
+    return ElementFactory.create("div", {
+      className: "island-tab-content",
+      children: [subtitle, ...this.notices(state, handlers), list, ...this.deliveredToday(state, handlers)],
+    });
+  }
+
+  /** "Delivered today (3)", leading to the history; nothing on a day with no deliveries. */
+  private deliveredToday(state: IslandState, handlers: IslandViewHandlers): HTMLElement[] {
+    if (state.snapshot.deliveredToday === 0) {
+      return [];
+    }
+    const link = ElementFactory.create("button", {
+      className: "island-delivered-link",
+      text: this.translator.format("island.delivered_today", { count: state.snapshot.deliveredToday }),
+      attributes: { type: "button", id: "delivered-today" },
+    });
+    link.addEventListener("click", (event) => {
+      event.stopPropagation();
+      handlers.onShowDelivered();
+    });
+    return [link];
   }
 }

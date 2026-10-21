@@ -1,4 +1,4 @@
-import type { SnapshotItem, SnapshotSection } from "../backend/contracts";
+import type { DeliveredItem, SnapshotItem, SnapshotSection } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
@@ -30,7 +30,8 @@ export class TaskListView {
     });
   }
 
-  private row(item: SnapshotItem, handlers: TaskListHandlers): HTMLElement {
+  /** One open task: client color, title (opens it), when it is due, and a deliver button. */
+  row(item: SnapshotItem, handlers: TaskListHandlers): HTMLElement {
     const colorBar = ElementFactory.create("span", { className: "island-row-bar" });
     colorBar.style.background = item.clientColor ?? "var(--island-faint)";
 
@@ -63,6 +64,32 @@ export class TaskListView {
           text: item.detailLabel,
         }),
         deliverButton,
+      ],
+    });
+  }
+
+  /** One delivered task: client color, title (opens it, to reopen it) and when it was delivered. */
+  deliveredRow(item: DeliveredItem, onOpen: (taskId: number) => void): HTMLElement {
+    const colorBar = ElementFactory.create("span", { className: "island-row-bar" });
+    colorBar.style.background = item.clientColor ?? "var(--island-faint)";
+    const text = ElementFactory.create("button", {
+      className: "island-row-text",
+      text: item.title,
+      attributes: { type: "button", title: this.translator.text("island.row.edit") },
+      children: item.clientName ? [ElementFactory.create("small", { text: item.clientName })] : [],
+    });
+    text.addEventListener("click", (event) => {
+      event.stopPropagation();
+      onOpen(item.taskId);
+    });
+    return ElementFactory.create("div", {
+      className: "island-row island-row-delivered",
+      attributes: { "data-task-id": String(item.taskId) },
+      children: [
+        colorBar,
+        text,
+        ElementFactory.create("span", { className: "island-when island-when-done", text: item.deliveredLabel }),
+        ElementFactory.fromTrustedMarkup("island-row-check", ICONS.check),
       ],
     });
   }

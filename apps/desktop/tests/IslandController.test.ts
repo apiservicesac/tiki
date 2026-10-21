@@ -6,9 +6,10 @@ import { FakeBackend } from "./support/FakeBackend";
 import { FakeShell } from "./support/FakeShell";
 
 const EVENING_BRIEF = {
-  moment: "evening" as const,
+  kind: "evening" as const,
   title: "Cierre del día",
   body: "Atrasado: 1 · Vence pronto: 2 · Esperando: 2\nMañana vence: Tracking",
+  taskId: null,
 };
 
 describe("IslandController", () => {
@@ -121,13 +122,15 @@ describe("IslandController", () => {
     controller.setMode("expanded");
     root.querySelector<HTMLButtonElement>('[data-task-id="1"] .island-row-text')?.click();
     await vi.waitFor(() => expect(root.querySelector("#edit-title")).not.toBeNull());
-    expect(root.querySelector<HTMLSelectElement>("#edit-client")?.value).toBe("Altamira");
+    expect(root.querySelector("#edit-client")?.textContent).toBe("Altamira");
 
     const title = root.querySelector<HTMLInputElement>("#edit-title");
     const status = root.querySelector<HTMLSelectElement>("#edit-status");
-    if (title && status) {
+    const remind = root.querySelector<HTMLInputElement>("#edit-remind");
+    if (title && status && remind) {
       title.value = "Tracking de formularios";
       status.value = "waiting_on_others";
+      remind.value = "2026-10-22T09:30";
     }
     await controller.refresh();
     expect(root.querySelector<HTMLInputElement>("#edit-title")?.value).toBe("Tracking de formularios");
@@ -143,9 +146,102 @@ describe("IslandController", () => {
         dueDate: "2026-10-22",
         priority: "normal",
         status: "waiting_on_others",
+        remindAt: "2026-10-22T09:30:00",
       },
     });
     await vi.waitFor(() => expect(controller.currentState.panel).toBe("tasks"));
+  });
+
+  it("lists every pending task by client in the Tasks tab, with search and client filter", () => {
+    controller.selectTab("all_tasks");
+    const groups = () => [...root.querySelectorAll(".tasks-group span:first-of-type")].map((group) => group.textContent);
+    expect(groups()).toEqual(["Andeanvet", "Altamira", "Vapestation"]);
+
+    const search = root.querySelector<HTMLInputElement>("#tasks-search");
+    if (search) {
+      search.value = "github";
+      search.dispatchEvent(new Event("input"));
+    }
+    expect(root.querySelectorAll(".tasks-tab .island-row")).toHaveLength(1);
+
+    if (search) {
+      search.value = "";
+      search.dispatchEvent(new Event("input"));
+    }
+    root.querySelector<HTMLButtonElement>("#tasks-client-picker")?.click();
+    const pickerSearch = root.querySelector<HTMLInputElement>(".picker-search");
+    if (pickerSearch) {
+      pickerSearch.value = "alta";
+      pickerSearch.dispatchEvent(new Event("input"));
+    }
+    root.querySelector<HTMLButtonElement>('.picker-option[data-value="Altamira"]')?.click();
+    expect(groups()).toEqual(["Altamira"]);
+    expect(root.querySelectorAll(".tasks-tab .island-row")).toHaveLength(2);
+  });
+
+  it("keeps the search text when the island refreshes", async () => {
+    controller.selectTab("all_tasks");
+    const search = root.querySelector<HTMLInputElement>("#tasks-search");
+    if (search) {
+      search.value = "acta";
+    }
+    await controller.refresh();
+    expect(root.querySelector<HTMLInputElement>("#tasks-search")?.value).toBe("acta");
+  });
+
+  it("shows the delivered history from Today and reopens a task from it", async () => {
+    controller.setMode("expanded");
+    await controller.refresh();
+    root.querySelector<HTMLButtonElement>("#delivered-today")?.click();
+
+    expect(controller.currentState.tab).toBe("all_tasks");
+    expect(controller.currentState.tasksView).toBe("delivered");
+    const rows = [...root.querySelectorAll(".island-row-delivered")].map((row) => row.querySelector(".island-when")?.textContent);
+    expect(rows).toEqual(["hoy", "ayer"]);
+
+    root.querySelector<HTMLButtonElement>('.island-row-delivered[data-task-id="9"] .island-row-text')?.click();
+    await vi.waitFor(() => expect(controller.currentState.panel).toBe("edit"));
+  });
+
+  it("creates, renames, recolors and removes clients in the client panel", async () => {
+    controller.selectTab("all_tasks");
+    await controller.refresh();
+    root.querySelector<HTMLButtonElement>("#tasks-client-picker")?.click();
+    [...root.querySelectorAll<HTMLButtonElement>(".picker-action")].find((action) => action.textContent === "Gestionar clientes")?.click();
+    expect(controller.currentState.panel).toBe("clients");
+
+    const name = root.querySelector<HTMLInputElement>("#new-client");
+    if (name) {
+      name.value = "Constructora Sur";
+    }
+    root.querySelector<HTMLButtonElement>("#add-client")?.click();
+    await vi.waitFor(() => expect(backend.clients.map((client) => client.name)).toContain("Constructora Sur"));
+    await vi.waitFor(() => expect(root.querySelectorAll(".client-row")).toHaveLength(4));
+
+    root.querySelector<HTMLButtonElement>('[data-client-id="3"] .island-icon-button')?.click();
+    const rename = root.querySelector<HTMLInputElement>("#client-name-input");
+    if (rename) {
+      rename.value = "Vape Station";
+      rename.dispatchEvent(new Event("input"));
+    }
+    root.querySelector<HTMLButtonElement>('.client-swatch[data-color="#7357E8"]')?.click();
+    root.querySelector<HTMLButtonElement>("#save-client")?.click();
+    await vi.waitFor(() =>
+      expect(backend.clients.find((client) => client.clientId === 3)).toMatchObject({ name: "Vape Station", color: "#7357E8" }));
+
+    root.querySelector<HTMLButtonElement>('[data-client-id="1"] .client-remove')?.click();
+    root.querySelector<HTMLButtonElement>('[data-client-id="1"] .client-remove-confirm')?.click();
+    await vi.waitFor(() => expect(backend.clients.some((client) => client.clientId === 1)).toBe(false));
+  });
+
+  it("does not fold while the user is typing a search", () => {
+    vi.useFakeTimers();
+    controller.selectTab("all_tasks");
+    root.querySelector<HTMLInputElement>("#tasks-search")?.focus();
+    notch()?.dispatchEvent(new Event("pointerleave"));
+
+    vi.advanceTimersByTime(UI_CONFIG.foldDelayMs);
+    expect(notch()?.dataset.mode).toBe("expanded");
   });
 
   it("switches tabs and shows the empty state of Tickets", () => {
@@ -227,7 +323,7 @@ describe("IslandController", () => {
 
   it("shows a reminder in the grown notch, then folds leaving an unread dot", async () => {
     vi.useFakeTimers();
-    backend.deliverBrief(EVENING_BRIEF);
+    backend.deliverAlert(EVENING_BRIEF);
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
     expect(root.querySelector(".notch-alert strong")?.textContent).toBe("Cierre del día");
     expect(root.querySelector(".notch-alert-preview")?.textContent).toBe(
@@ -239,13 +335,16 @@ describe("IslandController", () => {
     expect(root.querySelector(".notch-unread")).not.toBeNull();
   });
 
-  it("opens the reminder on click and puts it away after reading", async () => {
-    backend.deliverBrief(EVENING_BRIEF);
+  it("opens the brief as a receipt on click and puts it away after reading", async () => {
+    backend.deliverAlert(EVENING_BRIEF);
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
 
     notch()?.click();
-    expect(notch()?.dataset.mode).toBe("expanded");
-    expect(root.querySelector(".island-notice strong")?.textContent).toBe("Cierre del día");
+    await vi.waitFor(() => expect(controller.currentState.panel).toBe("brief"));
+    expect(root.querySelector(".receipt-head strong")?.textContent).toBe("Cierre del día");
+    expect(root.querySelectorAll(".receipt-block")).toHaveLength(4);
+    expect(root.querySelector(".receipt-tip")?.textContent).toContain("Mañana vence: Tracking");
+    expect(root.querySelector(".receipt-foot")?.textContent).toBe("6 pendientes · 2 esperando · 1 entregadas hoy");
     expect(controller.currentState.unreadAlert).toBe(false);
 
     controller.setMode("hidden");
@@ -253,9 +352,18 @@ describe("IslandController", () => {
     expect(root.querySelector(".notch-unread")).toBeNull();
   });
 
+  it("opens the task of a task reminder", async () => {
+    backend.deliverAlert({ kind: "task", title: "Recordatorio", body: "Tracking de formularios\nAltamira · mañana", taskId: 1 });
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
+
+    notch()?.click();
+    await vi.waitFor(() => expect(controller.currentState.panel).toBe("edit"));
+    expect(root.querySelector<HTMLInputElement>("#edit-title")?.value).toBe("Tracking de formularios comerciales");
+  });
+
   it("only adds the reminder to Today when the island is already open", async () => {
     controller.setMode("expanded");
-    backend.deliverBrief(EVENING_BRIEF);
+    backend.deliverAlert(EVENING_BRIEF);
     await vi.waitFor(() => expect(root.querySelector(".island-notice")).not.toBeNull());
     expect(notch()?.dataset.mode).toBe("expanded");
   });
@@ -317,6 +425,7 @@ describe("IslandController with the AI assistant", () => {
       clientName: "andeanvet",
       dueDate: "2026-10-23",
       priority: "high",
+      remindAt: "2026-10-23T09:00",
     }));
     controller.openPanel("capture");
 
@@ -324,18 +433,25 @@ describe("IslandController with the AI assistant", () => {
     const chips = [...root.querySelectorAll(".capture-chip")].map((chip) => chip.textContent);
     expect(chips).toContain("Cliente Andeanvet");
     expect(chips).toContain("Prioridad Alta");
+    expect(chips.some((chip) => chip?.startsWith("Aviso ") && chip.endsWith("· 09:00"))).toBe(true);
     expect(backend.confirmedCaptures).toHaveLength(0);
 
     await controller.submitCapture("revisar acceso facturas andeanvet viernes, importante");
     expect(backend.confirmedCaptures).toEqual([
-      { title: "Revisar acceso de facturas", clientName: "Andeanvet", dueDate: "2026-10-23", priority: "high" },
+      {
+        title: "Revisar acceso de facturas",
+        clientName: "Andeanvet",
+        dueDate: "2026-10-23",
+        priority: "high",
+        remindAt: "2026-10-23T09:00:00",
+      },
     ]);
     expect(backend.capturedSentences).toHaveLength(0);
     expect(controller.currentState.panel).toBe("tasks");
   });
 
   it("never sends the key to the interface's requests", async () => {
-    backend.aiShell = new FakeShell(claudeReads({ title: "Llamar", clientName: null, dueDate: null, priority: "normal" }));
+    backend.aiShell = new FakeShell(claudeReads({ title: "Llamar", clientName: null, dueDate: null, priority: "normal", remindAt: null }));
     await controller.submitCapture("llamar");
 
     const sent = JSON.stringify(backend.aiShell.requests);

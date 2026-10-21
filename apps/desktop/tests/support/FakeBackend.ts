@@ -2,8 +2,11 @@ import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest
 import type {
   AiProviderStatus,
   AvailableUpdate,
-  BriefNotification,
+  TikiAlert,
   CaptureIntent,
+  ClientChange,
+  ClientSummary,
+  DeliveredItem,
   HitArea,
   CaptureOutcome,
   IslandSnapshot,
@@ -26,6 +29,15 @@ export class FakeBackend implements TikiBackend {
   readonly hitAreas: HitArea[] = [];
   readonly confirmedCaptures: InterpretedCapture[] = [];
   readonly editedTasks: Array<{ taskId: number; edit: TaskEdit }> = [];
+  clients: ClientSummary[] = [
+    { clientId: 1, name: "Altamira", color: "#2F6BD8", openCount: 2, pressingCount: 2 },
+    { clientId: 2, name: "Andeanvet", color: "#17837D", openCount: 3, pressingCount: 1 },
+    { clientId: 3, name: "Vapestation", color: "#C2410C", openCount: 1, pressingCount: 0 },
+  ];
+  delivered: DeliveredItem[] = [
+    { taskId: 9, title: "Reporte de ventas de septiembre", clientName: "Altamira", clientColor: "#2F6BD8", deliveredLabel: "hoy" },
+    { taskId: 8, title: "Ajuste del acta CAPEX", clientName: null, clientColor: null, deliveredLabel: "ayer" },
+  ];
   savedPreferences: UserPreferences = {
     locale: "spanish",
     islandPlacement: "top",
@@ -57,7 +69,7 @@ export class FakeBackend implements TikiBackend {
     const trimmed = sentence.trim();
     return trimmed.startsWith("+")
       ? { kind: "client", name: trimmed.slice(1).trim() }
-      : { kind: "task", title: trimmed, clientId: null, clientName: null, dueDate: null };
+      : { kind: "task", title: trimmed, clientId: null, clientName: null, dueDate: null, remindAt: null };
   }
 
   async capture(sentence: string): Promise<CaptureOutcome> {
@@ -82,7 +94,33 @@ export class FakeBackend implements TikiBackend {
   }
 
   async clientNames(): Promise<string[]> {
-    return ["Altamira", "Andeanvet", "Vapestation"];
+    return this.clients.map((client) => client.name);
+  }
+
+  async clientSummaries(): Promise<ClientSummary[]> {
+    return this.clients;
+  }
+
+  async createClient(name: string): Promise<number> {
+    const clientId = Math.max(0, ...this.clients.map((client) => client.clientId)) + 1;
+    this.clients = [...this.clients, { clientId, name, color: "#7357E8", openCount: 0, pressingCount: 0 }];
+    return clientId;
+  }
+
+  async changeClient(clientId: number, change: ClientChange): Promise<void> {
+    this.clients = this.clients.map((client) => (client.clientId === clientId ? { ...client, ...change } : client));
+  }
+
+  async removeClient(clientId: number): Promise<void> {
+    this.clients = this.clients.filter((client) => client.clientId !== clientId);
+  }
+
+  async clientColors(): Promise<string[]> {
+    return ["#2F6BD8", "#17837D", "#C2410C", "#7357E8"];
+  }
+
+  async deliveredTasks(): Promise<DeliveredItem[]> {
+    return this.delivered;
   }
 
   async taskDetails(taskId: number): Promise<TaskDetails> {
@@ -95,6 +133,7 @@ export class FakeBackend implements TikiBackend {
       dueDate: "2026-10-22",
       priority: "normal",
       status: "to_do",
+      remindAt: null,
     };
   }
 
@@ -160,18 +199,18 @@ export class FakeBackend implements TikiBackend {
     return () => this.listeners.delete(eventName);
   }
 
-  private briefHandler: ((brief: BriefNotification) => void) | null = null;
+  private alertHandler: ((brief: TikiAlert) => void) | null = null;
 
-  async onBriefReady(handler: (brief: BriefNotification) => void): Promise<() => void> {
-    this.briefHandler = handler;
+  async onAlert(handler: (brief: TikiAlert) => void): Promise<() => void> {
+    this.alertHandler = handler;
     return () => {
-      this.briefHandler = null;
+      this.alertHandler = null;
     };
   }
 
   /** Simulates the shell delivering a brief. */
-  deliverBrief(brief: BriefNotification): void {
-    this.briefHandler?.(brief);
+  deliverAlert(brief: TikiAlert): void {
+    this.alertHandler?.(brief);
   }
 
   /** Simulates the desktop shell emitting an event. */
@@ -190,6 +229,7 @@ export class FakeBackend implements TikiBackend {
       attentionCount: 5,
       dueCount: 3,
       waitingCount: 2,
+      deliveredToday: 1,
       closedSummary: "3 hoy · 2 esperando",
       todaySubtitle: "miércoles 21 de octubre · 3 vencen pronto",
       narration: "Buenos días. Hoy es miércoles 21 de octubre.",

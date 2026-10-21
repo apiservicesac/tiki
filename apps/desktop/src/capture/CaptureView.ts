@@ -80,6 +80,9 @@ export class CaptureView {
     if (capture.dueDate) {
       chips.push(this.chip("capture.field.due", this.formatDate(capture.dueDate)));
     }
+    if (capture.remindAt) {
+      chips.push(this.chip("capture.field.remind", this.formatDateTime(capture.remindAt)));
+    }
     chips.push(this.chip("capture.field.priority", this.translator.text(`priority.${capture.priority}`)));
     this.chipsContainer?.replaceChildren(...chips);
     this.setHint(`${this.translator.text("capture.confirm")} · ${this.translator.text("capture.edit_tip")}`);
@@ -117,6 +120,9 @@ export class CaptureView {
     if (draft.dueDate) {
       chips.push(this.chip("capture.field.due", this.formatDate(draft.dueDate)));
     }
+    if (draft.remindAt) {
+      chips.push(this.chip("capture.field.remind", this.formatDateTime(draft.remindAt)));
+    }
     chips.push(this.chip("capture.field.status", this.translator.text("status.to_do")));
     return chips;
   }
@@ -129,6 +135,12 @@ export class CaptureView {
         document.createTextNode(` ${value}`),
       ],
     });
+  }
+
+  /** "vie 23 · 09:00" from `2026-10-23T09:00:00`. */
+  private formatDateTime(isoDateTime: string): string {
+    const [date = "", time = ""] = isoDateTime.split("T");
+    return `${this.formatDate(date)} · ${time.slice(0, 5)}`;
   }
 
   private formatDate(isoDate: string): string {

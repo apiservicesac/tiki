@@ -5,7 +5,10 @@ import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest
 import type {
   AiProviderStatus,
   AvailableUpdate,
-  BriefNotification,
+  ClientChange,
+  ClientSummary,
+  DeliveredItem,
+  TikiAlert,
   CaptureIntent,
   HitArea,
   CaptureOutcome,
@@ -53,6 +56,30 @@ export class TauriBackend implements TikiBackend {
 
   taskDetails(taskId: number): Promise<TaskDetails> {
     return invoke<TaskDetails>("task_details", { taskId });
+  }
+
+  clientSummaries(): Promise<ClientSummary[]> {
+    return invoke<ClientSummary[]>("client_summaries");
+  }
+
+  createClient(name: string): Promise<number> {
+    return invoke<number>("create_client", { name });
+  }
+
+  async changeClient(clientId: number, change: ClientChange): Promise<void> {
+    await invoke("change_client", { clientId, change });
+  }
+
+  async removeClient(clientId: number): Promise<void> {
+    await invoke("remove_client", { clientId });
+  }
+
+  clientColors(): Promise<string[]> {
+    return invoke<string[]>("client_colors");
+  }
+
+  deliveredTasks(): Promise<DeliveredItem[]> {
+    return invoke<DeliveredItem[]>("delivered_tasks");
   }
 
   assistantContext(): Promise<AdvisorContext> {
@@ -107,8 +134,8 @@ export class TauriBackend implements TikiBackend {
     await invoke("set_island_hit_area", { area });
   }
 
-  onBriefReady(handler: (brief: BriefNotification) => void): Promise<() => void> {
-    return listen<BriefNotification>(SHELL_EVENTS.briefReady, (event) => handler(event.payload));
+  onAlert(handler: (brief: TikiAlert) => void): Promise<() => void> {
+    return listen<TikiAlert>(SHELL_EVENTS.briefReady, (event) => handler(event.payload));
   }
 
   listen(eventName: string, handler: () => void): Promise<() => void> {

@@ -17,6 +17,8 @@ export class HeaderView {
     settings: "settings.title",
     edit: "edit.title",
     ask: "ask.title",
+    clients: "clients.title",
+    brief: "receipt.title",
   });
 
   constructor(private readonly translator: Translator) {}

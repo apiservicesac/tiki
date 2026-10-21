@@ -1,4 +1,4 @@
-import type { BriefNotification, IslandSnapshot, MoodName } from "../backend/contracts";
+import type { TikiAlert, IslandSnapshot, MoodName } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
@@ -32,7 +32,7 @@ export class NotchView {
   }
 
   /** The notch grown a little: Tiki, the reminder's title and its first line, cut with "…". */
-  alert(snapshot: IslandSnapshot, alert: BriefNotification, mood: MoodName): HTMLElement {
+  alert(snapshot: IslandSnapshot, alert: TikiAlert, mood: MoodName): HTMLElement {
     const preview = alert.body.split("\n").join(" · ");
     return ElementFactory.create("div", {
       className: "notch-alert",

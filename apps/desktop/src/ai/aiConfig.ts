@@ -18,6 +18,8 @@ export const AI_CONFIG = Object.freeze({
   placeholderApiKey: "added-by-tiki-shell",
   /** Short extractions (a task from a sentence) need little reasoning. */
   extractionEffort: "low" as const,
+  /** A reminder asked for without a time rings at this time (as `default_reminder_time` in the core). */
+  defaultReminderTime: "09:00",
   providers: Object.freeze<Record<AiProviderName, ProviderConfig>>({
     anthropic: {
       defaultModel: "claude-opus-5-5",
