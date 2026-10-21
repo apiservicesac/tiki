@@ -44,6 +44,10 @@ export interface IslandSnapshot {
   moodLabel: string;
   /** Tasks that need attention: overdue, due soon or waiting on others. */
   attentionCount: number;
+  /** Overdue or due soon. */
+  dueCount: number;
+  /** Waiting on others. */
+  waitingCount: number;
   closedSummary: string;
   todaySubtitle: string;
   sections: SnapshotSection[];

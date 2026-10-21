@@ -44,6 +44,10 @@ pub struct IslandSnapshot {
     pub mood_label: String,
     /// Tasks that need attention: overdue, due soon or waiting on others.
     pub attention_count: usize,
+    /// Overdue or due soon.
+    pub due_count: usize,
+    /// Waiting on others.
+    pub waiting_count: usize,
     /// Text of the closed island: "3 hoy · 2 esperando".
     pub closed_summary: String,
     /// Subtitle of the Today tab.

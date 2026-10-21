@@ -34,6 +34,8 @@ impl<'context> SnapshotPresenter<'context> {
             mood,
             mood_label: self.translator.text(&format!("mood.label.{}", mood.key())),
             attention_count: brief.pressing_count() + brief.waiting.len(),
+            due_count: brief.pressing_count(),
+            waiting_count: brief.waiting.len(),
             closed_summary: self.translator.format(
                 "island.closed.summary",
                 &[
