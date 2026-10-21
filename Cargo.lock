@@ -4023,7 +4023,7 @@ dependencies = [
 
 [[package]]
 name = "tiki-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chrono",
  "rusqlite",
@@ -4035,7 +4035,7 @@ dependencies = [
 
 [[package]]
 name = "tiki-desktop"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
