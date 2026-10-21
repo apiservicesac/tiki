@@ -78,7 +78,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 }
 
 .island-content-entering {
-  animation: island-content-in 280ms var(--ease-out) 90ms both;
+  animation: island-content-in 240ms var(--ease-out) 40ms both;
 }
 
 .island-notch[data-motion="closing"] .island-content-entering {
