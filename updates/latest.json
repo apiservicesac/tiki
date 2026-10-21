@@ -1,11 +1,11 @@
 {
-  "version": "0.2.1-rc.3",
-  "notes": "Settings fit on the left and right edges without scrolling.",
-  "pub_date": "2026-10-21T22:29:57.774Z",
+  "version": "0.2.1-rc.4",
+  "notes": "Test notification button, briefs moved later today arrive today, and a diagnostics log.",
+  "pub_date": "2026-10-21T22:45:14.070Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXFLUmpkck5Ua0JqajhySEZta0lGN3FiWHpaWmVEdDRFRjRCa3BqZlkybnpHWUlrbUZkM0RRU1Y1Sm5qYmRjS2UxRGtyOGtXendZQUg5TEp1cksvOWcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjIxNzg5CWZpbGU6VGlraV8wLjIuMS1yYy4zX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMS1yYy4zClI3UnMzcWkzS1NFZ3pnRkk1VXNlY0lud05qUXF3Qjdzd2Z2ci9icUJLREZIUEZDY0lrSFNXdkxJUEgyMnI3NkFydnBtNXVXWUVSMG5CdUlKYXFuZ0JBPT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.1-rc.3/Tiki_0.2.1-rc.3_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXBzZm4zQjV2bnBSSVlxdWNMNGFIZ1QwcUIvZlJzUm9YZ0xHend3NysrU0ZNVWp2am9rVHoyL0Y1dVFZR054aG1Oemdxcm05alh4Ky82cjNJcUY5WlFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjIyNzA1CWZpbGU6VGlraV8wLjIuMS1yYy40X3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMS1yYy40CjFCSGNqU3EwOEl5QUNWbWlxTFpBWWlLWWNxazN1Q0NLSVVvSEN4Y25VV2tJVFhuVC8zZFVFSVVqLzAyWTNtSzdtb08wbVFIZmxaWWhpNlh4T2l2aEN3PT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.1-rc.4/Tiki_0.2.1-rc.4_x64-setup.exe"
     }
   }
 }
