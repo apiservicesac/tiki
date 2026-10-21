@@ -181,7 +181,7 @@ describe("IslandController", () => {
     expect(document.documentElement.lang).toBe("en");
   });
 
-  it("changes reminder settings: focus mode, brief time and start with Windows", async () => {
+  it("changes reminder settings: focus mode and brief time", async () => {
     controller.openPanel("settings");
     root.querySelector<HTMLButtonElement>('[data-setting="settings.focus_mode"]')?.click();
     await vi.waitFor(() => expect(backend.savedPreferences.focusMode).toBe(true));
@@ -193,23 +193,22 @@ describe("IslandController", () => {
       morning.dispatchEvent(new Event("change"));
     }
     await vi.waitFor(() => expect(backend.savedPreferences.morningBriefTime).toBe("07:45"));
-
-    root.querySelector<HTMLButtonElement>('[data-setting="settings.autostart"]')?.click();
-    await vi.waitFor(() => expect(backend.autostart).toBe(true));
-    await vi.waitFor(() =>
-      expect(root.querySelector('[data-setting="settings.autostart"]')?.getAttribute("aria-checked")).toBe("true"));
   });
 
-  it("shows the version, finds a new one and installs it from Settings", async () => {
+  it("keeps only the island's own settings and links to the advanced ones", () => {
     controller.openPanel("settings");
-    await vi.waitFor(() => expect(root.querySelector(".settings-updates")?.textContent).toContain("Versión 0.2.0"));
+    const groups = [...root.querySelectorAll(".settings-group h3")].map((title) => title.textContent);
+    expect(groups).toEqual(["Posición de la isla", "Idioma", "Recordatorios"]);
+    expect(root.querySelector(".settings-ai")).toBeNull();
 
-    backend.availableUpdate = { version: "0.2.1", notes: null };
-    root.querySelector<HTMLButtonElement>("#update-action")?.click();
-    await vi.waitFor(() => expect(root.querySelector("#update-action")?.textContent).toBe("Instalar 0.2.1"));
+    root.querySelector<HTMLButtonElement>("#open-advanced-settings")?.click();
+    expect(backend.openedSettings).toEqual([undefined]);
+  });
 
-    root.querySelector<HTMLButtonElement>("#update-action")?.click();
-    await vi.waitFor(() => expect(backend.installedUpdates).toBe(1));
+  it("reloads preferences changed in the advanced settings window", async () => {
+    backend.savedPreferences = { ...backend.savedPreferences, locale: "english" };
+    backend.emit(SHELL_EVENTS.preferencesChanged);
+    await vi.waitFor(() => expect(document.documentElement.lang).toBe("en"));
   });
 
   it("peeks out with the summary when a brief notification arrives", async () => {
@@ -225,6 +224,9 @@ describe("IslandController", () => {
     controller.openPanel("ask");
     expect(root.querySelector("#ask-input")).toBeNull();
     expect(root.querySelector(".ask .island-empty")?.textContent).toContain("Ajustes");
+
+    root.querySelector<HTMLButtonElement>(".ask .settings-button")?.click();
+    expect(backend.openedSettings).toEqual(["ai"]);
   });
 
   it("switches tabs instantly, without fading the card", () => {
@@ -344,29 +346,4 @@ describe("IslandController with the AI assistant", () => {
     expect(root.querySelector(".island-brief")?.textContent).toBe("Empieza por el tracking de Altamira.");
   });
 
-  it("shows the provider, the stored key and the model list in Settings", async () => {
-    controller.openPanel("settings");
-    await vi.waitFor(() => expect(root.querySelector(".settings-connected")).not.toBeNull());
-
-    const models = [...root.querySelectorAll<HTMLOptionElement>("#ai-model-select option")].map((option) => option.value);
-    expect(models).toContain("claude-opus-5-5");
-
-    root.querySelector<HTMLButtonElement>(".settings-ai .settings-button-quiet")?.click();
-    await vi.waitFor(() => expect(root.querySelector("#ai-key-input")).not.toBeNull());
-    expect(backend.aiKeys.has("anthropic")).toBe(false);
-  });
-
-  it("saves a pasted key through the shell", async () => {
-    backend.aiKeys.clear();
-    controller.openPanel("settings");
-    await vi.waitFor(() => expect(root.querySelector("#ai-key-input")).not.toBeNull());
-
-    const input = root.querySelector<HTMLInputElement>("#ai-key-input");
-    if (input) {
-      input.value = "sk-new";
-    }
-    root.querySelector<HTMLButtonElement>(".settings-ai .settings-button")?.click();
-    await vi.waitFor(() => expect(backend.aiKeys.get("anthropic")).toBe("sk-new"));
-    await vi.waitFor(() => expect(root.querySelector(".settings-connected")).not.toBeNull());
-  });
 });

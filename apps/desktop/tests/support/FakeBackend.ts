@@ -38,6 +38,7 @@ export class FakeBackend implements TikiBackend {
   autostart = false;
   availableUpdate: AvailableUpdate | null = null;
   installedUpdates = 0;
+  readonly openedSettings: Array<string | undefined> = [];
   readonly aiKeys = new Map<AiProviderName, string>();
   /** Plays the AI provider: what the official SDK receives back through the shell. */
   aiShell = new FakeShell(() => ({}));
@@ -125,6 +126,10 @@ export class FakeBackend implements TikiBackend {
 
   async autostartEnabled(): Promise<boolean> {
     return this.autostart;
+  }
+
+  async openAdvancedSettings(section?: string): Promise<void> {
+    this.openedSettings.push(section);
   }
 
   async appVersion(): Promise<string> {

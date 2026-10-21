@@ -77,6 +77,10 @@ export class TauriBackend implements TikiBackend {
     return invoke<ProxiedResponse>("ai_fetch", { request });
   }
 
+  async openAdvancedSettings(section?: string): Promise<void> {
+    await invoke("open_advanced_settings", { section: section ?? null });
+  }
+
   autostartEnabled(): Promise<boolean> {
     return invoke<boolean>("autostart_enabled");
   }

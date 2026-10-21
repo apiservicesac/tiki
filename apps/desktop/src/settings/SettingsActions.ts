@@ -1,7 +1,7 @@
 import type { AiProviderName } from "../ai";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
 import type { TikiBackend } from "../backend/contracts";
-import type { IslandStore } from "./IslandStore";
+import type { SettingsStore } from "./SettingsStore";
 import type { UpdateState } from "./UpdateSettingsView";
 
 /** Loads and changes the settings the shell owns: AI keys, models, start with Windows and updates. */
@@ -10,7 +10,7 @@ export class SettingsActions {
   private aiLoads = 0;
 
   constructor(
-    private readonly store: IslandStore,
+    private readonly store: SettingsStore,
     private readonly backend: TikiBackend,
     private readonly assistant: TikiAssistant,
   ) {}

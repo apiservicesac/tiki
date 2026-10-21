@@ -17,6 +17,13 @@ export default defineConfig({
     target: "es2023",
     outDir: "dist",
     emptyOutDir: true,
+    // Two windows, two pages: the island and the advanced settings.
+    rolldownOptions: {
+      input: {
+        island: fileURLToPath(new URL("index.html", import.meta.url)),
+        settings: fileURLToPath(new URL("settings.html", import.meta.url)),
+      },
+    },
   },
   test: {
     environment: "happy-dom",

@@ -1,35 +1,25 @@
 import { ISLAND_PLACEMENTS, LOCALE_NAMES, type IslandPlacement, type UserPreferences } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
-import { AiSettingsView, type AiSettingsHandlers, type AiSettingsState } from "./AiSettingsView";
-import { ReminderSettingsView, type ReminderSettingsHandlers } from "./ReminderSettingsView";
-import { UpdateSettingsView, type UpdateSettingsHandlers, type UpdateState } from "./UpdateSettingsView";
+import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
+import { ReminderSettingsView, type ReminderSettingsHandlers } from "./ReminderSettingsView";
 
-export type SettingsHandlers = AiSettingsHandlers & ReminderSettingsHandlers & UpdateSettingsHandlers;
-
-/** What the settings card shows besides the preferences themselves. */
-export interface SettingsState {
-  ai: AiSettingsState;
-  autostart: boolean;
-  updates: UpdateState;
+export interface SettingsHandlers extends ReminderSettingsHandlers {
+  onOpenAdvancedSettings: () => void;
 }
 
 /**
- * Settings card: where the island hangs, which language Tiki speaks, when it reminds the
- * user and its AI assistant.
+ * The island's own settings: where it hangs, which language Tiki speaks and when it reminds
+ * the user. Everything else lives in the advanced settings window.
  */
 export class SettingsView {
-  private readonly aiSettings: AiSettingsView;
   private readonly reminderSettings: ReminderSettingsView;
-  private readonly updateSettings: UpdateSettingsView;
 
   constructor(private readonly translator: Translator) {
-    this.aiSettings = new AiSettingsView(translator);
     this.reminderSettings = new ReminderSettingsView(translator);
-    this.updateSettings = new UpdateSettingsView(translator);
   }
 
-  render(preferences: UserPreferences, state: SettingsState, handlers: SettingsHandlers): HTMLElement {
+  render(preferences: UserPreferences, handlers: SettingsHandlers): HTMLElement {
     const onChange = handlers.onChangePreferences;
     return ElementFactory.create("div", {
       className: "settings",
@@ -53,11 +43,33 @@ export class SettingsView {
               () => onChange({ ...preferences, locale }),
             )),
         ),
-        this.reminderSettings.render(preferences, state.autostart, handlers),
-        this.aiSettings.render(preferences, state.ai, handlers),
-        this.updateSettings.render(state.updates, handlers),
+        this.reminderSettings.render(preferences, handlers),
+        this.advancedLink(handlers.onOpenAdvancedSettings),
       ],
     });
+  }
+
+  private advancedLink(onOpen: () => void): HTMLElement {
+    const button = ElementFactory.create("button", {
+      className: "settings-advanced",
+      attributes: { type: "button", id: "open-advanced-settings" },
+      children: [
+        ElementFactory.fromTrustedMarkup("settings-advanced-icon", ICONS.sliders),
+        ElementFactory.create("span", {
+          className: "settings-advanced-text",
+          children: [
+            ElementFactory.create("strong", { text: this.translator.text("settings.advanced") }),
+            ElementFactory.create("small", { text: this.translator.text("settings.advanced_hint") }),
+          ],
+        }),
+        ElementFactory.fromTrustedMarkup("settings-advanced-arrow", ICONS.external),
+      ],
+    });
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      onOpen();
+    });
+    return button;
   }
 
   private group(titleKey: string, options: HTMLElement[]): HTMLElement {

@@ -4,16 +4,15 @@ import type { Translator } from "../i18n/Translator";
 
 export interface ReminderSettingsHandlers {
   onChangePreferences: (preferences: UserPreferences) => void;
-  onSetAutostart: (enabled: boolean) => void;
 }
 
 type BriefTimeField = "morningBriefTime" | "eveningBriefTime";
 
-/** Settings for when Tiki speaks up: brief times, notifications, focus mode and autostart. */
+/** Settings for when Tiki speaks up: notifications, focus mode and the brief times. */
 export class ReminderSettingsView {
   constructor(private readonly translator: Translator) {}
 
-  render(preferences: UserPreferences, autostart: boolean, handlers: ReminderSettingsHandlers): HTMLElement {
+  render(preferences: UserPreferences, handlers: ReminderSettingsHandlers): HTMLElement {
     const onChange = handlers.onChangePreferences;
     return ElementFactory.create("section", {
       className: "settings-group settings-reminders",
@@ -26,7 +25,6 @@ export class ReminderSettingsView {
               onChange({ ...preferences, notificationsEnabled: enabled })),
             this.toggle("settings.focus_mode", preferences.focusMode, (enabled) =>
               onChange({ ...preferences, focusMode: enabled })),
-            this.toggle("settings.autostart", autostart, handlers.onSetAutostart),
           ],
         }),
         this.timeRow("settings.morning_brief", "morningBriefTime", preferences, onChange),
@@ -60,6 +58,8 @@ export class ReminderSettingsView {
     });
     // The core sends "08:30:00"; the picker shows hours and minutes.
     input.value = preferences[field].slice(0, 5);
+    // The clock icon is hidden; clicking anywhere on the field opens the picker instead.
+    input.addEventListener("click", () => input.showPicker?.());
     input.addEventListener("change", () => {
       if (input.value !== "") {
         onChange({ ...preferences, [field]: input.value });

@@ -1,0 +1,193 @@
+/*
+ * The advanced settings window, drawn like the island: the same dark notch color, a card
+ * with rounded corners for the content, pills, mono section labels and stroke icons.
+ */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--island-notch);
+  font: 13px/1.45 var(--font-body);
+  color: var(--island-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.advanced {
+  display: grid;
+  grid-template-rows: 44px minmax(0, 1fr);
+  height: 100%;
+  user-select: none;
+}
+
+/* Title bar: drag anywhere except the buttons. */
+.advanced-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 0 14px;
+}
+
+.advanced-mascot { display: grid; place-items: center; pointer-events: none; }
+.advanced-title { font-weight: 600; font-size: 12.5px; color: var(--island-muted); pointer-events: none; }
+.advanced-titlebar-spacer { flex: 1; align-self: stretch; }
+.advanced-window-buttons { display: flex; gap: 2px; }
+.advanced-close:hover { background: rgba(244, 80, 94, 0.85); color: #ffffff; }
+
+.advanced-body {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 10px;
+  min-height: 0;
+  padding: 0 10px 10px;
+}
+
+/* Side menu */
+.advanced-nav {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding-top: 6px;
+}
+
+.advanced-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--island-muted);
+  font: 600 13px var(--font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.advanced-nav-item:hover { background: var(--island-soft); color: var(--island-text); }
+.advanced-nav-item-on { background: var(--island-active); color: var(--island-text); }
+
+.advanced-nav-icon svg {
+  display: block;
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Content card */
+.advanced-content {
+  overflow-y: auto;
+  padding: 26px 30px 30px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: 20px;
+  background: var(--island-card);
+  scrollbar-width: thin;
+  scrollbar-color: var(--island-soft) transparent;
+}
+
+.advanced-content h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.advanced-subtitle {
+  margin: 4px 0 22px;
+  color: var(--island-muted);
+}
+
+.advanced-sections {
+  display: grid;
+  gap: 24px;
+  max-width: 640px;
+}
+
+.advanced-intro { margin: 0; color: var(--island-muted); }
+
+/* Plugins and accounts */
+.catalog {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.catalog-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: 16px;
+  background: var(--island-soft);
+}
+
+.catalog-initial {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: var(--island-active);
+  font: 700 14px var(--font-mono);
+}
+
+.catalog-text { display: grid; gap: 6px; min-width: 0; }
+.catalog-text p { margin: 0; font-size: 12px; color: var(--island-muted); }
+
+.catalog-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalog-badge {
+  padding: 2px 8px;
+  border-radius: 99px;
+  font: 600 10.5px var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+.catalog-badge-next { background: var(--urgency-soon-background); color: var(--urgency-soon-text); }
+.catalog-badge-later { background: var(--urgency-normal-background); color: var(--urgency-normal-text); }
+
+.catalog-kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.catalog-kinds:empty { display: none; }
+
+.catalog-kind {
+  padding: 2px 9px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: 99px;
+  font-size: 11px;
+  color: var(--island-muted);
+}
+
+/* Shortcuts */
+.shortcuts { display: grid; gap: 6px; }
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: var(--island-soft);
+}
+
+.shortcut-keys { display: flex; gap: 4px; }
+
+.shortcut-keys kbd {
+  min-width: 18px;
+  padding: 3px 8px;
+  border: 1px solid var(--island-card-edge);
+  border-bottom-width: 2px;
+  border-radius: 8px;
+  background: var(--island-card);
+  font: 600 11.5px var(--font-mono);
+  text-align: center;
+}

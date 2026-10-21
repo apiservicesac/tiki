@@ -17,7 +17,6 @@ import type { IslandMode, IslandPanel, IslandState, IslandTab } from "./islandSt
 import type { IslandView, IslandViewHandlers } from "./IslandView";
 import type { HitAreaReporter } from "./HitAreaReporter";
 import type { IslandStore } from "./IslandStore";
-import { SettingsActions } from "./SettingsActions";
 
 /** The views the controller drives directly, besides the island itself. */
 export interface IslandViews {
@@ -34,7 +33,6 @@ export class IslandController {
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   /** What the assistant understood from the sentence in the box, waiting for a second Enter. */
   private pendingCapture: { sentence: string; capture: InterpretedCapture } | null = null;
-  private readonly settingsActions: SettingsActions;
   private readonly assistantActions: AssistantActions;
   private readonly view: IslandView;
   private readonly captureView: CaptureView;
@@ -63,15 +61,10 @@ export class IslandController {
       placement: initialPreferences.islandPlacement,
       snapshot: initialSnapshot,
       reactionMood: null,
-      aiSettings: { configured: { anthropic: false, openai: false }, models: [] },
       editing: null,
-      autostart: false,
       dayBrief: null,
-      updates: { currentVersion: "", status: "idle", availableVersion: null },
     };
-    const store = this.store();
-    this.settingsActions = new SettingsActions(store, backend, assistant);
-    this.assistantActions = new AssistantActions(store, assistant, views.ask);
+    this.assistantActions = new AssistantActions(this.store(), assistant, views.ask);
   }
 
   get currentState(): Readonly<IslandState> {
@@ -86,10 +79,11 @@ export class IslandController {
       await this.backend.listen(SHELL_EVENTS.openSettings, () => this.openPanel("settings")),
       await this.backend.listen(SHELL_EVENTS.toggleIsland, () => this.toggle()),
       await this.backend.listen(SHELL_EVENTS.briefReady, () => this.announceBrief()),
+      await this.backend.listen(SHELL_EVENTS.preferencesChanged, () => void this.reloadPreferences()),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
     window.addEventListener("resize", this.redrawOnResize);
-    await this.settingsActions.load();
+    await this.loadAssistantStatus();
   }
 
   /** Stops timers and shell listeners. */
@@ -121,9 +115,6 @@ export class IslandController {
 
   openPanel(panel: IslandPanel): void {
     this.update({ mode: "expanded", panel });
-    if (panel === "settings") {
-      void this.settingsActions.load();
-    }
   }
 
   selectTab(tab: IslandTab): void {
@@ -179,9 +170,18 @@ export class IslandController {
 
   /** Saves the preferences and applies them in place, without closing the island. */
   async changePreferences(preferences: UserPreferences): Promise<void> {
-    const localeChanged = preferences.locale !== this.preferences.locale;
-    const providerChanged = preferences.aiProvider !== this.preferences.aiProvider;
     await this.backend.updatePreferences(preferences);
+    await this.applyPreferences(preferences);
+  }
+
+  /** Preferences or AI keys changed, maybe in the advanced settings window. */
+  async reloadPreferences(): Promise<void> {
+    await this.applyPreferences(await this.backend.preferences());
+    await this.loadAssistantStatus();
+  }
+
+  private async applyPreferences(preferences: UserPreferences): Promise<void> {
+    const localeChanged = preferences.locale !== this.preferences.locale;
     this.preferences = preferences;
     if (localeChanged) {
       this.translator.use(LOCALE_CODES[preferences.locale]);
@@ -190,9 +190,12 @@ export class IslandController {
     }
     this.update({ placement: preferences.islandPlacement, dayBrief: localeChanged ? null : this.state.dayBrief });
     await this.refresh();
-    if (providerChanged) {
-      await this.settingsActions.loadAi();
-    }
+  }
+
+  /** Which providers have a key, so Ask Tiki and AI capture know whether they can work. */
+  private async loadAssistantStatus(): Promise<void> {
+    await this.assistant.loadStatus();
+    this.render();
   }
 
   /**
@@ -315,15 +318,11 @@ export class IslandController {
       onDeliverTask: (taskId) => void this.deliverTask(taskId),
       onOpenTask: (taskId) => void this.openTask(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
-      onSaveKey: (provider, apiKey) => void this.settingsActions.saveAiKey(provider, apiKey),
-      onRemoveKey: (provider) => void this.settingsActions.removeAiKey(provider),
-      onSetAutostart: (enabled) => void this.settingsActions.setAutostart(enabled),
-      onCheckUpdate: () => void this.settingsActions.checkForUpdate(),
-      onInstallUpdate: () => void this.settingsActions.installUpdate(),
+      onOpenAdvancedSettings: () => void this.backend.openAdvancedSettings(),
       ask: {
         onAsk: (question) => void this.assistantActions.ask(question),
         onSummarize: () => void this.assistantActions.summarize(),
-        onOpenSettings: () => this.openPanel("settings"),
+        onOpenSettings: () => void this.backend.openAdvancedSettings("ai"),
         onCancel: () => this.openPanel("tasks"),
       },
       edit: {
