@@ -1,11 +1,11 @@
 {
-  "version": "0.2.1-rc.5",
-  "notes": "Reminders in the notch with a chime and an unread dot; Windows notifications optional.",
-  "pub_date": "2026-10-21T23:16:59.638Z",
+  "version": "0.2.1-rc.6",
+  "notes": "Rounded corners for the reminder notch.",
+  "pub_date": "2026-10-21T23:27:04.813Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXFkUnRMVUlrL1NXN3hyakpJV05CTk94OFgyQkZUWEZGb29JNXF6eVBETjFHdnc5MGlBREFHbHlaRkloM1ltd3kvOGNBaFRLK1JxVFE4UnhIN1pvUmc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjI0NjEwCWZpbGU6VGlraV8wLjIuMS1yYy41X3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMS1yYy41ClBrcC9JQ2ZmTVF3cEtFaXZ5NXQvVTdLeml2MWwwVWZxck1rc3FEUWpoUU01TGZiRSsxd01tNEU3eUtxVngwVzJIaVRsWGJvdUhmTmVnZnFsK25rbkJnPT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.1-rc.5/Tiki_0.2.1-rc.5_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbWhDYVZaY0RPYkE1Ui9OYzF2cEhJVUhQeTVWaTJWb1o2Vmp5OWdabENDVDFwNDk0Y2NDTmJnQkRYTG8rUDFObkkyNHFSYzV2WHZjeVVjVW15QnBwa0FBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjI1MjE2CWZpbGU6VGlraV8wLjIuMS1yYy42X3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMS1yYy42ClJTM3JtbE5JR3F6QnYremVaeDVCMlpUTUNYOFZHY2N4SEZzdE81WEF5U0tXUTBNL0NUU2JSOHJURmhuSktXU1RrUmVpcUxQemtFc090MWQwVHp4QkJ3PT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.1-rc.6/Tiki_0.2.1-rc.6_x64-setup.exe"
     }
   }
 }
