@@ -1,4 +1,4 @@
-use tiki_core::preferences::{IslandGeometry, IslandPlacement, ScreenRect};
+use tiki_core::preferences::{IslandGeometry, IslandHitArea, IslandPlacement, ScreenRect};
 
 /// A 1920×1080 screen with a 48-pixel taskbar at the bottom.
 const WORK_AREA: ScreenRect = ScreenRect {
@@ -44,4 +44,19 @@ fn a_second_monitor_keeps_its_offset() {
         IslandGeometry::window_origin(IslandPlacement::Top, second_monitor, 280, 40),
         (2420, 0)
     );
+}
+
+#[test]
+fn the_hit_area_contains_only_points_over_the_island() {
+    let notch = IslandHitArea {
+        x: 230.0,
+        y: 0.0,
+        width: 196.0,
+        height: 50.0,
+    };
+    assert!(notch.contains(230.0, 0.0));
+    assert!(notch.contains(425.9, 49.9));
+    assert!(!notch.contains(426.0, 10.0));
+    assert!(!notch.contains(300.0, 50.0));
+    assert!(!IslandHitArea::default().contains(0.0, 0.0));
 }
