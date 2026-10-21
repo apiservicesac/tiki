@@ -6,6 +6,15 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1-rc.2] - 2026-10-21
+
+### Fixed
+- The advanced settings window opened blank on Windows. It now loads, with the island's
+  dark background from the first frame.
+
+### Changed
+- Opening the advanced settings folds the island back to its notch, so it never covers them.
+
 ## [0.2.1-rc.1] - 2026-10-21
 
 ### Added
