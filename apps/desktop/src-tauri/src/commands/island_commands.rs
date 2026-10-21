@@ -2,7 +2,7 @@ use tauri::State;
 use tiki_core::capture::{CaptureIntent, CaptureOutcome, ConfirmedCapture};
 use tiki_core::domain::{TaskId, TaskStatus};
 use tiki_core::editing::{TaskDetails, TaskEdit};
-use tiki_core::workspace::{AssistantContext, IslandSnapshot};
+use tiki_core::workspace::{AssistantContext, DeliveredItem, IslandSnapshot};
 
 use super::command_error::CommandResult;
 use crate::app_state::AppState;
@@ -65,4 +65,10 @@ pub fn edit_task(state: State<'_, AppState>, task_id: i64, edit: TaskEdit) -> Co
 #[tauri::command]
 pub fn assistant_context(state: State<'_, AppState>) -> CommandResult<AssistantContext> {
     Ok(state.with_workspace(|workspace| workspace.assistant_context())?)
+}
+
+/// Delivered tasks, most recent first.
+#[tauri::command]
+pub fn delivered_tasks(state: State<'_, AppState>) -> CommandResult<Vec<DeliveredItem>> {
+    Ok(state.with_workspace(|workspace| workspace.delivered_tasks())?)
 }

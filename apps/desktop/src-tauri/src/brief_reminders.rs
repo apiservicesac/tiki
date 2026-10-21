@@ -3,15 +3,16 @@ use std::thread;
 use chrono::Local;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_notification::NotificationExt;
-use tiki_core::reminders::BriefNotification;
+use tiki_core::reminders::TikiAlert;
 
 use crate::app_state::AppState;
 use crate::desktop_config::DesktopConfig;
 use crate::shell_events::ShellEvent;
 
-/// Delivers the morning brief and the end-of-day close: always to the island, which shows
-/// them in the notch, and as a Windows notification when the user wants that too. The core
-/// decides when each one is due and what it says; this loop only asks it every minute.
+/// Delivers the morning brief, the end-of-day close and task reminders: always to the
+/// island, which shows them in the notch, and as Windows notifications when the user wants
+/// that too. The core decides when each one is due and what it says; this loop only asks
+/// it every minute.
 pub struct BriefReminders;
 
 impl BriefReminders {
@@ -24,35 +25,33 @@ impl BriefReminders {
         });
     }
 
-    /// Shows a brief as a Windows notification.
-    fn show(
-        app: &AppHandle,
-        notification: &BriefNotification,
-    ) -> tauri_plugin_notification::Result<()> {
-        app.notification()
-            .builder()
-            .title(&notification.title)
-            .body(&notification.body)
-            .show()
-    }
-
     fn send_due(app: &AppHandle) {
         let now = Local::now().naive_local();
         let due = app.state::<AppState>().with_workspace(|workspace| {
-            let notification = workspace.take_due_notification(now)?;
-            Ok(notification
-                .map(|notification| (notification, workspace.preferences().windows_notifications)))
+            let mut alerts: Vec<TikiAlert> =
+                workspace.take_due_notification(now)?.into_iter().collect();
+            alerts.extend(workspace.take_due_task_reminders(now)?);
+            Ok((alerts, workspace.preferences().windows_notifications))
         });
         match due {
-            Ok(Some((notification, also_in_windows))) => {
-                tracing::info!(moment = ?notification.moment, %now, also_in_windows, "brief due");
-                if also_in_windows && let Err(error) = Self::show(app, &notification) {
-                    tracing::warn!(%error, "could not show the Windows notification");
+            Ok((alerts, also_in_windows)) => {
+                for alert in alerts {
+                    tracing::info!(kind = ?alert.kind, %now, also_in_windows, "alert due");
+                    if also_in_windows && let Err(error) = Self::show(app, &alert) {
+                        tracing::warn!(%error, "could not show the Windows notification");
+                    }
+                    ShellEvent::BriefReady.emit_with(app, &alert);
                 }
-                ShellEvent::BriefReady.emit_with(app, &notification);
             }
-            Ok(None) => {}
-            Err(error) => tracing::warn!(%error, "could not prepare the brief notification"),
+            Err(error) => tracing::warn!(%error, "could not prepare the alerts"),
         }
+    }
+
+    fn show(app: &AppHandle, alert: &TikiAlert) -> tauri_plugin_notification::Result<()> {
+        app.notification()
+            .builder()
+            .title(&alert.title)
+            .body(&alert.body)
+            .show()
     }
 }
