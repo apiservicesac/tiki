@@ -4,7 +4,8 @@ import type { BriefNotification, IslandPlacement, IslandSnapshot, MoodName, Task
  * How much of the island is visible, like the notch of dooai. `alert` is the notch grown a
  * little to show a reminder.
  */
-export type IslandMode = "hidden" | "compact" | "alert" | "expanded";
+export const ISLAND_MODES = Object.freeze(["hidden", "compact", "alert", "expanded"] as const);
+export type IslandMode = (typeof ISLAND_MODES)[number];
 
 /** What the expanded island shows in its card. */
 export type IslandPanel = "tasks" | "capture" | "settings" | "edit" | "ask";
