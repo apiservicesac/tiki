@@ -9,7 +9,8 @@ pub struct TaskRowMapper;
 impl TaskRowMapper {
     /// Columns in the order `read_row` expects them.
     pub const COLUMNS: &'static str = "id, title, notes, client_id, status, priority, due_date, \
-        waiting_since, origin_plugin, origin_connection, origin_record, origin_url";
+        waiting_since, completed_on, remind_at, origin_plugin, origin_connection, origin_record, \
+        origin_url";
 
     pub fn read_row(row: &Row<'_>) -> rusqlite::Result<Task> {
         Ok(Task {
@@ -21,6 +22,8 @@ impl TaskRowMapper {
             priority: Self::read_priority(row)?,
             due_date: row.get("due_date")?,
             waiting_since: row.get("waiting_since")?,
+            completed_on: row.get("completed_on")?,
+            remind_at: row.get("remind_at")?,
             origin: Self::read_origin(row)?,
         })
     }

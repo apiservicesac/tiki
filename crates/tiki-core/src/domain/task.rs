@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 
 use super::{ClientId, Priority, TaskId, TaskOrigin, TaskStatus};
@@ -16,6 +16,10 @@ pub struct Task {
     pub due_date: Option<NaiveDate>,
     /// Day the task moved to "waiting on others"; empty in any other status.
     pub waiting_since: Option<NaiveDate>,
+    /// Day the task was delivered; empty while it is open.
+    pub completed_on: Option<NaiveDate>,
+    /// When Tiki should remind the user about this task; cleared once it has.
+    pub remind_at: Option<NaiveDateTime>,
     pub origin: TaskOrigin,
 }
 
@@ -35,6 +39,8 @@ impl Task {
             priority: Priority::default(),
             due_date: None,
             waiting_since: None,
+            completed_on: None,
+            remind_at: None,
             origin: TaskOrigin::Manual,
         })
     }
@@ -69,12 +75,18 @@ impl Task {
         self
     }
 
-    /// Moves the task to a new status and keeps track of when it started waiting.
+    /// Moves the task to a new status, keeping track of when it started waiting and when it
+    /// was delivered. Reopening a delivered task clears its delivery day.
     pub fn move_to(&mut self, status: TaskStatus, today: NaiveDate) {
         if status == TaskStatus::WaitingOnOthers && self.status != TaskStatus::WaitingOnOthers {
             self.waiting_since = Some(today);
         } else if status != TaskStatus::WaitingOnOthers {
             self.waiting_since = None;
+        }
+        if status == TaskStatus::Done && self.status != TaskStatus::Done {
+            self.completed_on = Some(today);
+        } else if status != TaskStatus::Done {
+            self.completed_on = None;
         }
         self.status = status;
     }

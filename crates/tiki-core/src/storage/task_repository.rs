@@ -18,8 +18,9 @@ impl<'connection> TaskRepository<'connection> {
         let (plugin, connection_id, record, url) = TaskRowMapper::origin_columns(&task.origin);
         self.connection.execute(
             "INSERT INTO tasks (title, notes, client_id, status, priority, due_date, waiting_since,
+                                completed_on, remind_at,
                                 origin_plugin, origin_connection, origin_record, origin_url)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 task.title,
                 task.notes,
@@ -28,6 +29,8 @@ impl<'connection> TaskRepository<'connection> {
                 task.priority.key(),
                 task.due_date,
                 task.waiting_since,
+                task.completed_on,
+                task.remind_at,
                 plugin,
                 connection_id,
                 record,
@@ -42,7 +45,8 @@ impl<'connection> TaskRepository<'connection> {
         let changed_rows = self.connection.execute(
             "UPDATE tasks
                 SET title = ?2, notes = ?3, client_id = ?4, status = ?5, priority = ?6,
-                    due_date = ?7, waiting_since = ?8, updated_at = CURRENT_TIMESTAMP
+                    due_date = ?7, waiting_since = ?8, completed_on = ?9, remind_at = ?10,
+                    updated_at = CURRENT_TIMESTAMP
               WHERE id = ?1",
             params![
                 task_id.0,
@@ -53,6 +57,8 @@ impl<'connection> TaskRepository<'connection> {
                 task.priority.key(),
                 task.due_date,
                 task.waiting_since,
+                task.completed_on,
+                task.remind_at,
             ],
         )?;
         if changed_rows == 0 {
@@ -73,6 +79,47 @@ impl<'connection> TaskRepository<'connection> {
                 entity: "task",
                 id: task_id.0,
             })
+    }
+
+    /// Delivered tasks, most recent first, at most `limit` of them.
+    pub fn list_delivered(&self, limit: usize) -> TikiResult<Vec<Task>> {
+        let query = format!(
+            "SELECT {} FROM tasks WHERE status = 'done'
+              ORDER BY completed_on DESC, updated_at DESC, id DESC LIMIT ?1",
+            TaskRowMapper::COLUMNS
+        );
+        let mut statement = self.connection.prepare(&query)?;
+        let tasks = statement
+            .query_map(
+                params![i64::try_from(limit).unwrap_or(i64::MAX)],
+                TaskRowMapper::read_row,
+            )?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(tasks)
+    }
+
+    /// Open tasks whose reminder time has come.
+    pub fn list_reminders_due(&self, now: chrono::NaiveDateTime) -> TikiResult<Vec<Task>> {
+        let query = format!(
+            "SELECT {} FROM tasks WHERE status <> 'done' AND remind_at IS NOT NULL
+                AND remind_at <= ?1 ORDER BY remind_at, id",
+            TaskRowMapper::COLUMNS
+        );
+        let mut statement = self.connection.prepare(&query)?;
+        let tasks = statement
+            .query_map(params![now], TaskRowMapper::read_row)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(tasks)
+    }
+
+    /// How many tasks were delivered on `day`.
+    pub fn count_delivered_on(&self, day: chrono::NaiveDate) -> TikiResult<usize> {
+        let count: i64 = self.connection.query_row(
+            "SELECT COUNT(*) FROM tasks WHERE status = 'done' AND completed_on = ?1",
+            params![day],
+            |row| row.get(0),
+        )?;
+        Ok(usize::try_from(count).unwrap_or_default())
     }
 
     /// Every task that is not delivered yet, earliest due date first.

@@ -9,6 +9,7 @@ impl SchemaMigrations {
             M::up(Self::INITIAL_SCHEMA),
             M::up(Self::PREFERENCES),
             M::up(Self::REMINDER_LOG),
+            M::up(Self::DELIVERY_AND_TASK_REMINDERS),
         ])
     }
 
@@ -41,6 +42,14 @@ impl SchemaMigrations {
         CREATE UNIQUE INDEX tasks_by_external_record
             ON tasks(origin_plugin, origin_connection, origin_record)
             WHERE origin_plugin IS NOT NULL;
+    ";
+
+    const DELIVERY_AND_TASK_REMINDERS: &'static str = "
+        ALTER TABLE tasks ADD COLUMN completed_on TEXT;
+        ALTER TABLE tasks ADD COLUMN remind_at TEXT;
+        UPDATE tasks SET completed_on = date(updated_at) WHERE status = 'done';
+        CREATE INDEX tasks_by_completion ON tasks(completed_on) WHERE status = 'done';
+        CREATE INDEX tasks_by_reminder ON tasks(remind_at) WHERE remind_at IS NOT NULL;
     ";
 
     const REMINDER_LOG: &'static str = "
