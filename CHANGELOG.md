@@ -6,6 +6,18 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1-rc.4] - 2026-10-21
+
+### Fixed
+- Moving the morning brief or the end-of-day close to a time still ahead today now sends it
+  at that time, even if today's was already sent (for example, when Tiki started after 08:30).
+
+### Added
+- "Test notification" in the reminder settings shows the brief right away, without using up
+  today's, to check that Windows lets Tiki notify.
+- A diagnostics log (`%LOCALAPPDATA%\pe.apiservice.tiki\logs\tiki.log`) records when each
+  brief is due and shown, saved reminder times and errors, to explain problems afterwards.
+
 ## [0.2.1-rc.3] - 2026-10-21
 
 ### Fixed
