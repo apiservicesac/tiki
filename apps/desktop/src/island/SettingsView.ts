@@ -1,12 +1,18 @@
 import { ISLAND_PLACEMENTS, LOCALE_NAMES, type IslandPlacement, type UserPreferences } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
+import { AiSettingsView, type AiSettingsHandlers, type AiSettingsState } from "./AiSettingsView";
 import type { Translator } from "../i18n/Translator";
 
-/** Settings card: where the island hangs and which language Tiki speaks. */
+/** Settings card: where the island hangs, which language Tiki speaks and its AI assistant. */
 export class SettingsView {
-  constructor(private readonly translator: Translator) {}
+  private readonly aiSettings: AiSettingsView;
 
-  render(preferences: UserPreferences, onChange: (preferences: UserPreferences) => void): HTMLElement {
+  constructor(private readonly translator: Translator) {
+    this.aiSettings = new AiSettingsView(translator);
+  }
+
+  render(preferences: UserPreferences, aiState: AiSettingsState, handlers: AiSettingsHandlers): HTMLElement {
+    const onChange = handlers.onChangePreferences;
     return ElementFactory.create("div", {
       className: "settings",
       children: [
@@ -29,6 +35,7 @@ export class SettingsView {
               () => onChange({ ...preferences, locale }),
             )),
         ),
+        this.aiSettings.render(preferences, aiState, handlers),
       ],
     });
   }

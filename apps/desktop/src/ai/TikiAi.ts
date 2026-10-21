@@ -15,6 +15,10 @@ export class TikiAi {
     this.shellFetch = new ShellFetch(sendThroughShell).fetch;
   }
 
+  static defaultModel(provider: AiProviderName): string {
+    return AI_CONFIG.providers[provider].defaultModel;
+  }
+
   model(provider: AiProviderName, modelId: string | null): StructuredModel {
     return this.client(provider, modelId ?? AI_CONFIG.providers[provider].defaultModel);
   }

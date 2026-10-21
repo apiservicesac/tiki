@@ -4,6 +4,7 @@ import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
+import type { AiSettingsHandlers } from "./AiSettingsView";
 import { HeaderView, type HeaderHandlers } from "./HeaderView";
 import type { IslandMode, IslandState } from "./islandState";
 import { NotchView } from "./NotchView";
@@ -12,12 +13,11 @@ import { TaskListView } from "./TaskListView";
 import type { HitArea } from "../backend/contracts";
 import { ContentTransition, type ContentSize } from "./ContentTransition";
 
-export interface IslandViewHandlers extends HeaderHandlers {
+export interface IslandViewHandlers extends HeaderHandlers, AiSettingsHandlers {
   onExpand: () => void;
   onPointerEnter: () => void;
   onPointerLeave: () => void;
   onDeliverTask: (taskId: number) => void;
-  onChangePreferences: (preferences: UserPreferences) => void;
   capture: CaptureViewHandlers;
 }
 
@@ -180,7 +180,7 @@ export class IslandView {
       case "capture":
         return this.captureView.render(handlers.capture);
       case "settings":
-        return this.settings.render(preferences, handlers.onChangePreferences);
+        return this.settings.render(preferences, state.aiSettings, handlers);
       case "tasks":
         return this.tabContent(state, handlers);
     }

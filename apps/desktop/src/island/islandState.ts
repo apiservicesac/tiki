@@ -1,4 +1,5 @@
 import type { IslandPlacement, IslandSnapshot, MoodName } from "../backend/contracts";
+import type { AiSettingsState } from "./AiSettingsView";
 
 /** How much of the island is visible, like the notch of dooai. */
 export type IslandMode = "hidden" | "compact" | "expanded";
@@ -24,4 +25,5 @@ export interface IslandState {
   snapshot: IslandSnapshot;
   /** A short-lived mood (happy after capturing) that overrides the snapshot's mood. */
   reactionMood: MoodName | null;
+  aiSettings: AiSettingsState;
 }
