@@ -49,8 +49,12 @@ WINDOWS_TARGET := x86_64-pc-windows-msvc
 windows-check:
 	$(COMPOSE) windows sh -c "npm run build && cargo xwin clippy -p tiki-desktop --target $(WINDOWS_TARGET) -- -D warnings"
 
+UPDATER_KEY := $(HOME)/.tauri/tiki-updater.key
+
 windows-installer:
-	$(COMPOSE) windows npm run tauri build -- --runner cargo-xwin --target $(WINDOWS_TARGET)
+	@test -f $(UPDATER_KEY) || (echo "Missing $(UPDATER_KEY): the update signing key" && exit 1)
+	TAURI_SIGNING_PRIVATE_KEY="$$(cat $(UPDATER_KEY))" TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" \
+		$(COMPOSE) windows npm run tauri build -- --runner cargo-xwin --target $(WINDOWS_TARGET)
 	@echo "Installer: target/$(WINDOWS_TARGET)/release/bundle/nsis/"
 
 clean:

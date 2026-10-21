@@ -6,6 +6,7 @@ use tiki_core::i18n::Translator;
 
 use crate::ai::{AiCredentials, AiProxy};
 use crate::app_state::AppState;
+use crate::app_updates::AppUpdates;
 use crate::brief_reminders::BriefReminders;
 use crate::click_through::ClickThrough;
 use crate::commands;
@@ -36,6 +37,7 @@ impl TikiDesktopApp {
                 },
             ))
             .plugin(tauri_plugin_notification::init())
+            .plugin(tauri_plugin_updater::Builder::new().build())
             .plugin(tauri_plugin_autostart::init(
                 MacosLauncher::LaunchAgent,
                 None,
@@ -55,6 +57,9 @@ impl TikiDesktopApp {
                 commands::window_commands::set_island_hit_area,
                 commands::system_commands::autostart_enabled,
                 commands::system_commands::set_autostart,
+                commands::system_commands::app_version,
+                commands::system_commands::check_for_update,
+                commands::system_commands::install_update,
                 commands::ai_commands::ai_status,
                 commands::ai_commands::save_ai_key,
                 commands::ai_commands::remove_ai_key,
@@ -82,6 +87,7 @@ impl TikiDesktopApp {
         app.manage(Arc::clone(&click_through));
         ClickThrough::start(app.handle().clone(), click_through);
         BriefReminders::start(app.handle().clone());
+        AppUpdates::watch(app.handle().clone(), Translator::new(preferences.locale)?);
         Ok(())
     }
 }

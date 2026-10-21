@@ -1,17 +1,19 @@
 # Every build and test runs in Docker as the host user, so generated files stay yours.
 # Caches live in `.cache/` and build output in `target/`, both ignored by git.
 # Use the Makefile (`make test`, `make lint`…), which passes HOST_UID and HOST_GID.
+x-host-environment: &host-environment
+  HOME: /workspace/.cache/home
+  CARGO_HOME: /workspace/.cache/cargo
+  CARGO_TARGET_DIR: /workspace/target
+  CARGO_TERM_COLOR: never
+  npm_config_cache: /workspace/.cache/npm
+  npm_config_update_notifier: "false"
+
 x-host-user: &host-user
   user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
   volumes:
     - .:/workspace
-  environment:
-    HOME: /workspace/.cache/home
-    CARGO_HOME: /workspace/.cache/cargo
-    CARGO_TARGET_DIR: /workspace/target
-    CARGO_TERM_COLOR: never
-    npm_config_cache: /workspace/.cache/npm
-    npm_config_update_notifier: "false"
+  environment: *host-environment
 
 services:
   core:
@@ -30,6 +32,12 @@ services:
   windows:
     <<: *host-user
     working_dir: /workspace/apps/desktop
+    # The update signing key never lives in the repo: the Makefile reads it from
+    # ~/.tauri/tiki-updater.key and passes it here only for installer builds.
+    environment:
+      <<: *host-environment
+      TAURI_SIGNING_PRIVATE_KEY: ${TAURI_SIGNING_PRIVATE_KEY:-}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}
     build:
       context: .
       dockerfile: docker/windows.Dockerfile

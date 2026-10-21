@@ -136,6 +136,17 @@
     "ask.open_settings": "Ir a Ajustes",
     "ask.privacy": "Se envían los títulos, clientes y fechas de tus tareas abiertas; nunca las notas.",
 
+    "update.available.title": "Tiki {version} está lista",
+    "update.available.body": "Instálala desde Ajustes › Actualizaciones.",
+    "settings.updates": "Actualizaciones",
+    "settings.updates.current": "Versión {version}",
+    "settings.updates.check": "Buscar actualizaciones",
+    "settings.updates.checking": "Buscando…",
+    "settings.updates.up_to_date": "Tienes la última versión",
+    "settings.updates.install": "Instalar {version}",
+    "settings.updates.installing": "Instalando… Tiki se reiniciará",
+    "settings.updates.failed": "No se pudo buscar ahora",
+
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"
   },

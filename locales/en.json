@@ -136,6 +136,17 @@
     "ask.open_settings": "Open Settings",
     "ask.privacy": "Titles, clients and dates of your open tasks are sent; never your notes.",
 
+    "update.available.title": "Tiki {version} is ready",
+    "update.available.body": "Install it from Settings › Updates.",
+    "settings.updates": "Updates",
+    "settings.updates.current": "Version {version}",
+    "settings.updates.check": "Check for updates",
+    "settings.updates.checking": "Checking…",
+    "settings.updates.up_to_date": "You have the latest version",
+    "settings.updates.install": "Install {version}",
+    "settings.updates.installing": "Installing… Tiki will restart",
+    "settings.updates.failed": "Could not check right now",
+
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"
   },
