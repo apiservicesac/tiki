@@ -168,6 +168,12 @@ export class IslandController {
     this.react("happy");
   }
 
+  /** Folds the island back to its notch, so it never covers the advanced settings window. */
+  openAdvancedSettings(section?: string): void {
+    this.setMode("hidden");
+    void this.backend.openAdvancedSettings(section);
+  }
+
   /** Saves the preferences and applies them in place, without closing the island. */
   async changePreferences(preferences: UserPreferences): Promise<void> {
     await this.backend.updatePreferences(preferences);
@@ -318,11 +324,11 @@ export class IslandController {
       onDeliverTask: (taskId) => void this.deliverTask(taskId),
       onOpenTask: (taskId) => void this.openTask(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
-      onOpenAdvancedSettings: () => void this.backend.openAdvancedSettings(),
+      onOpenAdvancedSettings: () => this.openAdvancedSettings(),
       ask: {
         onAsk: (question) => void this.assistantActions.ask(question),
         onSummarize: () => void this.assistantActions.summarize(),
-        onOpenSettings: () => void this.backend.openAdvancedSettings("ai"),
+        onOpenSettings: () => this.openAdvancedSettings("ai"),
         onCancel: () => this.openPanel("tasks"),
       },
       edit: {

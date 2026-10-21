@@ -203,6 +203,7 @@ describe("IslandController", () => {
 
     root.querySelector<HTMLButtonElement>("#open-advanced-settings")?.click();
     expect(backend.openedSettings).toEqual([undefined]);
+    expect(notch()?.dataset.mode).toBe("hidden");
   });
 
   it("reloads preferences changed in the advanced settings window", async () => {
