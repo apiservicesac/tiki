@@ -60,6 +60,16 @@ make windows-installer # build the Windows installer (.exe)
 Microsoft C runtime and Windows SDK headers (about 1.5 GB) and accepts Microsoft's license.
 The `Windows installer` GitHub workflow builds the same installer natively on Windows.
 
+## Releases
+
+- Versions follow Semantic Versioning. The app version lives in `Cargo.toml`,
+  `apps/desktop/package.json` and `apps/desktop/src-tauri/tauri.conf.json`.
+- Release candidates are tagged `vX.Y.Z-rc.N` and published as GitHub pre-releases titled
+  `Tiki vX.Y.Z-rc.N`; the final release is tagged `vX.Y.Z` and titled `Tiki vX.Y.Z`.
+- Every release adds its entry to `CHANGELOG.md`; release notes reuse that entry.
+- Everything in the repository is written in English: code, comments, commits, changelog
+  and release notes. Only the interface texts in `locales/` are translated.
+
 ## Code rules
 
 - Classes (structs + traits in Rust) with a single responsibility; small files.
