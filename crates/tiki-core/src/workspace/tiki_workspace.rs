@@ -1,7 +1,9 @@
 use super::{Clock, IslandSnapshot, SnapshotPresenter};
 use crate::briefing::DailyBriefBuilder;
-use crate::capture::{CaptureIntent, CaptureIntentReader, CaptureOutcome, QuickCaptureParser};
-use crate::domain::{Client, ClientDirectory, ClientId, TaskId, TaskStatus};
+use crate::capture::{
+    CaptureIntent, CaptureIntentReader, CaptureOutcome, ConfirmedCapture, QuickCaptureParser,
+};
+use crate::domain::{Client, ClientDirectory, ClientId, Task, TaskId, TaskStatus};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
 use crate::mood::{MoodResolver, MoodSignals};
@@ -101,6 +103,24 @@ impl TikiWorkspace {
             }
             CaptureIntent::Client { name } => Ok(CaptureOutcome::Client(self.add_client(&name)?)),
         }
+    }
+
+    /// Saves a task exactly as the user confirmed it; an unknown client name is left out.
+    pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
+        let mut task = Task::new(capture.title)?.with_priority(capture.priority);
+        task.due_date = capture.due_date;
+        if let Some(name) = capture.client_name {
+            task.client_id = self
+                .database
+                .clients()
+                .find_by_name(&name)?
+                .and_then(|client| client.id);
+        }
+        self.database.tasks().insert(&task)
+    }
+
+    pub fn clients(&self) -> TikiResult<Vec<Client>> {
+        self.database.clients().list()
     }
 
     pub fn move_task(&self, task_id: TaskId, status: TaskStatus) -> TikiResult<()> {

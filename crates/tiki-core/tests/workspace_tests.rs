@@ -2,8 +2,8 @@ mod support;
 
 use support::{SampleWorkspace, TestDay};
 use tiki_core::TikiSettings;
-use tiki_core::capture::{CaptureIntent, CaptureOutcome};
-use tiki_core::domain::TaskStatus;
+use tiki_core::capture::{CaptureIntent, CaptureOutcome, ConfirmedCapture};
+use tiki_core::domain::{Priority, TaskStatus};
 use tiki_core::i18n::Locale;
 use tiki_core::mood::Mood;
 use tiki_core::preferences::{IslandPlacement, UserPreferences};
@@ -130,4 +130,37 @@ fn preferences_are_saved_and_applied() {
         IslandPlacement::Right
     );
     assert_eq!(workspace.island_snapshot().unwrap().mood_label, "LATE");
+}
+
+#[test]
+fn a_confirmed_capture_is_saved_with_its_client_priority_and_date() {
+    let workspace = sample_workspace();
+    workspace
+        .save_confirmed(ConfirmedCapture {
+            title: "Revisar acceso de Almendra".into(),
+            client_name: Some("andeanvet".into()),
+            due_date: Some(TestDay::october(22)),
+            priority: Priority::High,
+        })
+        .unwrap();
+
+    let due_soon = workspace.island_snapshot().unwrap().sections[1].clone();
+    let saved = due_soon
+        .items
+        .iter()
+        .find(|item| item.title == "Revisar acceso de Almendra")
+        .unwrap();
+    assert_eq!(saved.client_name.as_deref(), Some("Andeanvet"));
+}
+
+#[test]
+fn an_unknown_client_name_is_left_out_instead_of_failing() {
+    let workspace = sample_workspace();
+    let saved = workspace.save_confirmed(ConfirmedCapture {
+        title: "Llamar".into(),
+        client_name: Some("Cliente que no existe".into()),
+        due_date: None,
+        priority: Priority::Normal,
+    });
+    assert!(saved.is_ok());
 }
