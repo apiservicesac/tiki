@@ -6,6 +6,26 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.2-rc.1] - 2026-10-21
+
+### Added
+- Tasks tab in the island: every task grouped by client, the most pressing first, with a
+  search box (task or client), a client picker with its own search, and Pending or Delivered.
+  It works the same with three clients or fifty.
+- Delivered history: delivered tasks with their day ("today", "yesterday", a date); opening
+  one lets you reopen it. Today ends with "Delivered today (n)", which leads there.
+- Client panel in the island (from the client picker): create clients, rename them, pick one
+  of sixteen colors, or remove them; their tasks stay, without client.
+- Task reminders: a "Remind me" day and time when editing a task, and quick capture
+  understands "avísame el viernes a las 9" or "remind me at 5pm" (by rules or with AI). At
+  that time the notch grows with the reminder and chimes; clicking it opens the task.
+- The brief as the receipt of the design: clicking the morning brief or the end-of-day close
+  shows each section with its lines, Tiki's suggestion and the day's totals.
+
+### Changed
+- The client field when editing a task is a picker with search instead of a plain list.
+- New clients get one of sixteen colors instead of six.
+
 ## [0.2.1-rc.6] - 2026-10-21
 
 ### Fixed
