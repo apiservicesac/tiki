@@ -1,0 +1,112 @@
+{
+  "messages": {
+    "app.name": "Tiki",
+
+    "status.to_do": "To do",
+    "status.in_progress": "In progress",
+    "status.testing": "Testing",
+    "status.waiting_on_others": "Waiting on others",
+    "status.done": "Delivered",
+
+    "priority.low": "Low",
+    "priority.normal": "Normal",
+    "priority.high": "High",
+    "priority.urgent": "Urgent",
+
+    "island.tab.today": "Today",
+    "island.tab.tickets": "Tickets",
+    "island.tab.agenda": "Agenda",
+    "island.closed.summary": "{due} today · {waiting} waiting",
+    "island.today.subtitle": "{date} · {count} due soon",
+    "island.tickets.empty": "No ticket sources are active. Add one in Settings › Plugins.",
+    "island.agenda.empty": "No calendars connected yet.",
+    "island.today.empty": "Nothing pending for today.",
+
+    "brief.title.morning": "Morning brief",
+    "brief.title.evening": "End of day",
+    "brief.section.overdue": "Overdue",
+    "brief.section.due_soon": "Due soon",
+    "brief.section.your_turn": "Your turn",
+    "brief.section.waiting": "Waiting on others",
+    "brief.detail.due_today": "today",
+    "brief.detail.due_tomorrow": "tomorrow",
+    "brief.detail.overdue_days": "{days} days late",
+    "brief.detail.waiting_days": "{days} days",
+    "brief.detail.overdue_one_day": "1 day late",
+    "brief.detail.waiting_one_day": "1 day",
+
+    "narration.greeting.morning": "Good morning.",
+    "narration.greeting.evening": "Good evening, here is your end of day.",
+    "narration.today_is": "Today is {date}.",
+    "narration.all_clear": "Nothing is due soon and nothing is overdue.",
+    "narration.overdue": "Overdue: {items}.",
+    "narration.due_soon": "Due soon: {items}.",
+    "narration.your_turn": "Your turn: {items}.",
+    "narration.waiting": "Waiting for a reply: {items}.",
+    "narration.item_with_client": "{title} for {client}",
+    "narration.list_separator": ", ",
+    "narration.list_last_separator": " and ",
+
+    "mood.label.calm": "200 OK",
+    "mood.label.hurry": "TODAY!",
+    "mood.label.worried": "LATE",
+    "mood.label.alert": "15 MIN",
+    "mood.label.impatient": "WAITING",
+    "mood.label.curious": "NEW",
+    "mood.label.happy": "DONE",
+    "mood.label.sleep": "ZZZ",
+
+    "tray.tooltip": "Tiki · your pending work",
+    "tray.open": "Open Tiki",
+    "tray.capture": "New task",
+    "tray.focus": "Focus mode",
+    "tray.quit": "Quit",
+
+    "island.action.capture": "New task",
+    "island.action.settings": "Settings",
+    "island.action.close": "Close",
+    "island.action.back": "Back",
+    "island.row.done": "Mark as delivered",
+    "island.compact.pending": "{count} pending",
+    "settings.title": "Settings",
+    "settings.placement": "Island position",
+    "settings.language": "Language",
+    "placement.top": "Top",
+    "placement.bottom": "Bottom",
+    "placement.left": "Left",
+    "placement.right": "Right",
+    "language.spanish": "Español",
+    "language.english": "English",
+    "capture.new_client": "New client",
+    "capture.client_tip": "Type +Name to create a client",
+    "tray.settings": "Settings",
+
+    "capture.placeholder": "Type a task the way you would say it",
+    "capture.hint": "Enter saves · Esc closes",
+    "capture.field.client": "Client",
+    "capture.field.due": "Due",
+    "capture.field.status": "Status",
+
+    "date.long": "{weekday}, {month} {day}",
+    "date.short": "{weekday_short} {day}"
+  },
+  "dates": {
+    "weekdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    "weekdays_short": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  },
+  "capture": {
+    "today": ["today"],
+    "tomorrow": ["tomorrow"],
+    "weekdays": [
+      ["monday", "mon"],
+      ["tuesday", "tue"],
+      ["wednesday", "wed"],
+      ["thursday", "thu"],
+      ["friday", "fri"],
+      ["saturday", "sat"],
+      ["sunday", "sun"]
+    ],
+    "connector_words": ["on", "by", "this", "next", "for", "to", "with"]
+  }
+}

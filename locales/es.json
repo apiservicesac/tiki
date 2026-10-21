@@ -1,0 +1,112 @@
+{
+  "messages": {
+    "app.name": "Tiki",
+
+    "status.to_do": "Por hacer",
+    "status.in_progress": "En progreso",
+    "status.testing": "En prueba",
+    "status.waiting_on_others": "Esperando a otro",
+    "status.done": "Entregado",
+
+    "priority.low": "Baja",
+    "priority.normal": "Normal",
+    "priority.high": "Alta",
+    "priority.urgent": "Urgente",
+
+    "island.tab.today": "Hoy",
+    "island.tab.tickets": "Tickets",
+    "island.tab.agenda": "Agenda",
+    "island.closed.summary": "{due} hoy · {waiting} esperando",
+    "island.today.subtitle": "{date} · {count} vencen pronto",
+    "island.tickets.empty": "No hay fuentes de tickets activas. Agrega una en Ajustes › Plugins.",
+    "island.agenda.empty": "No hay calendarios conectados todavía.",
+    "island.today.empty": "Nada pendiente para hoy.",
+
+    "brief.title.morning": "Resumen de la mañana",
+    "brief.title.evening": "Cierre del día",
+    "brief.section.overdue": "Atrasado",
+    "brief.section.due_soon": "Vence pronto",
+    "brief.section.your_turn": "Te toca",
+    "brief.section.waiting": "Esperando a otro",
+    "brief.detail.due_today": "hoy",
+    "brief.detail.due_tomorrow": "mañana",
+    "brief.detail.overdue_days": "{days} días de atraso",
+    "brief.detail.waiting_days": "{days} días",
+    "brief.detail.overdue_one_day": "1 día de atraso",
+    "brief.detail.waiting_one_day": "1 día",
+
+    "narration.greeting.morning": "Buenos días.",
+    "narration.greeting.evening": "Buenas tardes, este es el cierre del día.",
+    "narration.today_is": "Hoy es {date}.",
+    "narration.all_clear": "No tienes nada que venza pronto ni nada atrasado.",
+    "narration.overdue": "Atrasado: {items}.",
+    "narration.due_soon": "Vence pronto: {items}.",
+    "narration.your_turn": "Te toca: {items}.",
+    "narration.waiting": "Esperando respuesta: {items}.",
+    "narration.item_with_client": "{title} de {client}",
+    "narration.list_separator": ", ",
+    "narration.list_last_separator": " y ",
+
+    "mood.label.calm": "200 OK",
+    "mood.label.hurry": "¡HOY!",
+    "mood.label.worried": "ATRASO",
+    "mood.label.alert": "15 MIN",
+    "mood.label.impatient": "ESPERA",
+    "mood.label.curious": "NUEVO",
+    "mood.label.happy": "LISTO",
+    "mood.label.sleep": "ZZZ",
+
+    "tray.tooltip": "Tiki · tus pendientes",
+    "tray.open": "Abrir Tiki",
+    "tray.capture": "Nueva tarea",
+    "tray.focus": "Modo concentración",
+    "tray.quit": "Salir",
+
+    "island.action.capture": "Nueva tarea",
+    "island.action.settings": "Ajustes",
+    "island.action.close": "Cerrar",
+    "island.action.back": "Volver",
+    "island.row.done": "Marcar como entregado",
+    "island.compact.pending": "{count} pendientes",
+    "settings.title": "Ajustes",
+    "settings.placement": "Posición de la isla",
+    "settings.language": "Idioma",
+    "placement.top": "Arriba",
+    "placement.bottom": "Abajo",
+    "placement.left": "Izquierda",
+    "placement.right": "Derecha",
+    "language.spanish": "Español",
+    "language.english": "English",
+    "capture.new_client": "Nuevo cliente",
+    "capture.client_tip": "Escribe +Nombre para crear un cliente",
+    "tray.settings": "Ajustes",
+
+    "capture.placeholder": "Escribe una tarea como la dirías",
+    "capture.hint": "Enter guarda · Esc cierra",
+    "capture.field.client": "Cliente",
+    "capture.field.due": "Fecha",
+    "capture.field.status": "Estado",
+
+    "date.long": "{weekday} {day} de {month}",
+    "date.short": "{weekday_short} {day}"
+  },
+  "dates": {
+    "weekdays": ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"],
+    "weekdays_short": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
+    "months": ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+  },
+  "capture": {
+    "today": ["hoy"],
+    "tomorrow": ["mañana"],
+    "weekdays": [
+      ["lunes"],
+      ["martes"],
+      ["miércoles"],
+      ["jueves"],
+      ["viernes"],
+      ["sábado"],
+      ["domingo"]
+    ],
+    "connector_words": ["el", "este", "para", "hasta", "de", "a", "con"]
+  }
+}
