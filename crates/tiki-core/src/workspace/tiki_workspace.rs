@@ -1,17 +1,18 @@
-use super::{AssistantContext, Clock, IslandSnapshot, SnapshotPresenter};
+use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, SnapshotPresenter};
 use chrono::NaiveDateTime;
 
 use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
 use crate::capture::{
     CaptureIntent, CaptureIntentReader, CaptureOutcome, ConfirmedCapture, QuickCaptureParser,
 };
+use crate::clients::{ClientBook, ClientChange, ClientSummary};
 use crate::domain::{Client, ClientDirectory, ClientId, Task, TaskId, TaskStatus};
 use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
 use crate::mood::{MoodResolver, MoodSignals};
 use crate::preferences::UserPreferences;
-use crate::reminders::{BriefNotification, NotificationComposer, ReminderPlanner};
+use crate::reminders::{NotificationComposer, ReminderPlanner, TikiAlert};
 use crate::settings::TikiSettings;
 use crate::storage::Database;
 
@@ -88,7 +89,15 @@ impl TikiWorkspace {
             minutes_to_next_meeting: None,
             focus_mode: self.preferences.focus_mode,
         });
-        Ok(SnapshotPresenter::new(&self.translator, &clients).present(&brief, mood))
+        let delivered_today = self
+            .database
+            .tasks()
+            .count_delivered_on(self.clock.today())?;
+        Ok(SnapshotPresenter::new(&self.translator, &clients).present(
+            &brief,
+            mood,
+            delivered_today,
+        ))
     }
 
     /// Open tasks in the shape the assistant needs to summarize the day or answer questions.
@@ -103,10 +112,7 @@ impl TikiWorkspace {
 
     /// The brief notification due at `now`, if any; it is marked as sent so it arrives once
     /// a day. Nothing is due while notifications are off or focus mode is on.
-    pub fn take_due_notification(
-        &self,
-        now: NaiveDateTime,
-    ) -> TikiResult<Option<BriefNotification>> {
+    pub fn take_due_notification(&self, now: NaiveDateTime) -> TikiResult<Option<TikiAlert>> {
         if !self.preferences.allows_notifications() {
             return Ok(None);
         }
@@ -127,10 +133,32 @@ impl TikiWorkspace {
         ))
     }
 
+    /// Task reminders whose time has come; each one is cleared so it rings once. Nothing is
+    /// due while notifications are off or focus mode is on: they ring when it ends.
+    pub fn take_due_task_reminders(&self, now: NaiveDateTime) -> TikiResult<Vec<TikiAlert>> {
+        if !self.preferences.allows_notifications() {
+            return Ok(Vec::new());
+        }
+        let clients = self.client_directory()?;
+        let composer = NotificationComposer::new(&self.translator);
+        let today = now.date();
+        let mut alerts = Vec::new();
+        for mut task in self.database.tasks().list_reminders_due(now)? {
+            alerts.push(composer.compose_task(&task, clients.name_of(task.client_id), today));
+            task.remind_at = None;
+            self.database.tasks().update(&task)?;
+        }
+        Ok(alerts)
+    }
+
     /// Reads a quick-capture sentence without saving it, so the user can confirm it.
     pub fn preview_capture(&self, sentence: &str) -> TikiResult<CaptureIntent> {
         let clients = self.database.clients().list()?;
-        let task_parser = QuickCaptureParser::new(&self.translator.catalog().capture, &clients);
+        let task_parser = QuickCaptureParser::new(
+            &self.translator.catalog().capture,
+            &clients,
+            self.settings.default_reminder_time,
+        );
         CaptureIntentReader::new(&task_parser).read(sentence, self.clock.today())
     }
 
@@ -138,7 +166,9 @@ impl TikiWorkspace {
     pub fn capture(&self, sentence: &str) -> TikiResult<CaptureOutcome> {
         match self.preview_capture(sentence)? {
             CaptureIntent::Task(draft) => {
-                let task_id = self.database.tasks().insert(&draft.into_task()?)?;
+                let mut task = draft.into_task()?;
+                self.move_past_reminder_to_tomorrow(&mut task);
+                let task_id = self.database.tasks().insert(&task)?;
                 Ok(CaptureOutcome::Task(task_id))
             }
             CaptureIntent::Client { name } => Ok(CaptureOutcome::Client(self.add_client(&name)?)),
@@ -150,6 +180,7 @@ impl TikiWorkspace {
         let mut task = Task::new(capture.title)?.with_priority(capture.priority);
         task.due_date = capture.due_date;
         task.client_id = self.client_id_by_name(capture.client_name.as_deref())?;
+        task.remind_at = capture.remind_at;
         self.database.tasks().insert(&task)
     }
 
@@ -167,6 +198,20 @@ impl TikiWorkspace {
         self.database.tasks().update(&task)
     }
 
+    /// Delivered tasks, most recent first, for the history.
+    pub fn delivered_tasks(&self) -> TikiResult<Vec<DeliveredItem>> {
+        let tasks = self
+            .database
+            .tasks()
+            .list_delivered(self.settings.delivered_history_limit)?;
+        let clients = self.client_directory()?;
+        let today = self.clock.today();
+        Ok(tasks
+            .iter()
+            .filter_map(|task| DeliveredItem::present(task, &clients, &self.translator, today))
+            .collect())
+    }
+
     pub fn clients(&self) -> TikiResult<Vec<Client>> {
         self.database.clients().list()
     }
@@ -179,13 +224,32 @@ impl TikiWorkspace {
 
     /// Saves a client with the next color of the palette.
     pub fn add_client(&self, name: &str) -> TikiResult<ClientId> {
-        let existing_clients = self.database.clients().list()?.len();
-        let palette = &self.settings.client_colors;
-        let color = palette
-            .get(existing_clients % palette.len().max(1))
-            .cloned()
-            .unwrap_or_default();
-        self.database.clients().insert(&Client::new(name, color))
+        self.client_book().create(name)
+    }
+
+    /// Every client with their open and pressing work, busiest first.
+    pub fn client_summaries(&self) -> TikiResult<Vec<ClientSummary>> {
+        let open_tasks = self.database.tasks().list_open()?;
+        self.client_book()
+            .summaries(&open_tasks, self.clock.today())
+    }
+
+    pub fn change_client(&self, client_id: ClientId, change: ClientChange) -> TikiResult<()> {
+        self.client_book().change(client_id, change)
+    }
+
+    /// Removes a client; their tasks stay, without client.
+    pub fn remove_client(&self, client_id: ClientId) -> TikiResult<()> {
+        self.client_book().remove(client_id)
+    }
+
+    /// The colors new clients get, offered when changing one.
+    pub fn client_colors(&self) -> &[String] {
+        &self.settings.client_colors
+    }
+
+    fn client_book(&self) -> ClientBook<'_> {
+        ClientBook::new(&self.database, &self.settings)
     }
 
     fn client_id_by_name(&self, name: Option<&str>) -> TikiResult<Option<ClientId>> {
@@ -197,6 +261,16 @@ impl TikiWorkspace {
             .clients()
             .find_by_name(name)?
             .and_then(|client| client.id))
+    }
+
+    /// "Avísame a las 9" said at 17:00 means tomorrow at 9, not a reminder in the past.
+    fn move_past_reminder_to_tomorrow(&self, task: &mut Task) {
+        let now = self.clock.now();
+        if task.due_date.is_none()
+            && let Some(remind_at) = task.remind_at.filter(|remind_at| *remind_at <= now)
+        {
+            task.remind_at = remind_at.checked_add_days(chrono::Days::new(1));
+        }
     }
 
     fn reschedule_moved_briefs(&self, preferences: &UserPreferences) -> TikiResult<()> {

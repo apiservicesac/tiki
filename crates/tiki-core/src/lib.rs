@@ -6,6 +6,7 @@
 pub mod ai;
 pub mod briefing;
 pub mod capture;
+pub mod clients;
 pub mod domain;
 pub mod editing;
 pub mod error;

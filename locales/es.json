@@ -192,6 +192,11 @@
     "settings.windows_notifications": "También en Windows",
     "island.alert.open": "Ver el aviso",
 
+    "history.today": "hoy",
+    "history.yesterday": "ayer",
+
+    "notify.task.title": "Recordatorio",
+
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"
   },
@@ -212,6 +217,9 @@
       ["sábado"],
       ["domingo"]
     ],
-    "connector_words": ["el", "este", "para", "hasta", "de", "a", "con"]
+    "connector_words": ["el", "este", "para", "hasta", "de", "a", "con", "las", "la"],
+    "remind_words": ["avisame", "recuerdame", "avisa", "recuerda"],
+    "remind_fillers": [],
+    "time_markers": ["las", "la"]
   }
 }

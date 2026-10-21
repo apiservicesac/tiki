@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
 use serde::Serialize;
 
 use crate::domain::{ClientDirectory, Priority, Task, TaskId, TaskStatus};
@@ -15,6 +15,7 @@ pub struct TaskDetails {
     pub due_date: Option<NaiveDate>,
     pub priority: Priority,
     pub status: TaskStatus,
+    pub remind_at: Option<NaiveDateTime>,
 }
 
 impl TaskDetails {
@@ -27,6 +28,7 @@ impl TaskDetails {
             due_date: task.due_date,
             priority: task.priority,
             status: task.status,
+            remind_at: task.remind_at,
         })
     }
 }

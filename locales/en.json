@@ -192,6 +192,11 @@
     "settings.windows_notifications": "Also in Windows",
     "island.alert.open": "Open the alert",
 
+    "history.today": "today",
+    "history.yesterday": "yesterday",
+
+    "notify.task.title": "Reminder",
+
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"
   },
@@ -212,6 +217,9 @@
       ["saturday", "sat"],
       ["sunday", "sun"]
     ],
-    "connector_words": ["on", "by", "this", "next", "for", "to", "with"]
+    "connector_words": ["on", "by", "this", "next", "for", "to", "with", "at"],
+    "remind_words": ["remind", "alert"],
+    "remind_fillers": ["me"],
+    "time_markers": ["at"]
   }
 }

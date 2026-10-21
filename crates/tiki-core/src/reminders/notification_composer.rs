@@ -1,5 +1,8 @@
-use super::BriefNotification;
-use crate::briefing::{BriefDetail, BriefItem, BriefMoment, DailyBrief};
+use chrono::NaiveDate;
+
+use super::{AlertKind, TikiAlert};
+use crate::briefing::{BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, DailyBrief};
+use crate::domain::Task;
 use crate::i18n::Translator;
 
 /// Writes the short notification for a brief: counts first, then what to start with and
@@ -13,13 +16,42 @@ impl<'translator> NotificationComposer<'translator> {
         Self { translator }
     }
 
-    pub fn compose(&self, brief: &DailyBrief, moment: BriefMoment) -> BriefNotification {
+    /// The reminder of one task: its title, its client and when it is due.
+    pub fn compose_task(
+        &self,
+        task: &Task,
+        client_name: Option<&str>,
+        today: NaiveDate,
+    ) -> TikiAlert {
+        let mut lines = vec![task.title.clone()];
+        let mut context: Vec<String> = client_name.map(str::to_owned).into_iter().collect();
+        if let Some(days) = task.days_until_due(today) {
+            let detail = if days < 0 {
+                BriefDetail::Overdue { days: -days }
+            } else {
+                BriefDetail::DueIn { days }
+            };
+            context.push(BriefDetailFormatter::new(self.translator).label(detail, today));
+        }
+        if !context.is_empty() {
+            lines.push(context.join(" · "));
+        }
+        TikiAlert {
+            kind: AlertKind::Task,
+            title: self.translator.text("notify.task.title"),
+            body: lines.join("\n"),
+            task_id: task.id,
+        }
+    }
+
+    pub fn compose(&self, brief: &DailyBrief, moment: BriefMoment) -> TikiAlert {
         let lines = match moment {
             BriefMoment::Morning => self.morning_lines(brief),
             BriefMoment::Evening => self.evening_lines(brief),
         };
-        BriefNotification {
-            moment,
+        TikiAlert {
+            kind: AlertKind::from(moment),
+            task_id: None,
             title: self
                 .translator
                 .text(&format!("notify.{}.title", moment.key())),

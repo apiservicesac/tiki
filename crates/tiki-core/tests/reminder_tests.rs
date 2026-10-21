@@ -5,7 +5,7 @@ use support::{SampleWorkspace, TestDay};
 use tiki_core::TikiSettings;
 use tiki_core::briefing::BriefMoment;
 use tiki_core::preferences::UserPreferences;
-use tiki_core::reminders::ReminderPlanner;
+use tiki_core::reminders::{AlertKind, ReminderPlanner};
 use tiki_core::storage::Database;
 use tiki_core::workspace::{FixedClock, TikiWorkspace};
 
@@ -54,7 +54,7 @@ fn each_brief_arrives_once_a_day_with_counts_and_follow_ups() {
         .take_due_notification(today_at(9, 0))
         .unwrap()
         .unwrap();
-    assert_eq!(morning.moment, BriefMoment::Morning);
+    assert_eq!(morning.kind, AlertKind::Morning);
     assert_eq!(morning.title, "Buenos días · tu día con Tiki");
     assert!(
         morning
@@ -173,7 +173,7 @@ fn moving_a_brief_later_today_sends_it_again_at_the_new_time() {
         .take_due_notification(today_at(17, 30))
         .unwrap()
         .unwrap();
-    assert_eq!(again.moment, BriefMoment::Morning);
+    assert_eq!(again.kind, AlertKind::Morning);
 }
 
 #[test]
@@ -197,5 +197,52 @@ fn moving_a_brief_to_a_time_already_past_waits_for_tomorrow() {
             .take_due_notification(today_at(17, 31))
             .unwrap()
             .is_none()
+    );
+}
+
+#[test]
+fn a_task_reminder_rings_once_at_its_time() {
+    let workspace = sample_workspace();
+    workspace
+        .capture("llamar a altamira mañana, avísame a las 10")
+        .unwrap();
+
+    let before_ten = TestDay::october(22).and_time(NaiveTime::from_hms_opt(9, 59, 0).unwrap());
+    assert_eq!(
+        workspace.take_due_task_reminders(before_ten).unwrap(),
+        Vec::new()
+    );
+    let ten = TestDay::october(22).and_time(NaiveTime::from_hms_opt(10, 0, 0).unwrap());
+    let alerts = workspace.take_due_task_reminders(ten).unwrap();
+    assert_eq!(alerts.len(), 1);
+    assert_eq!(alerts[0].kind, AlertKind::Task);
+    assert_eq!(alerts[0].title, "Recordatorio");
+    assert!(alerts[0].body.starts_with("Llamar\nAltamira · "));
+    assert!(alerts[0].task_id.is_some());
+
+    assert_eq!(workspace.take_due_task_reminders(ten).unwrap(), Vec::new());
+}
+
+#[test]
+fn a_reminder_time_already_past_today_moves_to_tomorrow() {
+    let workspace = TikiWorkspace::new(
+        SampleWorkspace::create().database,
+        TikiSettings::default(),
+        Box::new(FixedClock::at(today_at(17, 0))),
+    )
+    .unwrap();
+    workspace.capture("revisar zonas, avísame a las 9").unwrap();
+
+    assert_eq!(
+        workspace.take_due_task_reminders(today_at(23, 0)).unwrap(),
+        Vec::new()
+    );
+    let tomorrow_nine = TestDay::october(22).and_time(NaiveTime::from_hms_opt(9, 0, 0).unwrap());
+    assert_eq!(
+        workspace
+            .take_due_task_reminders(tomorrow_nine)
+            .unwrap()
+            .len(),
+        1
     );
 }

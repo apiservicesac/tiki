@@ -152,6 +152,7 @@ fn a_confirmed_capture_is_saved_with_its_client_priority_and_date() {
             client_name: Some("andeanvet".into()),
             due_date: Some(TestDay::october(22)),
             priority: Priority::High,
+            remind_at: None,
         })
         .unwrap();
 
@@ -172,6 +173,7 @@ fn an_unknown_client_name_is_left_out_instead_of_failing() {
         client_name: Some("Cliente que no existe".into()),
         due_date: None,
         priority: Priority::Normal,
+        remind_at: None,
     });
     assert!(saved.is_ok());
 }

@@ -18,7 +18,12 @@ impl<'context> SnapshotPresenter<'context> {
         }
     }
 
-    pub fn present(&self, brief: &DailyBrief, mood: Mood) -> IslandSnapshot {
+    pub fn present(
+        &self,
+        brief: &DailyBrief,
+        mood: Mood,
+        delivered_today: usize,
+    ) -> IslandSnapshot {
         let sections = [
             ("overdue", &brief.overdue, Urgency::Critical),
             ("due_soon", &brief.due_soon, Urgency::Soon),
@@ -36,6 +41,7 @@ impl<'context> SnapshotPresenter<'context> {
             attention_count: brief.pressing_count() + brief.waiting.len(),
             due_count: brief.pressing_count(),
             waiting_count: brief.waiting.len(),
+            delivered_today,
             closed_summary: self.translator.format(
                 "island.closed.summary",
                 &[

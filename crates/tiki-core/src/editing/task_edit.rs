@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
 use serde::Deserialize;
 
 use crate::domain::{ClientId, Priority, Task, TaskStatus};
@@ -15,6 +15,8 @@ pub struct TaskEdit {
     pub due_date: Option<NaiveDate>,
     pub priority: Priority,
     pub status: TaskStatus,
+    /// When to remind the user; `None` removes the reminder.
+    pub remind_at: Option<NaiveDateTime>,
 }
 
 impl TaskEdit {
@@ -34,6 +36,7 @@ impl TaskEdit {
         task.client_id = client_id;
         task.due_date = self.due_date;
         task.priority = self.priority;
+        task.remind_at = self.remind_at;
         task.move_to(self.status, today);
         Ok(())
     }

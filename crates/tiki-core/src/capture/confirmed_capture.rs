@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
 use serde::Deserialize;
 
 use crate::domain::Priority;
@@ -12,4 +12,7 @@ pub struct ConfirmedCapture {
     pub client_name: Option<String>,
     pub due_date: Option<NaiveDate>,
     pub priority: Priority,
+    /// When to remind the user, if the sentence asked for it.
+    #[serde(default)]
+    pub remind_at: Option<NaiveDateTime>,
 }

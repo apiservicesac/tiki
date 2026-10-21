@@ -22,6 +22,12 @@ pub struct CaptureVocabulary {
     pub weekdays: Vec<Vec<String>>,
     /// Small words dropped from the title when they introduce a date ("para viernes").
     pub connector_words: Vec<String>,
+    /// Words that ask for a reminder ("avísame", "remind").
+    pub remind_words: Vec<String>,
+    /// Words that only go with a reminder word and leave the title ("me" in "remind me").
+    pub remind_fillers: Vec<String>,
+    /// Words that announce a time ("a las 9", "at 5").
+    pub time_markers: Vec<String>,
 }
 
 /// One language file from `/locales`, parsed.

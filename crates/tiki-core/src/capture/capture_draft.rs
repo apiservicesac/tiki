@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
 use serde::Serialize;
 
 use crate::domain::{ClientId, Task};
@@ -13,6 +13,8 @@ pub struct CaptureDraft {
     /// Name of the recognized client, for showing the draft before saving.
     pub client_name: Option<String>,
     pub due_date: Option<NaiveDate>,
+    /// When to remind the user, if the sentence asked for it ("avísame a las 9").
+    pub remind_at: Option<NaiveDateTime>,
 }
 
 impl CaptureDraft {
@@ -20,6 +22,7 @@ impl CaptureDraft {
         let mut task = Task::new(self.title)?;
         task.client_id = self.client_id;
         task.due_date = self.due_date;
+        task.remind_at = self.remind_at;
         Ok(task)
     }
 }
