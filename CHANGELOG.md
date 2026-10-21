@@ -6,6 +6,15 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- AI assistant settings: choose Anthropic or OpenAI, store the API key in the Windows
+  credential store (never in Tiki's database or interface) and pick the model from a list.
+  With a key the list comes from the provider; without one, a curated list is shown.
+- Quick capture with AI: the first Enter shows what Tiki understood (task, client, due date,
+  priority) and the second one saves it. Only the sentence and client names are sent.
+  Without a key, for `+Name`, or if the provider fails, the sentence is saved with the
+  built-in rules as before.
+
 ### Changed
 - On the left and right edges the compact island shows the mood as a colored dot instead of
   a cramped "200 OK" label; the word stays on Tiki's tag and in the tooltip.
