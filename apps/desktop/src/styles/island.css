@@ -708,3 +708,34 @@ button.island-row-text {
 /* Reminders */
 .settings-row-label { flex: 1; }
 .settings-time { flex: 0 0 auto; width: 108px; }
+
+/* Ask Tiki */
+.ask {
+  display: grid;
+  gap: 10px;
+}
+
+.ask-answer {
+  margin: 0;
+  min-height: 20px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--island-text);
+  white-space: pre-line;
+}
+
+.ask-answer-thinking { color: var(--island-muted); }
+.ask-answer-failed { color: var(--island-muted); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ask-answer-thinking { animation: capture-thinking 1.2s ease-in-out infinite alternate; }
+}
+
+.island-brief {
+  margin: 4px 0 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--island-soft);
+  font-size: 12.5px;
+  line-height: 1.45;
+}

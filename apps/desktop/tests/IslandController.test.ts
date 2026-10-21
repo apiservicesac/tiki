@@ -209,6 +209,12 @@ describe("IslandController", () => {
     expect(notch()?.dataset.mode).toBe("hidden");
   });
 
+  it("asks for a key before answering questions", () => {
+    controller.openPanel("ask");
+    expect(root.querySelector("#ask-input")).toBeNull();
+    expect(root.querySelector(".ask .island-empty")?.textContent).toContain("Ajustes");
+  });
+
   it("switches tabs instantly, without fading the card", () => {
     controller.setMode("expanded");
     root.querySelector<HTMLButtonElement>('[data-tab="agenda"]')?.click();
@@ -294,6 +300,36 @@ describe("IslandController with the AI assistant", () => {
     await controller.submitCapture("+Nuevo Cliente");
     expect(backend.capturedSentences).toEqual(["+Nuevo Cliente"]);
     expect(backend.aiShell.requests).toHaveLength(requestsBefore);
+  });
+
+  it("answers a question in the Ask panel with the open tasks as context", async () => {
+    backend.aiShell = new FakeShell(claudeReads({ text: "Con Altamira tienes el tracking de formularios para mañana." }));
+    controller.openPanel("ask");
+
+    await vi.waitFor(() => expect(root.querySelector("#ask-input")).not.toBeNull());
+    const input = root.querySelector<HTMLInputElement>("#ask-input");
+    if (input) {
+      input.value = "¿qué tengo con Altamira?";
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    }
+    await vi.waitFor(() =>
+      expect(root.querySelector(".ask-answer")?.textContent).toBe("Con Altamira tienes el tracking de formularios para mañana."));
+
+    const body = backend.aiShell.lastBody();
+    const sent = JSON.stringify(body.messages);
+    expect(sent).toContain("Tracking de formularios");
+    expect(sent).toContain("¿qué tengo con Altamira?");
+  });
+
+  it("keeps the day's AI brief on the Today tab", async () => {
+    backend.aiShell = new FakeShell(claudeReads({ text: "Empieza por el tracking de Altamira." }));
+    controller.openPanel("ask");
+    await vi.waitFor(() => expect(root.querySelector("#ask-summarize")).not.toBeNull());
+    root.querySelector<HTMLButtonElement>("#ask-summarize")?.click();
+    await vi.waitFor(() => expect(controller.currentState.dayBrief).toBe("Empieza por el tracking de Altamira."));
+
+    controller.selectTab("today");
+    expect(root.querySelector(".island-brief")?.textContent).toBe("Empieza por el tracking de Altamira.");
   });
 
   it("shows the provider, the stored key and the model list in Settings", async () => {

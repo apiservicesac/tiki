@@ -1,4 +1,4 @@
-import type { AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../../src/ai";
+import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../../src/ai";
 import type {
   AiProviderStatus,
   CaptureIntent,
@@ -88,6 +88,15 @@ export class FakeBackend implements TikiBackend {
       dueDate: "2026-10-22",
       priority: "normal",
       status: "to_do",
+    };
+  }
+
+  async assistantContext(): Promise<AdvisorContext> {
+    return {
+      today: "2026-10-21",
+      openTasks: [
+        { title: "Tracking de formularios", clientName: "Altamira", status: "to_do", priority: "high", dueDate: "2026-10-22", waitingDays: null },
+      ],
     };
   }
 

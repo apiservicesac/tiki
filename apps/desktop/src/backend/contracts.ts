@@ -2,7 +2,7 @@
  * Shapes the Rust core sends to the interface (see `tiki_core`).
  * Field names are camelCase because the core serializes them that way.
  */
-import type { AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
+import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
 import type { LocaleCode } from "../i18n/LocaleCode";
 
 export type MoodName =
@@ -136,6 +136,8 @@ export interface TikiBackend {
   saveConfirmedCapture(capture: InterpretedCapture): Promise<void>;
   clientNames(): Promise<string[]>;
   taskDetails(taskId: number): Promise<TaskDetails>;
+  /** Open tasks without ids or notes: what the assistant may read. */
+  assistantContext(): Promise<AdvisorContext>;
   editTask(taskId: number, edit: TaskEdit): Promise<void>;
   /** Which providers have a key; the keys themselves never leave the shell. */
   aiStatus(): Promise<AiProviderStatus[]>;

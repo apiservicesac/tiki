@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
+import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
 import type {
   AiProviderStatus,
   CaptureIntent,
@@ -50,6 +50,10 @@ export class TauriBackend implements TikiBackend {
 
   taskDetails(taskId: number): Promise<TaskDetails> {
     return invoke<TaskDetails>("task_details", { taskId });
+  }
+
+  assistantContext(): Promise<AdvisorContext> {
+    return invoke<AdvisorContext>("assistant_context");
   }
 
   async editTask(taskId: number, edit: TaskEdit): Promise<void> {

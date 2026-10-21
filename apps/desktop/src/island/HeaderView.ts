@@ -16,6 +16,7 @@ export class HeaderView {
     capture: "island.action.capture",
     settings: "settings.title",
     edit: "edit.title",
+    ask: "ask.title",
   });
 
   constructor(private readonly translator: Translator) {}
@@ -30,6 +31,8 @@ export class HeaderView {
       children: [
         leading,
         ElementFactory.create("span", { className: "island-head-spacer" }),
+        ElementFactory.iconButton(ICONS.sparkle, this.translator.text("ask.title"), () =>
+          handlers.onOpenPanel("ask")),
         ElementFactory.iconButton(ICONS.plus, this.translator.text("island.action.capture"), () =>
           handlers.onOpenPanel("capture")),
         ElementFactory.iconButton(ICONS.settings, this.translator.text("island.action.settings"), () =>

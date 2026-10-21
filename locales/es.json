@@ -89,7 +89,7 @@
     "settings.ai.remove_key": "Quitar clave",
     "settings.ai.connected": "Conectado · la clave está guardada en Windows",
     "settings.ai.model": "Modelo",
-    "settings.ai.privacy": "Solo se envía la frase que escribes y los nombres de tus clientes.",
+    "settings.ai.privacy": "Para capturar se envía solo la frase y los nombres de tus clientes. Para resumir o responder, los títulos, clientes y fechas de tus tareas abiertas; nunca las notas.",
     "provider.anthropic": "Anthropic (Claude)",
     "provider.openai": "OpenAI",
     "capture.thinking": "Tiki está pensando…",
@@ -127,6 +127,14 @@
     "settings.autostart": "Iniciar con Windows",
     "settings.morning_brief": "Resumen de la mañana",
     "settings.evening_brief": "Cierre del día",
+
+    "ask.title": "Pregúntale a Tiki",
+    "ask.placeholder": "¿Qué tengo pendiente con Altamira?",
+    "ask.summarize": "Resumir mi día",
+    "ask.failed": "No pude responder ahora. Revisa tu clave o inténtalo de nuevo.",
+    "ask.needs_key": "Agrega una clave de IA en Ajustes para preguntarle a Tiki.",
+    "ask.open_settings": "Ir a Ajustes",
+    "ask.privacy": "Se envían los títulos, clientes y fechas de tus tareas abiertas; nunca las notas.",
 
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"

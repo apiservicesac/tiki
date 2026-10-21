@@ -5,7 +5,7 @@ import type { AiSettingsState } from "./AiSettingsView";
 export type IslandMode = "hidden" | "compact" | "expanded";
 
 /** What the expanded island shows in its card. */
-export type IslandPanel = "tasks" | "capture" | "settings" | "edit";
+export type IslandPanel = "tasks" | "capture" | "settings" | "edit" | "ask";
 
 export type IslandTab = "today" | "tickets" | "agenda";
 
@@ -28,6 +28,8 @@ export interface IslandState {
   aiSettings: AiSettingsState;
   /** Whether Tiki starts with Windows; the shell owns this setting. */
   autostart: boolean;
+  /** The AI brief of the day, shown above the Today list when there is one. */
+  dayBrief: string | null;
   /** The task open in the edit panel, with the clients it can be assigned to. */
   editing: { task: TaskDetails; clientNames: string[] } | null;
 }

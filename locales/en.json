@@ -89,7 +89,7 @@
     "settings.ai.remove_key": "Remove key",
     "settings.ai.connected": "Connected · the key is stored in Windows",
     "settings.ai.model": "Model",
-    "settings.ai.privacy": "Only the sentence you type and your client names are sent.",
+    "settings.ai.privacy": "Capture sends only the sentence and your client names. Summaries and answers send the titles, clients and dates of your open tasks; never your notes.",
     "provider.anthropic": "Anthropic (Claude)",
     "provider.openai": "OpenAI",
     "capture.thinking": "Tiki is thinking…",
@@ -127,6 +127,14 @@
     "settings.autostart": "Start with Windows",
     "settings.morning_brief": "Morning brief",
     "settings.evening_brief": "End-of-day close",
+
+    "ask.title": "Ask Tiki",
+    "ask.placeholder": "What is pending with Altamira?",
+    "ask.summarize": "Summarize my day",
+    "ask.failed": "I could not answer right now. Check your key or try again.",
+    "ask.needs_key": "Add an AI key in Settings to ask Tiki.",
+    "ask.open_settings": "Open Settings",
+    "ask.privacy": "Titles, clients and dates of your open tasks are sent; never your notes.",
 
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"

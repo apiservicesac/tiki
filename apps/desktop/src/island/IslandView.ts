@@ -1,4 +1,5 @@
 import type { MoodName, UserPreferences } from "../backend/contracts";
+import type { AskView, AskViewHandlers } from "../assistant/AskView";
 import type { CaptureView, CaptureViewHandlers } from "../capture/CaptureView";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
@@ -19,6 +20,7 @@ export interface IslandViewHandlers extends HeaderHandlers, SettingsHandlers, Ta
   onPointerLeave: () => void;
   capture: CaptureViewHandlers;
   edit: TaskEditHandlers;
+  ask: AskViewHandlers;
 }
 
 /**
@@ -39,12 +41,14 @@ export class IslandView {
   private notchSize: ContentSize = { width: 0, height: 0 };
   private shownMode: IslandMode | null = null;
   private shownPanel = "";
+  private assistantReady = false;
 
   constructor(
     private readonly root: HTMLElement,
     private readonly translator: Translator,
     private readonly mascot: MascotRenderer,
     private readonly captureView: CaptureView,
+    private readonly askView: AskView,
   ) {
     this.notchView = new NotchView(mascot);
     this.header = new HeaderView(translator);
@@ -60,7 +64,8 @@ export class IslandView {
     root.replaceChildren(this.notch);
   }
 
-  render(state: IslandState, preferences: UserPreferences, handlers: IslandViewHandlers): void {
+  render(state: IslandState, preferences: UserPreferences, handlers: IslandViewHandlers, assistantReady: boolean): void {
+    this.assistantReady = assistantReady;
     this.handlers = handlers;
     const mood = state.reactionMood ?? state.snapshot.mood;
     this.root.dataset.placement = state.placement;
@@ -77,6 +82,7 @@ export class IslandView {
     if (panelKey !== this.shownPanel) {
       this.captureView.reset();
       this.taskEdit.reset();
+      this.askView.reset();
     }
     this.shownMode = state.mode;
     this.shownPanel = panelKey;
@@ -184,6 +190,8 @@ export class IslandView {
         return this.captureView.render(handlers.capture);
       case "settings":
         return this.settings.render(preferences, { ai: state.aiSettings, autostart: state.autostart }, handlers);
+      case "ask":
+        return this.askView.render(this.assistantReady, handlers.ask);
       case "edit":
         return state.editing
           ? this.taskEdit.render(state.editing.task, state.editing.clientNames, handlers.edit)
@@ -195,9 +203,12 @@ export class IslandView {
 
   private tabContent(state: IslandState, handlers: IslandViewHandlers): HTMLElement {
     const subtitle = ElementFactory.create("p", { className: "island-subtitle", text: state.snapshot.todaySubtitle });
+    const brief = state.tab === "today" && state.dayBrief
+      ? [ElementFactory.create("p", { className: "island-brief", text: state.dayBrief })]
+      : [];
     const list = state.tab === "today"
       ? this.taskList.render(state.snapshot.sections, this.translator.text("island.today.empty"), handlers)
       : this.taskList.render([], this.translator.text(`island.${state.tab}.empty`), handlers);
-    return ElementFactory.create("div", { className: "island-tab-content", children: [subtitle, list] });
+    return ElementFactory.create("div", { className: "island-tab-content", children: [subtitle, ...brief, list] });
   }
 }

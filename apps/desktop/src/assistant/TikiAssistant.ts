@@ -1,7 +1,20 @@
-import { CaptureInterpreter, TikiAi, type AiModelOption, type AiProviderName, type InterpretedCapture } from "../ai";
-import { AI_PROVIDERS, type TikiBackend, type UserPreferences } from "../backend/contracts";
+import {
+  CaptureInterpreter,
+  DayAdvisor,
+  TikiAi,
+  type AdvisorLanguage,
+  type AiModelOption,
+  type AiProviderName,
+  type InterpretedCapture,
+} from "../ai";
+import { AI_PROVIDERS, type LocaleName, type TikiBackend, type UserPreferences } from "../backend/contracts";
 
 export type ConfiguredProviders = Record<AiProviderName, boolean>;
+
+const ADVISOR_LANGUAGES: Readonly<Record<LocaleName, AdvisorLanguage>> = Object.freeze({
+  spanish: "Spanish",
+  english: "English",
+});
 
 /** Connects the AI library to the user's data: keys status, model choice and quick capture. */
 export class TikiAssistant {
@@ -36,6 +49,22 @@ export class TikiAssistant {
     const clientNames = await this.backend.clientNames();
     const interpreter = new CaptureInterpreter(this.ai.model(preferences.aiProvider, preferences.aiModel));
     return interpreter.interpret(sentence, { clientNames, today: new Date() });
+  }
+
+  /** A short AI brief of the user's open tasks. */
+  async summarizeDay(preferences: UserPreferences): Promise<string> {
+    const context = await this.backend.assistantContext();
+    return this.advisor(preferences).summarizeDay(context, ADVISOR_LANGUAGES[preferences.locale]);
+  }
+
+  /** Answers a question about the user's open tasks. */
+  async answer(question: string, preferences: UserPreferences): Promise<string> {
+    const context = await this.backend.assistantContext();
+    return this.advisor(preferences).answer(question, context, ADVISOR_LANGUAGES[preferences.locale]);
+  }
+
+  private advisor(preferences: UserPreferences): DayAdvisor {
+    return new DayAdvisor(this.ai.model(preferences.aiProvider, preferences.aiModel));
   }
 
   private static noProviders(): ConfiguredProviders {
