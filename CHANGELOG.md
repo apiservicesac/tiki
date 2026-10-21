@@ -6,6 +6,20 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.2-rc.1] - 2026-10-21
+
+### Changed
+- The island window keeps a fixed size and lets clicks through outside the island, so the
+  notch animates with CSS only and never jumps while the window moves or resizes.
+- Opening and closing use separate curves: a soft ease-out to open and a shorter one to
+  close.
+- Content cross-fades only when the island changes shape; tabs and panels switch instantly.
+
+### Fixed
+- Changing the language no longer closes the island; Settings stays open in the new language.
+- Switching tabs no longer flashes an empty card.
+- Text typed in quick capture is kept when the island refreshes.
+
 ## [0.1.1-rc.1] - 2026-10-21
 
 ### Changed
@@ -30,6 +44,7 @@ All notable changes to Tiki are documented here. The format follows
 - Tray icon and `Ctrl+Alt+N` to open or close the island.
 - Windows installer cross-compiled from Linux with Docker.
 
-[Unreleased]: https://github.com/apiservicesac/tiki/compare/v0.1.1-rc.1...HEAD
+[Unreleased]: https://github.com/apiservicesac/tiki/compare/v0.1.2-rc.1...HEAD
+[0.1.2-rc.1]: https://github.com/apiservicesac/tiki/compare/v0.1.1-rc.1...v0.1.2-rc.1
 [0.1.1-rc.1]: https://github.com/apiservicesac/tiki/compare/v0.1.0-rc.1...v0.1.1-rc.1
 [0.1.0-rc.1]: https://github.com/apiservicesac/tiki/releases/tag/v0.1.0-rc.1
