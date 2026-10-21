@@ -15,6 +15,11 @@
   --island-primary: #f5f6f8;
   --island-on-primary: #0b0c0e;
   --island-good: #7ee0b9;
+  --switch-on: #17a398;
+  --kind-ticket-background: rgba(106, 155, 240, 0.16);
+  --kind-ticket-text: #8fb4f5;
+  --kind-instance-background: rgba(59, 179, 171, 0.18);
+  --kind-instance-text: #7fd9d2;
   --island-wash-strength: 1;
 
   --urgency-critical-background: rgba(244, 80, 94, 0.18);
@@ -58,6 +63,11 @@
     --island-primary: #14171c;
     --island-on-primary: #ffffff;
     --island-good: #0f7a52;
+    --switch-on: #17837d;
+    --kind-ticket-background: rgba(47, 107, 216, 0.12);
+    --kind-ticket-text: #2f6bd8;
+    --kind-instance-background: rgba(23, 131, 125, 0.13);
+    --kind-instance-text: #17837d;
     --island-wash-strength: 0.5;
     --urgency-critical-text: #b02a37;
     --urgency-soon-text: #a8650a;

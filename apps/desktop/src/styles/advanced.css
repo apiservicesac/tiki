@@ -191,3 +191,6 @@ body {
   font: 600 11.5px var(--font-mono);
   text-align: center;
 }
+
+.catalog-kind-ticket_source { border-color: transparent; background: var(--kind-ticket-background); color: var(--kind-ticket-text); }
+.catalog-kind-client_instance { border-color: transparent; background: var(--kind-instance-background); color: var(--kind-instance-text); }

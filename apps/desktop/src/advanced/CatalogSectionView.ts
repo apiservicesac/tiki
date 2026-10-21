@@ -39,7 +39,7 @@ export class CatalogSectionView {
             ElementFactory.create("div", {
               className: "catalog-kinds",
               children: entry.kinds.map((kind) =>
-                ElementFactory.create("span", { className: "catalog-kind", text: this.translator.text(`advanced.kind.${kind}`) })),
+                ElementFactory.create("span", { className: `catalog-kind catalog-kind-${kind}`, text: this.translator.text(`advanced.kind.${kind}`) })),
             }),
           ],
         }),
