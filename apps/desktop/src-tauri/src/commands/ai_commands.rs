@@ -1,9 +1,10 @@
 use serde::Serialize;
-use tauri::State;
+use tauri::{AppHandle, State};
 use tiki_core::ai::AiProvider;
 
 use super::command_error::CommandResult;
 use crate::ai::{AiCredentials, AiProxy, ProxiedRequest, ProxiedResponse};
+use crate::shell_events::ShellEvent;
 
 /// Whether each provider has a key; the key itself is never sent to the interface.
 #[derive(Serialize)]
@@ -26,13 +27,17 @@ pub fn ai_status() -> CommandResult<Vec<ProviderStatus>> {
 }
 
 #[tauri::command]
-pub fn save_ai_key(provider: AiProvider, api_key: String) -> CommandResult<()> {
-    Ok(AiCredentials::save(provider, &api_key)?)
+pub fn save_ai_key(app: AppHandle, provider: AiProvider, api_key: String) -> CommandResult<()> {
+    AiCredentials::save(provider, &api_key)?;
+    ShellEvent::PreferencesChanged.emit(&app);
+    Ok(())
 }
 
 #[tauri::command]
-pub fn remove_ai_key(provider: AiProvider) -> CommandResult<()> {
-    Ok(AiCredentials::remove(provider)?)
+pub fn remove_ai_key(app: AppHandle, provider: AiProvider) -> CommandResult<()> {
+    AiCredentials::remove(provider)?;
+    ShellEvent::PreferencesChanged.emit(&app);
+    Ok(())
 }
 
 /// The `fetch` the official SDKs use: the shell adds the key and sends the request.

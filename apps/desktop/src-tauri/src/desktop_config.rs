@@ -6,6 +6,11 @@ pub struct DesktopConfig;
 impl DesktopConfig {
     /// Label of the island window in `tauri.conf.json`.
     pub const ISLAND_WINDOW_LABEL: &'static str = "island";
+    /// The advanced settings window and the page it loads.
+    pub const SETTINGS_WINDOW_LABEL: &'static str = "settings";
+    pub const SETTINGS_PAGE: &'static str = "settings.html";
+    pub const SETTINGS_WINDOW_SIZE: (f64, f64) = (920.0, 640.0);
+    pub const SETTINGS_WINDOW_MIN_SIZE: (f64, f64) = (760.0, 520.0);
     /// The window does not resize while the island animates: it is as big as the expanded
     /// island (plus its ears and shadow), and clicks outside the island pass through.
     /// Top and bottom use a wide window; left and right use a tall one.

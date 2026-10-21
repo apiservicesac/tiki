@@ -9,6 +9,8 @@ pub enum ShellEvent {
     ToggleIsland,
     /// A brief notification was just shown; the island peeks out to go with it.
     BriefReady,
+    /// Preferences or AI keys changed in one window; the others reload them.
+    PreferencesChanged,
 }
 
 impl ShellEvent {
@@ -18,6 +20,7 @@ impl ShellEvent {
             ShellEvent::OpenSettings => "tiki://open-settings",
             ShellEvent::ToggleIsland => "tiki://toggle-island",
             ShellEvent::BriefReady => "tiki://brief-ready",
+            ShellEvent::PreferencesChanged => "tiki://preferences-changed",
         }
     }
 

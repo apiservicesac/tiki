@@ -4,6 +4,7 @@ use tiki_core::preferences::UserPreferences;
 use super::command_error::CommandResult;
 use crate::app_state::AppState;
 use crate::island_window::IslandWindow;
+use crate::shell_events::ShellEvent;
 
 #[tauri::command]
 pub fn preferences(state: State<'_, AppState>) -> CommandResult<UserPreferences> {
@@ -24,5 +25,6 @@ pub fn update_preferences(
     {
         tracing::warn!(%error, "could not move the island");
     }
+    ShellEvent::PreferencesChanged.emit(&app);
     Ok(())
 }

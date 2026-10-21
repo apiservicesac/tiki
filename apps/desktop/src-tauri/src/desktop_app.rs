@@ -55,6 +55,7 @@ impl TikiDesktopApp {
                 commands::settings_commands::preferences,
                 commands::settings_commands::update_preferences,
                 commands::window_commands::set_island_hit_area,
+                commands::window_commands::open_advanced_settings,
                 commands::system_commands::autostart_enabled,
                 commands::system_commands::set_autostart,
                 commands::system_commands::app_version,
