@@ -9,7 +9,8 @@ import type { IslandState } from "./islandState";
 import { NotchView } from "./NotchView";
 import { SettingsView } from "./SettingsView";
 import { TaskListView } from "./TaskListView";
-import type { IslandSize } from "./WindowFitter";
+import type { HitArea } from "../backend/contracts";
+import { ContentTransition, type ContentSize } from "./ContentTransition";
 
 export interface IslandViewHandlers extends HeaderHandlers {
   onExpand: () => void;
@@ -23,6 +24,7 @@ export interface IslandViewHandlers extends HeaderHandlers {
 /**
  * Draws the island for a given state. The notch element lives for the whole session and
  * only its content changes, so its size and corners animate between states like dooai.
+ * The window never resizes: the notch animates inside it with CSS only.
  */
 export class IslandView {
   private readonly notchView: NotchView;
@@ -31,8 +33,10 @@ export class IslandView {
   private readonly settings: SettingsView;
   private readonly notch: HTMLElement;
   private readonly clip: HTMLElement;
+  private readonly contentTransition: ContentTransition;
   private handlers: IslandViewHandlers | null = null;
-  private notchSize: IslandSize = { width: 0, height: 0 };
+  private notchSize: ContentSize = { width: 0, height: 0 };
+  private shownView = "";
 
   constructor(
     private readonly root: HTMLElement,
@@ -46,7 +50,10 @@ export class IslandView {
     this.settings = new SettingsView(translator);
     this.clip = ElementFactory.create("div", { className: "island-clip" });
     this.notch = this.createNotch();
-    root.style.setProperty("--island-transition", `${UI_CONFIG.islandTransitionMs}ms`);
+    this.contentTransition = new ContentTransition(this.clip);
+    root.style.setProperty("--island-open-duration", `${UI_CONFIG.motion.openMs}ms`);
+    root.style.setProperty("--island-close-duration", `${UI_CONFIG.motion.closeMs}ms`);
+    root.style.setProperty("--island-content-out-duration", `${UI_CONFIG.motion.contentOutMs}ms`);
     root.replaceChildren(this.notch);
   }
 
@@ -58,21 +65,41 @@ export class IslandView {
     this.notch.dataset.mode = state.mode;
     this.notch.dataset.mood = mood;
 
+    const view = state.mode === "expanded" ? `expanded:${state.panel}:${state.tab}` : state.mode;
+    const animate = this.shownView !== "" && view !== this.shownView;
+    if (view !== this.shownView) {
+      this.captureView.reset();
+    }
+    this.shownView = view;
+
     const content = this.content(state, mood, preferences, handlers);
-    content.classList.add("island-content");
-    this.clip.replaceChildren(content);
-    this.resizeNotchTo(content);
+    this.resizeNotch(this.contentTransition.swap(content, animate));
   }
 
-  /** Size the window needs: the notch at its target size plus the room around it. */
-  windowSize(): IslandSize {
-    const padding = getComputedStyle(this.root);
-    const horizontal = parseFloat(padding.paddingLeft) + parseFloat(padding.paddingRight);
-    const vertical = parseFloat(padding.paddingTop) + parseFloat(padding.paddingBottom);
-    return {
-      width: Math.ceil(this.notchSize.width + (horizontal || 0)),
-      height: Math.ceil(this.notchSize.height + (vertical || 0)),
-    };
+  /** Where the island is inside the window, so the shell can let other clicks through. */
+  hitArea(): HitArea {
+    const style = getComputedStyle(this.root);
+    const padding = (side: "Left" | "Right" | "Top" | "Bottom") => parseFloat(style[`padding${side}`]) || 0;
+    const width = this.notchSize.width + padding("Left") + padding("Right");
+    const height = this.notchSize.height + padding("Top") + padding("Bottom");
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const centeredX = (windowWidth - width) / 2;
+    const centeredY = (windowHeight - height) / 2;
+    switch (this.root.dataset.placement) {
+      case "bottom":
+        return { x: centeredX, y: windowHeight - height, width, height };
+      case "left":
+        return { x: 0, y: centeredY, width, height };
+      case "right":
+        return { x: windowWidth - width, y: centeredY, width, height };
+      default:
+        return { x: centeredX, y: 0, width, height };
+    }
+  }
+
+  stop(): void {
+    this.contentTransition.stop();
   }
 
   private createNotch(): HTMLElement {
@@ -94,11 +121,13 @@ export class IslandView {
     return notch;
   }
 
-  /** Gives the notch the natural size of its new content; CSS animates the change. */
-  private resizeNotchTo(content: HTMLElement): void {
-    this.notchSize = { width: content.offsetWidth, height: content.offsetHeight };
-    this.notch.style.width = `${this.notchSize.width}px`;
-    this.notch.style.height = `${this.notchSize.height}px`;
+  /** Gives the notch its new size; CSS animates growing and shrinking with different curves. */
+  private resizeNotch(size: ContentSize): void {
+    const growing = size.width * size.height >= this.notchSize.width * this.notchSize.height;
+    this.notch.dataset.motion = growing ? "opening" : "closing";
+    this.notchSize = size;
+    this.notch.style.width = `${size.width}px`;
+    this.notch.style.height = `${size.height}px`;
   }
 
   private content(

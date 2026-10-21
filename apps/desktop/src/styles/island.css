@@ -40,26 +40,54 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   background: var(--island-notch);
   color: var(--island-text);
   box-shadow: var(--island-notch-shadow), 0 0 0 1px var(--island-notch-edge);
-  transition:
-    width var(--island-transition) var(--spring),
-    height var(--island-transition) var(--spring),
-    border-radius var(--island-transition) var(--ease);
+  transition-property: width, height, border-radius;
+  transition-duration: var(--island-close-duration);
+  transition-timing-function: var(--ease-in-out);
+  will-change: width, height;
+}
+
+/* Growing uses a longer, softer curve than shrinking, like the iPhone island and dooai. */
+.island-notch[data-motion="opening"] {
+  transition-duration: var(--island-open-duration);
+  transition-timing-function: var(--ease-out);
 }
 
 .island-notch[data-mode="hidden"] { --radius: 16px; cursor: pointer; }
 .island-notch[data-mode="compact"] { --radius: 18px; cursor: pointer; }
 .island-notch[data-mode="expanded"] { --radius: 30px; }
 
-/* Clips the content to the rounded notch while the ears stay outside it. */
+/*
+ * Clips the content to the rounded notch while the ears stay outside it. The old and new
+ * content share one grid cell, so they cross-fade in place, anchored to the island's edge.
+ */
 .island-clip {
   position: absolute;
   inset: 0;
+  display: grid;
   overflow: hidden;
   border-radius: inherit;
 }
 
+[data-placement="top"] .island-clip { place-items: start center; }
+[data-placement="bottom"] .island-clip { place-items: end center; }
+[data-placement="left"] .island-clip { place-items: center start; }
+[data-placement="right"] .island-clip { place-items: center end; }
+
 .island-content {
-  animation: island-fade 0.28s 0.1s both;
+  grid-area: 1 / 1;
+}
+
+.island-content-entering {
+  animation: island-content-in 280ms var(--ease-out) 90ms both;
+}
+
+.island-notch[data-motion="closing"] .island-content-entering {
+  animation-delay: calc(var(--island-close-duration) * 0.55);
+}
+
+.island-content-leaving {
+  pointer-events: none;
+  animation: island-content-out var(--island-content-out-duration) var(--ease-in-out) forwards;
 }
 
 [data-placement="top"] .island-notch { border-radius: 0 0 var(--radius) var(--radius); }
@@ -443,10 +471,12 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 
 @media (prefers-reduced-motion: reduce) {
   .island-notch { transition: none; }
-  .island-content { animation: none; }
+  .island-content-entering,
+  .island-content-leaving { animation: none; }
 }
 
-@keyframes island-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes island-content-in { from { opacity: 0; transform: scale(0.97); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes island-content-out { to { opacity: 0; transform: scale(0.98); } }
 @keyframes mascot-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
 @keyframes mascot-hurry { to { transform: translateX(1.5px); } }
 @keyframes mascot-rock { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }

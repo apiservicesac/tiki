@@ -67,6 +67,20 @@ describe("IslandController", () => {
     expect(notch()).toBe(firstNotch);
   });
 
+  it("tells the shell where the island is so other clicks pass through", () => {
+    expect(backend.hitAreas.length).toBeGreaterThan(0);
+  });
+
+  it("keeps what the user types when the island refreshes", async () => {
+    controller.openPanel("capture");
+    const input = root.querySelector<HTMLInputElement>("#capture-input");
+    if (input) {
+      input.value = "llamar a altamira";
+    }
+    await controller.refresh();
+    expect(root.querySelector<HTMLInputElement>("#capture-input")?.value).toBe("llamar a altamira");
+  });
+
   it("expands on click and lists every section of the day", () => {
     notch()?.click();
 

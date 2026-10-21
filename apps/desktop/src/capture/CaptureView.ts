@@ -8,13 +8,29 @@ export interface CaptureViewHandlers {
   onCancel: () => void;
 }
 
-/** The quick-capture box and the chips showing what Tiki understood. */
+/**
+ * The quick-capture box and the chips showing what Tiki understood. The box is kept while
+ * the user stays in quick capture, so refreshes never wipe what they are typing.
+ */
 export class CaptureView {
   private chipsContainer: HTMLElement | null = null;
+  private element: HTMLElement | null = null;
 
   constructor(private readonly translator: Translator) {}
 
+  /** The capture box, created on first use and reused until `reset`. */
   render(handlers: CaptureViewHandlers): HTMLElement {
+    this.element ??= this.build(handlers);
+    return this.element;
+  }
+
+  /** Forgets the box, so the next capture starts empty. */
+  reset(): void {
+    this.element = null;
+    this.chipsContainer = null;
+  }
+
+  private build(handlers: CaptureViewHandlers): HTMLElement {
     const input = ElementFactory.create("input", {
       className: "capture-input",
       attributes: {
