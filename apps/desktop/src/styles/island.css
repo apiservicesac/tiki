@@ -485,6 +485,15 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   padding: 6px 14px 14px;
 }
 
+/* The narrow island has no room for the big mascot above Settings; the notch already shows it. */
+[data-orientation="vertical"] .island-card[data-panel="settings"] .island-card-mascot {
+  display: none;
+}
+
+[data-orientation="vertical"] .island-card[data-panel="settings"] .island-card-body {
+  padding-top: 14px;
+}
+
 [data-orientation="vertical"] .island-list {
   max-height: 420px;
 }
@@ -539,12 +548,6 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   to { opacity: 1; }
 }
 
-.settings {
-  max-height: 400px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--island-soft) transparent;
-}
 
 /* Task editing */
 button.island-row-text {

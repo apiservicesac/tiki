@@ -195,6 +195,13 @@ describe("IslandController", () => {
     await vi.waitFor(() => expect(backend.savedPreferences.morningBriefTime).toBe("07:45"));
   });
 
+  it("shows Settings without the big mascot on the narrow left and right island", async () => {
+    await controller.changePreferences({ ...backend.savedPreferences, islandPlacement: "left" });
+    controller.openPanel("settings");
+    expect(root.querySelector(".island-card")?.getAttribute("data-panel")).toBe("settings");
+    expect(root.dataset.orientation).toBe("vertical");
+  });
+
   it("keeps only the island's own settings and links to the advanced ones", () => {
     controller.openPanel("settings");
     const groups = [...root.querySelectorAll(".settings-group h3")].map((title) => title.textContent);

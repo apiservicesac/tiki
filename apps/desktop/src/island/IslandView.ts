@@ -168,7 +168,7 @@ export class IslandView {
         this.header.render(state.panel, state.tab, handlers),
         ElementFactory.create("div", {
           className: "island-card",
-          attributes: { "data-mood": mood },
+          attributes: { "data-mood": mood, "data-panel": state.panel },
           children: [
             ElementFactory.fromTrustedMarkup(
               "island-card-mascot",
