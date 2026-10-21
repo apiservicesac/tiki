@@ -25,6 +25,7 @@ fn the_snapshot_is_translated_and_ready_to_draw() {
 
     assert_eq!(snapshot.mood, Mood::Worried);
     assert_eq!(snapshot.mood_label, "ATRASO");
+    assert_eq!(snapshot.attention_count, 5);
     assert_eq!(snapshot.closed_summary, "3 hoy · 2 esperando");
     assert_eq!(
         snapshot.today_subtitle,

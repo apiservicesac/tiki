@@ -71,6 +71,7 @@ export class FakeBackend implements TikiBackend {
     return {
       mood: "worried",
       moodLabel: "ATRASO",
+      attentionCount: 5,
       closedSummary: "3 hoy · 2 esperando",
       todaySubtitle: "miércoles 21 de octubre · 3 vencen pronto",
       narration: "Buenos días. Hoy es miércoles 21 de octubre.",

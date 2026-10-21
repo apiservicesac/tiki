@@ -42,6 +42,8 @@ pub struct IslandSnapshot {
     pub mood: Mood,
     /// Word on the mascot's ticket tag: "200 OK", "¡HOY!"…
     pub mood_label: String,
+    /// Tasks that need attention: overdue, due soon or waiting on others.
+    pub attention_count: usize,
     /// Text of the closed island: "3 hoy · 2 esperando".
     pub closed_summary: String,
     /// Subtitle of the Today tab.

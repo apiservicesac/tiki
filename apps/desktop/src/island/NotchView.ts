@@ -3,18 +3,27 @@ import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
 
-/** Content of the folded island: Tiki alone (hidden) or Tiki with the day's summary (compact). */
+/**
+ * Content of the folded island. Resting, it shows Tiki with the day's summary when something
+ * needs attention, or Tiki alone when the day is clear. Compact adds the mood word.
+ */
 export class NotchView {
   constructor(private readonly mascot: MascotRenderer) {}
 
   hidden(snapshot: IslandSnapshot, mood: MoodName): HTMLElement {
+    const mascot = ElementFactory.fromTrustedMarkup(
+      "notch-mascot",
+      this.mascot.render(mood, snapshot.moodLabel, UI_CONFIG.mascotSize.hidden),
+    );
+    if (snapshot.attentionCount === 0) {
+      return ElementFactory.create("div", { className: "notch-hidden", children: [mascot] });
+    }
     return ElementFactory.create("div", {
-      className: "notch-hidden",
+      className: "notch-hidden notch-hidden-busy",
       children: [
-        ElementFactory.fromTrustedMarkup(
-          "notch-mascot",
-          this.mascot.render(mood, snapshot.moodLabel, UI_CONFIG.mascotSize.hidden),
-        ),
+        mascot,
+        ElementFactory.create("span", { className: "notch-name", text: "Tiki" }),
+        ElementFactory.create("span", { className: "notch-summary", text: snapshot.closedSummary }),
       ],
     });
   }
