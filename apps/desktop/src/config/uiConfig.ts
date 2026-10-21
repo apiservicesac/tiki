@@ -6,10 +6,14 @@ export const UI_CONFIG = Object.freeze({
   snapshotRefreshIntervalMs: 60_000,
   /** Wait after the last keystroke before previewing a quick capture. */
   capturePreviewDelayMs: 250,
-  /** Resting the pointer this long on the hidden notch shows the compact island. */
+  /** Resting the pointer this long on the hidden notch starts opening it. */
   peekDelayMs: 120,
-  /** The compact island folds back this long after the pointer leaves. */
-  foldDelayMs: 700,
+  /** After the compact step, the island unfolds completely after this long. */
+  unfoldDelayMs: 380,
+  /** The island folds back this long after the pointer leaves it. */
+  foldDelayMs: 650,
+  /** Duration of the notch resize animation; the window shrinks only after it ends. */
+  islandTransitionMs: 460,
   mascotSize: Object.freeze({ hidden: 24, compact: 30, card: 72 }),
 });
 

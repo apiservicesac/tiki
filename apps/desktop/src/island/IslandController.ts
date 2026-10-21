@@ -3,6 +3,7 @@ import type { CaptureView } from "../capture/CaptureView";
 import { SHELL_EVENTS, UI_CONFIG } from "../config/uiConfig";
 import type { IslandMode, IslandPanel, IslandState, IslandTab } from "./islandState";
 import type { IslandView, IslandViewHandlers } from "./IslandView";
+import type { WindowFitter } from "./WindowFitter";
 
 /** Called when the user picks another language; the app reloads its translations. */
 export type LocaleChangedListener = () => void;
@@ -19,6 +20,7 @@ export class IslandController {
     private readonly backend: TikiBackend,
     private readonly view: IslandView,
     private readonly captureView: CaptureView,
+    private readonly windowFitter: WindowFitter,
     initialSnapshot: IslandSnapshot,
     initialPreferences: UserPreferences,
     private readonly onLocaleChanged: LocaleChangedListener,
@@ -53,6 +55,7 @@ export class IslandController {
   stop(): void {
     this.timers.forEach((timer) => clearTimeout(timer));
     this.timers.clear();
+    this.windowFitter.stop();
     if (this.refreshTimer) {
       clearInterval(this.refreshTimer);
     }
@@ -69,6 +72,7 @@ export class IslandController {
 
   setMode(mode: IslandMode): void {
     this.cancel("fold");
+    this.cancel("unfold");
     this.update({ mode, panel: mode === "expanded" ? this.state.panel : "tasks" });
   }
 
@@ -104,19 +108,29 @@ export class IslandController {
     this.update({ placement: preferences.islandPlacement });
   }
 
-  /** Hovering the hidden notch shows the compact island for a moment, like dooai. */
+  /**
+   * Resting the pointer on the notch opens it in two steps, like dooai: first the compact
+   * island with the day's summary, then the whole island. No click needed.
+   */
   private peek(): void {
     this.cancel("fold");
-    if (this.state.mode === "hidden") {
-      this.schedule("peek", UI_CONFIG.peekDelayMs, () => this.update({ mode: "compact" }));
+    if (this.state.mode !== "hidden") {
+      return;
     }
+    this.schedule("peek", UI_CONFIG.peekDelayMs, () => {
+      this.update({ mode: "compact" });
+      this.schedule("unfold", UI_CONFIG.unfoldDelayMs, () => this.update({ mode: "expanded" }));
+    });
   }
 
+  /** Leaving the island folds it back, unless the user is typing or changing settings. */
   private fold(): void {
     this.cancel("peek");
-    if (this.state.mode === "compact") {
-      this.schedule("fold", UI_CONFIG.foldDelayMs, () => this.update({ mode: "hidden" }));
+    this.cancel("unfold");
+    if (this.state.mode === "hidden" || this.state.panel !== "tasks") {
+      return;
     }
+    this.schedule("fold", UI_CONFIG.foldDelayMs, () => this.update({ mode: "hidden", panel: "tasks" }));
   }
 
   private previewCapture(sentence: string): void {
@@ -159,6 +173,7 @@ export class IslandController {
 
   private render(): void {
     this.view.render(this.state, this.preferences, this.handlers());
+    this.windowFitter.request(this.view.windowSize());
   }
 
   private handlers(): IslandViewHandlers {

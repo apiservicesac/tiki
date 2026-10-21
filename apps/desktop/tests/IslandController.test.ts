@@ -31,13 +31,40 @@ describe("IslandController", () => {
     expect(root.dataset.placement).toBe("top");
   });
 
-  it("peeks into the compact island when the pointer rests on it", () => {
+  it("opens without a click: compact first, then the whole island", () => {
     vi.useFakeTimers();
     notch()?.dispatchEvent(new Event("pointerenter"));
-    vi.advanceTimersByTime(UI_CONFIG.peekDelayMs);
 
+    vi.advanceTimersByTime(UI_CONFIG.peekDelayMs);
     expect(notch()?.dataset.mode).toBe("compact");
     expect(root.querySelector(".notch-summary")?.textContent).toBe("3 hoy · 2 esperando");
+
+    vi.advanceTimersByTime(UI_CONFIG.unfoldDelayMs);
+    expect(notch()?.dataset.mode).toBe("expanded");
+  });
+
+  it("folds back when the pointer leaves the task list", () => {
+    vi.useFakeTimers();
+    controller.setMode("expanded");
+    notch()?.dispatchEvent(new Event("pointerleave"));
+
+    vi.advanceTimersByTime(UI_CONFIG.foldDelayMs);
+    expect(notch()?.dataset.mode).toBe("hidden");
+  });
+
+  it("stays open while the user is typing a capture", () => {
+    vi.useFakeTimers();
+    controller.openPanel("capture");
+    notch()?.dispatchEvent(new Event("pointerleave"));
+
+    vi.advanceTimersByTime(UI_CONFIG.foldDelayMs);
+    expect(notch()?.dataset.mode).toBe("expanded");
+  });
+
+  it("keeps the same notch element so its size can animate", () => {
+    const firstNotch = notch();
+    controller.setMode("expanded");
+    expect(notch()).toBe(firstNotch);
   });
 
   it("expands on click and lists every section of the day", () => {
