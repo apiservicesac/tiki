@@ -6,6 +6,26 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1-rc.1] - 2026-10-21
+
+### Added
+- Advanced settings window, opened from Settings in the island and drawn in the island's
+  style, with its own title bar and a side menu: General (start with Windows, version and
+  updates), AI assistant, Plugins and sources, Mail and calendar, and Shortcuts. Plugins and
+  accounts show what each brings and when it arrives.
+
+### Changed
+- Settings in the island keep only what belongs to it: position, language and reminders
+  (notifications, focus mode, morning brief and end-of-day close).
+- On/off settings are switches, and plugin kinds are colored, as in the design.
+- Ask Tiki opens the AI section of the advanced settings when no key is set.
+- Both windows stay in sync: a change in one applies to the other right away.
+
+### Fixed
+- The model list opened white with unreadable options; lists and time pickers now follow
+  the dark theme, and selects use Tiki's own arrow instead of the system one.
+- Time fields no longer show the system clock icon; clicking the field opens the picker.
+
 ## [0.2.0-rc.1] - 2026-10-21
 
 ### Added
