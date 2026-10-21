@@ -5,6 +5,12 @@ import { TikiApp } from "../src/TikiApp";
 import { FakeBackend } from "./support/FakeBackend";
 import { FakeShell } from "./support/FakeShell";
 
+const EVENING_BRIEF = {
+  moment: "evening" as const,
+  title: "Cierre del día",
+  body: "Atrasado: 1 · Vence pronto: 2 · Esperando: 2\nMañana vence: Tracking",
+};
+
 describe("IslandController", () => {
   let root: HTMLElement;
   let backend: FakeBackend;
@@ -193,9 +199,6 @@ describe("IslandController", () => {
       morning.dispatchEvent(new Event("change"));
     }
     await vi.waitFor(() => expect(backend.savedPreferences.morningBriefTime).toBe("07:45"));
-
-    root.querySelector<HTMLButtonElement>("#test-notification")?.click();
-    expect(backend.testNotifications).toBe(1);
   });
 
   it("shows Settings without the big mascot on the narrow left and right island", async () => {
@@ -222,13 +225,39 @@ describe("IslandController", () => {
     await vi.waitFor(() => expect(document.documentElement.lang).toBe("en"));
   });
 
-  it("peeks out with the summary when a brief notification arrives", async () => {
+  it("shows a reminder in the grown notch, then folds leaving an unread dot", async () => {
     vi.useFakeTimers();
-    backend.emit(SHELL_EVENTS.briefReady);
-    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("compact"));
+    backend.deliverBrief(EVENING_BRIEF);
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
+    expect(root.querySelector(".notch-alert strong")?.textContent).toBe("Cierre del día");
+    expect(root.querySelector(".notch-alert-preview")?.textContent).toBe(
+      "Atrasado: 1 · Vence pronto: 2 · Esperando: 2 · Mañana vence: Tracking",
+    );
 
-    vi.advanceTimersByTime(UI_CONFIG.briefPeekDurationMs);
+    vi.advanceTimersByTime(UI_CONFIG.alertDurationMs);
     expect(notch()?.dataset.mode).toBe("hidden");
+    expect(root.querySelector(".notch-unread")).not.toBeNull();
+  });
+
+  it("opens the reminder on click and puts it away after reading", async () => {
+    backend.deliverBrief(EVENING_BRIEF);
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
+
+    notch()?.click();
+    expect(notch()?.dataset.mode).toBe("expanded");
+    expect(root.querySelector(".island-notice strong")?.textContent).toBe("Cierre del día");
+    expect(controller.currentState.unreadAlert).toBe(false);
+
+    controller.setMode("hidden");
+    expect(controller.currentState.alert).toBeNull();
+    expect(root.querySelector(".notch-unread")).toBeNull();
+  });
+
+  it("only adds the reminder to Today when the island is already open", async () => {
+    controller.setMode("expanded");
+    backend.deliverBrief(EVENING_BRIEF);
+    await vi.waitFor(() => expect(root.querySelector(".island-notice")).not.toBeNull());
+    expect(notch()?.dataset.mode).toBe("expanded");
   });
 
   it("asks for a key before answering questions", () => {

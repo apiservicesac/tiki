@@ -1,7 +1,10 @@
-import type { IslandPlacement, IslandSnapshot, MoodName, TaskDetails } from "../backend/contracts";
+import type { BriefNotification, IslandPlacement, IslandSnapshot, MoodName, TaskDetails } from "../backend/contracts";
 
-/** How much of the island is visible, like the notch of dooai. */
-export type IslandMode = "hidden" | "compact" | "expanded";
+/**
+ * How much of the island is visible, like the notch of dooai. `alert` is the notch grown a
+ * little to show a reminder.
+ */
+export type IslandMode = "hidden" | "compact" | "alert" | "expanded";
 
 /** What the expanded island shows in its card. */
 export type IslandPanel = "tasks" | "capture" | "settings" | "edit" | "ask";
@@ -24,6 +27,10 @@ export interface IslandState {
   snapshot: IslandSnapshot;
   /** A short-lived mood (happy after capturing) that overrides the snapshot's mood. */
   reactionMood: MoodName | null;
+  /** The latest reminder: shown in the notch, then above the Today list until seen. */
+  alert: BriefNotification | null;
+  /** A reminder arrived and the island has not been opened since: the notch shows a dot. */
+  unreadAlert: boolean;
   /** The AI brief of the day, shown above the Today list when there is one. */
   dayBrief: string | null;
   /** The task open in the edit panel, with the clients it can be assigned to. */

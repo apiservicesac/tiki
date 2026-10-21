@@ -122,7 +122,7 @@
     "notify.tomorrow": "Mañana vence: {items}",
 
     "settings.reminders": "Recordatorios",
-    "settings.notifications": "Notificaciones",
+    "settings.notifications": "Avisos",
     "settings.focus_mode": "Modo enfoque",
     "settings.autostart": "Iniciar con Windows",
     "settings.morning_brief": "Resumen de la mañana",
@@ -187,8 +187,10 @@
     "advanced.window.minimize": "Minimizar",
     "advanced.window.maximize": "Maximizar",
 
-    "settings.test_notification": "Probar notificación",
-    "settings.test_notification_hint": "Muestra el resumen ahora, sin gastar el de hoy",
+
+    "settings.alert_sound": "Sonido",
+    "settings.windows_notifications": "También en Windows",
+    "island.alert.open": "Ver el aviso",
 
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"

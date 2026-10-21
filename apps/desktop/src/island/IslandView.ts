@@ -157,7 +157,10 @@ export class IslandView {
     handlers: IslandViewHandlers,
   ): HTMLElement {
     if (state.mode === "hidden") {
-      return this.notchView.hidden(state.snapshot, mood);
+      return this.notchView.hidden(state.snapshot, mood, state.unreadAlert);
+    }
+    if (state.mode === "alert" && state.alert) {
+      return this.notchView.alert(state.snapshot, state.alert, mood);
     }
     if (state.mode === "compact") {
       return this.notchView.compact(state.snapshot, mood);
@@ -201,14 +204,30 @@ export class IslandView {
     }
   }
 
+  /** The latest reminder and the AI brief, above the Today list. */
+  private notices(state: IslandState): HTMLElement[] {
+    const notices: HTMLElement[] = [];
+    if (state.alert) {
+      notices.push(ElementFactory.create("div", {
+        className: "island-notice",
+        children: [
+          ElementFactory.create("strong", { text: state.alert.title }),
+          ElementFactory.create("p", { text: state.alert.body }),
+        ],
+      }));
+    }
+    if (state.dayBrief) {
+      notices.push(ElementFactory.create("p", { className: "island-brief", text: state.dayBrief }));
+    }
+    return notices;
+  }
+
   private tabContent(state: IslandState, handlers: IslandViewHandlers): HTMLElement {
     const subtitle = ElementFactory.create("p", { className: "island-subtitle", text: state.snapshot.todaySubtitle });
-    const brief = state.tab === "today" && state.dayBrief
-      ? [ElementFactory.create("p", { className: "island-brief", text: state.dayBrief })]
-      : [];
+    const notices = state.tab === "today" ? this.notices(state) : [];
     const list = state.tab === "today"
       ? this.taskList.render(state.snapshot.sections, this.translator.text("island.today.empty"), handlers)
       : this.taskList.render([], this.translator.text(`island.${state.tab}.empty`), handlers);
-    return ElementFactory.create("div", { className: "island-tab-content", children: [subtitle, ...brief, list] });
+    return ElementFactory.create("div", { className: "island-tab-content", children: [subtitle, ...notices, list] });
   }
 }

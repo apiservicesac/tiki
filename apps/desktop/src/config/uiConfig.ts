@@ -13,8 +13,10 @@ export const UI_CONFIG = Object.freeze({
    * compact notch to finish opening and rest for a moment, so the two steps read clearly.
    */
   unfoldDelayMs: 800,
-  /** After a brief notification, the island shows its compact summary this long. */
-  briefPeekDurationMs: 8_000,
+  /** A reminder stays in the grown notch this long, then folds leaving an unread dot. */
+  alertDurationMs: 12_000,
+  /** The island's chime: two notes, each this long, at a gentle volume (0 to 1). */
+  alertChime: Object.freeze({ notesHz: Object.freeze([880, 1318.5]), noteSeconds: 0.16, volume: 0.12 }),
   /** The island folds back this long after the pointer leaves it. */
   foldDelayMs: 650,
   motion: Object.freeze({
@@ -25,7 +27,7 @@ export const UI_CONFIG = Object.freeze({
     /** The previous content fades out this fast while the new one starts to appear. */
     contentOutMs: 180,
   }),
-  mascotSize: Object.freeze({ hidden: 24, compact: 30, card: 72 }),
+  mascotSize: Object.freeze({ hidden: 24, compact: 30, alert: 40, card: 72 }),
 });
 
 /** Names of the events the desktop shell sends to the interface (see `shell_events.rs`). */

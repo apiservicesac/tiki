@@ -89,6 +89,14 @@ export interface TaskDetails extends TaskEdit {
   taskId: number;
 }
 
+/** A reminder already written in the user's language (see `BriefNotification` in the core). */
+export interface BriefNotification {
+  moment: "morning" | "evening";
+  title: string;
+  /** Lines separated by line breaks. */
+  body: string;
+}
+
 export interface AvailableUpdate {
   version: string;
   notes: string | null;
@@ -111,7 +119,12 @@ export interface UserPreferences {
   /** "08:30" or "08:30:00". */
   morningBriefTime: string;
   eveningBriefTime: string;
+  /** Master switch for reminders. */
   notificationsEnabled: boolean;
+  /** The island plays a chime with each alert. */
+  alertSound: boolean;
+  /** Also send reminders as Windows notifications. */
+  windowsNotifications: boolean;
   /** Silences notifications and lets Tiki sleep. */
   focusMode: boolean;
 }
@@ -152,8 +165,6 @@ export interface TikiBackend {
   aiFetch(request: ProxiedRequest): Promise<ProxiedResponse>;
   /** Opens the advanced settings window, optionally on one section. */
   openAdvancedSettings(section?: string): Promise<void>;
-  /** Shows the morning brief now, to check that Windows lets Tiki notify. */
-  sendTestNotification(): Promise<void>;
   autostartEnabled(): Promise<boolean>;
   appVersion(): Promise<string>;
   /** A newer signed version on GitHub, or `null` when Tiki is up to date. */
@@ -163,6 +174,8 @@ export interface TikiBackend {
   setAutostart(enabled: boolean): Promise<void>;
   /** Tells the shell which part of the window is the island; the rest lets clicks through. */
   setHitArea(area: HitArea): Promise<void>;
+  /** Calls `handler` with each brief the shell delivers; returns a function that stops listening. */
+  onBriefReady(handler: (brief: BriefNotification) => void): Promise<() => void>;
   /** Calls `handler` whenever the shell emits `eventName`; returns a function that stops listening. */
   listen(eventName: string, handler: () => void): Promise<() => void>;
 }

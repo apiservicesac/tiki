@@ -498,6 +498,97 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   max-height: 420px;
 }
 
+/* Alert: the notch grown a little to show a reminder, with Tiki bouncing in. */
+.notch-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: var(--notch-alert-width);
+  height: var(--notch-alert-height);
+  box-sizing: border-box;
+  padding: 0 18px 0 12px;
+  cursor: pointer;
+}
+
+.notch-alert-text {
+  display: grid;
+  flex: 1;
+  gap: 1px;
+  min-width: 0;
+}
+
+.notch-alert-text strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.notch-alert-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--island-muted);
+}
+
+[data-orientation="vertical"] .notch-alert {
+  flex-direction: column;
+  justify-content: center;
+  width: var(--notch-alert-vertical-width);
+  height: auto;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+[data-orientation="vertical"] .notch-alert-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+}
+
+/* A reminder nobody has opened yet. */
+.notch-unread {
+  position: absolute;
+  top: 7px;
+  right: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--urgency-soon-text);
+  box-shadow: 0 0 0 3px var(--urgency-soon-background);
+}
+
+/* The latest reminder, above the Today list. */
+.island-notice {
+  margin: 4px 0 8px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: var(--urgency-soon-background);
+}
+
+.island-notice strong { font-size: 12.5px; }
+
+.island-notice p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--island-text);
+  white-space: pre-line;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .notch-alert .notch-mascot { animation: alert-hop 0.9s var(--ease-out) 2; }
+  .notch-unread { animation: alert-pulse 1.8s ease-in-out infinite; }
+}
+
+@keyframes alert-hop {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  30% { transform: translateY(-5px) rotate(-6deg); }
+  60% { transform: translateY(0) rotate(5deg); }
+}
+
+@keyframes alert-pulse { 50% { opacity: 0.45; } }
+
 /* Mascot animations */
 @media (prefers-reduced-motion: no-preference) {
   .mascot-blink {

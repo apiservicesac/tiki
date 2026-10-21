@@ -4,12 +4,14 @@ import type { Translator } from "../i18n/Translator";
 
 export interface ReminderSettingsHandlers {
   onChangePreferences: (preferences: UserPreferences) => void;
-  onTestNotification: () => void;
 }
 
 type BriefTimeField = "morningBriefTime" | "eveningBriefTime";
 
-/** Settings for when Tiki speaks up: notifications, focus mode and the brief times. */
+/**
+ * Settings for when Tiki speaks up: reminders on or off, the island's chime, Windows
+ * notifications as an extra, focus mode and the brief times.
+ */
 export class ReminderSettingsView {
   constructor(private readonly translator: Translator) {}
 
@@ -24,13 +26,16 @@ export class ReminderSettingsView {
           children: [
             this.toggle("settings.notifications", preferences.notificationsEnabled, (enabled) =>
               onChange({ ...preferences, notificationsEnabled: enabled })),
+            this.toggle("settings.alert_sound", preferences.alertSound, (enabled) =>
+              onChange({ ...preferences, alertSound: enabled })),
+            this.toggle("settings.windows_notifications", preferences.windowsNotifications, (enabled) =>
+              onChange({ ...preferences, windowsNotifications: enabled })),
             this.toggle("settings.focus_mode", preferences.focusMode, (enabled) =>
               onChange({ ...preferences, focusMode: enabled })),
           ],
         }),
         this.timeRow("settings.morning_brief", "morningBriefTime", preferences, onChange),
         this.timeRow("settings.evening_brief", "eveningBriefTime", preferences, onChange),
-        this.testRow(handlers.onTestNotification),
       ],
     });
   }
@@ -46,25 +51,6 @@ export class ReminderSettingsView {
       onToggle(!enabled);
     });
     return button;
-  }
-
-  private testRow(onTest: () => void): HTMLElement {
-    const button = ElementFactory.create("button", {
-      className: "settings-button settings-button-quiet",
-      text: this.translator.text("settings.test_notification"),
-      attributes: { type: "button", id: "test-notification" },
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      onTest();
-    });
-    return ElementFactory.create("div", {
-      className: "settings-row",
-      children: [
-        ElementFactory.create("span", { className: "settings-row-label", text: this.translator.text("settings.test_notification_hint") }),
-        button,
-      ],
-    });
   }
 
   private timeRow(

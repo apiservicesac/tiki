@@ -2,6 +2,7 @@ import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest
 import type {
   AiProviderStatus,
   AvailableUpdate,
+  BriefNotification,
   CaptureIntent,
   HitArea,
   CaptureOutcome,
@@ -33,6 +34,8 @@ export class FakeBackend implements TikiBackend {
     morningBriefTime: "08:30:00",
     eveningBriefTime: "18:00:00",
     notificationsEnabled: true,
+    alertSound: true,
+    windowsNotifications: true,
     focusMode: false,
   };
   autostart = false;
@@ -128,12 +131,6 @@ export class FakeBackend implements TikiBackend {
     return this.autostart;
   }
 
-  testNotifications = 0;
-
-  async sendTestNotification(): Promise<void> {
-    this.testNotifications += 1;
-  }
-
   async openAdvancedSettings(section?: string): Promise<void> {
     this.openedSettings.push(section);
   }
@@ -161,6 +158,20 @@ export class FakeBackend implements TikiBackend {
   async listen(eventName: string, handler: () => void): Promise<() => void> {
     this.listeners.set(eventName, handler);
     return () => this.listeners.delete(eventName);
+  }
+
+  private briefHandler: ((brief: BriefNotification) => void) | null = null;
+
+  async onBriefReady(handler: (brief: BriefNotification) => void): Promise<() => void> {
+    this.briefHandler = handler;
+    return () => {
+      this.briefHandler = null;
+    };
+  }
+
+  /** Simulates the shell delivering a brief. */
+  deliverBrief(brief: BriefNotification): void {
+    this.briefHandler?.(brief);
   }
 
   /** Simulates the desktop shell emitting an event. */

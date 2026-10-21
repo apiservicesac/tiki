@@ -1,9 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { SHELL_EVENTS } from "../config/uiConfig";
 import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
 import type {
   AiProviderStatus,
   AvailableUpdate,
+  BriefNotification,
   CaptureIntent,
   HitArea,
   CaptureOutcome,
@@ -81,10 +83,6 @@ export class TauriBackend implements TikiBackend {
     await invoke("open_advanced_settings", { section: section ?? null });
   }
 
-  async sendTestNotification(): Promise<void> {
-    await invoke("send_test_notification");
-  }
-
   autostartEnabled(): Promise<boolean> {
     return invoke<boolean>("autostart_enabled");
   }
@@ -107,6 +105,10 @@ export class TauriBackend implements TikiBackend {
 
   async setHitArea(area: HitArea): Promise<void> {
     await invoke("set_island_hit_area", { area });
+  }
+
+  onBriefReady(handler: (brief: BriefNotification) => void): Promise<() => void> {
+    return listen<BriefNotification>(SHELL_EVENTS.briefReady, (event) => handler(event.payload));
   }
 
   listen(eventName: string, handler: () => void): Promise<() => void> {

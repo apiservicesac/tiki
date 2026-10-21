@@ -122,7 +122,7 @@
     "notify.tomorrow": "Due tomorrow: {items}",
 
     "settings.reminders": "Reminders",
-    "settings.notifications": "Notifications",
+    "settings.notifications": "Alerts",
     "settings.focus_mode": "Focus mode",
     "settings.autostart": "Start with Windows",
     "settings.morning_brief": "Morning brief",
@@ -187,8 +187,10 @@
     "advanced.window.minimize": "Minimize",
     "advanced.window.maximize": "Maximize",
 
-    "settings.test_notification": "Test notification",
-    "settings.test_notification_hint": "Shows the brief now, without using up today's",
+
+    "settings.alert_sound": "Sound",
+    "settings.windows_notifications": "Also in Windows",
+    "island.alert.open": "Open the alert",
 
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"

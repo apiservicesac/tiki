@@ -1,4 +1,4 @@
-import type { IslandSnapshot, MoodName } from "../backend/contracts";
+import type { BriefNotification, IslandSnapshot, MoodName } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
@@ -13,10 +13,11 @@ import type { MascotRenderer } from "../mascot/MascotRenderer";
 export class NotchView {
   constructor(private readonly mascot: MascotRenderer) {}
 
-  hidden(snapshot: IslandSnapshot, mood: MoodName): HTMLElement {
+  hidden(snapshot: IslandSnapshot, mood: MoodName, unread: boolean): HTMLElement {
     const mascot = this.mascotOf(snapshot, mood, UI_CONFIG.mascotSize.hidden);
+    const unreadDot = unread ? [ElementFactory.create("span", { className: "notch-unread", attributes: { "aria-hidden": "true" } })] : [];
     if (snapshot.attentionCount === 0) {
-      return ElementFactory.create("div", { className: "notch-hidden", children: [mascot] });
+      return ElementFactory.create("div", { className: "notch-hidden", children: [mascot, ...unreadDot] });
     }
     return ElementFactory.create("div", {
       className: "notch-hidden notch-hidden-busy",
@@ -25,6 +26,26 @@ export class NotchView {
         ElementFactory.create("span", { className: "notch-name", text: "Tiki" }),
         this.summaryText(snapshot),
         this.countBubbles(snapshot),
+        ...unreadDot,
+      ],
+    });
+  }
+
+  /** The notch grown a little: Tiki, the reminder's title and its first line, cut with "…". */
+  alert(snapshot: IslandSnapshot, alert: BriefNotification, mood: MoodName): HTMLElement {
+    const preview = alert.body.split("\n").join(" · ");
+    return ElementFactory.create("div", {
+      className: "notch-alert",
+      attributes: { role: "status", "aria-live": "polite" },
+      children: [
+        this.mascotOf(snapshot, mood, UI_CONFIG.mascotSize.alert),
+        ElementFactory.create("span", {
+          className: "notch-alert-text",
+          children: [
+            ElementFactory.create("strong", { text: alert.title }),
+            ElementFactory.create("span", { className: "notch-alert-preview", text: preview }),
+          ],
+        }),
       ],
     });
   }

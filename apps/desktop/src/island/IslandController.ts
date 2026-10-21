@@ -4,6 +4,7 @@ import type { AskView } from "../assistant/AskView";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
 import {
   LOCALE_CODES,
+  type BriefNotification,
   type IslandSnapshot,
   type MoodName,
   type TaskEdit,
@@ -15,6 +16,7 @@ import type { Translator } from "../i18n/Translator";
 import { SHELL_EVENTS, UI_CONFIG } from "../config/uiConfig";
 import type { IslandMode, IslandPanel, IslandState, IslandTab } from "./islandState";
 import type { IslandView, IslandViewHandlers } from "./IslandView";
+import { AlertSound } from "./AlertSound";
 import type { HitAreaReporter } from "./HitAreaReporter";
 import type { IslandStore } from "./IslandStore";
 
@@ -34,6 +36,7 @@ export class IslandController {
   /** What the assistant understood from the sentence in the box, waiting for a second Enter. */
   private pendingCapture: { sentence: string; capture: InterpretedCapture } | null = null;
   private readonly assistantActions: AssistantActions;
+  private readonly sound = new AlertSound();
   private readonly view: IslandView;
   private readonly captureView: CaptureView;
   private readonly askView: AskView;
@@ -63,6 +66,8 @@ export class IslandController {
       reactionMood: null,
       editing: null,
       dayBrief: null,
+      alert: null,
+      unreadAlert: false,
     };
     this.assistantActions = new AssistantActions(this.store(), assistant, views.ask);
   }
@@ -78,7 +83,7 @@ export class IslandController {
       await this.backend.listen(SHELL_EVENTS.openCapture, () => this.openPanel("capture")),
       await this.backend.listen(SHELL_EVENTS.openSettings, () => this.openPanel("settings")),
       await this.backend.listen(SHELL_EVENTS.toggleIsland, () => this.toggle()),
-      await this.backend.listen(SHELL_EVENTS.briefReady, () => this.announceBrief()),
+      await this.backend.onBriefReady((brief) => void this.announceBrief(brief)),
       await this.backend.listen(SHELL_EVENTS.preferencesChanged, () => void this.reloadPreferences()),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
@@ -108,6 +113,7 @@ export class IslandController {
   }
 
   setMode(mode: IslandMode): void {
+    this.cancel("alert");
     this.cancel("fold");
     this.cancel("unfold");
     this.update({ mode, panel: mode === "expanded" ? this.state.panel : "tasks" });
@@ -205,19 +211,26 @@ export class IslandController {
   }
 
   /**
-   * A brief notification was just shown: the hidden island peeks out with the day's summary
-   * for a moment, then hides again unless the user is already on it.
+   * A reminder arrived: the notch grows a little with Tiki, the title and a preview, and
+   * chimes. It folds back after a moment, leaving a dot until the island is opened. If the
+   * user already has the island open, the reminder just appears above the Today list.
    */
-  private async announceBrief(): Promise<void> {
+  async announceBrief(brief: BriefNotification): Promise<void> {
     await this.refresh();
     void this.assistantActions.prepareDayBrief();
-    if (this.state.mode !== "hidden") {
+    const alreadyOpen = this.state.mode === "expanded";
+    this.update({ alert: brief, unreadAlert: !alreadyOpen });
+    if (this.preferences.alertSound) {
+      this.sound.play();
+    }
+    this.react("curious");
+    if (alreadyOpen) {
       return;
     }
-    this.update({ mode: "compact" });
-    this.react("curious");
-    this.schedule("fold", UI_CONFIG.briefPeekDurationMs, () => {
-      if (this.state.mode === "compact") {
+    ["peek", "unfold", "fold"].forEach((timer) => this.cancel(timer));
+    this.update({ mode: "alert" });
+    this.schedule("alert", UI_CONFIG.alertDurationMs, () => {
+      if (this.state.mode === "alert") {
         this.update({ mode: "hidden" });
       }
     });
@@ -241,6 +254,12 @@ export class IslandController {
    */
   private peek(): void {
     this.cancel("fold");
+    if (this.state.mode === "alert") {
+      // The reminder is already showing: resting on it opens the whole island.
+      this.cancel("alert");
+      this.schedule("unfold", UI_CONFIG.peekDelayMs, () => this.update({ mode: "expanded" }));
+      return;
+    }
     if (this.state.mode !== "hidden") {
       return;
     }
@@ -304,7 +323,14 @@ export class IslandController {
   }
 
   private update(changes: Partial<IslandState>): void {
-    this.state = { ...this.state, ...changes };
+    const next = { ...this.state, ...changes };
+    // Opening the island reads the reminder; folding it afterwards puts the reminder away.
+    if (next.mode === "expanded") {
+      next.unreadAlert = false;
+    } else if (next.mode === "hidden" && this.state.mode === "expanded") {
+      next.alert = null;
+    }
+    this.state = next;
     this.render();
   }
 
@@ -325,7 +351,6 @@ export class IslandController {
       onOpenTask: (taskId) => void this.openTask(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
       onOpenAdvancedSettings: () => this.openAdvancedSettings(),
-      onTestNotification: () => void this.backend.sendTestNotification(),
       ask: {
         onAsk: (question) => void this.assistantActions.ask(question),
         onSummarize: () => void this.assistantActions.summarize(),
