@@ -115,7 +115,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 [data-placement="right"] .island-ear-start { top: calc(-1 * var(--notch-ear)); right: 0; background: radial-gradient(circle at 0 0, var(--ear-curve)); }
 [data-placement="right"] .island-ear-end { bottom: calc(-1 * var(--notch-ear)); right: 0; background: radial-gradient(circle at 0 100%, var(--ear-curve)); }
 
-/* Hidden: a small notch always in sight with Tiki resting inside. */
+/* Hidden: a small notch always in sight; with pending work it also shows the day's summary. */
 .notch-hidden {
   display: grid;
   place-items: center;
@@ -123,10 +123,19 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   height: var(--notch-hidden-thickness);
 }
 
-[data-placement="left"] .notch-hidden,
-[data-placement="right"] .notch-hidden {
-  width: var(--notch-hidden-thickness);
-  height: var(--notch-hidden-length);
+.notch-hidden-busy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  min-width: var(--notch-hidden-length);
+  box-sizing: border-box;
+  padding: 0 14px 0 10px;
+}
+
+.notch-name {
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .notch-mascot {
@@ -449,6 +458,60 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 .settings-screen-bottom { bottom: 0; left: 9px; width: 12px; height: 4px; }
 .settings-screen-left { left: 0; top: 5px; width: 4px; height: 10px; }
 .settings-screen-right { right: 0; top: 5px; width: 4px; height: 10px; }
+
+/*
+ * Left and right edges: the island is a column. The folded notch stacks Tiki and a
+ * vertical summary, and the expanded island becomes a narrow, tall panel.
+ */
+[data-orientation="vertical"] {
+  --notch-expanded-width: 380px;
+}
+
+[data-orientation="vertical"] .notch-hidden {
+  width: var(--notch-hidden-thickness);
+  height: var(--notch-hidden-length);
+}
+
+[data-orientation="vertical"] .notch-hidden-busy,
+[data-orientation="vertical"] .notch-compact {
+  flex-direction: column;
+  height: auto;
+  min-width: 0;
+  min-height: var(--notch-hidden-length);
+  padding: 12px 0;
+}
+
+[data-orientation="vertical"] .notch-compact {
+  width: var(--notch-head-height);
+  gap: 10px;
+}
+
+[data-orientation="vertical"] .notch-name,
+[data-orientation="vertical"] .notch-summary,
+[data-orientation="vertical"] .notch-chip {
+  flex: none;
+  writing-mode: vertical-rl;
+}
+
+[data-orientation="vertical"] .notch-chip {
+  padding: 8px 1px;
+}
+
+[data-orientation="vertical"] .island-card {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+[data-orientation="vertical"] .island-card-mascot {
+  padding-top: 14px;
+}
+
+[data-orientation="vertical"] .island-card-body {
+  padding: 6px 14px 14px;
+}
+
+[data-orientation="vertical"] .island-list {
+  max-height: 420px;
+}
 
 /* Mascot animations */
 @media (prefers-reduced-motion: no-preference) {

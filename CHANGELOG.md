@@ -9,6 +9,12 @@ All notable changes to Tiki are documented here. The format follows
 ### Changed
 - Opening on hover now pauses on the compact notch before unfolding, and the expanded
   content appears a third of the way through the growth, so the two steps read clearly.
+- On the left and right edges the island is laid out vertically: the folded notch stacks
+  Tiki and a vertical summary, and the expanded island is a narrow, tall panel.
+
+### Added
+- The resting island shows "Tiki · 3 today · 2 waiting" when work is pending, and Tiki alone
+  when the day is clear.
 
 ## [0.1.2-rc.1] - 2026-10-21
 

@@ -29,6 +29,19 @@ describe("IslandController", () => {
     expect(root.dataset.placement).toBe("top");
   });
 
+  it("shows Tiki and the day's summary while resting when work is pending", () => {
+    expect(root.querySelector(".notch-hidden-busy .notch-name")?.textContent).toBe("Tiki");
+    expect(root.querySelector(".notch-hidden-busy .notch-summary")?.textContent).toBe("3 hoy · 2 esperando");
+  });
+
+  it("lays the island out vertically on the left and right edges", async () => {
+    await controller.changePreferences({ locale: "spanish", islandPlacement: "left" });
+    expect(root.dataset.orientation).toBe("vertical");
+
+    await controller.changePreferences({ locale: "spanish", islandPlacement: "bottom" });
+    expect(root.dataset.orientation).toBe("horizontal");
+  });
+
   it("opens without a click: compact first, then the whole island", () => {
     vi.useFakeTimers();
     notch()?.dispatchEvent(new Event("pointerenter"));
@@ -138,5 +151,14 @@ describe("IslandController", () => {
     controller.setMode("expanded");
     root.querySelector<HTMLButtonElement>('[data-tab="agenda"]')?.click();
     expect(root.querySelector(".island-content-leaving")).toBeNull();
+  });
+
+  it("shows only Tiki while resting when the day is clear", async () => {
+    controller.stop();
+    const clearDay = { ...FakeBackend.sampleSnapshot(), attentionCount: 0, sections: [] };
+    controller = await new TikiApp(root, new FakeBackend(clearDay)).start();
+
+    expect(root.querySelector(".notch-hidden-busy")).toBeNull();
+    expect(root.querySelector(".notch-hidden .notch-mascot")).not.toBeNull();
   });
 });

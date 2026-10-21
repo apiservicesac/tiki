@@ -6,10 +6,11 @@ pub struct DesktopConfig;
 impl DesktopConfig {
     /// Label of the island window in `tauri.conf.json`.
     pub const ISLAND_WINDOW_LABEL: &'static str = "island";
-    /// The window never resizes: it is as big as the expanded island (plus its ears and
-    /// shadow), so the island animates with CSS only. Clicks outside it pass through.
-    pub const ISLAND_WINDOW_WIDTH: f64 = 700.0;
-    pub const ISLAND_WINDOW_HEIGHT: f64 = 560.0;
+    /// The window does not resize while the island animates: it is as big as the expanded
+    /// island (plus its ears and shadow), and clicks outside the island pass through.
+    /// Top and bottom use a wide window; left and right use a tall one.
+    pub const HORIZONTAL_WINDOW_SIZE: (f64, f64) = (700.0, 560.0);
+    pub const VERTICAL_WINDOW_SIZE: (f64, f64) = (440.0, 720.0);
     /// How often the shell checks whether the pointer is over the island.
     pub const CURSOR_POLL_INTERVAL: Duration = Duration::from_millis(30);
     /// SQLite file inside the app data folder.

@@ -62,6 +62,7 @@ export class IslandView {
     this.handlers = handlers;
     const mood = state.reactionMood ?? state.snapshot.mood;
     this.root.dataset.placement = state.placement;
+    this.root.dataset.orientation = IslandView.isVertical(state) ? "vertical" : "horizontal";
     this.root.ownerDocument.body.dataset.placement = state.placement;
     this.root.ownerDocument.documentElement.lang = this.translator.localeCode;
     this.notch.dataset.mode = state.mode;
@@ -105,6 +106,11 @@ export class IslandView {
 
   stop(): void {
     this.contentTransition.stop();
+  }
+
+  /** On the left and right edges the island is a column: everything stacks vertically. */
+  private static isVertical(state: IslandState): boolean {
+    return state.placement === "left" || state.placement === "right";
   }
 
   private createNotch(): HTMLElement {

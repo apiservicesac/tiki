@@ -13,6 +13,8 @@ export class IslandController {
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private readonly stopListening: Array<() => void> = [];
+  /** The window changes size when the island moves to another orientation. */
+  private readonly redrawOnResize = () => this.render();
 
   constructor(
     private readonly backend: TikiBackend,
@@ -47,6 +49,7 @@ export class IslandController {
       await this.backend.listen(SHELL_EVENTS.toggleIsland, () => this.toggle()),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
+    window.addEventListener("resize", this.redrawOnResize);
   }
 
   /** Stops timers and shell listeners. */
@@ -59,6 +62,7 @@ export class IslandController {
       clearInterval(this.refreshTimer);
     }
     this.stopListening.splice(0).forEach((unlisten) => unlisten());
+    window.removeEventListener("resize", this.redrawOnResize);
   }
 
   async refresh(): Promise<void> {
