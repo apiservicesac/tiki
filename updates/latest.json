@@ -1,11 +1,11 @@
 {
-  "version": "0.2.1-rc.6",
-  "notes": "Rounded corners for the reminder notch.",
-  "pub_date": "2026-10-21T23:27:04.813Z",
+  "version": "0.2.2-rc.1",
+  "notes": "Tasks tab with clients and history, client panel, task reminders and the brief as a receipt.",
+  "pub_date": "2026-10-21T23:50:32.391Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbWhDYVZaY0RPYkE1Ui9OYzF2cEhJVUhQeTVWaTJWb1o2Vmp5OWdabENDVDFwNDk0Y2NDTmJnQkRYTG8rUDFObkkyNHFSYzV2WHZjeVVjVW15QnBwa0FBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjI1MjE2CWZpbGU6VGlraV8wLjIuMS1yYy42X3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMS1yYy42ClJTM3JtbE5JR3F6QnYremVaeDVCMlpUTUNYOFZHY2N4SEZzdE81WEF5U0tXUTBNL0NUU2JSOHJURmhuSktXU1RrUmVpcUxQemtFc090MWQwVHp4QkJ3PT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.1-rc.6/Tiki_0.2.1-rc.6_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbWxta2VNQ1d1RjluV0hXOUlBS2N4dnhCWndKUWM3OTlzZlJ1bitCYVJlOG0vK3Z1SURtVlAxOHNlNXdvdnVoT2hsaW1xeWxCTWJsOXR4UVZoSDRMMGdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjI2NjIzCWZpbGU6VGlraV8wLjIuMi1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMi1yYy4xCkdCL21uM3lvWEFkV3M4V3VCMzBKczJKUDJpMmRUcUhUZklpTlBvTG1oZkcza0tJa3Q1TmVGWjFMM2QvZGt3UjMxTlcxbWs5YkdONStUR2lRWmRKeERBPT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.2-rc.1/Tiki_0.2.2-rc.1_x64-setup.exe"
     }
   }
 }
