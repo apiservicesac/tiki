@@ -9,7 +9,7 @@ Platforms: Windows first; Linux, macOS, Android and iOS later. There is no web v
 
 ```text
 crates/tiki-core/        Rust core, no UI: domain, SQLite storage, daily brief, mood,
-                         quick capture, plugin contracts, i18n, workspace facade
+                         projects, reminders, plugin contracts, i18n, workspace facade
 apps/desktop/            Desktop app
   src/                   TypeScript interface (island, mascot, quick capture)
   src-tauri/             Tauri 2 shell: window, tray, global shortcuts, commands
@@ -22,11 +22,14 @@ docker/                  Toolchains: core (Rust), ui (Node), windows (cross-comp
 
 | Module | Responsibility |
 | --- | --- |
-| `domain` | Task, Client, statuses, priorities, origin of a task |
+| `domain` | Task, Project, statuses, priorities, origin of a task |
 | `storage` | SQLite database, migrations and one repository per entity |
 | `briefing` | Sorts open tasks into overdue / due soon / your turn / waiting, and narrates them |
 | `mood` | Picks the mascot's mood from the day |
-| `capture` | Reads "probar saldo vacacional andeanvet viernes" into a task draft |
+| `capture` | A confirmed quick capture: fields the AI filled from a sentence or the user picked (no word rules) |
+| `projects` | Projects (a client, a product, a team or personal): workload, create, change, remove |
+| `editing` | Task details and edits |
+| `reminders` | When the briefs and task reminders are due, and the alerts they produce |
 | `plugins` | Contracts for the two connection kinds: `TicketSource` and `ClientInstance` |
 | `i18n` | Locale catalogs, translator, date formatting |
 | `workspace` | `TikiWorkspace`, the single entry point every client uses |
