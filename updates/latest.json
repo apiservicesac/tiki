@@ -1,11 +1,11 @@
 {
-  "version": "0.3.1-rc.4",
-  "notes": "Reminders live in the Agenda by day; Tasks keeps only tasks.",
-  "pub_date": "2026-10-22T19:21:10.718Z",
+  "version": "0.4.0-rc.1",
+  "notes": "Calendars: connect Google Calendar from Settings › Accounts. Meetings in the Agenda with Join, an alert 15 minutes before each one, and free time before the next meeting in Now.",
+  "pub_date": "2026-10-22T20:06:11.450Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXFiL3FqM0laY2ExcVRTVDhIaWRDbWJWaWFxK09XdXZCRGpmZG1jR0dVZ3dhb016YjRXcGllUDV6TjNibnlaQjJmMzgwTWpyY2lrOXJEc0lTVmpXRWdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjk2ODY5CWZpbGU6VGlraV8wLjMuMS1yYy40X3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMuMS1yYy40CmVmRTR1YWhNejJMbWl3WkYrQnNqNHJRRGU0R2FnR2c0c25sZ2NiOVF3QUZ4UkhsOWRjUFVtanlFRkt2eHJnSlVyZER1aFB0MkxTYlovL2Rad1VyZkR3PT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.3.1-rc.4/Tiki_0.3.1-rc.4_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXN0Q3pnTVlXajFyejk3TmxQTVRvbDF3VHBtWmkwaURyZnZBcmozUUJTZjRvcjFWTU9NUFF3bi9LaENQUHpWZHhrei9oY0I3SEZ3a3p0QlNoM3lrRlFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjk5NTUwCWZpbGU6VGlraV8wLjQuMC1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQuMC1yYy4xCjNoU3puUiswQWI1QzU0Vzlxa0ROSzJvUE56KzdXVlNkeWJ2RkU5bFloalVKVC9yelBaRms0M09ncVptZ3FPZS9JSlZObG44U3FOVEhaNW5md2dBL0FnPT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.4.0-rc.1/Tiki_0.4.0-rc.1_x64-setup.exe"
     }
   }
 }

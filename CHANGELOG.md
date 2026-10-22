@@ -6,6 +6,8 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0-rc.1] - 2026-10-22
+
 ### Added
 - Calendars: connect Microsoft 365 / Outlook and Google accounts from Settings › Accounts.
   Tiki signs in in the browser, only reads the calendar and keeps the sign-in in Windows
