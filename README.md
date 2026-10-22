@@ -40,8 +40,13 @@ docker/                  Toolchains: core (Rust), ui (Node), windows (cross-comp
 The AI library (`apps/desktop/src/ai`) wraps the official Anthropic and OpenAI SDKs; the
 shell adds the key, which never reaches the interface. Prompts are built from harness pieces
 (`ai/harness`): persona, guardrails, memory (project notes and the user's capture
-corrections), the guide of actions Tiki may propose, and one skill per job (capture, brief,
-answer). Tiki never changes anything by itself: proposed actions wait for the user's click.
+corrections), the guide of actions Tiki may propose, and one skill per job (the single box,
+which captures items or answers and proposes changes, and the brief). Tiki never changes
+anything by itself: proposed actions wait for the user's click. There are no word rules:
+without an AI key, the text is the title and the user picks the fields.
+
+Tiki keeps no lists to maintain: projects are created the first time they are named, tags
+are free, and who a task waits for is free text.
 
 ## Plugins
 
