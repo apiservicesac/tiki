@@ -6,6 +6,29 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0-rc.1] - 2026-10-22
+
+### Added
+- Standalone reminders: an item that is only a heads-up at a moment ("call mom at 5"). Quick
+  capture and the edit form choose Task or Reminder; the AI tells them apart. Reminders list
+  under "Reminders" in Today with their time, ring in the notch and are done once they ring.
+- Tags across projects (#billing, #urgent): a field in quick capture and the edit form, read
+  by the AI from "#" words, shown under each title and searchable in Tasks with "#".
+- Project notes: context for Tiki (who is who, how they work) in the project panel. The AI
+  reads them for briefs, answers and proposed changes.
+- Ask Tiki can act: it proposes changes (create a task or reminder, set a reminder or due
+  date, move a task) as cards; each one applies only with your click, or "Apply all".
+- Tiki learns from your corrections: when you change what the AI filled in before saving,
+  it remembers the correction and follows it for similar sentences.
+- AI prompts built from harness pieces (persona, guardrails, memory, action guide and one
+  skill per job), and an eval of real sentences (`make eval-ai`) to measure the AI before
+  each release.
+
+### Fixed
+- The arrow of the project picker sits at the far right; the Tasks tab, project panel and
+  receipt keep the same margin on both sides; the project panel kept its styles after the
+  rename.
+
 ## [0.2.2-rc.2] - 2026-10-22
 
 ### Changed
