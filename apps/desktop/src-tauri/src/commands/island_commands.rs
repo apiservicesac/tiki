@@ -1,5 +1,5 @@
 use tauri::State;
-use tiki_core::capture::ConfirmedCapture;
+use tiki_core::capture::{CaptureLesson, ConfirmedCapture};
 use tiki_core::domain::{TaskId, TaskStatus};
 use tiki_core::editing::{TaskDetails, TaskEdit};
 use tiki_core::workspace::{AssistantContext, DeliveredItem, IslandSnapshot};
@@ -58,4 +58,19 @@ pub fn assistant_context(state: State<'_, AppState>) -> CommandResult<AssistantC
 #[tauri::command]
 pub fn delivered_tasks(state: State<'_, AppState>) -> CommandResult<Vec<DeliveredItem>> {
     Ok(state.with_workspace(|workspace| workspace.delivered_tasks())?)
+}
+
+/// Remembers a correction the user made to what the AI understood.
+#[tauri::command]
+pub fn record_capture_lesson(
+    state: State<'_, AppState>,
+    lesson: CaptureLesson,
+) -> CommandResult<()> {
+    Ok(state.with_workspace(|workspace| workspace.record_capture_lesson(&lesson))?)
+}
+
+/// The user's recent corrections, for the AI to learn from.
+#[tauri::command]
+pub fn capture_lessons(state: State<'_, AppState>) -> CommandResult<Vec<CaptureLesson>> {
+    Ok(state.with_workspace(|workspace| workspace.capture_lessons())?)
 }

@@ -48,6 +48,8 @@ impl TikiDesktopApp {
                 commands::island_commands::edit_task,
                 commands::island_commands::assistant_context,
                 commands::island_commands::delivered_tasks,
+                commands::island_commands::record_capture_lesson,
+                commands::island_commands::capture_lessons,
                 commands::project_commands::project_summaries,
                 commands::project_commands::create_project,
                 commands::project_commands::change_project,
