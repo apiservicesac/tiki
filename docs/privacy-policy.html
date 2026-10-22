@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiki Privacy Policy</title>
+<style>
+  :root { --text: #1d1d1f; --muted: #5f6368; --bg: #ffffff; --line: #e5e5ea; --accent: #2f6bd8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --text: #f2f2f7; --muted: #a1a1aa; --bg: #141416; --line: #2c2c30; --accent: #7aa7ff; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 30px; margin: 0 0 4px; }
+  h2 { font-size: 20px; margin: 32px 0 8px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .meta { color: var(--muted); margin: 0 0 24px; }
+  a { color: var(--accent); }
+  li { margin: 4px 0; }
+  .lang { margin-top: 48px; padding-top: 8px; border-top: 3px solid var(--line); }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Tiki Privacy Policy</h1>
+<p class="meta">Last updated: October 22, 2026 · <a href="#es">Leer en español</a></p>
+
+<p>Tiki is a desktop assistant for Windows that keeps your tasks, reminders and meetings
+in one place and reminds you of them at the right time. Tiki is developed by
+<strong>[DEVELOPER NAME]</strong> ("we"). This policy explains what data Tiki accesses, how it
+is used, where it is stored and how you can delete it.</p>
+
+<p><strong>In short:</strong> Tiki runs on your computer. Your data stays on your computer.
+We do not run servers that receive your data, we do not sell it, and we do not use it for
+advertising.</p>
+
+<h2>1. Data Tiki accesses</h2>
+<p><strong>Data you create in Tiki.</strong> Tasks, reminders, projects, notes and settings
+you enter. They are stored only in a local database on your computer.</p>
+
+<p><strong>Google user data (only if you connect a Google account).</strong> When you choose
+"Connect Google" and give your consent, Tiki requests these permissions:</p>
+<ul>
+  <li><code>https://www.googleapis.com/auth/calendar.readonly</code>: read-only access to the
+    events of the calendars you show in Google Calendar.</li>
+  <li><code>openid</code> and <code>email</code>: your email address, to show which account is
+    connected.</li>
+</ul>
+<p>From your calendar events Tiki reads only: title, start and end time, whether it lasts
+all day, location and video call link. Tiki reads events from today up to 8 days ahead.</p>
+<p><strong>Tiki never creates, changes or deletes calendar events</strong>, and it does not
+access Gmail, Drive, contacts or any other Google service.</p>
+
+<h2>2. How Tiki uses Google user data</h2>
+<p>Tiki uses calendar data only to provide features you see in the app:</p>
+<ul>
+  <li>show your meetings in the Agenda, next to your reminders;</li>
+  <li>alert you shortly before a meeting starts, with a button to join its video call;</li>
+  <li>tell you how much free time you have before your next meeting, and list the day's
+    meetings in the morning summary.</li>
+</ul>
+<p>Your email address is used only to label the connected account in Settings.</p>
+
+<h2>3. Where data is stored</h2>
+<ul>
+  <li>Calendar events are copied to the local Tiki database on your computer, and refreshed
+    every 5 minutes while Tiki is running.</li>
+  <li>The sign-in token that lets Tiki read your calendar is stored in Windows Credential
+    Manager on your computer. It is never written to the Tiki database, shown in the
+    interface or sent to us.</li>
+  <li>Tiki talks directly to Google's servers over HTTPS. Your Google data does not pass
+    through any server of ours.</li>
+</ul>
+
+<h2>4. Sharing and transfer</h2>
+<p>We do not sell, rent, share or transfer Google user data to anyone. Specifically:</p>
+<ul>
+  <li>Google user data is <strong>not</strong> sent to us or any third party;</li>
+  <li>Google user data is <strong>not</strong> used for advertising, profiling or credit
+    decisions;</li>
+  <li>Google user data is <strong>not</strong> sent to artificial intelligence providers and
+    is <strong>not</strong> used to develop, improve or train AI or machine learning models;</li>
+  <li>no human reads your Google user data.</li>
+</ul>
+
+<h2>5. Optional AI features</h2>
+<p>Tiki can use an AI model to understand what you type (for example, turning "call Ana
+tomorrow at 10" into a reminder). This works only if you add your own API key from Anthropic
+or OpenAI in Settings. When you use it, the text you type and a summary of your open tasks and
+project notes are sent from your computer to the provider you chose, under that provider's
+terms. <strong>Calendar data from Google is not included in these requests.</strong> Your API
+key is stored in Windows Credential Manager.</p>
+
+<h2>6. Google API Services User Data Policy</h2>
+<p>Tiki's use and transfer of information received from Google APIs adheres to the
+<a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services
+User Data Policy</a>, including the Limited Use requirements.</p>
+
+<h2>7. Retention and deletion</h2>
+<ul>
+  <li>Meetings are kept only for the period Tiki displays; past meetings outside that period are
+    removed on the next refresh.</li>
+  <li>In Tiki, <strong>Settings › Accounts › Disconnect</strong> deletes that account's
+    meetings from the local database and its sign-in token from Windows Credential Manager.</li>
+  <li>Uninstalling Tiki and deleting its data folder removes everything Tiki stored.</li>
+  <li>You can also revoke Tiki's access at any time at
+    <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</li>
+</ul>
+
+<h2>8. Updates</h2>
+<p>Tiki checks GitHub for new versions. That request contains no personal data, only what
+any web request contains (such as your IP address), and is handled by GitHub.</p>
+
+<h2>9. Security</h2>
+<p>Connections to Google use HTTPS and the OAuth 2.0 sign-in with PKCE. Tokens and keys are
+kept in Windows Credential Manager. Nothing leaves your computer without an action from you.</p>
+
+<h2>10. Children</h2>
+<p>Tiki is not directed to children under 13 and does not knowingly collect their data.</p>
+
+<h2>11. Changes to this policy</h2>
+<p>If this policy changes, we will update this page and its date. Material changes will be
+noted in the app's release notes.</p>
+
+<h2>12. Contact</h2>
+<p>Questions or requests about your data: <strong>[CONTACT EMAIL]</strong>.</p>
+
+<section class="lang" id="es" lang="es">
+<h1>Política de privacidad de Tiki</h1>
+<p class="meta">Última actualización: 22 de octubre de 2026</p>
+
+<p>Tiki es un asistente de escritorio para Windows que reúne tus tareas, recordatorios y
+reuniones, y te avisa en el momento oportuno. Lo desarrolla <strong>[DEVELOPER NAME]</strong>.</p>
+
+<p><strong>En resumen:</strong> Tiki funciona en tu computadora y tus datos se quedan en ella.
+No tenemos servidores que reciban tus datos, no los vendemos y no los usamos para publicidad.</p>
+
+<h2>1. Datos a los que accede</h2>
+<p>Las tareas, recordatorios, proyectos, notas y ajustes que escribes, guardados solo en una
+base de datos local. Si conectas Google, Tiki pide <code>calendar.readonly</code> (solo lectura
+del calendario), <code>openid</code> y <code>email</code>. De cada evento lee título, inicio y
+fin, si es de todo el día, lugar y enlace de videollamada, desde hoy hasta 8 días después.
+<strong>Tiki nunca crea, cambia ni borra eventos</strong>, ni accede a Gmail, Drive, contactos u
+otros servicios.</p>
+
+<h2>2. Uso</h2>
+<p>Solo para mostrar tus reuniones en la Agenda, avisarte antes de cada una con un botón para
+unirte, decirte cuánto tiempo libre tienes antes de la próxima y listarlas en el resumen de la
+mañana. Tu correo solo identifica la cuenta conectada en Ajustes.</p>
+
+<h2>3. Almacenamiento</h2>
+<p>Los eventos se copian a la base local y se actualizan cada 5 minutos. El token de acceso se
+guarda en el Administrador de credenciales de Windows. Tiki se comunica directamente con
+Google por HTTPS; nada pasa por servidores nuestros.</p>
+
+<h2>4. Compartir</h2>
+<p>No vendemos, compartimos ni transferimos los datos de Google a nadie. No se usan para
+publicidad, no se envían a proveedores de inteligencia artificial, no se usan para entrenar
+modelos y ninguna persona los lee.</p>
+
+<h2>5. IA opcional</h2>
+<p>Si agregas tu propia clave de Anthropic u OpenAI, el texto que escribes y un resumen de tus
+tareas y notas de proyecto se envían a ese proveedor. Los datos del calendario de Google no se
+incluyen.</p>
+
+<h2>6. Política de Google</h2>
+<p>El uso y la transferencia de información recibida de las API de Google cumplen la
+<a href="https://developers.google.com/terms/api-services-user-data-policy">Política de datos
+de usuario de los servicios de API de Google</a>, incluidos los requisitos de Uso limitado.</p>
+
+<h2>7. Conservación y borrado</h2>
+<p><strong>Ajustes › Cuentas › Desconectar</strong> borra las reuniones de esa cuenta y su token.
+Desinstalar Tiki y borrar su carpeta de datos elimina todo. También puedes revocar el acceso en
+<a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</p>
+
+<h2>8. Contacto</h2>
+<p><strong>[CONTACT EMAIL]</strong></p>
+</section>
+
+</main>
+</body>
+</html>
