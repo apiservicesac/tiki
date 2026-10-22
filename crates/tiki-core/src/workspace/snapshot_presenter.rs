@@ -2,7 +2,7 @@ use super::{FocusSuggestion, IslandSnapshot, SnapshotItem, SnapshotSection, Urge
 use crate::briefing::{
     BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, BriefNarrator, DailyBrief,
 };
-use crate::domain::{Priority, ProjectDirectory};
+use crate::domain::{Priority, ProjectDirectory, Repeat};
 use crate::i18n::{DateFormatter, Translator};
 use crate::mood::Mood;
 
@@ -111,6 +111,14 @@ impl<'context> SnapshotPresenter<'context> {
             detail_label: BriefDetailFormatter::new(self.translator).label(item.detail, brief.date),
             priority: item.priority,
             tags: item.tags.clone(),
+            at: match item.detail {
+                BriefDetail::RemindAt { at, .. } => Some(at),
+                _ => None,
+            },
+            repeat: match item.detail {
+                BriefDetail::RemindAt { repeat, .. } => repeat,
+                _ => Repeat::Never,
+            },
             urgency,
         }
     }

@@ -1,6 +1,8 @@
 use serde::Serialize;
 
-use crate::domain::{Priority, TaskId};
+use chrono::NaiveDateTime;
+
+use crate::domain::{Priority, Repeat, TaskId};
 use crate::mood::Mood;
 
 /// How pressing a line is; the interface turns it into a color.
@@ -26,6 +28,9 @@ pub struct SnapshotItem {
     pub detail_label: String,
     pub priority: Priority,
     pub tags: Vec<String>,
+    /// For reminders: when it rings, and how often it comes back (for the Agenda).
+    pub at: Option<NaiveDateTime>,
+    pub repeat: Repeat,
     pub urgency: Urgency,
 }
 
