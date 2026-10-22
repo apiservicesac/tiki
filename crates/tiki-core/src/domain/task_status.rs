@@ -8,18 +8,17 @@ use crate::error::{TikiError, TikiResult};
 pub enum TaskStatus {
     ToDo,
     InProgress,
-    Testing,
-    WaitingOnOthers,
+    /// Waiting on someone or something else; see `Task::waiting_for`.
+    Waiting,
     Done,
 }
 
 impl TaskStatus {
     /// Every status, in the order a task usually moves through them.
-    pub const ALL: [TaskStatus; 5] = [
+    pub const ALL: [TaskStatus; 4] = [
         TaskStatus::ToDo,
         TaskStatus::InProgress,
-        TaskStatus::Testing,
-        TaskStatus::WaitingOnOthers,
+        TaskStatus::Waiting,
         TaskStatus::Done,
     ];
 
@@ -28,8 +27,7 @@ impl TaskStatus {
         match self {
             TaskStatus::ToDo => "to_do",
             TaskStatus::InProgress => "in_progress",
-            TaskStatus::Testing => "testing",
-            TaskStatus::WaitingOnOthers => "waiting_on_others",
+            TaskStatus::Waiting => "waiting",
             TaskStatus::Done => "done",
         }
     }
@@ -52,9 +50,6 @@ impl TaskStatus {
 
     /// Whether the next step belongs to the user (not delivered, not waiting on someone else).
     pub fn is_on_user(self) -> bool {
-        matches!(
-            self,
-            TaskStatus::ToDo | TaskStatus::InProgress | TaskStatus::Testing
-        )
+        matches!(self, TaskStatus::ToDo | TaskStatus::InProgress)
     }
 }

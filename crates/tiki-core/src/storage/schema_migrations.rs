@@ -12,6 +12,7 @@ impl SchemaMigrations {
             M::up(Self::DELIVERY_AND_TASK_REMINDERS),
             M::up(Self::CLIENTS_BECOME_PROJECTS),
             M::up(Self::KINDS_TAGS_NOTES_AND_LESSONS),
+            M::up(Self::GENERAL_STATUSES_REPEATS_AND_FOLLOW_UPS),
         ])
     }
 
@@ -44,6 +45,15 @@ impl SchemaMigrations {
         CREATE UNIQUE INDEX tasks_by_external_record
             ON tasks(origin_plugin, origin_connection, origin_record)
             WHERE origin_plugin IS NOT NULL;
+    ";
+
+    /// Four general statuses instead of a consultant's five, repeating reminders, and what a
+    /// waiting task waits for (free text: Tiki keeps no list of people).
+    const GENERAL_STATUSES_REPEATS_AND_FOLLOW_UPS: &'static str = "
+        UPDATE tasks SET status = 'in_progress' WHERE status = 'testing';
+        UPDATE tasks SET status = 'waiting' WHERE status = 'waiting_on_others';
+        ALTER TABLE tasks ADD COLUMN repeat TEXT NOT NULL DEFAULT 'never';
+        ALTER TABLE tasks ADD COLUMN waiting_for TEXT NOT NULL DEFAULT '';
     ";
 
     /// Standalone reminders next to tasks, tags across projects, notes per project, and the

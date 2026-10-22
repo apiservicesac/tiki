@@ -13,7 +13,7 @@ fn a_task_needs_a_title() {
 fn moving_to_waiting_remembers_the_day_and_leaving_it_forgets_it() {
     let mut task = Task::new("Permisos de GitHub").unwrap();
 
-    task.move_to(TaskStatus::WaitingOnOthers, TestDay::october(18));
+    task.move_to(TaskStatus::Waiting, TestDay::october(18));
     assert_eq!(task.waiting_since, Some(TestDay::october(18)));
     assert_eq!(task.days_waiting(TestDay::today()), Some(3));
 

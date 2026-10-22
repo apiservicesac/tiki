@@ -76,21 +76,21 @@ impl SampleWorkspace {
                 Task::new("Saldo vacacional con solicitud rechazada")
                     .unwrap()
                     .with_project(self.andeanvet),
-                TaskStatus::Testing,
+                TaskStatus::InProgress,
                 today,
             ),
             Self::moved(
                 Task::new("Permisos de GitHub para retenciones de IGV")
                     .unwrap()
                     .with_project(self.vapestation),
-                TaskStatus::WaitingOnOthers,
+                TaskStatus::Waiting,
                 TestDay::october(18),
             ),
             Self::moved(
                 Task::new("Confirmación de zonas del dashboard CxC")
                     .unwrap()
                     .with_project(self.andeanvet),
-                TaskStatus::WaitingOnOthers,
+                TaskStatus::Waiting,
                 TestDay::october(20),
             ),
             Task::new("Completar módulo de importaciones").unwrap(),
