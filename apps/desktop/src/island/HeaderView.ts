@@ -13,10 +13,9 @@ export interface HeaderHandlers {
 export class HeaderView {
   private static readonly PANEL_TITLES: Readonly<Record<IslandPanel, string>> = Object.freeze({
     tasks: "island.tab.today",
-    capture: "island.action.capture",
+    capture: "island.action.new",
     settings: "settings.title",
     edit: "edit.title",
-    ask: "ask.title",
     projects: "projects.title",
     brief: "receipt.title",
   });
@@ -33,9 +32,7 @@ export class HeaderView {
       children: [
         leading,
         ElementFactory.create("span", { className: "island-head-spacer" }),
-        ElementFactory.iconButton(ICONS.sparkle, this.translator.text("ask.title"), () =>
-          handlers.onOpenPanel("ask")),
-        ElementFactory.iconButton(ICONS.plus, this.translator.text("island.action.capture"), () =>
+        ElementFactory.iconButton(ICONS.plus, this.translator.text("island.action.new"), () =>
           handlers.onOpenPanel("capture")),
         ElementFactory.iconButton(ICONS.settings, this.translator.text("island.action.settings"), () =>
           handlers.onOpenPanel("settings")),

@@ -17,6 +17,8 @@ export class ActionApplier {
           remindAt: action.remindAt,
           kind: action.type === "create_task" ? "task" : "reminder",
           tags: [],
+          repeat: "never",
+          waitingFor: null,
         });
         return;
       case "set_reminder":

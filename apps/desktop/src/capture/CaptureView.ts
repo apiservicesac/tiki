@@ -1,122 +1,150 @@
-import type { InterpretedCapture } from "../ai";
-import { ITEM_KINDS, PRIORITIES, type ItemKind, type Priority, type ProjectSummary } from "../backend/contracts";
-import { TagText } from "../dom/TagText";
+import type { InterpretedCapture, ProposedAction } from "../ai";
+import { ProposedActionsView, type ApplyAction } from "../assistant/ProposedActionsView";
+import { ITEM_KINDS, PRIORITIES, REPEATS, type ItemKind, type Priority, type ProjectSummary, type Repeat } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
+import { TagText } from "../dom/TagText";
 import type { Translator } from "../i18n/Translator";
 import { ProjectPicker } from "../island/ProjectPicker";
 
 export interface CaptureViewHandlers {
-  /** Enter in the sentence box: the controller decides whether the AI reads it or it is saved. */
+  /** Enter in the box: the controller asks the AI, or saves the item. */
   onSubmit: () => void;
   onCancel: () => void;
   onOpenAiSettings: () => void;
 }
 
+/** What the box shows: nothing read yet, an item to review, or an answer. */
+type BoxMode = "idle" | "capture" | "answer";
+
 /**
- * Quick capture: a sentence box and the task's fields under it (project, due date,
- * reminder, priority). With AI, the first Enter fills the fields from the sentence and the
- * user reviews them; without AI, the user picks them. Nothing is guessed with word rules.
+ * Tiki's single box. The user writes anything: with AI, Enter reads it and either fills an
+ * item's fields to review (a task or a reminder) or answers and proposes actions. Without
+ * AI, the text is the title and the user picks the fields. Nothing is guessed with rules.
  *
- * The box is kept while the user stays in quick capture, so refreshes never wipe it.
+ * A task shows project, due date, reminder, priority, tags and who it waits for; a reminder
+ * shows only its moment and how often it repeats. The box is kept while it stays open, so
+ * refreshes never wipe it.
  */
 export class CaptureView {
   private element: HTMLElement | null = null;
   private sentence: HTMLInputElement | null = null;
+  private kindToggle: HTMLElement | null = null;
+  private fields: HTMLElement | null = null;
+  private answer: HTMLElement | null = null;
+  private status: HTMLElement | null = null;
   private dueDate: HTMLInputElement | null = null;
   private remindAt: HTMLInputElement | null = null;
   private priority: HTMLSelectElement | null = null;
+  private repeat: HTMLSelectElement | null = null;
   private tags: HTMLInputElement | null = null;
-  private kindToggle: HTMLElement | null = null;
-  private kind: ItemKind = "task";
-  /** What the AI understood and from which sentence, to learn from the user's corrections. */
-  private reading: { sentence: string; understood: InterpretedCapture } | null = null;
-  private status: HTMLElement | null = null;
+  private waitingFor: HTMLInputElement | null = null;
   private readonly picker = new ProjectPicker();
+  private readonly actionsView: ProposedActionsView;
   private project: string | null = null;
   private projects: readonly ProjectSummary[] = [];
-  /** The AI already read this sentence: the next Enter saves. */
-  private interpreted = false;
+  private kind: ItemKind = "task";
+  private mode: BoxMode = "idle";
+  private aiReady = false;
+  /** What the AI understood and from which text, to learn from the user's corrections. */
+  private reading: { sentence: string; understood: InterpretedCapture } | null = null;
 
-  constructor(private readonly translator: Translator) {}
+  constructor(private readonly translator: Translator) {
+    this.actionsView = new ProposedActionsView(translator);
+  }
 
-  /** The capture box, created on first use and reused until `reset`. */
+  /** The box, created on first use and reused until `reset`. */
   render(handlers: CaptureViewHandlers, projects: readonly ProjectSummary[], aiReady: boolean): HTMLElement {
     this.projects = projects;
+    this.aiReady = aiReady;
     this.element ??= this.build(handlers);
     this.drawPicker();
-    if (!this.interpreted) {
+    this.drawVisibility();
+    if (this.mode === "idle") {
       this.setStatus(aiReady ? "capture.hint_ai" : "capture.hint_manual", !aiReady, handlers);
     }
     return this.element;
   }
 
-  /** Forgets the box, so the next capture starts empty. */
+  /** Forgets the box, so it opens empty next time. */
   reset(): void {
     this.element = null;
     this.project = null;
-    this.interpreted = false;
     this.kind = "task";
+    this.mode = "idle";
     this.reading = null;
   }
 
-  /** The sentence and what the AI understood from it, when the AI read it. */
+  /** Whether Enter should ask the AI (nothing read yet, or after an answer) rather than save. */
+  get needsReading(): boolean {
+    return this.aiReady && this.mode !== "capture";
+  }
+
+  /** The text and what the AI understood from it, when the AI read an item. */
   get aiReading(): { sentence: string; understood: InterpretedCapture } | null {
     return this.reading;
   }
 
-  /** Whether the AI has already filled the fields for the current sentence. */
-  get isInterpreted(): boolean {
-    return this.interpreted;
+  get text(): string {
+    return this.sentence?.value.trim() ?? "";
   }
 
-  /** The task as the user sees it now: the sentence as title and the chosen fields. */
+  /** The item as the user sees it now: the text as title and the chosen fields. */
   values(): InterpretedCapture {
+    const reminder = this.kind === "reminder";
     return {
-      title: this.sentence?.value.trim() ?? "",
-      projectName: this.project,
-      dueDate: this.dueDate?.value || null,
-      priority: (this.priority?.value as Priority | undefined) ?? "normal",
+      title: this.text,
+      projectName: reminder ? null : this.project,
+      dueDate: reminder ? null : this.dueDate?.value || null,
+      priority: reminder ? "normal" : ((this.priority?.value as Priority | undefined) ?? "normal"),
       remindAt: this.remindAt?.value ? `${this.remindAt.value}:00` : null,
       kind: this.kind,
-      tags: TagText.parse(this.tags?.value ?? ""),
+      tags: reminder ? [] : TagText.parse(this.tags?.value ?? ""),
+      repeat: reminder ? ((this.repeat?.value as Repeat | undefined) ?? "never") : "never",
+      waitingFor: reminder ? null : this.waitingFor?.value.trim() || null,
     };
   }
 
-  /** The AI is reading the sentence. */
   showThinking(): void {
     this.setStatus("capture.thinking", false);
     this.status?.classList.add("capture-status-thinking");
   }
 
-  /** The AI's reading, put in the fields for the user to review; the next Enter saves. */
-  fill(capture: InterpretedCapture): void {
-    this.interpreted = true;
-    this.reading = { sentence: this.sentence?.value.trim() ?? "", understood: capture };
-    this.kind = capture.kind;
-    this.drawKind();
-    if (this.tags) {
-      this.tags.value = TagText.format(capture.tags);
-    }
+  /** The AI's reading in the fields, for the user to review; the next Enter saves. */
+  fill(item: InterpretedCapture): void {
+    this.mode = "capture";
+    this.reading = { sentence: this.text, understood: item };
     if (this.sentence) {
-      this.sentence.value = capture.title;
+      this.sentence.value = item.title;
     }
-    this.project = capture.projectName;
-    if (this.dueDate) {
-      this.dueDate.value = capture.dueDate ?? "";
-    }
-    if (this.remindAt) {
-      this.remindAt.value = capture.remindAt?.slice(0, 16) ?? "";
-    }
-    if (this.priority) {
-      this.priority.value = capture.priority;
-    }
+    this.kind = item.kind;
+    this.project = item.projectName;
+    this.setValue(this.dueDate, item.dueDate ?? "");
+    this.setValue(this.remindAt, item.remindAt?.slice(0, 16) ?? "");
+    this.setValue(this.priority, item.priority);
+    this.setValue(this.repeat, item.repeat);
+    this.setValue(this.tags, TagText.format(item.tags));
+    this.setValue(this.waitingFor, item.waitingFor ?? "");
+    this.drawKind();
     this.drawPicker();
+    this.drawVisibility();
     this.setStatus("capture.review", false);
+  }
+
+  /** The AI answered a question, maybe proposing changes the user can apply. */
+  showAnswer(text: string, actions: readonly ProposedAction[], apply: ApplyAction): void {
+    this.mode = "answer";
+    this.answer?.replaceChildren(
+      ElementFactory.create("p", { className: "ask-answer", text }),
+      ...this.actionsView.render(actions, apply),
+    );
+    this.drawVisibility();
+    this.setStatus("capture.after_answer", false);
   }
 
   /** The AI could not read it: the user fills the fields, and the next Enter saves. */
   showAiFailed(): void {
-    this.interpreted = true;
+    this.mode = "capture";
+    this.drawVisibility();
     this.setStatus("capture.ai_failed", false);
   }
 
@@ -132,43 +160,19 @@ export class CaptureView {
         "aria-label": this.translator.text("capture.placeholder"),
       },
     });
-    this.dueDate = this.field("date", "capture-due");
-    this.remindAt = this.field("datetime-local", "capture-remind");
-    this.priority = ElementFactory.create("select", {
-      className: "settings-select",
-      attributes: { id: "capture-priority", "aria-label": this.translator.text("capture.field.priority") },
-      children: PRIORITIES.map((priority) =>
-        ElementFactory.create("option", { text: this.translator.text(`priority.${priority}`), attributes: { value: priority } })),
-    });
-    this.priority.value = "normal";
-    this.tags = ElementFactory.create("input", {
-      className: "settings-input",
-      attributes: { type: "text", id: "capture-tags", autocomplete: "off", placeholder: this.translator.text("edit.tags_placeholder") },
-    });
     this.kindToggle = ElementFactory.create("div", { className: "tasks-toggle capture-kind", attributes: { role: "radiogroup" } });
-    this.drawKind();
+    this.fields = ElementFactory.create("div", { className: "capture-fields" });
+    this.answer = ElementFactory.create("div", { className: "capture-answer", attributes: { "aria-live": "polite" } });
     this.status = ElementFactory.create("p", { className: "island-hint capture-status" });
+    this.buildFields();
+    this.drawKind();
 
     const element = ElementFactory.create("div", {
       className: "capture",
-      children: [
-        this.sentence,
-        this.kindToggle,
-        ElementFactory.create("div", {
-          className: "capture-fields",
-          children: [
-            this.labelled("capture.field.project", this.picker.element, "div"),
-            this.labelled("capture.field.due", this.dueDate),
-            this.labelled("capture.field.remind", this.remindAt),
-            this.labelled("capture.field.priority", this.priority),
-            this.labelled("edit.field.tags", this.tags),
-          ],
-        }),
-        this.status,
-      ],
+      children: [this.sentence, this.kindToggle, this.fields, this.answer, this.status],
     });
     element.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !this.picker.isOpen() && (this.sentence?.value.trim() ?? "") !== "") {
+      if (event.key === "Enter" && !this.picker.isOpen() && this.text !== "" && !(event.target instanceof HTMLTextAreaElement)) {
         event.preventDefault();
         handlers.onSubmit();
       } else if (event.key === "Escape" && !this.picker.isOpen()) {
@@ -179,7 +183,51 @@ export class CaptureView {
     return element;
   }
 
-  /** Task or reminder: a reminder is a heads-up at a moment, done once it rings. */
+  private buildFields(): void {
+    this.dueDate = this.input("date", "capture-due");
+    this.remindAt = this.input("datetime-local", "capture-remind");
+    this.priority = this.select("capture-priority", PRIORITIES.map((priority) => [priority, this.translator.text(`priority.${priority}`)]));
+    this.priority.value = "normal";
+    this.repeat = this.select("capture-repeat", REPEATS.map((repeat) => [repeat, this.translator.text(`repeat.${repeat}`)]));
+    this.tags = this.input("text", "capture-tags", this.translator.text("edit.tags_placeholder"));
+    this.waitingFor = this.input("text", "capture-waiting", this.translator.text("edit.waiting_placeholder"));
+  }
+
+  /** The fields of the current kind: a reminder only has its moment and its repeat. */
+  private drawFields(): void {
+    if (!this.fields || !this.dueDate || !this.remindAt || !this.priority || !this.repeat || !this.tags || !this.waitingFor) {
+      return;
+    }
+    const children = this.kind === "reminder"
+      ? [
+        this.labelled("capture.field.moment", this.remindAt),
+        this.labelled("capture.field.repeat", this.repeat),
+      ]
+      : [
+        this.labelled("capture.field.project", this.picker.element, "div"),
+        this.labelled("capture.field.due", this.dueDate),
+        this.labelled("capture.field.remind", this.remindAt),
+        this.labelled("capture.field.priority", this.priority),
+        this.labelled("edit.field.waiting", this.waitingFor),
+        this.labelled("edit.field.tags", this.tags),
+      ];
+    this.fields.replaceChildren(...children);
+  }
+
+  /** Fields show once there is an item to review, or always without AI; answers apart. */
+  private drawVisibility(): void {
+    const showFields = !this.aiReady || this.mode === "capture";
+    if (this.fields) {
+      this.fields.hidden = !showFields;
+    }
+    if (this.kindToggle) {
+      this.kindToggle.hidden = !showFields;
+    }
+    if (this.answer) {
+      this.answer.hidden = this.mode !== "answer";
+    }
+  }
+
   private drawKind(): void {
     const buttons = ITEM_KINDS.map((kind) => {
       const button = ElementFactory.create("button", {
@@ -195,6 +243,7 @@ export class CaptureView {
       return button;
     });
     this.kindToggle?.replaceChildren(...buttons);
+    this.drawFields();
   }
 
   private drawPicker(): void {
@@ -207,6 +256,7 @@ export class CaptureView {
       selected: this.project,
       searchPlaceholder: this.translator.text("tasks.search_project"),
       emptyText: this.translator.text("tasks.no_project_match"),
+      createLabel: (name) => this.translator.format("projects.create", { name }),
       onSelect: (value) => {
         this.project = value;
         this.drawPicker();
@@ -235,8 +285,25 @@ export class CaptureView {
     this.status.replaceChildren(...children);
   }
 
-  private field(type: string, id: string): HTMLInputElement {
-    return ElementFactory.create("input", { className: "settings-input", attributes: { type, id, autocomplete: "off" } });
+  private setValue(control: HTMLInputElement | HTMLSelectElement | null, value: string): void {
+    if (control) {
+      control.value = value;
+    }
+  }
+
+  private input(type: string, id: string, placeholder = ""): HTMLInputElement {
+    return ElementFactory.create("input", {
+      className: "settings-input",
+      attributes: { type, id, autocomplete: "off", ...(placeholder ? { placeholder } : {}) },
+    });
+  }
+
+  private select(id: string, options: Array<[string, string]>): HTMLSelectElement {
+    return ElementFactory.create("select", {
+      className: "settings-select",
+      attributes: { id },
+      children: options.map(([value, label]) => ElementFactory.create("option", { text: label, attributes: { value } })),
+    });
   }
 
   private labelled(labelKey: string, control: HTMLElement, tag: "label" | "div" = "label"): HTMLElement {

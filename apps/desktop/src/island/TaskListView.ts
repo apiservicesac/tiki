@@ -1,4 +1,4 @@
-import type { DeliveredItem, SnapshotItem, SnapshotSection } from "../backend/contracts";
+import type { DeliveredItem, Priority, SnapshotItem, SnapshotSection } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
@@ -44,9 +44,12 @@ export class TaskListView {
 
     const text = ElementFactory.create("button", {
       className: "island-row-text",
-      text: item.title,
       attributes: { type: "button", title: this.translator.text("island.row.edit") },
-      children: TaskListView.context(item.projectName, item.tags),
+      children: [
+        ...this.priorityMark(item.priority),
+        document.createTextNode(item.title),
+        ...TaskListView.context(item.projectName, item.tags),
+      ],
     });
     text.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -98,5 +101,18 @@ export class TaskListView {
   private static context(projectName: string | null, tags: readonly string[]): HTMLElement[] {
     const parts = [...(projectName ? [projectName] : []), ...tags.map((tag) => `#${tag}`)];
     return parts.length > 0 ? [ElementFactory.create("small", { text: parts.join(" · ") })] : [];
+  }
+
+  /** "!!" for urgent and "!" for important work, before the title. */
+  private priorityMark(priority: Priority): HTMLElement[] {
+    const marks: Partial<Record<Priority, string>> = { urgent: "!!", high: "!" };
+    const mark = marks[priority];
+    return mark
+      ? [ElementFactory.create("span", {
+        className: `island-priority island-priority-${priority}`,
+        text: mark,
+        attributes: { title: this.translator.text(`priority.${priority}`) },
+      })]
+      : [];
   }
 }

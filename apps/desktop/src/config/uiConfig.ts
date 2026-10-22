@@ -15,6 +15,12 @@ export const UI_CONFIG = Object.freeze({
   alertDurationMs: 12_000,
   /** The island's chime: two notes, each this long, at a gentle volume (0 to 1). */
   alertChime: Object.freeze({ notesHz: Object.freeze([880, 1318.5]), noteSeconds: 0.16, volume: 0.12 }),
+  /** The snooze buttons of a reminder: minutes, and the translation key of the label. */
+  snoozeMinutes: Object.freeze([
+    Object.freeze({ minutes: 10, labelKey: "alert.snooze_10" }),
+    Object.freeze({ minutes: 60, labelKey: "alert.snooze_60" }),
+    Object.freeze({ minutes: 24 * 60, labelKey: "alert.snooze_tomorrow" }),
+  ]),
   /** The island folds back this long after the pointer leaves it. */
   foldDelayMs: 650,
   motion: Object.freeze({

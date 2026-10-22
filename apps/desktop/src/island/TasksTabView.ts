@@ -1,4 +1,4 @@
-import type { ProjectSummary, DeliveredItem, SnapshotItem, SnapshotSection, Urgency } from "../backend/contracts";
+import type { ProjectSummary, DeliveredItem, SnapshotItem, Urgency } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import { TextMatcher } from "../dom/TextMatcher";
@@ -9,7 +9,8 @@ import type { TaskListHandlers, TaskListView } from "./TaskListView";
 export type TasksView = "pending" | "delivered";
 
 export interface TasksTabData {
-  sections: SnapshotSection[];
+  /** Every open item. */
+  items: SnapshotItem[];
   delivered: DeliveredItem[];
   projects: ProjectSummary[];
   view: TasksView;
@@ -164,7 +165,7 @@ export class TasksTabView {
     }
     const query = this.search?.value ?? "";
     const rows = data.view === "pending"
-      ? this.pendingRows(data.sections, query, handlers)
+      ? this.pendingRows(data.items, query, handlers)
       : this.deliveredRows(data.delivered, query, handlers);
     const emptyKey = data.view === "pending" ? "tasks.empty_pending" : "tasks.empty_delivered";
     this.list.replaceChildren(
@@ -172,10 +173,8 @@ export class TasksTabView {
     );
   }
 
-  private pendingRows(sections: SnapshotSection[], query: string, handlers: TaskListHandlers): HTMLElement[] {
-    const items = sections
-      .flatMap((section) => section.items)
-      .filter((item) => this.keeps(item.title, item.projectName, item.tags, query));
+  private pendingRows(openItems: SnapshotItem[], query: string, handlers: TaskListHandlers): HTMLElement[] {
+    const items = openItems.filter((item) => this.keeps(item.title, item.projectName, item.tags, query));
     return this.groups(items).flatMap((group) => [
       this.groupHeader(group),
       ...group.items.map((item) => this.taskList.row(item, handlers)),

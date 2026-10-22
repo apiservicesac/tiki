@@ -21,10 +21,14 @@ export type Urgency = "critical" | "soon" | "waiting" | "normal" | "reminder";
 export const ITEM_KINDS = Object.freeze(["task", "reminder"] as const);
 export type ItemKind = (typeof ITEM_KINDS)[number];
 
+/** How often a reminder comes back after it rings. */
+export const REPEATS = Object.freeze(["never", "daily", "weekdays", "weekly", "monthly"] as const);
+export type Repeat = (typeof REPEATS)[number];
+
 /** A correction the user made to an AI capture (see `CaptureLesson` in the core). */
 export type CaptureLesson = HarnessLesson;
 
-export const TASK_STATUSES = Object.freeze(["to_do", "in_progress", "testing", "waiting_on_others", "done"] as const);
+export const TASK_STATUSES = Object.freeze(["to_do", "in_progress", "waiting", "done"] as const);
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
 export const PRIORITIES = Object.freeze(["low", "normal", "high", "urgent"] as const);
@@ -42,6 +46,7 @@ export interface SnapshotItem {
   projectName: string | null;
   projectColor: string | null;
   detailLabel: string;
+  priority: Priority;
   /** Lowercase, without "#". */
   tags: string[];
   urgency: Urgency;
@@ -66,7 +71,12 @@ export interface IslandSnapshot {
   deliveredToday: number;
   closedSummary: string;
   todaySubtitle: string;
+  /** Today only: overdue, due soon, today's reminders and follow-ups. */
   sections: SnapshotSection[];
+  /** Every open item, for the Tasks tab. */
+  openItems: SnapshotItem[];
+  /** What to do now, and why; `null` when nothing presses. */
+  focus: { item: SnapshotItem; reason: string } | null;
   narration: string;
 }
 
@@ -84,6 +94,9 @@ export interface TaskEdit {
   remindAt: string | null;
   kind: ItemKind;
   tags: string[];
+  repeat: Repeat;
+  /** Who or what the item waits for, as the user wrote it. */
+  waitingFor: string;
 }
 
 export interface TaskDetails extends TaskEdit {
@@ -92,7 +105,7 @@ export interface TaskDetails extends TaskEdit {
 
 /** An alert already written in the user's language (see `TikiAlert` in the core). */
 export interface TikiAlert {
-  kind: "morning" | "evening" | "task";
+  kind: "morning" | "evening" | "task" | "reminder" | "follow_up";
   title: string;
   /** Lines separated by line breaks. */
   body: string;
@@ -177,6 +190,8 @@ export const LOCALE_CODES: Readonly<Record<LocaleName, LocaleCode>> = Object.fre
 export interface TikiBackend {
   islandSnapshot(): Promise<IslandSnapshot>;
   moveTask(taskId: number, status: TaskStatus): Promise<void>;
+  /** Puts off a reminder for some minutes; one that already rang comes back. */
+  snooze(taskId: number, minutes: number): Promise<void>;
   preferences(): Promise<UserPreferences>;
   updatePreferences(preferences: UserPreferences): Promise<void>;
   /** Saves a task exactly as the user confirmed it after the assistant read their sentence. */

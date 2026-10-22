@@ -29,6 +29,10 @@ export class TauriBackend implements TikiBackend {
     await invoke("move_task", { taskId, status });
   }
 
+  async snooze(taskId: number, minutes: number): Promise<void> {
+    await invoke("snooze", { taskId, minutes });
+  }
+
   preferences(): Promise<UserPreferences> {
     return invoke<UserPreferences>("preferences");
   }

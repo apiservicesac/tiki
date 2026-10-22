@@ -1135,3 +1135,106 @@ button.island-notice {
 .ask-action-done .ask-apply { background: transparent; color: var(--island-good); cursor: default; }
 .ask-action-failed .ask-apply { background: var(--urgency-critical-background); color: var(--urgency-critical-text); }
 .ask-apply-all { justify-self: end; }
+
+/* Priority marks before a title: "!!" urgent, "!" important. */
+.island-priority {
+  margin-right: 6px;
+  font: 800 12px var(--font-mono);
+}
+
+.island-priority-urgent { color: var(--urgency-critical-text); }
+.island-priority-high { color: var(--urgency-soon-text); }
+
+/* "Now: do X" on top of Today. */
+.island-focus {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  margin: 4px 0 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: 12px;
+  background: var(--island-active);
+  color: var(--island-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.island-focus:hover { background: var(--island-soft-hover); }
+
+.island-focus-label {
+  font: 600 10.5px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--urgency-soon-text);
+}
+
+.island-focus strong { font-size: 13px; }
+.island-focus small { font-size: 11.5px; color: var(--island-muted); }
+
+/* One summary card: the latest alert with its buttons, or the AI brief. */
+.island-summary,
+.island-notice-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--island-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.island-summary {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--island-soft);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.island-summary-preparing { color: var(--island-muted); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .island-summary-preparing { animation: capture-thinking 1.2s ease-in-out infinite alternate; }
+}
+
+.island-notice-open strong { font-size: 12.5px; }
+
+.island-notice-open p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.island-notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.island-summary-prepare {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border: 1px dashed var(--island-card-edge);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--island-muted);
+  font: 600 12px var(--font-body);
+  cursor: pointer;
+}
+
+.island-summary-prepare:hover { color: var(--island-text); background: var(--island-soft); }
+
+/* The single box: the answer under the text when it was a question. */
+.capture-answer { display: grid; gap: 8px; }
+.capture-answer[hidden],
+.capture-fields[hidden],
+.capture-kind[hidden] { display: none; }
+
+.picker-create { color: var(--island-good); font-weight: 600; }

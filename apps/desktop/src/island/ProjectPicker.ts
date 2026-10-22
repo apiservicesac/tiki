@@ -25,6 +25,11 @@ export interface ProjectPickerConfig {
   emptyText: string;
   /** Extra entries under the list, such as "New project". */
   actions?: ProjectPickerAction[];
+  /**
+   * When given, a search that matches no project offers to use it as a new project
+   * ("Create «Sur»"); the name is chosen as is and the core creates it when saving.
+   */
+  createLabel?: (name: string) => string;
   onSelect: (value: string | null) => void;
 }
 
@@ -77,7 +82,9 @@ export class ProjectPicker {
     this.trigger.id = config.id;
     this.search.placeholder = config.searchPlaceholder;
     this.search.setAttribute("aria-label", config.searchPlaceholder);
-    const selected = config.options.find((option) => option.value === config.selected) ?? config.options[0];
+    // A new project the user typed is shown by its name until it is saved.
+    const selected = config.options.find((option) => option.value === config.selected)
+      ?? (config.selected !== null ? { value: config.selected, label: config.selected, color: null } : config.options[0]);
     this.trigger.replaceChildren(
       ...(selected ? this.optionContent(selected) : []),
       ElementFactory.fromTrustedMarkup("picker-chevron", ICONS.chevron),
@@ -113,11 +120,34 @@ export class ProjectPicker {
       return;
     }
     const matches = this.matchingOptions(config);
+    const create = this.createOption(config);
+    const rows = matches.map((option) => this.optionButton(option, option.value === config.selected));
     this.list.replaceChildren(
-      ...(matches.length > 0
-        ? matches.map((option) => this.optionButton(option, option.value === config.selected))
-        : [ElementFactory.create("p", { className: "picker-empty", text: config.emptyText })]),
+      ...(create ? [...rows, create] : rows.length > 0 ? rows : [ElementFactory.create("p", { className: "picker-empty", text: config.emptyText })]),
     );
+  }
+
+  /** "Create «X»" for a typed name no project has (ignoring case and accents). */
+  private createOption(config: ProjectPickerConfig): HTMLElement | null {
+    const name = this.search.value.trim();
+    if (!config.createLabel || name === "") {
+      return null;
+    }
+    const taken = config.options.some((option) => option.value !== null
+      && TextMatcher.normalize(option.value) === TextMatcher.normalize(name));
+    if (taken) {
+      return null;
+    }
+    const button = ElementFactory.create("button", {
+      className: "picker-option picker-create",
+      text: config.createLabel(name),
+      attributes: { type: "button", "data-create": name },
+    });
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.choose(name);
+    });
+    return button;
   }
 
   /** Special entries always show; projects only when they match the search. */
@@ -133,10 +163,12 @@ export class ProjectPicker {
       this.trigger.focus();
     } else if (event.key === "Enter" && this.config) {
       event.preventDefault();
-      const first = this.matchingOptions(this.config).find((option) => option.value !== null)
-        ?? this.matchingOptions(this.config)[0];
+      const first = this.matchingOptions(this.config).find((option) => option.value !== null);
+      const typed = this.search.value.trim();
       if (first) {
         this.choose(first.value);
+      } else if (this.config.createLabel && typed !== "") {
+        this.choose(typed);
       }
     }
   }

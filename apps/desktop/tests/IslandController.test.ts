@@ -110,12 +110,14 @@ describe("IslandController", () => {
     expect(root.querySelector<HTMLInputElement>("#capture-input")?.value).toBe("llamar a altamira");
   });
 
-  it("expands on click and lists every section of the day", () => {
+  it("expands on click and shows only today, with what to do now", () => {
     notch()?.click();
 
     const groups = [...root.querySelectorAll(".island-group")].map((group) => group.textContent);
-    expect(groups).toEqual(["Atrasado", "Vence pronto", "Te toca", "Esperando a otro"]);
-    expect(root.querySelectorAll(".island-row")).toHaveLength(6);
+    expect(groups).toEqual(["Atrasado", "Vence pronto", "Toca insistir"]);
+    expect(root.querySelectorAll(".island-tab-content .island-row")).toHaveLength(4);
+    expect(root.querySelector("#today-focus")?.textContent).toContain("Ahora · Está atrasada");
+    expect(root.querySelector('[data-task-id="1"] .island-priority-high')?.textContent).toBe("!");
   });
 
   it("delivers a task with its check button and celebrates", async () => {
@@ -137,7 +139,8 @@ describe("IslandController", () => {
     const remind = root.querySelector<HTMLInputElement>("#edit-remind");
     if (title && status && remind) {
       title.value = "Tracking de formularios";
-      status.value = "waiting_on_others";
+      status.value = "waiting";
+      status.dispatchEvent(new Event("change"));
       remind.value = "2026-10-22T09:30";
     }
     await controller.refresh();
@@ -153,10 +156,12 @@ describe("IslandController", () => {
         projectName: "Altamira",
         dueDate: "2026-10-22",
         priority: "normal",
-        status: "waiting_on_others",
+        status: "waiting",
         remindAt: "2026-10-22T09:30:00",
         kind: "task",
         tags: [],
+        repeat: "never",
+        waitingFor: "",
       },
     });
     await vi.waitFor(() => expect(controller.currentState.panel).toBe("tasks"));
@@ -244,18 +249,35 @@ describe("IslandController", () => {
     await vi.waitFor(() => expect(backend.projects.some((project) => project.projectId === 1)).toBe(false));
   });
 
-  it("saves a standalone reminder with tags from quick capture", async () => {
+  it("saves a repeating reminder from the box, with only its moment and repeat", async () => {
     controller.openPanel("capture");
-    typeCapture(root, "Llamar a mamá");
+    typeCapture(root, "Tomar la pastilla");
     root.querySelector<HTMLButtonElement>('[data-kind="reminder"]')?.click();
+    expect(root.querySelector("#capture-due")).toBeNull();
     const remind = root.querySelector<HTMLInputElement>("#capture-remind");
-    const tags = root.querySelector<HTMLInputElement>("#capture-tags");
-    if (remind && tags) {
-      remind.value = "2026-10-21T17:00";
-      tags.value = "#familia, Personal";
+    const repeat = root.querySelector<HTMLSelectElement>("#capture-repeat");
+    if (remind && repeat) {
+      remind.value = "2026-10-22T08:00";
+      repeat.value = "daily";
     }
     await controller.submitCapture();
-    expect(backend.confirmedCaptures[0]).toMatchObject({ kind: "reminder", remindAt: "2026-10-21T17:00:00", tags: ["familia", "personal"] });
+    expect(backend.confirmedCaptures[0]).toMatchObject({ kind: "reminder", remindAt: "2026-10-22T08:00:00", repeat: "daily", tags: [] });
+  });
+
+  it("creates a new project from the picker by typing its name", async () => {
+    controller.openPanel("capture");
+    typeCapture(root, "Preparar propuesta");
+    root.querySelector<HTMLButtonElement>("#capture-project")?.click();
+    const search = root.querySelector<HTMLInputElement>(".picker-search");
+    if (search) {
+      search.value = "Constructora Sur";
+      search.dispatchEvent(new Event("input"));
+    }
+    root.querySelector<HTMLButtonElement>(".picker-create")?.click();
+    expect(root.querySelector("#capture-project")?.textContent).toBe("Constructora Sur");
+
+    await controller.submitCapture();
+    expect(backend.confirmedCaptures[0]).toMatchObject({ projectName: "Constructora Sur" });
   });
 
   it("keeps notes for a project as context for Tiki", async () => {
@@ -281,12 +303,14 @@ describe("IslandController", () => {
     expect(notch()?.dataset.mode).toBe("expanded");
   });
 
-  it("switches tabs and shows the empty state of Tickets", () => {
+  it("shows Today, Tasks and Agenda, and no Tickets tab until a ticket connector exists", () => {
     controller.setMode("expanded");
-    root.querySelector<HTMLButtonElement>('[data-tab="tickets"]')?.click();
+    const tabs = [...root.querySelectorAll<HTMLElement>(".island-tab[data-tab]")].map((tab) => tab.dataset.tab);
+    expect(tabs).toEqual(["today", "all_tasks", "agenda"]);
 
-    expect(controller.currentState.tab).toBe("tickets");
-    expect(root.querySelector(".island-empty")?.textContent).toContain("Ajustes › Plugins");
+    root.querySelector<HTMLButtonElement>('[data-tab="agenda"]')?.click();
+    expect(controller.currentState.tab).toBe("agenda");
+    expect(root.querySelector(".island-empty")).not.toBeNull();
   });
 
   it("opens quick capture when the shell asks for it", () => {
@@ -307,7 +331,17 @@ describe("IslandController", () => {
 
     await controller.submitCapture();
     expect(backend.confirmedCaptures).toEqual([
-      { title: "revisar acta altamira viernes", projectName: "Altamira", dueDate: "2026-10-23", priority: "normal", remindAt: null, kind: "task", tags: [] },
+      {
+        title: "revisar acta altamira viernes",
+        projectName: "Altamira",
+        dueDate: "2026-10-23",
+        priority: "normal",
+        remindAt: null,
+        kind: "task",
+        tags: [],
+        repeat: "never",
+        waitingFor: null,
+      },
     ]);
     expect(controller.currentState.panel).toBe("tasks");
     expect(notch()?.dataset.mood).toBe("happy");
@@ -389,7 +423,7 @@ describe("IslandController", () => {
     notch()?.click();
     await vi.waitFor(() => expect(controller.currentState.panel).toBe("brief"));
     expect(root.querySelector(".receipt-head strong")?.textContent).toBe("Cierre del día");
-    expect(root.querySelectorAll(".receipt-block")).toHaveLength(4);
+    expect(root.querySelectorAll(".receipt-block")).toHaveLength(3);
     expect(root.querySelector(".receipt-tip")?.textContent).toContain("Mañana vence: Tracking");
     expect(root.querySelector(".receipt-foot")?.textContent).toBe("6 pendientes · 2 esperando · 1 entregadas hoy");
     expect(controller.currentState.unreadAlert).toBe(false);
@@ -415,13 +449,14 @@ describe("IslandController", () => {
     expect(notch()?.dataset.mode).toBe("expanded");
   });
 
-  it("asks for a key before answering questions", () => {
-    controller.openPanel("ask");
-    expect(root.querySelector("#ask-input")).toBeNull();
-    expect(root.querySelector(".ask .island-empty")?.textContent).toContain("Ajustes");
+  it("lets the user mark a reminder done or snooze it from Today", async () => {
+    controller.setMode("expanded");
+    backend.deliverAlert({ kind: "reminder", title: "Recordatorio", body: "Llamar a mamá", taskId: 7 });
+    await vi.waitFor(() => expect(root.querySelector("#alert-snooze-10")).not.toBeNull());
 
-    root.querySelector<HTMLButtonElement>(".ask .settings-button")?.click();
-    expect(backend.openedSettings).toEqual(["ai"]);
+    root.querySelector<HTMLButtonElement>("#alert-snooze-10")?.click();
+    await vi.waitFor(() => expect(backend.snoozed).toEqual([{ taskId: 7, minutes: 10 }]));
+    await vi.waitFor(() => expect(root.querySelector(".island-notice")).toBeNull());
   });
 
   it("switches tabs instantly, without fading the card", () => {
@@ -466,24 +501,39 @@ describe("IslandController with the AI assistant", () => {
 
   afterEach(() => controller.stop());
 
-  it("fills the fields from the sentence with AI and saves them on the second Enter", async () => {
-    backend.aiShell = new FakeShell(claudeReads({
+  const captureReply = (item: object) => claudeReads({ intent: "capture", item, answer: null, actions: [] });
+  const answerReply = (answer: string, actions: object[] = []) => claudeReads({ intent: "answer", item: null, answer, actions });
+  const item = (fields: object) => ({
+    kind: "task",
+    title: "",
+    projectName: null,
+    dueDate: null,
+    remindAt: null,
+    repeat: "never",
+    waitingFor: null,
+    tags: [],
+    priority: "normal",
+    ...fields,
+  });
+  const write = async (text: string) => {
+    controller.openPanel("capture");
+    typeCapture(root, text);
+    await controller.submitCapture();
+  };
+
+  it("fills the fields of an item with AI and saves them on the second Enter, learning from changes", async () => {
+    backend.aiShell = new FakeShell(captureReply(item({
       title: "Revisar acceso de facturas",
       projectName: "andeanvet",
       dueDate: "2026-10-23",
       priority: "high",
       remindAt: "2026-10-23T09:00",
-      kind: "task",
       tags: ["accesos"],
-    }));
-    controller.openPanel("capture");
-    typeCapture(root, "revisar acceso facturas andeanvet viernes, importante, avísame a las 9");
-
-    await controller.submitCapture();
+    })));
+    await write("revisar acceso facturas andeanvet viernes, importante, avísame a las 9");
     expect(root.querySelector<HTMLInputElement>("#capture-input")?.value).toBe("Revisar acceso de facturas");
     expect(root.querySelector("#capture-project")?.textContent).toBe("Andeanvet");
     expect(root.querySelector<HTMLInputElement>("#capture-due")?.value).toBe("2026-10-23");
-    expect(root.querySelector<HTMLInputElement>("#capture-remind")?.value).toBe("2026-10-23T09:00");
     expect(root.querySelector<HTMLSelectElement>("#capture-priority")?.value).toBe("high");
     expect(backend.confirmedCaptures).toHaveLength(0);
 
@@ -492,84 +542,60 @@ describe("IslandController with the AI assistant", () => {
       due.value = "2026-10-24";
     }
     await controller.submitCapture();
-    expect(backend.confirmedCaptures).toEqual([
-      {
-        title: "Revisar acceso de facturas",
-        projectName: "Andeanvet",
-        dueDate: "2026-10-24",
-        priority: "high",
-        remindAt: "2026-10-23T09:00:00",
-        kind: "task",
-        tags: ["accesos"],
-      },
-    ]);
-    // The user changed the date the AI read: Tiki keeps that as a lesson.
+    expect(backend.confirmedCaptures[0]).toMatchObject({ title: "Revisar acceso de facturas", projectName: "Andeanvet", dueDate: "2026-10-24" });
     await vi.waitFor(() => expect(backend.lessons).toHaveLength(1));
-    expect(backend.lessons[0]).toMatchObject({
-      sentence: "revisar acceso facturas andeanvet viernes, importante, avísame a las 9",
-      understood: { dueDate: "2026-10-23" },
-      corrected: { dueDate: "2026-10-24" },
-    });
+    expect(backend.lessons[0]).toMatchObject({ understood: { dueDate: "2026-10-23" }, corrected: { dueDate: "2026-10-24" } });
     expect(controller.currentState.panel).toBe("tasks");
   });
-  it("never sends the key to the interface's requests", async () => {
-    backend.aiShell = new FakeShell(claudeReads({ title: "Llamar", projectName: null, dueDate: null, priority: "normal", remindAt: null, kind: "task", tags: [] }));
-    controller.openPanel("capture");
-    typeCapture(root, "llamar");
-    await controller.submitCapture();
 
-    const sent = JSON.stringify(backend.aiShell.requests);
-    expect(sent).not.toContain("sk-test");
+  it("reads a repeating reminder and shows only its moment and repeat", async () => {
+    backend.aiShell = new FakeShell(captureReply(item({
+      kind: "reminder",
+      title: "Tomar la pastilla",
+      remindAt: "2026-10-22T08:00",
+      repeat: "daily",
+    })));
+    await write("recuérdame tomar la pastilla cada día a las 8");
+    expect(root.querySelector("#capture-due")).toBeNull();
+    expect(root.querySelector<HTMLSelectElement>("#capture-repeat")?.value).toBe("daily");
+
+    await controller.submitCapture();
+    expect(backend.confirmedCaptures[0]).toMatchObject({ kind: "reminder", repeat: "daily", remindAt: "2026-10-22T08:00:00", dueDate: null });
   });
-  it("lets the user fill the fields when the assistant fails, without guessing", async () => {
-    backend.aiShell = new FakeShell(() => ({ type: "error", error: { type: "invalid_request_error", message: "bad" } }), 400);
-    controller.openPanel("capture");
-    typeCapture(root, "llamar a altamira");
+
+  it("keeps who a task waits for as free text and a new project by name", async () => {
+    backend.aiShell = new FakeShell(captureReply(item({
+      title: "Contrato firmado",
+      projectName: "Constructora Sur",
+      waitingFor: "respuesta de Lucía",
+    })));
+    await write("esperando respuesta de Lucía sobre el contrato de Constructora Sur");
+    expect(root.querySelector("#capture-project")?.textContent).toBe("Constructora Sur");
+    expect(root.querySelector<HTMLInputElement>("#capture-waiting")?.value).toBe("respuesta de Lucía");
 
     await controller.submitCapture();
-    expect(root.querySelector(".capture-status")?.textContent).toContain("No pude");
+    expect(backend.confirmedCaptures[0]).toMatchObject({ projectName: "Constructora Sur", waitingFor: "respuesta de Lucía" });
+  });
+
+  it("answers a question in the same box, with the open items as context", async () => {
+    backend.aiShell = new FakeShell(answerReply("Con Altamira tienes el tracking de formularios para mañana."));
+    await write("¿qué tengo con Altamira?");
+
+    expect(root.querySelector(".capture-answer .ask-answer")?.textContent).toBe("Con Altamira tienes el tracking de formularios para mañana.");
+    expect(root.querySelector<HTMLElement>(".capture-fields")?.hidden).toBe(true);
     expect(backend.confirmedCaptures).toHaveLength(0);
-
-    await controller.submitCapture();
-    expect(backend.confirmedCaptures).toEqual([
-      { title: "llamar a altamira", projectName: null, dueDate: null, priority: "normal", remindAt: null, kind: "task", tags: [] },
-    ]);
-  });
-  it("answers a question in the Ask panel with the open tasks as context", async () => {
-    backend.aiShell = new FakeShell(claudeReads({ text: "Con Altamira tienes el tracking de formularios para mañana.", actions: [] }));
-    controller.openPanel("ask");
-
-    await vi.waitFor(() => expect(root.querySelector("#ask-input")).not.toBeNull());
-    const input = root.querySelector<HTMLInputElement>("#ask-input");
-    if (input) {
-      input.value = "¿qué tengo con Altamira?";
-      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
-    }
-    await vi.waitFor(() =>
-      expect(root.querySelector(".ask-answer")?.textContent).toBe("Con Altamira tienes el tracking de formularios para mañana."));
-
-    const body = backend.aiShell.lastBody();
-    const sent = JSON.stringify(body.messages);
+    const sent = JSON.stringify(backend.aiShell.lastBody().messages);
     expect(sent).toContain("Tracking de formularios");
     expect(sent).toContain("¿qué tengo con Altamira?");
   });
 
   it("applies the actions Tiki proposes only when the user clicks", async () => {
-    backend.aiShell = new FakeShell(claudeReads({
-      text: "Listo, te propongo esto.",
-      actions: [
-        { type: "set_due_date", summary: "Tracking vence el viernes", taskId: 1, title: null, projectName: null, dueDate: "2026-10-23", remindAt: null, status: null },
-        { type: "create_reminder", summary: "Avisarte mañana a las 10", taskId: null, title: "Llamar a Lucía", projectName: "Altamira", dueDate: null, remindAt: "2026-10-22T10:00", status: null },
-      ],
-    }));
-    controller.openPanel("ask");
-    await vi.waitFor(() => expect(root.querySelector("#ask-input")).not.toBeNull());
-    const input = root.querySelector<HTMLInputElement>("#ask-input");
-    if (input) {
-      input.value = "mueve el tracking al viernes y recuérdame llamar a Lucía mañana a las 10";
-      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
-    }
-    await vi.waitFor(() => expect(root.querySelectorAll(".ask-action")).toHaveLength(2));
+    backend.aiShell = new FakeShell(answerReply("Listo, te propongo esto.", [
+      { type: "set_due_date", summary: "Tracking vence el viernes", taskId: 1, title: null, projectName: null, dueDate: "2026-10-23", remindAt: null, status: null },
+      { type: "create_reminder", summary: "Avisarte mañana a las 10", taskId: null, title: "Llamar a Lucía", projectName: "Altamira", dueDate: null, remindAt: "2026-10-22T10:00", status: null },
+    ]));
+    await write("mueve el tracking al viernes y recuérdame llamar a Lucía mañana a las 10");
+    expect(root.querySelectorAll(".ask-action")).toHaveLength(2);
     expect(backend.editedTasks).toHaveLength(0);
     expect(backend.confirmedCaptures).toHaveLength(0);
 
@@ -581,15 +607,28 @@ describe("IslandController with the AI assistant", () => {
     await vi.waitFor(() => expect(root.querySelectorAll(".ask-action-done")).toHaveLength(2));
   });
 
-  it("keeps the day's AI brief on the Today tab", async () => {
-    backend.aiShell = new FakeShell(claudeReads({ text: "Empieza por el tracking de Altamira." }));
-    controller.openPanel("ask");
-    await vi.waitFor(() => expect(root.querySelector("#ask-summarize")).not.toBeNull());
-    root.querySelector<HTMLButtonElement>("#ask-summarize")?.click();
-    await vi.waitFor(() => expect(controller.currentState.dayBrief).toBe("Empieza por el tracking de Altamira."));
+  it("never sends the key to the interface's requests", async () => {
+    backend.aiShell = new FakeShell(captureReply(item({ title: "Llamar" })));
+    await write("llamar");
+    expect(JSON.stringify(backend.aiShell.requests)).not.toContain("sk-test");
+  });
 
-    controller.selectTab("today");
-    expect(root.querySelector(".island-brief")?.textContent).toBe("Empieza por el tracking de Altamira.");
+  it("lets the user fill the fields when the assistant fails, without guessing", async () => {
+    backend.aiShell = new FakeShell(() => ({ type: "error", error: { type: "invalid_request_error", message: "bad" } }), 400);
+    await write("llamar a altamira");
+    expect(root.querySelector(".capture-status")?.textContent).toContain("No pude");
+    expect(backend.confirmedCaptures).toHaveLength(0);
+
+    await controller.submitCapture();
+    expect(backend.confirmedCaptures[0]).toMatchObject({ title: "llamar a altamira", projectName: null, kind: "task" });
+  });
+
+  it("writes the day's AI brief in the summary card of Today", async () => {
+    backend.aiShell = new FakeShell(claudeReads({ text: "Empieza por el tracking de Altamira." }));
+    controller.setMode("expanded");
+    root.querySelector<HTMLButtonElement>("#prepare-brief")?.click();
+    await vi.waitFor(() => expect(controller.currentState.dayBrief).toBe("Empieza por el tracking de Altamira."));
+    expect(root.querySelector("#today-summary")?.textContent).toBe("Empieza por el tracking de Altamira.");
   });
 
 });

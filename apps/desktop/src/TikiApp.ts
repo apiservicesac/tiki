@@ -1,5 +1,4 @@
 import { TikiAi } from "./ai";
-import { AskView } from "./assistant/AskView";
 import { TikiAssistant } from "./assistant/TikiAssistant";
 import { LOCALE_CODES, type TikiBackend } from "./backend/contracts";
 import { TauriBackend } from "./backend/TauriBackend";
@@ -29,11 +28,10 @@ export class TikiApp {
     const translator = new Translator(LOCALE_CODES[preferences.locale]);
 
     const capture = new CaptureView(translator);
-    const ask = new AskView(translator);
-    const island = new IslandView(this.root, translator, new MascotRenderer(), capture, ask);
+    const island = new IslandView(this.root, translator, new MascotRenderer(), capture);
     const controller = new IslandController(
       this.backend,
-      { island, capture, ask },
+      { island, capture },
       this.hitAreaReporter,
       snapshot,
       preferences,

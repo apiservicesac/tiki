@@ -67,6 +67,12 @@ export class FakeBackend implements TikiBackend {
     this.movedTasks.push({ taskId, status });
   }
 
+  readonly snoozed: Array<{ taskId: number; minutes: number }> = [];
+
+  async snooze(taskId: number, minutes: number): Promise<void> {
+    this.snoozed.push({ taskId, minutes });
+  }
+
   async preferences(): Promise<UserPreferences> {
     return this.savedPreferences;
   }
@@ -110,7 +116,7 @@ export class FakeBackend implements TikiBackend {
   }
 
   async taskDetails(taskId: number): Promise<TaskDetails> {
-    const item = this.snapshot.sections.flatMap((section) => section.items).find((line) => line.taskId === taskId);
+    const item = this.snapshot.openItems.find((line) => line.taskId === taskId);
     return {
       taskId,
       title: item?.title ?? "",
@@ -122,6 +128,8 @@ export class FakeBackend implements TikiBackend {
       remindAt: null,
       kind: "task",
       tags: [],
+      repeat: "never",
+      waitingFor: "",
     };
   }
 
@@ -152,7 +160,11 @@ export class FakeBackend implements TikiBackend {
           waitingDays: null,
         },
       ],
-      projects: [{ name: "Altamira", notes: "Contacto: Lucía." }],
+      projects: [
+        { name: "Altamira", notes: "Contacto: Lucía." },
+        { name: "Andeanvet", notes: "" },
+        { name: "Vapestation", notes: "" },
+      ],
     };
   }
 
@@ -233,6 +245,12 @@ export class FakeBackend implements TikiBackend {
     const altamira = { projectName: "Altamira", projectColor: "#2F6BD8" };
     const andeanvet = { projectName: "Andeanvet", projectColor: "#17837D" };
     const vapestation = { projectName: "Vapestation", projectColor: "#C2410C" };
+    const access = { taskId: 3, title: "Acceso solo a análisis de facturas de Almendra", ...andeanvet, detailLabel: "1 día de atraso", urgency: "critical" as const, priority: "normal" as const, tags: [] };
+    const tracking = { taskId: 1, title: "Tracking de formularios comerciales", ...altamira, detailLabel: "mañana", urgency: "soon" as const, priority: "high" as const, tags: [] };
+    const sales = { taskId: 2, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon" as const, priority: "normal" as const, tags: ["ventas"] };
+    const vacation = { taskId: 4, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En curso", urgency: "normal" as const, priority: "normal" as const, tags: [] };
+    const github = { taskId: 5, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "3 días", urgency: "waiting" as const, priority: "normal" as const, tags: [] };
+    const zones = { taskId: 6, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "1 día", urgency: "waiting" as const, priority: "normal" as const, tags: [] };
     return {
       mood: "worried",
       moodLabel: "ATRASO",
@@ -244,37 +262,12 @@ export class FakeBackend implements TikiBackend {
       todaySubtitle: "miércoles 21 de octubre · 3 vencen pronto",
       narration: "Buenos días. Hoy es miércoles 21 de octubre.",
       sections: [
-        {
-          key: "overdue",
-          title: "Atrasado",
-          items: [
-            { taskId: 3, title: "Acceso solo a análisis de facturas de Almendra", ...andeanvet, detailLabel: "1 día de atraso", urgency: "critical", tags: [] },
-          ],
-        },
-        {
-          key: "due_soon",
-          title: "Vence pronto",
-          items: [
-            { taskId: 1, title: "Tracking de formularios comerciales", ...altamira, detailLabel: "mañana", urgency: "soon", tags: [] },
-            { taskId: 2, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon", tags: [] },
-          ],
-        },
-        {
-          key: "your_turn",
-          title: "Te toca",
-          items: [
-            { taskId: 4, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En prueba", urgency: "normal", tags: [] },
-          ],
-        },
-        {
-          key: "waiting",
-          title: "Esperando a otro",
-          items: [
-            { taskId: 5, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "3 días", urgency: "waiting", tags: [] },
-            { taskId: 6, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "1 día", urgency: "waiting", tags: [] },
-          ],
-        },
+        { key: "overdue", title: "Atrasado", items: [access] },
+        { key: "due_soon", title: "Vence pronto", items: [tracking, sales] },
+        { key: "follow_up", title: "Toca insistir", items: [github] },
       ],
+      openItems: [access, tracking, sales, vacation, github, zones],
+      focus: { item: access, reason: "Está atrasada" },
     };
   }
 }

@@ -1,4 +1,4 @@
-import { ITEM_KINDS, PRIORITIES, TASK_STATUSES, type ProjectSummary, type TaskDetails, type TaskEdit } from "../backend/contracts";
+import { ITEM_KINDS, PRIORITIES, REPEATS, TASK_STATUSES, type ProjectSummary, type TaskDetails, type TaskEdit } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import { TagText } from "../dom/TagText";
 import type { Translator } from "../i18n/Translator";
@@ -11,20 +11,24 @@ export interface TaskEditHandlers {
 
 interface TaskEditFields {
   title: HTMLInputElement;
-  /** The chosen project's name, or `null` for no project. */
+  /** The chosen project's name, or `null` for no project; a new name is created on save. */
   project: { value: string | null };
   dueDate: HTMLInputElement;
   remindAt: HTMLInputElement;
+  repeat: HTMLSelectElement;
   priority: HTMLSelectElement;
   status: HTMLSelectElement;
+  waitingFor: HTMLInputElement;
   kind: HTMLSelectElement;
   tags: HTMLInputElement;
   notes: HTMLTextAreaElement;
 }
 
 /**
- * The form to change a saved task. It is kept while the same task is open, so background
- * refreshes never wipe what the user is changing.
+ * The form to change a saved item. A task shows its work fields (project, due date, status,
+ * priority, reminder, tags, and who it waits for while waiting); a reminder shows only its
+ * moment and repeat. It is kept while the same item is open, so background refreshes never
+ * wipe what the user is changing.
  */
 export class TaskEditView {
   private shown: { taskId: number; element: HTMLElement } | null = null;
@@ -40,7 +44,7 @@ export class TaskEditView {
     return this.shown.element;
   }
 
-  /** Forgets the form, so the next task opens with fresh values. */
+  /** Forgets the form, so the next item opens with fresh values. */
   reset(): void {
     this.shown = null;
   }
@@ -57,6 +61,7 @@ export class TaskEditView {
       selected: project.value,
       searchPlaceholder: this.translator.text("tasks.search_project"),
       emptyText: this.translator.text("tasks.no_project_match"),
+      createLabel: (name) => this.translator.format("projects.create", { name }),
       onSelect: (value) => {
         project.value = value;
         drawPicker();
@@ -69,6 +74,7 @@ export class TaskEditView {
       dueDate: this.input("date", "edit-due", task.dueDate ?? ""),
       // The picker shows minutes; the core sends seconds too.
       remindAt: this.input("datetime-local", "edit-remind", task.remindAt?.slice(0, 16) ?? ""),
+      repeat: this.select("edit-repeat", REPEATS.map((repeat): [string, string] => [repeat, this.translator.text(`repeat.${repeat}`)]), task.repeat),
       priority: this.select(
         "edit-priority",
         PRIORITIES.map((priority): [string, string] => [priority, this.translator.text(`priority.${priority}`)]),
@@ -79,6 +85,7 @@ export class TaskEditView {
         TASK_STATUSES.map((status): [string, string] => [status, this.translator.text(`status.${status}`)]),
         task.status,
       ),
+      waitingFor: this.input("text", "edit-waiting", task.waitingFor),
       kind: this.select(
         "edit-kind",
         ITEM_KINDS.map((kind): [string, string] => [kind, this.translator.text(`kind.${kind}`)]),
@@ -91,28 +98,19 @@ export class TaskEditView {
       }),
     };
     fields.notes.value = task.notes;
+    fields.waitingFor.placeholder = this.translator.text("edit.waiting_placeholder");
 
-    const form = ElementFactory.create("form", {
-      className: "edit-form",
-      children: [
-        this.field("edit.field.title", fields.title, "edit-field-wide"),
-        this.field("capture.field.project", picker.element, "", "div"),
-        this.field("capture.field.due", fields.dueDate),
-        this.field("edit.field.remind", fields.remindAt),
-        this.field("capture.field.priority", fields.priority),
-        this.field("capture.field.status", fields.status),
-        this.field("edit.field.kind", fields.kind),
-        this.field("edit.field.tags", fields.tags),
-        this.field("edit.field.notes", fields.notes, "edit-field-wide"),
-        this.actions(),
-      ],
-    });
+    const form = ElementFactory.create("form", { className: "edit-form" });
+    const layout = () => form.replaceChildren(...this.layout(fields, picker.element));
+    fields.kind.addEventListener("change", layout);
+    fields.status.addEventListener("change", layout);
+    layout();
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       this.save(task.taskId, fields);
     });
     form.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && !picker.isOpen()) {
         this.handlers?.onCancel();
       }
     });
@@ -120,21 +118,53 @@ export class TaskEditView {
     return form;
   }
 
+  /** The fields of the item's kind; "waits for" only while the task is waiting. */
+  private layout(fields: TaskEditFields, projectPicker: HTMLElement): HTMLElement[] {
+    const header = [
+      this.field("edit.field.title", fields.title, "edit-field-wide"),
+      this.field("edit.field.kind", fields.kind),
+    ];
+    if (fields.kind.value === "reminder") {
+      return [
+        ...header,
+        this.field("capture.field.moment", fields.remindAt),
+        this.field("capture.field.repeat", fields.repeat),
+        this.field("edit.field.notes", fields.notes, "edit-field-wide"),
+        this.actions(),
+      ];
+    }
+    return [
+      ...header,
+      this.field("capture.field.project", projectPicker, "", "div"),
+      this.field("capture.field.status", fields.status),
+      ...(fields.status.value === "waiting" ? [this.field("edit.field.waiting", fields.waitingFor)] : []),
+      this.field("capture.field.due", fields.dueDate),
+      this.field("capture.field.priority", fields.priority),
+      this.field("edit.field.remind", fields.remindAt),
+      this.field("edit.field.tags", fields.tags),
+      this.field("edit.field.notes", fields.notes, "edit-field-wide"),
+      this.actions(),
+    ];
+  }
+
   private save(taskId: number, fields: TaskEditFields): void {
     if (fields.title.value.trim() === "") {
       fields.title.focus();
       return;
     }
+    const reminder = fields.kind.value === "reminder";
     this.handlers?.onSave(taskId, {
       title: fields.title.value.trim(),
       notes: fields.notes.value.trim(),
-      projectName: fields.project.value,
-      dueDate: fields.dueDate.value || null,
+      projectName: reminder ? null : fields.project.value,
+      dueDate: reminder ? null : fields.dueDate.value || null,
       remindAt: fields.remindAt.value ? `${fields.remindAt.value}:00` : null,
-      priority: fields.priority.value as TaskEdit["priority"],
-      status: fields.status.value as TaskEdit["status"],
+      priority: reminder ? "normal" : (fields.priority.value as TaskEdit["priority"]),
+      status: reminder ? "to_do" : (fields.status.value as TaskEdit["status"]),
       kind: fields.kind.value as TaskEdit["kind"],
-      tags: TagText.parse(fields.tags.value),
+      tags: reminder ? [] : TagText.parse(fields.tags.value),
+      repeat: reminder ? (fields.repeat.value as TaskEdit["repeat"]) : "never",
+      waitingFor: !reminder && fields.status.value === "waiting" ? fields.waitingFor.value.trim() : "",
     });
   }
 

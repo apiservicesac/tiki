@@ -1,5 +1,4 @@
 import type { MoodName, UserPreferences } from "../backend/contracts";
-import type { AskView, AskViewHandlers } from "../assistant/AskView";
 import type { CaptureView, CaptureViewHandlers } from "../capture/CaptureView";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
@@ -14,21 +13,18 @@ import { ProjectsPanelView, type ProjectsPanelHandlers } from "./ProjectsPanelVi
 import { ReceiptView } from "./ReceiptView";
 import { TaskListView } from "./TaskListView";
 import { TasksTabView, type TasksTabHandlers } from "./TasksTabView";
+import { TodayView, type TodayHandlers } from "./TodayView";
 import type { HitArea } from "../backend/contracts";
 import { ContentTransition, type ContentSize } from "./ContentTransition";
 import { FocusKeeper } from "../dom/FocusKeeper";
 
-export interface IslandViewHandlers extends HeaderHandlers, SettingsHandlers, TasksTabHandlers, ProjectsPanelHandlers {
+export interface IslandViewHandlers
+  extends HeaderHandlers, SettingsHandlers, TasksTabHandlers, ProjectsPanelHandlers, TodayHandlers {
   onExpand: () => void;
-  /** "Delivered today" at the end of Today: opens Tasks › Delivered. */
-  onShowDelivered: () => void;
-  /** Opens what the latest alert is about: its task, or the brief as a receipt. */
-  onOpenAlert: () => void;
   onPointerEnter: () => void;
   onPointerLeave: () => void;
   capture: CaptureViewHandlers;
   edit: TaskEditHandlers;
-  ask: AskViewHandlers;
 }
 
 /**
@@ -43,6 +39,7 @@ export class IslandView {
   private readonly settings: SettingsView;
   private readonly taskEdit: TaskEditView;
   private readonly tasksTab: TasksTabView;
+  private readonly today: TodayView;
   private readonly projectsPanel: ProjectsPanelView;
   private readonly receipt: ReceiptView;
   /** The views kept between frames are rebuilt when the language changes. */
@@ -61,7 +58,6 @@ export class IslandView {
     private readonly translator: Translator,
     private readonly mascot: MascotRenderer,
     private readonly captureView: CaptureView,
-    private readonly askView: AskView,
   ) {
     this.notchView = new NotchView(mascot);
     this.header = new HeaderView(translator);
@@ -69,6 +65,7 @@ export class IslandView {
     this.settings = new SettingsView(translator);
     this.taskEdit = new TaskEditView(translator);
     this.tasksTab = new TasksTabView(translator, this.taskList);
+    this.today = new TodayView(translator, this.taskList);
     this.projectsPanel = new ProjectsPanelView(translator);
     this.receipt = new ReceiptView(translator);
     this.clip = ElementFactory.create("div", { className: "island-clip" });
@@ -98,7 +95,6 @@ export class IslandView {
     if (panelKey !== this.shownPanel) {
       this.captureView.reset();
       this.taskEdit.reset();
-      this.askView.reset();
       this.projectsPanel.reset();
     }
     if (this.translator.localeCode !== this.shownLocale) {
@@ -224,8 +220,6 @@ export class IslandView {
         return this.captureView.render(handlers.capture, state.projects, this.assistantReady);
       case "settings":
         return this.settings.render(preferences, handlers);
-      case "ask":
-        return this.askView.render(this.assistantReady, handlers.ask);
       case "edit":
         return state.editing
           ? this.taskEdit.render(state.editing, state.projects, handlers.edit)
@@ -239,71 +233,29 @@ export class IslandView {
     }
   }
 
-  /** The latest reminder (it opens what it is about) and the AI brief, above the Today list. */
-  private notices(state: IslandState, handlers: IslandViewHandlers): HTMLElement[] {
-    const notices: HTMLElement[] = [];
-    if (state.alert) {
-      const notice = ElementFactory.create("button", {
-        className: "island-notice",
-        attributes: { type: "button", title: this.translator.text("island.alert.open") },
-        children: [
-          ElementFactory.create("strong", { text: state.alert.title }),
-          ElementFactory.create("p", { text: state.alert.body }),
-        ],
-      });
-      notice.addEventListener("click", (event) => {
-        event.stopPropagation();
-        handlers.onOpenAlert();
-      });
-      notices.push(notice);
-    }
-    if (state.dayBrief) {
-      notices.push(ElementFactory.create("p", { className: "island-brief", text: state.dayBrief }));
-    }
-    return notices;
-  }
-
   private tabContent(state: IslandState, handlers: IslandViewHandlers): HTMLElement {
     switch (state.tab) {
       case "today":
-        return this.todayContent(state, handlers);
-      case "all_tasks":
-        return this.tasksTab.render(
-          { sections: state.snapshot.sections, delivered: state.delivered, projects: state.projects, view: state.tasksView },
+        return this.today.render(
+          {
+            snapshot: state.snapshot,
+            alert: state.alert,
+            dayBrief: state.dayBrief,
+            preparingBrief: state.preparingBrief,
+            aiReady: this.assistantReady,
+          },
           handlers,
         );
-      case "tickets":
+      case "all_tasks":
+        return this.tasksTab.render(
+          { items: state.snapshot.openItems, delivered: state.delivered, projects: state.projects, view: state.tasksView },
+          handlers,
+        );
       case "agenda":
         return ElementFactory.create("div", {
           className: "island-tab-content",
           children: [this.taskList.render([], this.translator.text(`island.${state.tab}.empty`), handlers)],
         });
     }
-  }
-
-  private todayContent(state: IslandState, handlers: IslandViewHandlers): HTMLElement {
-    const subtitle = ElementFactory.create("p", { className: "island-subtitle", text: state.snapshot.todaySubtitle });
-    const list = this.taskList.render(state.snapshot.sections, this.translator.text("island.today.empty"), handlers);
-    return ElementFactory.create("div", {
-      className: "island-tab-content",
-      children: [subtitle, ...this.notices(state, handlers), list, ...this.deliveredToday(state, handlers)],
-    });
-  }
-
-  /** "Delivered today (3)", leading to the history; nothing on a day with no deliveries. */
-  private deliveredToday(state: IslandState, handlers: IslandViewHandlers): HTMLElement[] {
-    if (state.snapshot.deliveredToday === 0) {
-      return [];
-    }
-    const link = ElementFactory.create("button", {
-      className: "island-delivered-link",
-      text: this.translator.format("island.delivered_today", { count: state.snapshot.deliveredToday }),
-      attributes: { type: "button", id: "delivered-today" },
-    });
-    link.addEventListener("click", (event) => {
-      event.stopPropagation();
-      handlers.onShowDelivered();
-    });
-    return [link];
   }
 }

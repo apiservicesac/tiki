@@ -1,6 +1,5 @@
 import { ActionApplier } from "../assistant/ActionApplier";
 import { AssistantActions } from "../assistant/AssistantActions";
-import type { AskView } from "../assistant/AskView";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
 import {
   LOCALE_CODES,
@@ -24,7 +23,6 @@ import type { IslandStore } from "./IslandStore";
 export interface IslandViews {
   island: IslandView;
   capture: CaptureView;
-  ask: AskView;
 }
 
 /** Owns the island state, reacts to the user and the shell, and asks the view to redraw. */
@@ -37,7 +35,6 @@ export class IslandController {
   private readonly sound = new AlertSound();
   private readonly view: IslandView;
   private readonly captureView: CaptureView;
-  private readonly askView: AskView;
   private readonly stopListening: Array<() => void> = [];
   /** The window changes size when the island moves to another orientation. */
   private readonly redrawOnResize = () => this.render();
@@ -53,7 +50,6 @@ export class IslandController {
   ) {
     this.view = views.island;
     this.captureView = views.capture;
-    this.askView = views.ask;
     this.preferences = initialPreferences;
     this.state = {
       mode: "hidden",
@@ -69,10 +65,11 @@ export class IslandController {
       reactionMood: null,
       editing: null,
       dayBrief: null,
+      preparingBrief: false,
       alert: null,
       unreadAlert: false,
     };
-    this.assistantActions = new AssistantActions(this.store(), assistant, views.ask, new ActionApplier(backend));
+    this.assistantActions = new AssistantActions(this.store(), assistant, new ActionApplier(backend));
   }
 
   get currentState(): Readonly<IslandState> {
@@ -139,16 +136,21 @@ export class IslandController {
   }
 
   /**
-   * Enter in quick capture. With an AI key, the first Enter fills the fields from the
-   * sentence for the user to review, and the next one saves. Without a key, the sentence is
-   * the title and the user picks the fields, so Enter saves right away.
+   * Enter in the single box. With an AI key, Tiki reads the text: an item fills its fields
+   * for the user to review (the next Enter saves), a question gets an answer and maybe
+   * actions to apply. Without a key, the text is the title and Enter saves.
    */
   async submitCapture(): Promise<void> {
-    if (!this.captureView.isInterpreted && this.assistant.isReady(this.preferences)) {
-      const sentence = this.captureView.values().title;
+    if (this.captureView.needsReading) {
+      const text = this.captureView.text;
       this.captureView.showThinking();
       try {
-        this.captureView.fill(await this.assistant.interpret(sentence, this.preferences));
+        const reply = await this.assistant.command(text, this.preferences);
+        if (reply.kind === "capture") {
+          this.captureView.fill(reply.item);
+        } else {
+          this.captureView.showAnswer(reply.text, reply.actions, (action) => this.assistantActions.apply(action));
+        }
       } catch {
         this.captureView.showAiFailed();
       }
@@ -196,11 +198,18 @@ export class IslandController {
   async openAlert(): Promise<void> {
     const alert = this.state.alert;
     this.cancel("alert");
-    if (alert?.kind === "task" && alert.taskId !== null) {
+    if (alert && alert.taskId !== null) {
       await this.openTask(alert.taskId);
       return;
     }
     this.update({ mode: "expanded", panel: alert ? "brief" : "tasks" });
+  }
+
+  /** Puts off the reminder and puts the alert away. */
+  private async snooze(taskId: number, minutes: number): Promise<void> {
+    await this.backend.snooze(taskId, minutes);
+    this.update({ alert: null, unreadAlert: false });
+    await this.refresh();
   }
 
   /** Creates, changes or removes a project, then shows the result; a taken name is ignored. */
@@ -237,7 +246,6 @@ export class IslandController {
     if (localeChanged) {
       this.translator.use(LOCALE_CODES[preferences.locale]);
       this.captureView.reset();
-      this.askView.reset();
     }
     this.update({ placement: preferences.islandPlacement, dayBrief: localeChanged ? null : this.state.dayBrief });
     await this.refresh();
@@ -359,6 +367,9 @@ export class IslandController {
     return {
       onExpand: () => (this.state.mode === "alert" ? void this.openAlert() : this.setMode("expanded")),
       onOpenAlert: () => void this.openAlert(),
+      onDismissAlert: () => this.update({ alert: null, unreadAlert: false }),
+      onSnooze: (taskId, minutes) => void this.snooze(taskId, minutes),
+      onPrepareBrief: () => void this.assistantActions.prepareDayBrief(),
       onShowDelivered: () => this.update({ panel: "tasks", tab: "all_tasks", tasksView: "delivered" }),
       onSelectTasksView: (tasksView) => this.update({ tasksView }),
       onManageProjects: (creatingProject) => this.update({ mode: "expanded", panel: "projects", creatingProject }),
@@ -374,12 +385,6 @@ export class IslandController {
       onOpenTask: (taskId) => void this.openTask(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
       onOpenAdvancedSettings: () => this.openAdvancedSettings(),
-      ask: {
-        onAsk: (question) => void this.assistantActions.ask(question),
-        onSummarize: () => void this.assistantActions.summarize(),
-        onOpenSettings: () => this.openAdvancedSettings("ai"),
-        onCancel: () => this.openPanel("tasks"),
-      },
       edit: {
         onSave: (taskId, edit) => void this.saveTask(taskId, edit),
         onCancel: () => this.update({ panel: "tasks", editing: null }),

@@ -92,7 +92,7 @@
     "capture.thinking": "Tiki is thinking…",
     "capture.field.priority": "Priority",
 
-    "capture.placeholder": "Type a task the way you would say it",
+    "capture.placeholder": "Write a task, a reminder, or ask Tiki",
     "capture.field.project": "Project",
     "capture.field.due": "Due",
     "capture.field.status": "Status",
@@ -220,7 +220,7 @@
     "edit.field.remind": "Remind me",
     "capture.field.remind": "Remind me",
 
-    "capture.hint_ai": "Write it your way and press Enter: Tiki fills the fields · Esc closes",
+    "capture.hint_ai": "Write it your way and Enter: Tiki keeps it, answers or proposes changes · Esc closes",
     "capture.hint_manual": "Pick project, date and reminder; Enter saves · Esc closes",
     "capture.review": "Check the fields; Enter saves · Esc closes",
     "capture.ai_failed": "I could not read it now; fill the fields and Enter saves",
@@ -251,6 +251,25 @@
     "focus.due_soon": "Due soon",
     "focus.follow_up": "Time to follow up",
     "focus.title": "Now",
+
+    "capture.field.moment": "When",
+    "capture.field.repeat": "Repeats",
+    "repeat.never": "Does not repeat",
+    "repeat.daily": "Every day",
+    "repeat.weekdays": "Weekdays",
+    "repeat.weekly": "Every week",
+    "repeat.monthly": "Every month",
+    "edit.field.waiting": "Waiting for",
+    "edit.waiting_placeholder": "Optional: Lucía's answer",
+    "projects.create": "Create “{name}”",
+    "capture.after_answer": "Write something else and Enter · Esc closes",
+    "alert.done": "Done",
+    "alert.snooze_10": "+10 min",
+    "alert.snooze_60": "+1 h",
+    "alert.snooze_tomorrow": "Tomorrow",
+    "summary.prepare": "Summarize my day",
+    "summary.preparing": "Tiki is summarizing…",
+    "island.action.new": "Write or ask",
 
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"

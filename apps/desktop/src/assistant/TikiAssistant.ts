@@ -1,11 +1,11 @@
 import {
-  CaptureInterpreter,
+  CommandInterpreter,
   DayAdvisor,
   TikiAi,
   type AdvisorLanguage,
-  type AskReply,
   type AiModelOption,
   type AiProviderName,
+  type CommandReply,
   type InterpretedCapture,
 } from "../ai";
 import { AI_PROVIDERS, type LocaleName, type TikiBackend, type UserPreferences } from "../backend/contracts";
@@ -46,13 +46,14 @@ export class TikiAssistant {
   }
 
   /**
-   * Reads a sentence with the chosen model. Only the sentence, the project names and the
-   * user's recent corrections are sent.
+   * Reads what the user wrote in the single box: an item to keep (with its fields), or a
+   * question or change request (with an answer and proposed actions). Sends the text, the
+   * open items, project notes and the user's recent corrections.
    */
-  async interpret(sentence: string, preferences: UserPreferences): Promise<InterpretedCapture> {
-    const [projectNames, lessons] = await Promise.all([this.backend.projectNames(), this.backend.captureLessons()]);
-    const interpreter = new CaptureInterpreter(this.ai.model(preferences.aiProvider, preferences.aiModel));
-    return interpreter.interpret(sentence, { projectNames, now: new Date(), lessons });
+  async command(text: string, preferences: UserPreferences): Promise<CommandReply> {
+    const [advisor, lessons] = await Promise.all([this.backend.assistantContext(), this.backend.captureLessons()]);
+    const interpreter = new CommandInterpreter(this.ai.model(preferences.aiProvider, preferences.aiModel));
+    return interpreter.read(text, { now: new Date(), language: ADVISOR_LANGUAGES[preferences.locale], advisor, lessons });
   }
 
   /** When the user changed what the AI understood before saving, Tiki remembers it. */
@@ -66,12 +67,6 @@ export class TikiAssistant {
   async summarizeDay(preferences: UserPreferences): Promise<string> {
     const context = await this.backend.assistantContext();
     return this.advisor(preferences).summarizeDay(context, ADVISOR_LANGUAGES[preferences.locale]);
-  }
-
-  /** Answers a question about the user's work, with the actions it proposes. */
-  async ask(question: string, preferences: UserPreferences): Promise<AskReply> {
-    const context = await this.backend.assistantContext();
-    return this.advisor(preferences).ask(question, context, ADVISOR_LANGUAGES[preferences.locale]);
   }
 
   private advisor(preferences: UserPreferences): DayAdvisor {

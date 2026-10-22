@@ -20,15 +20,15 @@ export type IslandMode = (typeof ISLAND_MODES)[number];
  * What the expanded island shows in its card: the tabs, or a panel such as quick capture,
  * a task being edited, the project list or the brief drawn as a receipt.
  */
-export type IslandPanel = "tasks" | "capture" | "settings" | "edit" | "ask" | "projects" | "brief";
+export type IslandPanel = "tasks" | "capture" | "settings" | "edit" | "projects" | "brief";
 
-export type IslandTab = "today" | "all_tasks" | "tickets" | "agenda";
+/** Tickets join as a tab when a ticket connector arrives. */
+export type IslandTab = "today" | "all_tasks" | "agenda";
 
 /** Tabs in display order, each with its translation key. */
 export const ISLAND_TABS: ReadonlyArray<{ tab: IslandTab; labelKey: string }> = Object.freeze([
   { tab: "today", labelKey: "island.tab.today" },
   { tab: "all_tasks", labelKey: "island.tab.all_tasks" },
-  { tab: "tickets", labelKey: "island.tab.tickets" },
   { tab: "agenda", labelKey: "island.tab.agenda" },
 ]);
 
@@ -55,8 +55,10 @@ export interface IslandState {
   alert: TikiAlert | null;
   /** A reminder arrived and the island has not been opened since: the notch shows a dot. */
   unreadAlert: boolean;
-  /** The AI brief of the day, shown above the Today list when there is one. */
+  /** The AI brief of the day, shown in the summary card of Today. */
   dayBrief: string | null;
+  /** The AI is writing the brief. */
+  preparingBrief: boolean;
   /** The task open in the edit panel. */
   editing: TaskDetails | null;
 }
