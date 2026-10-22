@@ -29,7 +29,7 @@ impl<'context> SnapshotPresenter<'context> {
         let todays_reminders: Vec<BriefItem> = brief
             .reminders
             .iter()
-            .filter(|item| matches!(item.detail, BriefDetail::RemindAt { at } if at.date() == brief.date))
+            .filter(|item| matches!(item.detail, BriefDetail::RemindAt { at, .. } if at.date() == brief.date))
             .cloned()
             .collect();
         let sections = [

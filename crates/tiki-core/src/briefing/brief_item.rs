@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use serde::Serialize;
 
-use crate::domain::{Priority, TaskId, TaskStatus};
+use crate::domain::{Priority, Repeat, TaskId, TaskStatus};
 
 /// Why a task appears in the brief.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -15,8 +15,8 @@ pub enum BriefDetail {
     Waiting { days: i64 },
     /// No date pressure; shows the current status.
     InStatus { status: TaskStatus },
-    /// A standalone reminder that rings at this moment.
-    RemindAt { at: NaiveDateTime },
+    /// A standalone reminder that rings at this moment, and how often it comes back.
+    RemindAt { at: NaiveDateTime, repeat: Repeat },
 }
 
 /// One line of the brief.

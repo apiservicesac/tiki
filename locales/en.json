@@ -271,6 +271,9 @@
     "summary.preparing": "Tiki is summarizing…",
     "island.action.new": "Write or ask",
 
+    "tasks.view.reminders": "Reminders",
+    "tasks.empty_reminders": "No reminders yet. Write one in the box: “remind me…”",
+
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"
   },

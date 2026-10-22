@@ -351,3 +351,31 @@ fn weekday_repeats_skip_the_weekend() {
     );
     assert_eq!(Repeat::Never.next_after(friday, friday), None);
 }
+
+#[test]
+fn a_reminder_shows_its_moment_and_how_often_it_repeats() {
+    use tiki_core::domain::Repeat;
+    let workspace = sample_workspace();
+    workspace
+        .save_confirmed(reminder(
+            "Tomar agua",
+            TestDay::october(23).and_hms_opt(11, 0, 0).unwrap(),
+            Repeat::Daily,
+        ))
+        .unwrap();
+
+    let snapshot = workspace.island_snapshot().unwrap();
+    let water = snapshot
+        .open_items
+        .iter()
+        .find(|item| item.title == "Tomar agua")
+        .unwrap();
+    assert_eq!(water.detail_label, "Vie 23 · 11:00 · Cada día");
+    // Not today: it is in the list of reminders, not in Today.
+    assert!(
+        snapshot
+            .sections
+            .iter()
+            .all(|section| section.key != "reminders")
+    );
+}

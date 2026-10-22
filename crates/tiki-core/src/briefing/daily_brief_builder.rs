@@ -37,7 +37,7 @@ impl<'settings> DailyBriefBuilder<'settings> {
             section.sort_by_key(|item| std::cmp::Reverse(item.priority));
         }
         brief.reminders.sort_by_key(|item| match item.detail {
-            BriefDetail::RemindAt { at } => Some(at),
+            BriefDetail::RemindAt { at, .. } => Some(at),
             _ => None,
         });
         brief
@@ -58,7 +58,10 @@ impl<'settings> DailyBriefBuilder<'settings> {
         // Standalone reminders are not work: they only list when they ring.
         if task.kind == ItemKind::Reminder {
             if let Some(at) = task.remind_at {
-                brief.reminders.push(line(BriefDetail::RemindAt { at }));
+                brief.reminders.push(line(BriefDetail::RemindAt {
+                    at,
+                    repeat: task.repeat,
+                }));
             }
             return;
         }

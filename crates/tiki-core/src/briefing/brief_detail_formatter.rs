@@ -1,6 +1,7 @@
 use chrono::{Days, NaiveDate};
 
 use super::BriefDetail;
+use crate::domain::Repeat;
 use crate::i18n::{DateFormatter, Translator};
 
 /// Writes the short label shown next to each brief line: "mañana", "3 días", "En prueba".
@@ -33,7 +34,17 @@ impl<'translator> BriefDetailFormatter<'translator> {
             BriefDetail::InStatus { status } => {
                 self.translator.text(&format!("status.{}", status.key()))
             }
-            BriefDetail::RemindAt { at } => self.moment_label(at, today),
+            BriefDetail::RemindAt { at, repeat } => {
+                let moment = self.moment_label(at, today);
+                if repeat == Repeat::Never {
+                    moment
+                } else {
+                    format!(
+                        "{moment} · {}",
+                        self.translator.text(&format!("repeat.{}", repeat.key()))
+                    )
+                }
+            }
         }
     }
 
