@@ -1,11 +1,11 @@
 {
-  "version": "0.3.0-rc.1",
-  "notes": "Standalone reminders, tags, project notes, Ask Tiki proposes actions you apply, and Tiki learns from your corrections.",
-  "pub_date": "2026-10-22T00:36:13.792Z",
+  "version": "0.3.1-rc.1",
+  "notes": "One box for capture and questions, real reminders with repeat and snooze, follow-ups, projects created on the fly, Today with what to do now.",
+  "pub_date": "2026-10-22T18:59:14.770Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbWtnaU5WQlhlOGsrNXFua1JOaXJNOWs4eEV6WHVPdFBQeDhtaXhuWmpZMmdjZStNVHFMNGkzdGltSGdLYk9YWGE2TlNBTUJYbnNZOG9VV2txeXRlRkF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjI5MzY0CWZpbGU6VGlraV8wLjMuMC1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMuMC1yYy4xClprWEZ2ejVGbzJvNi90Z2JKTWNIMWw3S1I2ODhwM0RtTVlnQ2ZEZXRnamFsS01rdmE5V29vQi95ODl4R2ROMHUvc2FWZ2Q1UkZYRytWZnYvT0lnUER3PT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.3.0-rc.1/Tiki_0.3.0-rc.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbW9mTkxTaVh2enY4cFVSOGhMaDhlTGZ2dE8vc2VzOFdDdVdtSThDYS9mNVlwRlhlcVd2V1ZOU0FDVUd3S0I4dkI1SnBCTzlIdHkzRWZ2aU5STHBIY1FRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjk1NTQ1CWZpbGU6VGlraV8wLjMuMS1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMuMS1yYy4xCjQxK3VJekFlNXIyL0Y3b3VHZlZtTTFFeWJuWFN5VzI5aEtIbkI3QVdnNVVJUUNxbi95emp5WnpDK3pRcFRDTFJ6Vmt4RDNSalVISU9rd002UFQrRENBPT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.3.1-rc.1/Tiki_0.3.1-rc.1_x64-setup.exe"
     }
   }
 }
