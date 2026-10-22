@@ -61,6 +61,7 @@ fn a_project_can_be_renamed_and_recolored_but_not_to_a_taken_name() {
             ProjectChange {
                 name: "  Vape Station  ".into(),
                 color: "#0E7490".into(),
+                notes: String::new(),
             },
         )
         .unwrap();
@@ -78,6 +79,7 @@ fn a_project_can_be_renamed_and_recolored_but_not_to_a_taken_name() {
         ProjectChange {
             name: "altamira".into(),
             color: "#0E7490".into(),
+            notes: String::new(),
         },
     );
     assert!(matches!(taken, Err(TikiError::DuplicateProjectName(_))));

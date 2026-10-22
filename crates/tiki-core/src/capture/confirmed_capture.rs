@@ -1,9 +1,9 @@
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::Deserialize;
 
-use crate::domain::Priority;
+use crate::domain::{ItemKind, Priority};
 
-/// A task the user confirmed after Tiki read their sentence (with the assistant or the rules).
+/// An item the user confirmed after the AI read their sentence, or after picking the fields.
 /// The project comes by name, so the interface never has to know database ids.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -15,4 +15,9 @@ pub struct ConfirmedCapture {
     /// When to remind the user, if the sentence asked for it.
     #[serde(default)]
     pub remind_at: Option<NaiveDateTime>,
+    /// A task, or a standalone reminder.
+    #[serde(default)]
+    pub kind: ItemKind,
+    #[serde(default)]
+    pub tags: Vec<String>,
 }

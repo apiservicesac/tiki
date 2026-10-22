@@ -13,4 +13,6 @@ pub struct ProjectSummary {
     pub open_count: usize,
     /// Open tasks that are overdue or due soon.
     pub pressing_count: usize,
+    /// Context the user keeps for the project; Tiki's AI reads it.
+    pub notes: String,
 }

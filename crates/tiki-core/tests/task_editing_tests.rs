@@ -1,5 +1,7 @@
 mod support;
 
+use tiki_core::domain::ItemKind;
+
 use support::{SampleWorkspace, TestDay};
 use tiki_core::TikiError;
 use tiki_core::TikiSettings;
@@ -45,6 +47,8 @@ fn editing_a_task_changes_its_fields_and_project() {
                 priority: Priority::Urgent,
                 status: TaskStatus::WaitingOnOthers,
                 remind_at: Some(TestDay::october(29).and_hms_opt(16, 0, 0).unwrap()),
+                kind: ItemKind::Task,
+                tags: Vec::new(),
             },
         )
         .unwrap();
@@ -78,6 +82,8 @@ fn a_task_cannot_lose_its_title() {
             priority: details.priority,
             status: details.status,
             remind_at: None,
+            kind: ItemKind::Task,
+            tags: Vec::new(),
         },
     );
     assert!(matches!(result, Err(TikiError::EmptyTaskTitle)));

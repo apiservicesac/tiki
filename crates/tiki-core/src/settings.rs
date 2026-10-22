@@ -22,6 +22,8 @@ pub struct TikiSettings {
     pub meeting_alert_minutes: i64,
     /// Maximum number of tasks the morning plan suggests for the day.
     pub daily_focus_task_count: usize,
+    /// How many of the user's corrections are kept and shown to the AI as examples.
+    pub capture_lesson_limit: usize,
     /// How many delivered tasks the history shows, most recent first.
     pub delivered_history_limit: usize,
     /// Colors given to new projects, in turn.
@@ -39,6 +41,7 @@ impl Default for TikiSettings {
             meeting_alert_minutes: 15,
             daily_focus_task_count: 3,
             delivered_history_limit: 300,
+            capture_lesson_limit: 20,
             // Sixteen colors that read on dark and light, so even many projects repeat little.
             project_colors: [
                 "#2F6BD8", "#17837D", "#C2410C", "#7357E8", "#B0397A", "#B45309", "#0E7490",

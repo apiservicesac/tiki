@@ -1,43 +1,77 @@
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
 use serde::Serialize;
 
-use crate::domain::{Priority, ProjectDirectory, Task, TaskStatus};
+use crate::domain::{ItemKind, Priority, Project, ProjectDirectory, Task, TaskId, TaskStatus};
 
-/// One open task as the assistant sees it: no ids, no notes, only what a summary needs.
+/// One open item as the assistant sees it: its id (so it can propose changes to it), never
+/// its private notes.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssistantTask {
+    pub task_id: TaskId,
+    pub kind: ItemKind,
     pub title: String,
     pub project_name: Option<String>,
+    pub tags: Vec<String>,
     pub status: TaskStatus,
     pub priority: Priority,
     pub due_date: Option<NaiveDate>,
+    pub remind_at: Option<NaiveDateTime>,
     /// Days waiting on others, when the task is waiting.
     pub waiting_days: Option<i64>,
 }
 
-/// The minimum the assistant receives to summarize the day or answer a question.
+/// A project with the context the user wrote for it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssistantProject {
+    pub name: String,
+    pub notes: String,
+}
+
+/// What the assistant receives to summarize, answer or propose actions: open items and the
+/// notes of the projects that have them.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssistantContext {
-    pub today: NaiveDate,
+    pub now: NaiveDateTime,
     pub open_tasks: Vec<AssistantTask>,
+    pub projects: Vec<AssistantProject>,
 }
 
 impl AssistantContext {
-    pub fn build(tasks: &[Task], projects: &ProjectDirectory, today: NaiveDate) -> Self {
+    pub fn build(tasks: &[Task], projects: &ProjectDirectory, now: NaiveDateTime) -> Self {
+        let today = now.date();
+        let mut noted: Vec<&Project> = projects
+            .projects()
+            .filter(|project| !project.notes.trim().is_empty())
+            .collect();
+        noted.sort_by(|first, second| first.name.cmp(&second.name));
         Self {
-            today,
+            now,
             open_tasks: tasks
                 .iter()
                 .filter(|task| task.status.is_open())
-                .map(|task| AssistantTask {
-                    title: task.title.clone(),
-                    project_name: projects.name_of(task.project_id).map(str::to_owned),
-                    status: task.status,
-                    priority: task.priority,
-                    due_date: task.due_date,
-                    waiting_days: task.days_waiting(today),
+                .filter_map(|task| {
+                    Some(AssistantTask {
+                        task_id: task.id?,
+                        kind: task.kind,
+                        title: task.title.clone(),
+                        project_name: projects.name_of(task.project_id).map(str::to_owned),
+                        tags: task.tags.clone(),
+                        status: task.status,
+                        priority: task.priority,
+                        due_date: task.due_date,
+                        remind_at: task.remind_at,
+                        waiting_days: task.days_waiting(today),
+                    })
+                })
+                .collect(),
+            projects: noted
+                .into_iter()
+                .map(|project| AssistantProject {
+                    name: project.name.clone(),
+                    notes: project.notes.clone(),
                 })
                 .collect(),
         }

@@ -2,8 +2,10 @@ use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, SnapshotPres
 use chrono::NaiveDateTime;
 
 use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
-use crate::capture::ConfirmedCapture;
-use crate::domain::{Project, ProjectDirectory, ProjectId, Task, TaskId, TaskStatus};
+use crate::capture::{CaptureLesson, ConfirmedCapture};
+use crate::domain::{
+    ItemKind, Project, ProjectDirectory, ProjectId, Tags, Task, TaskId, TaskStatus,
+};
 use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
@@ -104,7 +106,7 @@ impl TikiWorkspace {
         Ok(AssistantContext::build(
             &tasks,
             &self.project_directory()?,
-            self.clock.today(),
+            self.clock.now(),
         ))
     }
 
@@ -144,6 +146,10 @@ impl TikiWorkspace {
         for mut task in self.database.tasks().list_reminders_due(now)? {
             alerts.push(composer.compose_task(&task, projects.name_of(task.project_id), today));
             task.remind_at = None;
+            if task.kind == ItemKind::Reminder {
+                // A standalone reminder has nothing left to do once it rang.
+                task.move_to(TaskStatus::Done, today);
+            }
             self.database.tasks().update(&task)?;
         }
         Ok(alerts)
@@ -155,6 +161,8 @@ impl TikiWorkspace {
         task.due_date = capture.due_date;
         task.project_id = self.project_id_by_name(capture.project_name.as_deref())?;
         task.remind_at = capture.remind_at;
+        task.kind = capture.kind;
+        task.tags = Tags::normalize(&capture.tags);
         self.database.tasks().insert(&task)
     }
 
@@ -170,6 +178,20 @@ impl TikiWorkspace {
         let project_id = self.project_id_by_name(edit.project_name.as_deref())?;
         edit.apply_to(&mut task, project_id, self.clock.today())?;
         self.database.tasks().update(&task)
+    }
+
+    /// Remembers a correction the user made to an AI capture.
+    pub fn record_capture_lesson(&self, lesson: &CaptureLesson) -> TikiResult<()> {
+        self.database
+            .capture_lessons()
+            .record(lesson, self.settings.capture_lesson_limit)
+    }
+
+    /// The user's recent corrections, newest first, for the AI to learn from.
+    pub fn capture_lessons(&self) -> TikiResult<Vec<CaptureLesson>> {
+        self.database
+            .capture_lessons()
+            .recent(self.settings.capture_lesson_limit)
     }
 
     /// Delivered tasks, most recent first, for the history.

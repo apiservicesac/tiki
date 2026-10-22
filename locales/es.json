@@ -227,6 +227,8 @@
     "capture.ai_failed": "No pude entenderlo ahora; completa los campos y Enter guarda",
     "capture.set_up_ai": "Configurar IA",
 
+    "brief.section.reminders": "Avisos",
+
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"
   },

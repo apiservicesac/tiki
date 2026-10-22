@@ -1,5 +1,7 @@
 mod support;
 
+use tiki_core::domain::ItemKind;
+
 use chrono::{NaiveDateTime, NaiveTime};
 use support::{SampleWorkspace, TestDay};
 use tiki_core::TikiSettings;
@@ -212,6 +214,8 @@ fn a_task_reminder_rings_once_at_its_time() {
             due_date: Some(TestDay::october(22)),
             priority: Priority::Normal,
             remind_at: Some(TestDay::october(22).and_hms_opt(10, 0, 0).unwrap()),
+            kind: ItemKind::Task,
+            tags: Vec::new(),
         })
         .unwrap();
 

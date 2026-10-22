@@ -1,7 +1,7 @@
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::Deserialize;
 
-use crate::domain::{Priority, ProjectId, Task, TaskStatus};
+use crate::domain::{ItemKind, Priority, ProjectId, Tags, Task, TaskStatus};
 use crate::error::{TikiError, TikiResult};
 
 /// The fields the user changed in the edit form. The project comes by name, so the
@@ -17,6 +17,10 @@ pub struct TaskEdit {
     pub status: TaskStatus,
     /// When to remind the user; `None` removes the reminder.
     pub remind_at: Option<NaiveDateTime>,
+    #[serde(default)]
+    pub kind: ItemKind,
+    #[serde(default)]
+    pub tags: Vec<String>,
 }
 
 impl TaskEdit {
@@ -37,6 +41,8 @@ impl TaskEdit {
         task.due_date = self.due_date;
         task.priority = self.priority;
         task.remind_at = self.remind_at;
+        task.kind = self.kind;
+        task.tags = Tags::normalize(&self.tags);
         task.move_to(self.status, today);
         Ok(())
     }

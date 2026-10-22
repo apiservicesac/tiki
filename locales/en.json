@@ -227,6 +227,8 @@
     "capture.ai_failed": "I could not read it now; fill the fields and Enter saves",
     "capture.set_up_ai": "Set up AI",
 
+    "brief.section.reminders": "Reminders",
+
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"
   },

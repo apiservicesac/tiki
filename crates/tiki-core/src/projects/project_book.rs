@@ -44,6 +44,7 @@ impl<'context> ProjectBook<'context> {
                     color: project.color,
                     open_count,
                     pressing_count,
+                    notes: project.notes,
                 })
             })
             .collect();
@@ -75,6 +76,7 @@ impl<'context> ProjectBook<'context> {
             id: Some(project_id),
             name,
             color: change.color,
+            notes: change.notes.trim().to_owned(),
         })
     }
 

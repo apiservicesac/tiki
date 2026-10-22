@@ -1,5 +1,7 @@
 mod support;
 
+use tiki_core::domain::ItemKind;
+
 use chrono::NaiveTime;
 
 use support::{SampleWorkspace, TestDay};
@@ -113,6 +115,8 @@ fn a_confirmed_capture_is_saved_with_its_project_priority_and_date() {
             due_date: Some(TestDay::october(22)),
             priority: Priority::High,
             remind_at: None,
+            kind: ItemKind::Task,
+            tags: Vec::new(),
         })
         .unwrap();
 
@@ -134,15 +138,17 @@ fn an_unknown_project_name_is_left_out_instead_of_failing() {
         due_date: None,
         priority: Priority::Normal,
         remind_at: None,
+        kind: ItemKind::Task,
+        tags: Vec::new(),
     });
     assert!(saved.is_ok());
 }
 
 #[test]
-fn the_assistant_sees_open_tasks_without_ids_or_notes() {
+fn the_assistant_sees_open_tasks_without_their_private_notes() {
     let context = sample_workspace().assistant_context().unwrap();
 
-    assert_eq!(context.today, TestDay::today());
+    assert_eq!(context.now.date(), TestDay::today());
     assert_eq!(context.open_tasks.len(), 7);
     let waiting = context
         .open_tasks
@@ -152,6 +158,112 @@ fn the_assistant_sees_open_tasks_without_ids_or_notes() {
     assert!(waiting.waiting_days.is_some());
 
     let json = serde_json::to_string(&context).unwrap();
-    assert!(!json.contains("\"id\""));
-    assert!(!json.contains("notes"));
+    assert!(!json.contains("\"notes\":\"\""));
+}
+
+#[test]
+fn tags_are_normalized_and_standalone_reminders_list_apart_from_work() {
+    let workspace = sample_workspace();
+    let today = TestDay::today();
+    let task_id = workspace
+        .save_confirmed(ConfirmedCapture {
+            title: "Facturar septiembre".into(),
+            project_name: Some("Altamira".into()),
+            due_date: Some(TestDay::october(30)),
+            priority: Priority::Normal,
+            remind_at: None,
+            kind: tiki_core::domain::ItemKind::Task,
+            tags: vec![
+                "#Facturación".into(),
+                "facturación".into(),
+                " Cierre de mes ".into(),
+            ],
+        })
+        .unwrap();
+    assert_eq!(
+        workspace.task_details(task_id).unwrap().tags,
+        ["facturación", "cierre-de-mes"]
+    );
+
+    workspace
+        .save_confirmed(ConfirmedCapture {
+            title: "Llamar a mamá".into(),
+            project_name: None,
+            due_date: None,
+            priority: Priority::Normal,
+            remind_at: Some(today.and_hms_opt(17, 0, 0).unwrap()),
+            kind: tiki_core::domain::ItemKind::Reminder,
+            tags: Vec::new(),
+        })
+        .unwrap();
+    let snapshot = workspace.island_snapshot().unwrap();
+    let reminders = snapshot
+        .sections
+        .iter()
+        .find(|section| section.key == "reminders")
+        .unwrap();
+    assert_eq!(reminders.title, "Avisos");
+    assert_eq!(reminders.items[0].title, "Llamar a mamá");
+    assert_eq!(reminders.items[0].detail_label, "17:00");
+    assert_eq!(snapshot.due_count, 3);
+
+    let alerts = workspace
+        .take_due_task_reminders(today.and_hms_opt(17, 0, 0).unwrap())
+        .unwrap();
+    assert_eq!(alerts.len(), 1);
+    let after = workspace.island_snapshot().unwrap();
+    assert!(
+        after
+            .sections
+            .iter()
+            .all(|section| section.key != "reminders")
+    );
+    assert_eq!(after.delivered_today, 1);
+}
+
+#[test]
+fn the_assistant_reads_project_notes_and_task_ids() {
+    let workspace = sample_workspace();
+    let altamira = workspace
+        .project_summaries()
+        .unwrap()
+        .into_iter()
+        .find(|project| project.name == "Altamira")
+        .unwrap();
+    workspace
+        .change_project(
+            altamira.project_id,
+            tiki_core::projects::ProjectChange {
+                name: altamira.name.clone(),
+                color: altamira.color.clone(),
+                notes: "Contacto: Lucía, prefiere correos cortos.".into(),
+            },
+        )
+        .unwrap();
+
+    let context = workspace.assistant_context().unwrap();
+    assert_eq!(context.projects.len(), 1);
+    assert_eq!(
+        context.projects[0].notes,
+        "Contacto: Lucía, prefiere correos cortos."
+    );
+    assert!(context.open_tasks.iter().all(|task| task.task_id.0 > 0));
+}
+
+#[test]
+fn capture_lessons_keep_only_the_most_recent() {
+    let workspace = sample_workspace();
+    for index in 0..25 {
+        workspace
+            .record_capture_lesson(&tiki_core::capture::CaptureLesson {
+                sentence: format!("frase {index}"),
+                understood: serde_json::json!({ "projectName": null }),
+                corrected: serde_json::json!({ "projectName": "Andeanvet" }),
+            })
+            .unwrap();
+    }
+    let lessons = workspace.capture_lessons().unwrap();
+    assert_eq!(lessons.len(), 20);
+    assert_eq!(lessons[0].sentence, "frase 24");
+    assert_eq!(lessons[0].corrected["projectName"], "Andeanvet");
 }
