@@ -158,7 +158,7 @@
     "advanced.general.startup": "Startup",
     "advanced.general.startup_hint": "Tiki opens on the island when the computer starts, ready for the morning brief.",
     "advanced.plugins.intro": "Each plugin brings one or both kinds of connection: ticket and project sources, and read-only client instances. Odoo comes first.",
-    "advanced.accounts.intro": "You will be able to link several accounts and choose mail, calendar or both for each one.",
+    "advanced.accounts.intro": "Connect your Microsoft 365 / Outlook or Google calendars: your meetings show in the Agenda and Tiki warns you before each one.",
     "advanced.availability.next": "Next version",
     "advanced.availability.later": "Coming later",
     "advanced.kind.ticket_source": "Tickets and projects",
@@ -169,8 +169,6 @@
     "advanced.plugin.github": "Issues as tickets; client repositories to review code.",
     "advanced.plugin.zendesk": "Support tickets.",
     "advanced.plugin.postgresql": "The client database, read-only queries.",
-    "advanced.account.google": "Gmail and Google Calendar, several accounts.",
-    "advanced.account.microsoft": "Microsoft mail and calendar.",
     "advanced.shortcuts.capture": "Quick new task",
     "advanced.shortcuts.toggle": "Show or hide the island",
     "advanced.key.ctrl": "Ctrl",
@@ -283,7 +281,24 @@
     "calendar.signed_in_page": "Done: your calendar is connected. You can go back to Tiki.",
 
     "date.long": "{weekday}, {month} {day}",
-    "date.short": "{weekday_short} {day}"
+    "date.short": "{weekday_short} {day}",
+
+    "calendar.connected": "Connected calendars",
+    "calendar.none": "None yet.",
+    "calendar.add": "Connect a calendar",
+    "calendar.connect.microsoft": "Connect Microsoft 365 / Outlook",
+    "calendar.connect.google": "Connect Google",
+    "calendar.connecting": "Waiting for the browser…",
+    "calendar.browser_hint": "Sign in in the browser window that opened, then come back here.",
+    "calendar.failed": "Could not connect. Please try again.",
+    "calendar.unavailable": "This version of Tiki cannot connect some of these calendars yet.",
+    "calendar.privacy": "Tiki only reads your calendar and never changes it. Your sign-in is kept in Windows Credential Manager.",
+    "calendar.disconnect": "Disconnect",
+    "calendar.provider.microsoft": "Microsoft 365 / Outlook",
+    "calendar.provider.google": "Google Calendar",
+    "meeting.join": "Join",
+    "meeting.all_day": "All day",
+    "meeting.untitled": "(No title)"
   },
   "dates": {
     "weekdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],

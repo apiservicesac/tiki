@@ -182,3 +182,10 @@
   background-color: var(--switch-on);
   background-image: radial-gradient(circle at 20px 50%, #ffffff 5px, transparent 5.5px);
 }
+
+/* Calendar accounts: the email, then which calendar it is. */
+.calendar-account small {
+  display: block;
+  font-size: 11px;
+  color: var(--island-faint);
+}

@@ -5,13 +5,14 @@ import type { Translator } from "../i18n/Translator";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
 import { AiSettingsView, type AiSettingsHandlers } from "../settings/AiSettingsView";
 import type { SettingsState } from "../settings/SettingsStore";
-import { ACCOUNT_CATALOG, ADVANCED_SECTIONS, PLUGIN_CATALOG, type AdvancedSection } from "./advancedCatalog";
+import { ADVANCED_SECTIONS, PLUGIN_CATALOG, type AdvancedSection } from "./advancedCatalog";
+import { CalendarAccountsView, type CalendarAccountsHandlers } from "./CalendarAccountsView";
 import { CatalogSectionView } from "./CatalogSectionView";
 import { GeneralSectionView, type GeneralSectionHandlers } from "./GeneralSectionView";
 import { ShortcutsSectionView } from "./ShortcutsSectionView";
 import type { WindowControls } from "./WindowControls";
 
-export interface AdvancedSettingsHandlers extends AiSettingsHandlers, GeneralSectionHandlers {
+export interface AdvancedSettingsHandlers extends AiSettingsHandlers, GeneralSectionHandlers, CalendarAccountsHandlers {
   onSelectSection: (section: AdvancedSection) => void;
 }
 
@@ -31,6 +32,7 @@ export class AdvancedSettingsView {
   private readonly general: GeneralSectionView;
   private readonly ai: AiSettingsView;
   private readonly catalog: CatalogSectionView;
+  private readonly calendars: CalendarAccountsView;
   private readonly shortcuts: ShortcutsSectionView;
   private readonly titleText: HTMLElement;
   private readonly nav: HTMLElement;
@@ -47,6 +49,7 @@ export class AdvancedSettingsView {
     this.general = new GeneralSectionView(translator);
     this.ai = new AiSettingsView(translator);
     this.catalog = new CatalogSectionView(translator);
+    this.calendars = new CalendarAccountsView(translator);
     this.shortcuts = new ShortcutsSectionView(translator);
     this.titleText = ElementFactory.create("span", { className: "advanced-title" });
     this.nav = ElementFactory.create("nav", { className: "advanced-nav" });
@@ -97,7 +100,7 @@ export class AdvancedSettingsView {
       case "plugins":
         return this.catalog.render("advanced.plugins.intro", PLUGIN_CATALOG, "advanced.plugin");
       case "accounts":
-        return this.catalog.render("advanced.accounts.intro", ACCOUNT_CATALOG, "advanced.account");
+        return this.calendars.render(state.calendars, handlers);
       case "shortcuts":
         return this.shortcuts.render();
     }

@@ -1,6 +1,6 @@
 /**
- * What the advanced settings list: sections, plugins and accounts. Plugins and accounts are
- * shown with their real availability; none of them is connected yet.
+ * What the advanced settings list: sections and plugins. Plugins are shown with their real
+ * availability; none of them is connected yet.
  */
 export const ADVANCED_SECTIONS = Object.freeze(["general", "ai", "plugins", "accounts", "shortcuts"] as const);
 export type AdvancedSection = (typeof ADVANCED_SECTIONS)[number];
@@ -22,11 +22,6 @@ export const PLUGIN_CATALOG: readonly CatalogEntry[] = Object.freeze([
   { id: "github", name: "GitHub", kinds: ["ticket_source", "client_instance"], availability: "later" },
   { id: "zendesk", name: "Zendesk", kinds: ["ticket_source"], availability: "later" },
   { id: "postgresql", name: "PostgreSQL", kinds: ["client_instance"], availability: "later" },
-]);
-
-export const ACCOUNT_CATALOG: readonly CatalogEntry[] = Object.freeze([
-  { id: "google", name: "Google", kinds: [], availability: "next" },
-  { id: "microsoft", name: "Outlook · Microsoft 365", kinds: [], availability: "later" },
 ]);
 
 /** Must match `DesktopConfig::SHORTCUT_*` in the shell. */

@@ -41,6 +41,7 @@ export class AdvancedSettingsApp {
     this.actions = new SettingsActions(this.store(), this.backend, assistant);
     this.render();
     await this.backend.listen(SHELL_EVENTS.preferencesChanged, () => void this.reload());
+    await this.backend.listen(SHELL_EVENTS.calendarSynced, () => void this.actions.loadCalendars());
     await this.actions.load();
   }
 
@@ -94,6 +95,8 @@ export class AdvancedSettingsApp {
       onSetAutostart: (enabled) => void this.actions.setAutostart(enabled),
       onCheckUpdate: () => void this.actions.checkForUpdate(),
       onInstallUpdate: () => void this.actions.installUpdate(),
+      onConnectCalendar: (provider) => void this.actions.connectCalendar(provider),
+      onDisconnectCalendar: (accountId) => void this.actions.disconnectCalendar(accountId),
     };
   }
 

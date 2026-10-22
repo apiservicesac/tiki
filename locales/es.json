@@ -158,7 +158,7 @@
     "advanced.general.startup": "Inicio",
     "advanced.general.startup_hint": "Tiki se abre en la isla al encender la computadora, listo para el resumen de la mañana.",
     "advanced.plugins.intro": "Cada plugin aporta uno o los dos tipos de conexión: fuentes de tickets y proyectos, e instancias de cliente en solo lectura. Odoo llega primero.",
-    "advanced.accounts.intro": "Podrás vincular varias cuentas y elegir en cada una correo, calendario o ambos.",
+    "advanced.accounts.intro": "Conecta tus calendarios de Microsoft 365 / Outlook o Google: tus reuniones aparecen en la Agenda y Tiki te avisa antes de cada una.",
     "advanced.availability.next": "Próxima versión",
     "advanced.availability.later": "Próximamente",
     "advanced.kind.ticket_source": "Tickets y proyectos",
@@ -169,8 +169,6 @@
     "advanced.plugin.github": "Issues como tickets; repos del cliente para revisar código.",
     "advanced.plugin.zendesk": "Tickets de soporte.",
     "advanced.plugin.postgresql": "Base de datos del cliente, solo consultas.",
-    "advanced.account.google": "Gmail y Google Calendar, varias cuentas.",
-    "advanced.account.microsoft": "Correo y calendario de Microsoft.",
     "advanced.shortcuts.capture": "Nueva tarea rápida",
     "advanced.shortcuts.toggle": "Mostrar u ocultar la isla",
     "advanced.key.ctrl": "Ctrl",
@@ -283,7 +281,24 @@
     "calendar.signed_in_page": "Listo: tu calendario quedó conectado. Ya puedes volver a Tiki.",
 
     "date.long": "{weekday} {day} de {month}",
-    "date.short": "{weekday_short} {day}"
+    "date.short": "{weekday_short} {day}",
+
+    "calendar.connected": "Calendarios conectados",
+    "calendar.none": "Aún no hay ninguno.",
+    "calendar.add": "Conectar un calendario",
+    "calendar.connect.microsoft": "Conectar Microsoft 365 / Outlook",
+    "calendar.connect.google": "Conectar Google",
+    "calendar.connecting": "Esperando el navegador…",
+    "calendar.browser_hint": "Inicia sesión en la ventana del navegador que se abrió y vuelve aquí.",
+    "calendar.failed": "No se pudo conectar. Inténtalo de nuevo.",
+    "calendar.unavailable": "Esta versión de Tiki todavía no puede conectar alguno de estos calendarios.",
+    "calendar.privacy": "Tiki solo lee tu calendario, nunca lo cambia. Tu sesión se guarda en el Administrador de credenciales de Windows.",
+    "calendar.disconnect": "Desconectar",
+    "calendar.provider.microsoft": "Microsoft 365 / Outlook",
+    "calendar.provider.google": "Google Calendar",
+    "meeting.join": "Unirse",
+    "meeting.all_day": "Todo el día",
+    "meeting.untitled": "(Sin título)"
   },
   "dates": {
     "weekdays": ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"],

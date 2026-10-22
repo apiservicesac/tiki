@@ -1,10 +1,13 @@
 import type { AiProviderName } from "../ai";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
-import type { TikiBackend } from "../backend/contracts";
+import type { CalendarProvider, TikiBackend } from "../backend/contracts";
 import type { SettingsStore } from "./SettingsStore";
 import type { UpdateState } from "./UpdateSettingsView";
 
-/** Loads and changes the settings the shell owns: AI keys, models, start with Windows and updates. */
+/**
+ * Loads and changes the settings the shell owns: AI keys, models, start with Windows,
+ * updates and calendar accounts.
+ */
 export class SettingsActions {
   /** Counts AI settings loads, so a slow older load never overwrites a newer one. */
   private aiLoads = 0;
@@ -16,7 +19,30 @@ export class SettingsActions {
   ) {}
 
   async load(): Promise<void> {
-    await Promise.all([this.loadAi(), this.loadAutostart(), this.loadVersion()]);
+    await Promise.all([this.loadAi(), this.loadAutostart(), this.loadVersion(), this.loadCalendars()]);
+  }
+
+  async loadCalendars(): Promise<void> {
+    const status = await this.backend.calendarStatus();
+    this.store.update({ calendars: { ...this.store.state().calendars, status } });
+  }
+
+  /** Signs in in the browser; the section shows that Tiki is waiting for it. */
+  async connectCalendar(provider: CalendarProvider): Promise<void> {
+    this.store.update({ calendars: { ...this.store.state().calendars, connecting: provider, failed: false } });
+    let failed = false;
+    try {
+      await this.backend.connectCalendar(provider);
+    } catch {
+      failed = true;
+    }
+    this.store.update({ calendars: { ...this.store.state().calendars, connecting: null, failed } });
+    await this.loadCalendars();
+  }
+
+  async disconnectCalendar(accountId: number): Promise<void> {
+    await this.backend.disconnectCalendar(accountId);
+    await this.loadCalendars();
   }
 
   async checkForUpdate(): Promise<void> {
