@@ -4,8 +4,6 @@ export const UI_CONFIG = Object.freeze({
   reactionMoodDurationMs: 4_000,
   /** How often the island asks the core for a fresh snapshot. */
   snapshotRefreshIntervalMs: 60_000,
-  /** Wait after the last keystroke before previewing a quick capture. */
-  capturePreviewDelayMs: 250,
   /** Resting the pointer this long on the hidden notch starts opening it. */
   peekDelayMs: 90,
   /**

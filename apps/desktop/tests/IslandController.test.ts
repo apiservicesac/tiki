@@ -5,6 +5,14 @@ import { TikiApp } from "../src/TikiApp";
 import { FakeBackend } from "./support/FakeBackend";
 import { FakeShell } from "./support/FakeShell";
 
+/** Types a sentence in quick capture, as the user would. */
+function typeCapture(root: HTMLElement, sentence: string): void {
+  const input = root.querySelector<HTMLInputElement>("#capture-input");
+  if (input) {
+    input.value = sentence;
+  }
+}
+
 const EVENING_BRIEF = {
   kind: "evening" as const,
   title: "Cierre del día",
@@ -122,7 +130,7 @@ describe("IslandController", () => {
     controller.setMode("expanded");
     root.querySelector<HTMLButtonElement>('[data-task-id="1"] .island-row-text')?.click();
     await vi.waitFor(() => expect(root.querySelector("#edit-title")).not.toBeNull());
-    expect(root.querySelector("#edit-client")?.textContent).toBe("Altamira");
+    expect(root.querySelector("#edit-project")?.textContent).toBe("Altamira");
 
     const title = root.querySelector<HTMLInputElement>("#edit-title");
     const status = root.querySelector<HTMLSelectElement>("#edit-status");
@@ -142,7 +150,7 @@ describe("IslandController", () => {
       edit: {
         title: "Tracking de formularios",
         notes: "",
-        clientName: "Altamira",
+        projectName: "Altamira",
         dueDate: "2026-10-22",
         priority: "normal",
         status: "waiting_on_others",
@@ -152,7 +160,7 @@ describe("IslandController", () => {
     await vi.waitFor(() => expect(controller.currentState.panel).toBe("tasks"));
   });
 
-  it("lists every pending task by client in the Tasks tab, with search and client filter", () => {
+  it("lists every pending task by project in the Tasks tab, with search and project filter", () => {
     controller.selectTab("all_tasks");
     const groups = () => [...root.querySelectorAll(".tasks-group span:first-of-type")].map((group) => group.textContent);
     expect(groups()).toEqual(["Andeanvet", "Altamira", "Vapestation"]);
@@ -168,7 +176,7 @@ describe("IslandController", () => {
       search.value = "";
       search.dispatchEvent(new Event("input"));
     }
-    root.querySelector<HTMLButtonElement>("#tasks-client-picker")?.click();
+    root.querySelector<HTMLButtonElement>("#tasks-project-picker")?.click();
     const pickerSearch = root.querySelector<HTMLInputElement>(".picker-search");
     if (pickerSearch) {
       pickerSearch.value = "alta";
@@ -203,35 +211,35 @@ describe("IslandController", () => {
     await vi.waitFor(() => expect(controller.currentState.panel).toBe("edit"));
   });
 
-  it("creates, renames, recolors and removes clients in the client panel", async () => {
+  it("creates, renames, recolors and removes projects in the project panel", async () => {
     controller.selectTab("all_tasks");
     await controller.refresh();
-    root.querySelector<HTMLButtonElement>("#tasks-client-picker")?.click();
-    [...root.querySelectorAll<HTMLButtonElement>(".picker-action")].find((action) => action.textContent === "Gestionar clientes")?.click();
-    expect(controller.currentState.panel).toBe("clients");
+    root.querySelector<HTMLButtonElement>("#tasks-project-picker")?.click();
+    [...root.querySelectorAll<HTMLButtonElement>(".picker-action")].find((action) => action.textContent === "Gestionar proyectos")?.click();
+    expect(controller.currentState.panel).toBe("projects");
 
-    const name = root.querySelector<HTMLInputElement>("#new-client");
+    const name = root.querySelector<HTMLInputElement>("#new-project");
     if (name) {
       name.value = "Constructora Sur";
     }
-    root.querySelector<HTMLButtonElement>("#add-client")?.click();
-    await vi.waitFor(() => expect(backend.clients.map((client) => client.name)).toContain("Constructora Sur"));
-    await vi.waitFor(() => expect(root.querySelectorAll(".client-row")).toHaveLength(4));
+    root.querySelector<HTMLButtonElement>("#add-project")?.click();
+    await vi.waitFor(() => expect(backend.projects.map((project) => project.name)).toContain("Constructora Sur"));
+    await vi.waitFor(() => expect(root.querySelectorAll(".project-row")).toHaveLength(4));
 
-    root.querySelector<HTMLButtonElement>('[data-client-id="3"] .island-icon-button')?.click();
-    const rename = root.querySelector<HTMLInputElement>("#client-name-input");
+    root.querySelector<HTMLButtonElement>('[data-project-id="3"] .island-icon-button')?.click();
+    const rename = root.querySelector<HTMLInputElement>("#project-name-input");
     if (rename) {
       rename.value = "Vape Station";
       rename.dispatchEvent(new Event("input"));
     }
-    root.querySelector<HTMLButtonElement>('.client-swatch[data-color="#7357E8"]')?.click();
-    root.querySelector<HTMLButtonElement>("#save-client")?.click();
+    root.querySelector<HTMLButtonElement>('.project-swatch[data-color="#7357E8"]')?.click();
+    root.querySelector<HTMLButtonElement>("#save-project")?.click();
     await vi.waitFor(() =>
-      expect(backend.clients.find((client) => client.clientId === 3)).toMatchObject({ name: "Vape Station", color: "#7357E8" }));
+      expect(backend.projects.find((project) => project.projectId === 3)).toMatchObject({ name: "Vape Station", color: "#7357E8" }));
 
-    root.querySelector<HTMLButtonElement>('[data-client-id="1"] .client-remove')?.click();
-    root.querySelector<HTMLButtonElement>('[data-client-id="1"] .client-remove-confirm')?.click();
-    await vi.waitFor(() => expect(backend.clients.some((client) => client.clientId === 1)).toBe(false));
+    root.querySelector<HTMLButtonElement>('[data-project-id="1"] .project-remove')?.click();
+    root.querySelector<HTMLButtonElement>('[data-project-id="1"] .project-remove-confirm')?.click();
+    await vi.waitFor(() => expect(backend.projects.some((project) => project.projectId === 1)).toBe(false));
   });
 
   it("does not fold while the user is typing a search", () => {
@@ -257,14 +265,24 @@ describe("IslandController", () => {
     expect(root.querySelector("#capture-input")).not.toBeNull();
   });
 
-  it("saves a capture, goes back to the list and celebrates", async () => {
-    await controller.submitCapture("revisar acta altamira viernes");
+  it("saves the sentence as typed with the fields the user picked when there is no AI", async () => {
+    controller.openPanel("capture");
+    typeCapture(root, "revisar acta altamira viernes");
+    root.querySelector<HTMLButtonElement>("#capture-project")?.click();
+    root.querySelector<HTMLButtonElement>('.picker-option[data-value="Altamira"]')?.click();
+    const due = root.querySelector<HTMLInputElement>("#capture-due");
+    if (due) {
+      due.value = "2026-10-23";
+    }
+    expect(root.querySelector(".capture-status")?.textContent).toContain("Configurar IA");
 
-    expect(backend.capturedSentences).toEqual(["revisar acta altamira viernes"]);
+    await controller.submitCapture();
+    expect(backend.confirmedCaptures).toEqual([
+      { title: "revisar acta altamira viernes", projectName: "Altamira", dueDate: "2026-10-23", priority: "normal", remindAt: null },
+    ]);
     expect(controller.currentState.panel).toBe("tasks");
     expect(notch()?.dataset.mood).toBe("happy");
   });
-
   it("moves the island when another edge is chosen in Settings", async () => {
     backend.emit(SHELL_EVENTS.openSettings);
     root.querySelectorAll<HTMLButtonElement>(".settings-option")[3]?.click();
@@ -419,59 +437,64 @@ describe("IslandController with the AI assistant", () => {
 
   afterEach(() => controller.stop());
 
-  it("shows what Tiki understood and saves it on the second Enter", async () => {
+  it("fills the fields from the sentence with AI and saves them on the second Enter", async () => {
     backend.aiShell = new FakeShell(claudeReads({
       title: "Revisar acceso de facturas",
-      clientName: "andeanvet",
+      projectName: "andeanvet",
       dueDate: "2026-10-23",
       priority: "high",
       remindAt: "2026-10-23T09:00",
     }));
     controller.openPanel("capture");
+    typeCapture(root, "revisar acceso facturas andeanvet viernes, importante, avísame a las 9");
 
-    await controller.submitCapture("revisar acceso facturas andeanvet viernes, importante");
-    const chips = [...root.querySelectorAll(".capture-chip")].map((chip) => chip.textContent);
-    expect(chips).toContain("Cliente Andeanvet");
-    expect(chips).toContain("Prioridad Alta");
-    expect(chips.some((chip) => chip?.startsWith("Aviso ") && chip.endsWith("· 09:00"))).toBe(true);
+    await controller.submitCapture();
+    expect(root.querySelector<HTMLInputElement>("#capture-input")?.value).toBe("Revisar acceso de facturas");
+    expect(root.querySelector("#capture-project")?.textContent).toBe("Andeanvet");
+    expect(root.querySelector<HTMLInputElement>("#capture-due")?.value).toBe("2026-10-23");
+    expect(root.querySelector<HTMLInputElement>("#capture-remind")?.value).toBe("2026-10-23T09:00");
+    expect(root.querySelector<HTMLSelectElement>("#capture-priority")?.value).toBe("high");
     expect(backend.confirmedCaptures).toHaveLength(0);
 
-    await controller.submitCapture("revisar acceso facturas andeanvet viernes, importante");
+    const due = root.querySelector<HTMLInputElement>("#capture-due");
+    if (due) {
+      due.value = "2026-10-24";
+    }
+    await controller.submitCapture();
     expect(backend.confirmedCaptures).toEqual([
       {
         title: "Revisar acceso de facturas",
-        clientName: "Andeanvet",
-        dueDate: "2026-10-23",
+        projectName: "Andeanvet",
+        dueDate: "2026-10-24",
         priority: "high",
         remindAt: "2026-10-23T09:00:00",
       },
     ]);
-    expect(backend.capturedSentences).toHaveLength(0);
     expect(controller.currentState.panel).toBe("tasks");
   });
-
   it("never sends the key to the interface's requests", async () => {
-    backend.aiShell = new FakeShell(claudeReads({ title: "Llamar", clientName: null, dueDate: null, priority: "normal", remindAt: null }));
-    await controller.submitCapture("llamar");
+    backend.aiShell = new FakeShell(claudeReads({ title: "Llamar", projectName: null, dueDate: null, priority: "normal", remindAt: null }));
+    controller.openPanel("capture");
+    typeCapture(root, "llamar");
+    await controller.submitCapture();
 
     const sent = JSON.stringify(backend.aiShell.requests);
     expect(sent).not.toContain("sk-test");
   });
-
-  it("falls back to the core's rules when the assistant fails", async () => {
+  it("lets the user fill the fields when the assistant fails, without guessing", async () => {
     backend.aiShell = new FakeShell(() => ({ type: "error", error: { type: "invalid_request_error", message: "bad" } }), 400);
+    controller.openPanel("capture");
+    typeCapture(root, "llamar a altamira");
 
-    await controller.submitCapture("llamar a altamira");
-    expect(backend.capturedSentences).toEqual(["llamar a altamira"]);
+    await controller.submitCapture();
+    expect(root.querySelector(".capture-status")?.textContent).toContain("No pude");
+    expect(backend.confirmedCaptures).toHaveLength(0);
+
+    await controller.submitCapture();
+    expect(backend.confirmedCaptures).toEqual([
+      { title: "llamar a altamira", projectName: null, dueDate: null, priority: "normal", remindAt: null },
+    ]);
   });
-
-  it("creates clients with the rules, without asking the assistant", async () => {
-    const requestsBefore = backend.aiShell.requests.length;
-    await controller.submitCapture("+Nuevo Cliente");
-    expect(backend.capturedSentences).toEqual(["+Nuevo Cliente"]);
-    expect(backend.aiShell.requests).toHaveLength(requestsBefore);
-  });
-
   it("answers a question in the Ask panel with the open tasks as context", async () => {
     backend.aiShell = new FakeShell(claudeReads({ text: "Con Altamira tienes el tracking de formularios para mañana." }));
     controller.openPanel("ask");

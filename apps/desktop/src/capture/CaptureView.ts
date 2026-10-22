@@ -1,40 +1,106 @@
 import type { InterpretedCapture } from "../ai";
-import type { CaptureDraft, CaptureIntent } from "../backend/contracts";
+import { PRIORITIES, type Priority, type ProjectSummary } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
+import { ProjectPicker } from "../island/ProjectPicker";
 
 export interface CaptureViewHandlers {
-  onInput: (sentence: string) => void;
-  onSubmit: (sentence: string) => void;
+  /** Enter in the sentence box: the controller decides whether the AI reads it or it is saved. */
+  onSubmit: () => void;
   onCancel: () => void;
+  onOpenAiSettings: () => void;
 }
 
 /**
- * The quick-capture box and the chips showing what Tiki understood. The box is kept while
- * the user stays in quick capture, so refreshes never wipe what they are typing.
+ * Quick capture: a sentence box and the task's fields under it (project, due date,
+ * reminder, priority). With AI, the first Enter fills the fields from the sentence and the
+ * user reviews them; without AI, the user picks them. Nothing is guessed with word rules.
+ *
+ * The box is kept while the user stays in quick capture, so refreshes never wipe it.
  */
 export class CaptureView {
-  private chipsContainer: HTMLElement | null = null;
-  private hint: HTMLElement | null = null;
   private element: HTMLElement | null = null;
+  private sentence: HTMLInputElement | null = null;
+  private dueDate: HTMLInputElement | null = null;
+  private remindAt: HTMLInputElement | null = null;
+  private priority: HTMLSelectElement | null = null;
+  private status: HTMLElement | null = null;
+  private readonly picker = new ProjectPicker();
+  private project: string | null = null;
+  private projects: readonly ProjectSummary[] = [];
+  /** The AI already read this sentence: the next Enter saves. */
+  private interpreted = false;
 
   constructor(private readonly translator: Translator) {}
 
   /** The capture box, created on first use and reused until `reset`. */
-  render(handlers: CaptureViewHandlers): HTMLElement {
+  render(handlers: CaptureViewHandlers, projects: readonly ProjectSummary[], aiReady: boolean): HTMLElement {
+    this.projects = projects;
     this.element ??= this.build(handlers);
+    this.drawPicker();
+    if (!this.interpreted) {
+      this.setStatus(aiReady ? "capture.hint_ai" : "capture.hint_manual", !aiReady, handlers);
+    }
     return this.element;
   }
 
   /** Forgets the box, so the next capture starts empty. */
   reset(): void {
     this.element = null;
-    this.chipsContainer = null;
-    this.hint = null;
+    this.project = null;
+    this.interpreted = false;
+  }
+
+  /** Whether the AI has already filled the fields for the current sentence. */
+  get isInterpreted(): boolean {
+    return this.interpreted;
+  }
+
+  /** The task as the user sees it now: the sentence as title and the chosen fields. */
+  values(): InterpretedCapture {
+    return {
+      title: this.sentence?.value.trim() ?? "",
+      projectName: this.project,
+      dueDate: this.dueDate?.value || null,
+      priority: (this.priority?.value as Priority | undefined) ?? "normal",
+      remindAt: this.remindAt?.value ? `${this.remindAt.value}:00` : null,
+    };
+  }
+
+  /** The AI is reading the sentence. */
+  showThinking(): void {
+    this.setStatus("capture.thinking", false);
+    this.status?.classList.add("capture-status-thinking");
+  }
+
+  /** The AI's reading, put in the fields for the user to review; the next Enter saves. */
+  fill(capture: InterpretedCapture): void {
+    this.interpreted = true;
+    if (this.sentence) {
+      this.sentence.value = capture.title;
+    }
+    this.project = capture.projectName;
+    if (this.dueDate) {
+      this.dueDate.value = capture.dueDate ?? "";
+    }
+    if (this.remindAt) {
+      this.remindAt.value = capture.remindAt?.slice(0, 16) ?? "";
+    }
+    if (this.priority) {
+      this.priority.value = capture.priority;
+    }
+    this.drawPicker();
+    this.setStatus("capture.review", false);
+  }
+
+  /** The AI could not read it: the user fills the fields, and the next Enter saves. */
+  showAiFailed(): void {
+    this.interpreted = true;
+    this.setStatus("capture.ai_failed", false);
   }
 
   private build(handlers: CaptureViewHandlers): HTMLElement {
-    const input = ElementFactory.create("input", {
+    this.sentence = ElementFactory.create("input", {
       className: "capture-input",
       attributes: {
         type: "text",
@@ -45,110 +111,91 @@ export class CaptureView {
         "aria-label": this.translator.text("capture.placeholder"),
       },
     });
-    input.addEventListener("input", () => handlers.onInput(input.value));
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && input.value.trim() !== "") {
-        handlers.onSubmit(input.value);
-      } else if (event.key === "Escape") {
+    this.dueDate = this.field("date", "capture-due");
+    this.remindAt = this.field("datetime-local", "capture-remind");
+    this.priority = ElementFactory.create("select", {
+      className: "settings-select",
+      attributes: { id: "capture-priority", "aria-label": this.translator.text("capture.field.priority") },
+      children: PRIORITIES.map((priority) =>
+        ElementFactory.create("option", { text: this.translator.text(`priority.${priority}`), attributes: { value: priority } })),
+    });
+    this.priority.value = "normal";
+    this.status = ElementFactory.create("p", { className: "island-hint capture-status" });
+
+    const element = ElementFactory.create("div", {
+      className: "capture",
+      children: [
+        this.sentence,
+        ElementFactory.create("div", {
+          className: "capture-fields",
+          children: [
+            this.labelled("capture.field.project", this.picker.element, "div"),
+            this.labelled("capture.field.due", this.dueDate),
+            this.labelled("capture.field.remind", this.remindAt),
+            this.labelled("capture.field.priority", this.priority),
+          ],
+        }),
+        this.status,
+      ],
+    });
+    element.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !this.picker.isOpen() && (this.sentence?.value.trim() ?? "") !== "") {
+        event.preventDefault();
+        handlers.onSubmit();
+      } else if (event.key === "Escape" && !this.picker.isOpen()) {
         handlers.onCancel();
       }
     });
+    queueMicrotask(() => this.sentence?.focus());
+    return element;
+  }
 
-    this.chipsContainer = ElementFactory.create("div", { className: "capture-chips" });
-    this.hint = ElementFactory.create("p", { className: "island-hint", text: this.defaultHint() });
-    queueMicrotask(() => input.focus());
-
-    return ElementFactory.create("div", {
-      className: "capture",
-      children: [input, this.chipsContainer, this.hint],
+  private drawPicker(): void {
+    this.picker.update({
+      id: "capture-project",
+      options: [
+        { value: null, label: this.translator.text("edit.no_project"), color: null },
+        ...this.projects.map((project) => ({ value: project.name, label: project.name, color: project.color })),
+      ],
+      selected: this.project,
+      searchPlaceholder: this.translator.text("tasks.search_project"),
+      emptyText: this.translator.text("tasks.no_project_match"),
+      onSelect: (value) => {
+        this.project = value;
+        this.drawPicker();
+      },
     });
   }
 
-  /** The assistant is reading the sentence. */
-  showThinking(): void {
-    this.chipsContainer?.replaceChildren(
-      ElementFactory.create("span", { className: "capture-thinking", text: this.translator.text("capture.thinking") }),
-    );
-  }
-
-  /** What the assistant understood; a second Enter saves it. */
-  showInterpreted(capture: InterpretedCapture): void {
-    const chips = [this.chip("capture.field.title", capture.title)];
-    if (capture.clientName) {
-      chips.push(this.chip("capture.field.client", capture.clientName));
-    }
-    if (capture.dueDate) {
-      chips.push(this.chip("capture.field.due", this.formatDate(capture.dueDate)));
-    }
-    if (capture.remindAt) {
-      chips.push(this.chip("capture.field.remind", this.formatDateTime(capture.remindAt)));
-    }
-    chips.push(this.chip("capture.field.priority", this.translator.text(`priority.${capture.priority}`)));
-    this.chipsContainer?.replaceChildren(...chips);
-    this.setHint(`${this.translator.text("capture.confirm")} · ${this.translator.text("capture.edit_tip")}`);
-  }
-
-  /** Replaces the chips with what the core understood from the current sentence. */
-  showIntent(intent: CaptureIntent | null): void {
-    if (!this.chipsContainer) {
+  private setStatus(key: string, withAiLink: boolean, handlers?: CaptureViewHandlers): void {
+    if (!this.status) {
       return;
     }
-    const chips = !intent
-      ? []
-      : intent.kind === "client"
-        ? [this.chip("capture.new_client", intent.name)]
-        : this.taskChips(intent);
-    this.chipsContainer.replaceChildren(...chips);
-    this.setHint(this.defaultHint());
+    this.status.className = "island-hint capture-status";
+    const children: Node[] = [document.createTextNode(this.translator.text(key))];
+    if (withAiLink && handlers) {
+      const link = ElementFactory.create("button", {
+        className: "capture-ai-link",
+        text: this.translator.text("capture.set_up_ai"),
+        attributes: { type: "button" },
+      });
+      link.addEventListener("click", (event) => {
+        event.stopPropagation();
+        handlers.onOpenAiSettings();
+      });
+      children.push(document.createTextNode(" · "), link);
+    }
+    this.status.replaceChildren(...children);
   }
 
-  private defaultHint(): string {
-    return `${this.translator.text("capture.hint")} · ${this.translator.text("capture.client_tip")}`;
+  private field(type: string, id: string): HTMLInputElement {
+    return ElementFactory.create("input", { className: "settings-input", attributes: { type, id, autocomplete: "off" } });
   }
 
-  private setHint(text: string): void {
-    if (this.hint) {
-      this.hint.textContent = text;
-    }
-  }
-
-  private taskChips(draft: CaptureDraft): HTMLElement[] {
-    const chips: HTMLElement[] = [];
-    if (draft.clientName) {
-      chips.push(this.chip("capture.field.client", draft.clientName));
-    }
-    if (draft.dueDate) {
-      chips.push(this.chip("capture.field.due", this.formatDate(draft.dueDate)));
-    }
-    if (draft.remindAt) {
-      chips.push(this.chip("capture.field.remind", this.formatDateTime(draft.remindAt)));
-    }
-    chips.push(this.chip("capture.field.status", this.translator.text("status.to_do")));
-    return chips;
-  }
-
-  private chip(labelKey: string, value: string): HTMLElement {
-    return ElementFactory.create("span", {
-      className: "capture-chip",
-      children: [
-        ElementFactory.create("em", { text: this.translator.text(labelKey) }),
-        document.createTextNode(` ${value}`),
-      ],
+  private labelled(labelKey: string, control: HTMLElement, tag: "label" | "div" = "label"): HTMLElement {
+    return ElementFactory.create(tag, {
+      className: "edit-field",
+      children: [ElementFactory.create("span", { text: this.translator.text(labelKey) }), control],
     });
-  }
-
-  /** "vie 23 · 09:00" from `2026-10-23T09:00:00`. */
-  private formatDateTime(isoDateTime: string): string {
-    const [date = "", time = ""] = isoDateTime.split("T");
-    return `${this.formatDate(date)} · ${time.slice(0, 5)}`;
-  }
-
-  private formatDate(isoDate: string): string {
-    const [year, month, day] = isoDate.split("-").map(Number) as [number, number, number];
-    return new Intl.DateTimeFormat(this.translator.localeCode, {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    }).format(new Date(year, month - 1, day));
   }
 }

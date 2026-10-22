@@ -358,25 +358,6 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 
 .capture-input:focus { border-color: var(--island-muted); }
 
-.capture-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  min-height: 24px;
-}
-
-.capture-chip {
-  padding: 3px 10px;
-  border-radius: 99px;
-  background: var(--island-soft);
-  font-size: 12px;
-}
-
-.capture-chip em {
-  font-style: normal;
-  color: var(--island-muted);
-}
-
 /* Settings */
 .settings {
   display: grid;
@@ -626,15 +607,6 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 @keyframes mascot-float { 50% { transform: translateY(-4px); opacity: 0.6; } }
 
 /* AI assistant */
-.capture-thinking {
-  font-size: 12px;
-  color: var(--island-muted);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .capture-thinking { animation: capture-thinking 1.2s ease-in-out infinite alternate; }
-}
-
 @keyframes capture-thinking {
   from { opacity: 0.45; }
   to { opacity: 1; }
@@ -1104,3 +1076,25 @@ button.island-notice {
 /* Four tabs and four actions fit the narrow island with tighter spacing. */
 [data-orientation="vertical"] .island-head { gap: 2px; padding: 0 8px 0 10px; }
 [data-orientation="vertical"] .island-tab { padding: 5px 7px; }
+
+/* Quick capture fields: filled by the AI from the sentence, or picked by the user. */
+.capture-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+[data-orientation="vertical"] .capture-fields { grid-template-columns: minmax(0, 1fr); }
+.capture-fields .picker-trigger { max-width: none; width: 100%; box-sizing: border-box; }
+.capture-fields .picker-popover { left: 0; right: auto; }
+.capture-status-thinking { animation: capture-thinking 1.2s ease-in-out infinite alternate; }
+
+.capture-ai-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--island-text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
