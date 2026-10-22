@@ -4,8 +4,8 @@
  * touches the island.
  */
 export { AiError } from "./AiError";
-export { CaptureInterpreter, type CaptureContext, type InterpretedCapture } from "./CaptureInterpreter";
-export { DayAdvisor, type AdvisorContext, type AdvisorLanguage, type AdvisorTask, type AskReply } from "./DayAdvisor";
+export { CommandInterpreter, type CommandContext, type CommandReply, type InterpretedCapture } from "./CommandInterpreter";
+export { DayAdvisor, type AdvisorContext, type AdvisorLanguage, type AdvisorTask } from "./DayAdvisor";
 export type { HarnessLesson } from "./harness/HarnessPieces";
 export { ACTION_TYPES, type ProposedAction } from "./ProposedAction";
 export type { AiModelOption, AiProviderName, ProxiedRequest, ProxiedResponse, StructuredModel } from "./contracts";

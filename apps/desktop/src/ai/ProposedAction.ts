@@ -2,7 +2,7 @@ import { z } from "zod";
 import { AiDates } from "./AiDates";
 
 export const ACTION_TYPES = Object.freeze(["create_task", "create_reminder", "set_reminder", "set_due_date", "move_task"] as const);
-const STATUSES = ["to_do", "in_progress", "testing", "waiting_on_others", "done"] as const;
+const STATUSES = ["to_do", "in_progress", "waiting", "done"] as const;
 
 /** A change the assistant proposes; nothing happens until the user applies it. */
 export interface ProposedAction {
