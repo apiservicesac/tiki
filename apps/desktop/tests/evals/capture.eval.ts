@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CaptureInterpreter, TikiAi, type AiProviderName, type InterpretedCapture, type ProxiedRequest, type ProxiedResponse } from "../../src/ai";
+import { CommandInterpreter, TikiAi, type AiProviderName, type InterpretedCapture, type ProxiedRequest, type ProxiedResponse } from "../../src/ai";
 import cases from "./captureCases.json";
 
 /**
@@ -29,22 +29,31 @@ async function sendWithKey(request: ProxiedRequest): Promise<ProxiedResponse> {
 
 describe.skipIf(!key)(`capture eval with ${provider}`, () => {
   it("reads real sentences", { timeout: 300_000 }, async () => {
-    const interpreter = new CaptureInterpreter(new TikiAi(sendWithKey).model(provider, process.env.TIKI_EVAL_MODEL ?? null));
+    const interpreter = new CommandInterpreter(new TikiAi(sendWithKey).model(provider, process.env.TIKI_EVAL_MODEL ?? null));
     let checks = 0;
     let passed = 0;
     for (const testCase of cases.cases) {
-      const read = await interpreter.interpret(testCase.sentence, {
-        projectNames: cases.projects,
+      const reply = await interpreter.read(testCase.sentence, {
         now: new Date(cases.now),
+        language: "Spanish",
+        advisor: { now: cases.now, openTasks: [], projects: cases.projects.map((name) => ({ name, notes: "" })) },
         lessons: [],
       });
-      const misses = Object.entries(testCase.expect).filter(([field, expected]) =>
-        JSON.stringify(read[field as keyof InterpretedCapture]) !== JSON.stringify(expected));
-      checks += Object.keys(testCase.expect).length;
-      passed += Object.keys(testCase.expect).length - misses.length;
+      const expectedKind = "answer" in testCase ? "answer" : "capture";
+      const expected: Record<string, unknown> = "expect" in testCase ? testCase.expect : {};
+      const read: Partial<InterpretedCapture> = reply.kind === "capture" ? reply.item : {};
+      const misses = [
+        ...(reply.kind === expectedKind ? [] : [["intent", expectedKind, reply.kind]]),
+        ...Object.entries(expected)
+          .filter(([field, value]) => JSON.stringify(read[field as keyof InterpretedCapture]) !== JSON.stringify(value))
+          .map(([field, value]) => [field, value, read[field as keyof InterpretedCapture]]),
+      ];
+      const fieldCount = Object.keys(expected).length + 1;
+      checks += fieldCount;
+      passed += fieldCount - misses.length;
       console.log(`${misses.length === 0 ? "✓" : "✗"} ${testCase.sentence}`);
-      misses.forEach(([field, expected]) =>
-        console.log(`    ${field}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(read[field as keyof InterpretedCapture])}`));
+      misses.forEach(([field, value, got]) =>
+        console.log(`    ${String(field)}: expected ${JSON.stringify(value)}, got ${JSON.stringify(got)}`));
     }
     const score = passed / checks;
     console.log(`Capture eval: ${passed}/${checks} fields right (${Math.round(score * 100)}%)`);
