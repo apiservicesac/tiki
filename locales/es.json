@@ -229,6 +229,17 @@
 
     "brief.section.reminders": "Avisos",
 
+    "kind.task": "Tarea",
+    "kind.reminder": "Recordatorio",
+    "edit.field.tags": "Etiquetas",
+    "edit.tags_placeholder": "#facturación #urgente",
+    "edit.field.kind": "Tipo",
+    "projects.notes_placeholder": "Notas del proyecto: contexto para Tiki (quién es quién, cómo trabajan)",
+    "ask.apply": "Aplicar",
+    "ask.applied": "Hecho ✓",
+    "ask.apply_failed": "No se pudo",
+    "ask.apply_all": "Aplicar todo",
+
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"
   },

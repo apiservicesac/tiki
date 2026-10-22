@@ -1,17 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { CaptureInterpreter, TikiAi } from "../src/ai";
+import { CaptureInterpreter, DayAdvisor, TikiAi } from "../src/ai";
 import { AI_CONFIG } from "../src/ai/aiConfig";
 import { FakeShell } from "./support/FakeShell";
 
 const capturedTask = {
+  kind: "task",
   title: "Revisar acceso de facturas",
   projectName: "andeanvet",
   dueDate: "2026-10-23",
-  priority: "high",
   remindAt: "2026-10-23T09:00",
+  tags: ["#Accesos"],
+  priority: "high",
 };
 
-const context = { projectNames: ["Altamira", "Andeanvet"], today: new Date(2026, 9, 21) };
+const context = {
+  projectNames: ["Altamira", "Andeanvet"],
+  now: new Date(2026, 9, 21, 17, 30),
+  lessons: [{ sentence: "revisar almendra", understood: { projectName: null }, corrected: { projectName: "Andeanvet" } }],
+};
 
 describe("TikiAi with Anthropic", () => {
   const claudeAnswer = () => ({
@@ -40,7 +46,8 @@ describe("TikiAi with Anthropic", () => {
     expect(body.fallbacks).toBe("default");
     expect(body.output_config).toMatchObject({ effort: "low", format: { type: "json_schema" } });
 
-    expect(capture).toEqual({ ...capturedTask, projectName: "Andeanvet", remindAt: "2026-10-23T09:00:00" });
+    expect(capture).toEqual({ ...capturedTask, projectName: "Andeanvet", remindAt: "2026-10-23T09:00:00", tags: ["accesos"] });
+    expect(String(body.system ?? JSON.stringify(body))).toContain("revisar almendra");
   });
 
   it("rejects an answer the model refused", async () => {
@@ -79,7 +86,7 @@ describe("TikiAi with OpenAI", () => {
     expect(shell.requests[0]?.url).toBe("https://api.openai.com/v1/responses");
     const body = shell.lastBody();
     expect(body.model).toBe("gpt-5.5");
-    expect(body.text).toMatchObject({ format: { type: "json_schema", name: "captured_task" } });
+    expect(body.text).toMatchObject({ format: { type: "json_schema", name: "captured_item" } });
     expect(capture.projectName).toBe("Andeanvet");
   });
 });
@@ -88,16 +95,27 @@ describe("CaptureInterpreter", () => {
   it("drops unknown projects and malformed dates", async () => {
     const model = {
       extract: async () => ({
+        kind: "reminder",
         title: " Llamar ",
         projectName: "Desconocido",
         dueDate: "viernes",
-        priority: "normal",
         remindAt: "mañana a las 9",
+        tags: [],
+        priority: "normal",
       }),
     };
     const capture = await new CaptureInterpreter(model as never).interpret("llamar", context);
 
-    expect(capture).toEqual({ title: "Llamar", projectName: null, dueDate: null, priority: "normal", remindAt: null });
+    // A reminder without a valid moment stays a task.
+    expect(capture).toEqual({
+      title: "Llamar",
+      projectName: null,
+      dueDate: null,
+      priority: "normal",
+      remindAt: null,
+      kind: "task",
+      tags: [],
+    });
   });
 });
 
@@ -135,5 +153,38 @@ describe("TikiAi model lists", () => {
     const models = await new TikiAi(failing).availableModels("anthropic", true);
 
     expect(models.map((model) => model.id)).toContain("claude-opus-5-5");
+  });
+});
+
+describe("DayAdvisor", () => {
+  const advisorContext = {
+    now: "2026-10-21T17:30:00",
+    openTasks: [
+      { taskId: 7, kind: "task", title: "Acta CAPEX", projectName: "Altamira", tags: [], status: "to_do", priority: "normal", dueDate: null, remindAt: null, waitingDays: null },
+    ],
+    projects: [{ name: "Altamira", notes: "Contacto: Lucía." }],
+  };
+
+  it("keeps only the actions Tiki can apply and sends the project notes", async () => {
+    let instructions = "";
+    const model = {
+      extract: async (task: { instructions: string }) => {
+        instructions = task.instructions;
+        return {
+          text: "Te propongo dos cambios.",
+          actions: [
+            { type: "set_due_date", summary: "Acta CAPEX vence el viernes", taskId: 7, title: null, projectName: null, dueDate: "2026-10-23", remindAt: null, status: null },
+            { type: "move_task", summary: "Mover una tarea que no existe", taskId: 99, title: null, projectName: null, dueDate: null, remindAt: null, status: "done" },
+            { type: "create_reminder", summary: "Recordarte llamar a Lucía", taskId: null, title: "Llamar a Lucía", projectName: "altamira", dueDate: null, remindAt: "2026-10-22T10:00", status: null },
+          ],
+        };
+      },
+    };
+    const reply = await new DayAdvisor(model as never).ask("mueve el acta al viernes", advisorContext, "Spanish");
+
+    expect(reply.actions.map((action) => action.type)).toEqual(["set_due_date", "create_reminder"]);
+    expect(reply.actions[1]).toMatchObject({ projectName: "Altamira", remindAt: "2026-10-22T10:00:00" });
+    expect(instructions).toContain("Contacto: Lucía.");
+    expect(instructions).toContain("You never change anything yourself");
   });
 });

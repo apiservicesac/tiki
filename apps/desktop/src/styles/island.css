@@ -1109,3 +1109,29 @@ button.island-notice {
 /* The picker's arrow sits at the far right, whatever the label's length. */
 .picker-trigger .picker-label { flex: 1; text-align: left; }
 .picker-trigger .picker-chevron { margin-left: auto; }
+
+/* Standalone reminders: a teal time label, apart from work urgency. */
+.island-when-reminder { background: var(--kind-instance-background); color: var(--kind-instance-text); }
+
+/* Task or reminder, at the top of quick capture. */
+.capture-kind { justify-self: start; }
+
+/* Actions Tiki proposes in Ask Tiki: each one waits for a click. */
+.ask-actions { display: grid; gap: 6px; }
+.ask-actions:empty { display: none; }
+
+.ask-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 12px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: 12px;
+  background: var(--island-soft);
+}
+
+.ask-action-summary { flex: 1; font-size: 12.5px; }
+.ask-action-done { border-color: rgba(52, 211, 153, 0.35); }
+.ask-action-done .ask-apply { background: transparent; color: var(--island-good); cursor: default; }
+.ask-action-failed .ask-apply { background: var(--urgency-critical-background); color: var(--urgency-critical-text); }
+.ask-apply-all { justify-self: end; }

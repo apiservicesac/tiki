@@ -19,7 +19,7 @@ export class ProjectsPanelView {
   private search: HTMLInputElement | null = null;
   private newProject: HTMLInputElement | null = null;
   private list: HTMLElement | null = null;
-  private editing: { projectId: number; name: string; color: string } | null = null;
+  private editing: { projectId: number; name: string; color: string; notes: string } | null = null;
   private confirmingRemoval: number | null = null;
   private projects: ProjectSummary[] = [];
   private colors: string[] = [];
@@ -137,7 +137,7 @@ export class ProjectsPanelView {
       }
     });
     const edit = ElementFactory.iconButton(ICONS.pencil, this.translator.text("projects.edit"), () => {
-      this.editing = { projectId: project.projectId, name: project.name, color: project.color };
+      this.editing = { projectId: project.projectId, name: project.name, color: project.color, notes: project.notes };
       this.confirmingRemoval = null;
       this.drawList();
     });
@@ -158,7 +158,17 @@ export class ProjectsPanelView {
   }
 
   private editRow(project: ProjectSummary): HTMLElement {
-    const editing = this.editing ?? { projectId: project.projectId, name: project.name, color: project.color };
+    const editing = this.editing ?? { projectId: project.projectId, name: project.name, color: project.color, notes: project.notes };
+    const notes = ElementFactory.create("textarea", {
+      className: "edit-notes",
+      attributes: { id: "project-notes-input", rows: "3", placeholder: this.translator.text("projects.notes_placeholder") },
+    });
+    notes.value = editing.notes;
+    notes.addEventListener("input", () => {
+      if (this.editing) {
+        this.editing.notes = notes.value;
+      }
+    });
     const name = ElementFactory.create("input", {
       className: "settings-input",
       attributes: { type: "text", id: "project-name-input", autocomplete: "off", "aria-label": this.translator.text("projects.name") },
@@ -172,7 +182,7 @@ export class ProjectsPanelView {
     const save = () => {
       if (name.value.trim() !== "") {
         this.editing = null;
-        this.handlers?.onChangeProject(project.projectId, { name: name.value.trim(), color: editing.color });
+        this.handlers?.onChangeProject(project.projectId, { name: name.value.trim(), color: editing.color, notes: notes.value.trim() });
       }
     };
     name.addEventListener("keydown", (event) => {
@@ -190,6 +200,7 @@ export class ProjectsPanelView {
       children: [
         name,
         ElementFactory.create("div", { className: "project-palette", children: this.swatches(editing.color) }),
+        notes,
         ElementFactory.create("div", { className: "edit-actions", children: [this.cancelButton(), this.saveButton(save)] }),
       ],
     });

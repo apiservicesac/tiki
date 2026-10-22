@@ -2,6 +2,7 @@ import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest
 import type {
   AiProviderStatus,
   AvailableUpdate,
+  CaptureLesson,
   TikiAlert,
   ProjectChange,
   ProjectSummary,
@@ -27,9 +28,9 @@ export class FakeBackend implements TikiBackend {
   readonly confirmedCaptures: InterpretedCapture[] = [];
   readonly editedTasks: Array<{ taskId: number; edit: TaskEdit }> = [];
   projects: ProjectSummary[] = [
-    { projectId: 1, name: "Altamira", color: "#2F6BD8", openCount: 2, pressingCount: 2 },
-    { projectId: 2, name: "Andeanvet", color: "#17837D", openCount: 3, pressingCount: 1 },
-    { projectId: 3, name: "Vapestation", color: "#C2410C", openCount: 1, pressingCount: 0 },
+    { projectId: 1, name: "Altamira", color: "#2F6BD8", openCount: 2, pressingCount: 2, notes: "" },
+    { projectId: 2, name: "Andeanvet", color: "#17837D", openCount: 3, pressingCount: 1, notes: "" },
+    { projectId: 3, name: "Vapestation", color: "#C2410C", openCount: 1, pressingCount: 0, notes: "" },
   ];
   delivered: DeliveredItem[] = [
     { taskId: 9, title: "Reporte de ventas de septiembre", projectName: "Altamira", projectColor: "#2F6BD8", deliveredLabel: "hoy" },
@@ -88,7 +89,7 @@ export class FakeBackend implements TikiBackend {
 
   async createProject(name: string): Promise<number> {
     const projectId = Math.max(0, ...this.projects.map((project) => project.projectId)) + 1;
-    this.projects = [...this.projects, { projectId, name, color: "#7357E8", openCount: 0, pressingCount: 0 }];
+    this.projects = [...this.projects, { projectId, name, color: "#7357E8", openCount: 0, pressingCount: 0, notes: "" }];
     return projectId;
   }
 
@@ -119,15 +120,39 @@ export class FakeBackend implements TikiBackend {
       priority: "normal",
       status: "to_do",
       remindAt: null,
+      kind: "task",
+      tags: [],
     };
+  }
+
+  readonly lessons: CaptureLesson[] = [];
+
+  async captureLessons(): Promise<CaptureLesson[]> {
+    return this.lessons;
+  }
+
+  async recordCaptureLesson(lesson: CaptureLesson): Promise<void> {
+    this.lessons.unshift(lesson);
   }
 
   async assistantContext(): Promise<AdvisorContext> {
     return {
-      today: "2026-10-21",
+      now: "2026-10-21T17:30:00",
       openTasks: [
-        { title: "Tracking de formularios", projectName: "Altamira", status: "to_do", priority: "high", dueDate: "2026-10-22", waitingDays: null },
+        {
+          taskId: 1,
+          kind: "task",
+          title: "Tracking de formularios",
+          projectName: "Altamira",
+          tags: [],
+          status: "to_do",
+          priority: "high",
+          dueDate: "2026-10-22",
+          remindAt: null,
+          waitingDays: null,
+        },
       ],
+      projects: [{ name: "Altamira", notes: "Contacto: Lucía." }],
     };
   }
 
@@ -223,30 +248,30 @@ export class FakeBackend implements TikiBackend {
           key: "overdue",
           title: "Atrasado",
           items: [
-            { taskId: 3, title: "Acceso solo a análisis de facturas de Almendra", ...andeanvet, detailLabel: "1 día de atraso", urgency: "critical" },
+            { taskId: 3, title: "Acceso solo a análisis de facturas de Almendra", ...andeanvet, detailLabel: "1 día de atraso", urgency: "critical", tags: [] },
           ],
         },
         {
           key: "due_soon",
           title: "Vence pronto",
           items: [
-            { taskId: 1, title: "Tracking de formularios comerciales", ...altamira, detailLabel: "mañana", urgency: "soon" },
-            { taskId: 2, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon" },
+            { taskId: 1, title: "Tracking de formularios comerciales", ...altamira, detailLabel: "mañana", urgency: "soon", tags: [] },
+            { taskId: 2, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon", tags: [] },
           ],
         },
         {
           key: "your_turn",
           title: "Te toca",
           items: [
-            { taskId: 4, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En prueba", urgency: "normal" },
+            { taskId: 4, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En prueba", urgency: "normal", tags: [] },
           ],
         },
         {
           key: "waiting",
           title: "Esperando a otro",
           items: [
-            { taskId: 5, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "3 días", urgency: "waiting" },
-            { taskId: 6, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "1 día", urgency: "waiting" },
+            { taskId: 5, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "3 días", urgency: "waiting", tags: [] },
+            { taskId: 6, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "1 día", urgency: "waiting", tags: [] },
           ],
         },
       ],

@@ -40,6 +40,7 @@ export class TasksTabView {
     soon: 1,
     waiting: 2,
     normal: 3,
+    reminder: 4,
   });
 
   private element: HTMLElement | null = null;
@@ -174,7 +175,7 @@ export class TasksTabView {
   private pendingRows(sections: SnapshotSection[], query: string, handlers: TaskListHandlers): HTMLElement[] {
     const items = sections
       .flatMap((section) => section.items)
-      .filter((item) => this.keeps(item.title, item.projectName, query));
+      .filter((item) => this.keeps(item.title, item.projectName, item.tags, query));
     return this.groups(items).flatMap((group) => [
       this.groupHeader(group),
       ...group.items.map((item) => this.taskList.row(item, handlers)),
@@ -183,16 +184,18 @@ export class TasksTabView {
 
   private deliveredRows(delivered: DeliveredItem[], query: string, handlers: TaskListHandlers): HTMLElement[] {
     return delivered
-      .filter((item) => this.keeps(item.title, item.projectName, query))
+      .filter((item) => this.keeps(item.title, item.projectName, [], query))
       .map((item) => this.taskList.deliveredRow(item, handlers.onOpenTask));
   }
 
-  /** Whether a task passes the project filter and the search (title or project name). */
-  private keeps(title: string, projectName: string | null, query: string): boolean {
+  /** Whether a task passes the project filter and the search (title, project or #tag). */
+  private keeps(title: string, projectName: string | null, tags: readonly string[], query: string): boolean {
     if (this.projectFilter !== null && projectName !== this.projectFilter) {
       return false;
     }
-    return TextMatcher.matches(title, query) || (projectName !== null && TextMatcher.matches(projectName, query));
+    return TextMatcher.matches(title, query)
+      || (projectName !== null && TextMatcher.matches(projectName, query))
+      || tags.some((tag) => TextMatcher.matches(`#${tag}`, query));
   }
 
   /** One group per project: the most pressing first, then the busiest, tasks without project last. */

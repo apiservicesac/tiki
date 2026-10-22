@@ -3,6 +3,7 @@ import {
   DayAdvisor,
   TikiAi,
   type AdvisorLanguage,
+  type AskReply,
   type AiModelOption,
   type AiProviderName,
   type InterpretedCapture,
@@ -44,11 +45,21 @@ export class TikiAssistant {
     return this.ai.availableModels(provider, this.configured[provider]);
   }
 
-  /** Reads a sentence with the chosen model; only the sentence and project names are sent. */
+  /**
+   * Reads a sentence with the chosen model. Only the sentence, the project names and the
+   * user's recent corrections are sent.
+   */
   async interpret(sentence: string, preferences: UserPreferences): Promise<InterpretedCapture> {
-    const projectNames = await this.backend.projectNames();
+    const [projectNames, lessons] = await Promise.all([this.backend.projectNames(), this.backend.captureLessons()]);
     const interpreter = new CaptureInterpreter(this.ai.model(preferences.aiProvider, preferences.aiModel));
-    return interpreter.interpret(sentence, { projectNames, today: new Date() });
+    return interpreter.interpret(sentence, { projectNames, now: new Date(), lessons });
+  }
+
+  /** When the user changed what the AI understood before saving, Tiki remembers it. */
+  async learn(sentence: string, understood: InterpretedCapture, saved: InterpretedCapture): Promise<void> {
+    if (JSON.stringify(understood) !== JSON.stringify(saved)) {
+      await this.backend.recordCaptureLesson({ sentence, understood, corrected: saved });
+    }
   }
 
   /** A short AI brief of the user's open tasks. */
@@ -57,10 +68,10 @@ export class TikiAssistant {
     return this.advisor(preferences).summarizeDay(context, ADVISOR_LANGUAGES[preferences.locale]);
   }
 
-  /** Answers a question about the user's open tasks. */
-  async answer(question: string, preferences: UserPreferences): Promise<string> {
+  /** Answers a question about the user's work, with the actions it proposes. */
+  async ask(question: string, preferences: UserPreferences): Promise<AskReply> {
     const context = await this.backend.assistantContext();
-    return this.advisor(preferences).answer(question, context, ADVISOR_LANGUAGES[preferences.locale]);
+    return this.advisor(preferences).ask(question, context, ADVISOR_LANGUAGES[preferences.locale]);
   }
 
   private advisor(preferences: UserPreferences): DayAdvisor {

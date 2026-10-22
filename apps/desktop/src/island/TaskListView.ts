@@ -46,7 +46,7 @@ export class TaskListView {
       className: "island-row-text",
       text: item.title,
       attributes: { type: "button", title: this.translator.text("island.row.edit") },
-      children: item.projectName ? [ElementFactory.create("small", { text: item.projectName })] : [],
+      children: TaskListView.context(item.projectName, item.tags),
     });
     text.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -92,5 +92,11 @@ export class TaskListView {
         ElementFactory.fromTrustedMarkup("island-row-check", ICONS.check),
       ],
     });
+  }
+
+  /** "Altamira · #billing" under the title; nothing when the item has neither. */
+  private static context(projectName: string | null, tags: readonly string[]): HTMLElement[] {
+    const parts = [...(projectName ? [projectName] : []), ...tags.map((tag) => `#${tag}`)];
+    return parts.length > 0 ? [ElementFactory.create("small", { text: parts.join(" · ") })] : [];
   }
 }

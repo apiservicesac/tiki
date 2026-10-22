@@ -1,3 +1,4 @@
+import type { AskReply, ProposedAction } from "../ai";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 
@@ -8,13 +9,18 @@ export interface AskViewHandlers {
   onCancel: () => void;
 }
 
+/** Applies one approved action; resolves `false` when it could not be applied. */
+export type ApplyAction = (action: ProposedAction) => Promise<boolean>;
+
 /**
- * "Ask Tiki": a question box, a button to summarize the day and the answer. The box is
- * kept while the panel stays open, so refreshes never wipe the question or the answer.
+ * "Ask Tiki": a question box, a button to summarize the day, the answer and the actions
+ * Tiki proposes, each with its own Apply button. The box is kept while the panel stays
+ * open, so refreshes never wipe the question or the answer.
  */
 export class AskView {
   private element: HTMLElement | null = null;
   private answer: HTMLElement | null = null;
+  private actions: HTMLElement | null = null;
   private handlers: AskViewHandlers | null = null;
 
   constructor(private readonly translator: Translator) {}
@@ -31,18 +37,61 @@ export class AskView {
   reset(): void {
     this.element = null;
     this.answer = null;
+    this.actions = null;
   }
 
   showThinking(): void {
     this.setAnswer(this.translator.text("capture.thinking"), "ask-answer ask-answer-thinking");
+    this.actions?.replaceChildren();
   }
 
-  showAnswer(text: string): void {
-    this.setAnswer(text, "ask-answer");
+  /** The answer, and a card for each proposed action. */
+  showReply(reply: AskReply, apply: ApplyAction): void {
+    this.setAnswer(reply.text, "ask-answer");
+    const cards = reply.actions.map((action) => this.actionCard(action, apply));
+    const applyAll = reply.actions.length > 1 ? [this.applyAllButton(cards)] : [];
+    this.actions?.replaceChildren(...cards, ...applyAll);
   }
 
   showFailure(): void {
     this.setAnswer(this.translator.text("ask.failed"), "ask-answer ask-answer-failed");
+    this.actions?.replaceChildren();
+  }
+
+  private actionCard(action: ProposedAction, apply: ApplyAction): HTMLElement {
+    const button = ElementFactory.create("button", {
+      className: "settings-button ask-apply",
+      text: this.translator.text("ask.apply"),
+      attributes: { type: "button" },
+    });
+    const card = ElementFactory.create("div", {
+      className: "ask-action",
+      attributes: { "data-action": action.type },
+      children: [ElementFactory.create("span", { className: "ask-action-summary", text: action.summary }), button],
+    });
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      button.disabled = true;
+      const applied = await apply(action);
+      button.textContent = this.translator.text(applied ? "ask.applied" : "ask.apply_failed");
+      card.classList.add(applied ? "ask-action-done" : "ask-action-failed");
+      button.disabled = applied;
+    });
+    return card;
+  }
+
+  private applyAllButton(cards: HTMLElement[]): HTMLElement {
+    const button = ElementFactory.create("button", {
+      className: "settings-button settings-button-quiet ask-apply-all",
+      text: this.translator.text("ask.apply_all"),
+      attributes: { type: "button" },
+    });
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      button.disabled = true;
+      cards.forEach((card) => card.querySelector<HTMLButtonElement>(".ask-apply:not(:disabled)")?.click());
+    });
+    return button;
   }
 
   private setAnswer(text: string, className: string): void {
@@ -80,6 +129,7 @@ export class AskView {
       this.handlers?.onSummarize();
     });
     this.answer = ElementFactory.create("p", { className: "ask-answer", attributes: { "aria-live": "polite" } });
+    this.actions = ElementFactory.create("div", { className: "ask-actions" });
     queueMicrotask(() => input.focus());
 
     return ElementFactory.create("div", {
@@ -88,6 +138,7 @@ export class AskView {
         input,
         ElementFactory.create("div", { className: "settings-options", children: [summarize] }),
         this.answer,
+        this.actions,
         ElementFactory.create("p", { className: "island-hint", text: this.translator.text("ask.privacy") }),
       ],
     });

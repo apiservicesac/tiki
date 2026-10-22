@@ -6,4 +6,6 @@ export interface IslandStore {
   state(): Readonly<IslandState>;
   preferences(): Readonly<UserPreferences>;
   update(changes: Partial<IslandState>): void;
+  /** Reloads the day, the projects and the history from the core. */
+  refresh(): Promise<void>;
 }

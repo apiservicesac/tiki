@@ -1,13 +1,19 @@
+import type { ProposedAction } from "../ai";
 import type { IslandStore } from "../island/IslandStore";
+import type { ActionApplier } from "./ActionApplier";
 import type { AskView } from "./AskView";
 import type { TikiAssistant } from "./TikiAssistant";
 
-/** "Ask Tiki" and the AI brief of the day. Without a key, both stay quiet. */
+/**
+ * "Ask Tiki" and the AI brief of the day. The assistant may propose actions; each one
+ * waits for the user's click. Without a key, both stay quiet.
+ */
 export class AssistantActions {
   constructor(
     private readonly store: IslandStore,
     private readonly assistant: TikiAssistant,
     private readonly askView: AskView,
+    private readonly applier: ActionApplier,
   ) {}
 
   get ready(): boolean {
@@ -15,7 +21,24 @@ export class AssistantActions {
   }
 
   async ask(question: string): Promise<void> {
-    await this.showInAskPanel(() => this.assistant.answer(question, this.store.preferences()));
+    this.askView.showThinking();
+    try {
+      const reply = await this.assistant.ask(question, this.store.preferences());
+      this.askView.showReply(reply, (action) => this.apply(action));
+    } catch {
+      this.askView.showFailure();
+    }
+  }
+
+  /** Applies one approved action and refreshes the island; `false` when it failed. */
+  async apply(action: ProposedAction): Promise<boolean> {
+    try {
+      await this.applier.apply(action);
+      await this.store.refresh();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /** Summarizes the day in the Ask panel and keeps it on the Today tab. */
@@ -42,7 +65,7 @@ export class AssistantActions {
     this.askView.showThinking();
     try {
       const text = await request();
-      this.askView.showAnswer(text);
+      this.askView.showReply({ text, actions: [] }, (action) => this.apply(action));
       return text;
     } catch {
       this.askView.showFailure();

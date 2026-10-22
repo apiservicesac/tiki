@@ -1,5 +1,6 @@
 import type { InterpretedCapture } from "../ai";
-import { PRIORITIES, type Priority, type ProjectSummary } from "../backend/contracts";
+import { ITEM_KINDS, PRIORITIES, type ItemKind, type Priority, type ProjectSummary } from "../backend/contracts";
+import { TagText } from "../dom/TagText";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 import { ProjectPicker } from "../island/ProjectPicker";
@@ -24,6 +25,11 @@ export class CaptureView {
   private dueDate: HTMLInputElement | null = null;
   private remindAt: HTMLInputElement | null = null;
   private priority: HTMLSelectElement | null = null;
+  private tags: HTMLInputElement | null = null;
+  private kindToggle: HTMLElement | null = null;
+  private kind: ItemKind = "task";
+  /** What the AI understood and from which sentence, to learn from the user's corrections. */
+  private reading: { sentence: string; understood: InterpretedCapture } | null = null;
   private status: HTMLElement | null = null;
   private readonly picker = new ProjectPicker();
   private project: string | null = null;
@@ -49,6 +55,13 @@ export class CaptureView {
     this.element = null;
     this.project = null;
     this.interpreted = false;
+    this.kind = "task";
+    this.reading = null;
+  }
+
+  /** The sentence and what the AI understood from it, when the AI read it. */
+  get aiReading(): { sentence: string; understood: InterpretedCapture } | null {
+    return this.reading;
   }
 
   /** Whether the AI has already filled the fields for the current sentence. */
@@ -64,6 +77,8 @@ export class CaptureView {
       dueDate: this.dueDate?.value || null,
       priority: (this.priority?.value as Priority | undefined) ?? "normal",
       remindAt: this.remindAt?.value ? `${this.remindAt.value}:00` : null,
+      kind: this.kind,
+      tags: TagText.parse(this.tags?.value ?? ""),
     };
   }
 
@@ -76,6 +91,12 @@ export class CaptureView {
   /** The AI's reading, put in the fields for the user to review; the next Enter saves. */
   fill(capture: InterpretedCapture): void {
     this.interpreted = true;
+    this.reading = { sentence: this.sentence?.value.trim() ?? "", understood: capture };
+    this.kind = capture.kind;
+    this.drawKind();
+    if (this.tags) {
+      this.tags.value = TagText.format(capture.tags);
+    }
     if (this.sentence) {
       this.sentence.value = capture.title;
     }
@@ -120,12 +141,19 @@ export class CaptureView {
         ElementFactory.create("option", { text: this.translator.text(`priority.${priority}`), attributes: { value: priority } })),
     });
     this.priority.value = "normal";
+    this.tags = ElementFactory.create("input", {
+      className: "settings-input",
+      attributes: { type: "text", id: "capture-tags", autocomplete: "off", placeholder: this.translator.text("edit.tags_placeholder") },
+    });
+    this.kindToggle = ElementFactory.create("div", { className: "tasks-toggle capture-kind", attributes: { role: "radiogroup" } });
+    this.drawKind();
     this.status = ElementFactory.create("p", { className: "island-hint capture-status" });
 
     const element = ElementFactory.create("div", {
       className: "capture",
       children: [
         this.sentence,
+        this.kindToggle,
         ElementFactory.create("div", {
           className: "capture-fields",
           children: [
@@ -133,6 +161,7 @@ export class CaptureView {
             this.labelled("capture.field.due", this.dueDate),
             this.labelled("capture.field.remind", this.remindAt),
             this.labelled("capture.field.priority", this.priority),
+            this.labelled("edit.field.tags", this.tags),
           ],
         }),
         this.status,
@@ -148,6 +177,24 @@ export class CaptureView {
     });
     queueMicrotask(() => this.sentence?.focus());
     return element;
+  }
+
+  /** Task or reminder: a reminder is a heads-up at a moment, done once it rings. */
+  private drawKind(): void {
+    const buttons = ITEM_KINDS.map((kind) => {
+      const button = ElementFactory.create("button", {
+        className: kind === this.kind ? "tasks-toggle-option tasks-toggle-on" : "tasks-toggle-option",
+        text: this.translator.text(`kind.${kind}`),
+        attributes: { type: "button", role: "radio", "aria-checked": String(kind === this.kind), "data-kind": kind },
+      });
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        this.kind = kind;
+        this.drawKind();
+      });
+      return button;
+    });
+    this.kindToggle?.replaceChildren(...buttons);
   }
 
   private drawPicker(): void {

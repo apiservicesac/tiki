@@ -1,3 +1,4 @@
+import { ActionApplier } from "../assistant/ActionApplier";
 import { AssistantActions } from "../assistant/AssistantActions";
 import type { AskView } from "../assistant/AskView";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
@@ -71,7 +72,7 @@ export class IslandController {
       alert: null,
       unreadAlert: false,
     };
-    this.assistantActions = new AssistantActions(this.store(), assistant, views.ask);
+    this.assistantActions = new AssistantActions(this.store(), assistant, views.ask, new ActionApplier(backend));
   }
 
   get currentState(): Readonly<IslandState> {
@@ -158,6 +159,11 @@ export class IslandController {
       return;
     }
     await this.backend.saveConfirmedCapture(capture);
+    const reading = this.captureView.aiReading;
+    if (reading) {
+      // What the user changed before saving teaches the AI their way of saying things.
+      void this.assistant.learn(reading.sentence, reading.understood, capture).catch(() => undefined);
+    }
     this.captureView.reset();
     await this.refresh();
     this.openPanel("tasks");
@@ -328,6 +334,7 @@ export class IslandController {
       state: () => this.state,
       preferences: () => this.preferences,
       update: (changes) => this.update(changes),
+      refresh: () => this.refresh(),
     };
   }
 

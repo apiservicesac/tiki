@@ -5,6 +5,7 @@ import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest
 import type {
   AiProviderStatus,
   AvailableUpdate,
+  CaptureLesson,
   ProjectChange,
   ProjectSummary,
   DeliveredItem,
@@ -70,6 +71,14 @@ export class TauriBackend implements TikiBackend {
 
   deliveredTasks(): Promise<DeliveredItem[]> {
     return invoke<DeliveredItem[]>("delivered_tasks");
+  }
+
+  captureLessons(): Promise<CaptureLesson[]> {
+    return invoke<CaptureLesson[]>("capture_lessons");
+  }
+
+  async recordCaptureLesson(lesson: CaptureLesson): Promise<void> {
+    await invoke("record_capture_lesson", { lesson });
   }
 
   assistantContext(): Promise<AdvisorContext> {

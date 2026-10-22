@@ -229,6 +229,17 @@
 
     "brief.section.reminders": "Reminders",
 
+    "kind.task": "Task",
+    "kind.reminder": "Reminder",
+    "edit.field.tags": "Tags",
+    "edit.tags_placeholder": "#billing #urgent",
+    "edit.field.kind": "Kind",
+    "projects.notes_placeholder": "Project notes: context for Tiki (who is who, how they work)",
+    "ask.apply": "Apply",
+    "ask.applied": "Done ✓",
+    "ask.apply_failed": "Could not apply",
+    "ask.apply_all": "Apply all",
+
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"
   },

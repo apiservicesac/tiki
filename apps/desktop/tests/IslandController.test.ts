@@ -155,6 +155,8 @@ describe("IslandController", () => {
         priority: "normal",
         status: "waiting_on_others",
         remindAt: "2026-10-22T09:30:00",
+        kind: "task",
+        tags: [],
       },
     });
     await vi.waitFor(() => expect(controller.currentState.panel).toBe("tasks"));
@@ -242,6 +244,33 @@ describe("IslandController", () => {
     await vi.waitFor(() => expect(backend.projects.some((project) => project.projectId === 1)).toBe(false));
   });
 
+  it("saves a standalone reminder with tags from quick capture", async () => {
+    controller.openPanel("capture");
+    typeCapture(root, "Llamar a mamá");
+    root.querySelector<HTMLButtonElement>('[data-kind="reminder"]')?.click();
+    const remind = root.querySelector<HTMLInputElement>("#capture-remind");
+    const tags = root.querySelector<HTMLInputElement>("#capture-tags");
+    if (remind && tags) {
+      remind.value = "2026-10-21T17:00";
+      tags.value = "#familia, Personal";
+    }
+    await controller.submitCapture();
+    expect(backend.confirmedCaptures[0]).toMatchObject({ kind: "reminder", remindAt: "2026-10-21T17:00:00", tags: ["familia", "personal"] });
+  });
+
+  it("keeps notes for a project as context for Tiki", async () => {
+    await controller.refresh();
+    controller.openPanel("projects");
+    root.querySelector<HTMLButtonElement>('[data-project-id="1"] .island-icon-button')?.click();
+    const notes = root.querySelector<HTMLTextAreaElement>("#project-notes-input");
+    if (notes) {
+      notes.value = "Contacto: Lucía. Prefieren correos cortos.";
+      notes.dispatchEvent(new Event("input"));
+    }
+    root.querySelector<HTMLButtonElement>("#save-project")?.click();
+    await vi.waitFor(() => expect(backend.projects.find((project) => project.projectId === 1)?.notes).toBe("Contacto: Lucía. Prefieren correos cortos."));
+  });
+
   it("does not fold while the user is typing a search", () => {
     vi.useFakeTimers();
     controller.selectTab("all_tasks");
@@ -278,7 +307,7 @@ describe("IslandController", () => {
 
     await controller.submitCapture();
     expect(backend.confirmedCaptures).toEqual([
-      { title: "revisar acta altamira viernes", projectName: "Altamira", dueDate: "2026-10-23", priority: "normal", remindAt: null },
+      { title: "revisar acta altamira viernes", projectName: "Altamira", dueDate: "2026-10-23", priority: "normal", remindAt: null, kind: "task", tags: [] },
     ]);
     expect(controller.currentState.panel).toBe("tasks");
     expect(notch()?.dataset.mood).toBe("happy");
@@ -444,6 +473,8 @@ describe("IslandController with the AI assistant", () => {
       dueDate: "2026-10-23",
       priority: "high",
       remindAt: "2026-10-23T09:00",
+      kind: "task",
+      tags: ["accesos"],
     }));
     controller.openPanel("capture");
     typeCapture(root, "revisar acceso facturas andeanvet viernes, importante, avísame a las 9");
@@ -468,12 +499,21 @@ describe("IslandController with the AI assistant", () => {
         dueDate: "2026-10-24",
         priority: "high",
         remindAt: "2026-10-23T09:00:00",
+        kind: "task",
+        tags: ["accesos"],
       },
     ]);
+    // The user changed the date the AI read: Tiki keeps that as a lesson.
+    await vi.waitFor(() => expect(backend.lessons).toHaveLength(1));
+    expect(backend.lessons[0]).toMatchObject({
+      sentence: "revisar acceso facturas andeanvet viernes, importante, avísame a las 9",
+      understood: { dueDate: "2026-10-23" },
+      corrected: { dueDate: "2026-10-24" },
+    });
     expect(controller.currentState.panel).toBe("tasks");
   });
   it("never sends the key to the interface's requests", async () => {
-    backend.aiShell = new FakeShell(claudeReads({ title: "Llamar", projectName: null, dueDate: null, priority: "normal", remindAt: null }));
+    backend.aiShell = new FakeShell(claudeReads({ title: "Llamar", projectName: null, dueDate: null, priority: "normal", remindAt: null, kind: "task", tags: [] }));
     controller.openPanel("capture");
     typeCapture(root, "llamar");
     await controller.submitCapture();
@@ -492,11 +532,11 @@ describe("IslandController with the AI assistant", () => {
 
     await controller.submitCapture();
     expect(backend.confirmedCaptures).toEqual([
-      { title: "llamar a altamira", projectName: null, dueDate: null, priority: "normal", remindAt: null },
+      { title: "llamar a altamira", projectName: null, dueDate: null, priority: "normal", remindAt: null, kind: "task", tags: [] },
     ]);
   });
   it("answers a question in the Ask panel with the open tasks as context", async () => {
-    backend.aiShell = new FakeShell(claudeReads({ text: "Con Altamira tienes el tracking de formularios para mañana." }));
+    backend.aiShell = new FakeShell(claudeReads({ text: "Con Altamira tienes el tracking de formularios para mañana.", actions: [] }));
     controller.openPanel("ask");
 
     await vi.waitFor(() => expect(root.querySelector("#ask-input")).not.toBeNull());
@@ -512,6 +552,33 @@ describe("IslandController with the AI assistant", () => {
     const sent = JSON.stringify(body.messages);
     expect(sent).toContain("Tracking de formularios");
     expect(sent).toContain("¿qué tengo con Altamira?");
+  });
+
+  it("applies the actions Tiki proposes only when the user clicks", async () => {
+    backend.aiShell = new FakeShell(claudeReads({
+      text: "Listo, te propongo esto.",
+      actions: [
+        { type: "set_due_date", summary: "Tracking vence el viernes", taskId: 1, title: null, projectName: null, dueDate: "2026-10-23", remindAt: null, status: null },
+        { type: "create_reminder", summary: "Avisarte mañana a las 10", taskId: null, title: "Llamar a Lucía", projectName: "Altamira", dueDate: null, remindAt: "2026-10-22T10:00", status: null },
+      ],
+    }));
+    controller.openPanel("ask");
+    await vi.waitFor(() => expect(root.querySelector("#ask-input")).not.toBeNull());
+    const input = root.querySelector<HTMLInputElement>("#ask-input");
+    if (input) {
+      input.value = "mueve el tracking al viernes y recuérdame llamar a Lucía mañana a las 10";
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    }
+    await vi.waitFor(() => expect(root.querySelectorAll(".ask-action")).toHaveLength(2));
+    expect(backend.editedTasks).toHaveLength(0);
+    expect(backend.confirmedCaptures).toHaveLength(0);
+
+    root.querySelector<HTMLButtonElement>(".ask-apply-all")?.click();
+    await vi.waitFor(() => expect(backend.editedTasks).toHaveLength(1));
+    expect(backend.editedTasks[0]?.edit.dueDate).toBe("2026-10-23");
+    await vi.waitFor(() => expect(backend.confirmedCaptures).toHaveLength(1));
+    expect(backend.confirmedCaptures[0]).toMatchObject({ kind: "reminder", title: "Llamar a Lucía", remindAt: "2026-10-22T10:00:00" });
+    await vi.waitFor(() => expect(root.querySelectorAll(".ask-action-done")).toHaveLength(2));
   });
 
   it("keeps the day's AI brief on the Today tab", async () => {

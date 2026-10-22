@@ -2,7 +2,7 @@
  * Shapes the Rust core sends to the interface (see `tiki_core`).
  * Field names are camelCase because the core serializes them that way.
  */
-import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
+import type { AdvisorContext, AiProviderName, HarnessLesson, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
 import type { LocaleCode } from "../i18n/LocaleCode";
 
 export type MoodName =
@@ -15,7 +15,14 @@ export type MoodName =
   | "happy"
   | "sleep";
 
-export type Urgency = "critical" | "soon" | "waiting" | "normal";
+export type Urgency = "critical" | "soon" | "waiting" | "normal" | "reminder";
+
+/** A task to do, or a standalone reminder that is done once it rings. */
+export const ITEM_KINDS = Object.freeze(["task", "reminder"] as const);
+export type ItemKind = (typeof ITEM_KINDS)[number];
+
+/** A correction the user made to an AI capture (see `CaptureLesson` in the core). */
+export type CaptureLesson = HarnessLesson;
 
 export const TASK_STATUSES = Object.freeze(["to_do", "in_progress", "testing", "waiting_on_others", "done"] as const);
 export type TaskStatus = (typeof TASK_STATUSES)[number];
@@ -35,6 +42,8 @@ export interface SnapshotItem {
   projectName: string | null;
   projectColor: string | null;
   detailLabel: string;
+  /** Lowercase, without "#". */
+  tags: string[];
   urgency: Urgency;
 }
 
@@ -73,6 +82,8 @@ export interface TaskEdit {
   status: TaskStatus;
   /** When to remind, for example `2026-10-23T09:00:00`; `null` for no reminder. */
   remindAt: string | null;
+  kind: ItemKind;
+  tags: string[];
 }
 
 export interface TaskDetails extends TaskEdit {
@@ -97,11 +108,14 @@ export interface ProjectSummary {
   openCount: number;
   /** Open tasks overdue or due soon. */
   pressingCount: number;
+  /** Context the user keeps for the project; Tiki's AI reads it. */
+  notes: string;
 }
 
 export interface ProjectChange {
   name: string;
   color: string;
+  notes: string;
 }
 
 /** One delivered task in the history. */
@@ -178,7 +192,10 @@ export interface TikiBackend {
   projectColors(): Promise<string[]>;
   /** Delivered tasks, most recent first. */
   deliveredTasks(): Promise<DeliveredItem[]>;
-  /** Open tasks without ids or notes: what the assistant may read. */
+  /** The user's recent corrections to AI captures, newest first. */
+  captureLessons(): Promise<CaptureLesson[]>;
+  recordCaptureLesson(lesson: CaptureLesson): Promise<void>;
+  /** Open items and project notes: what the assistant may read. */
   assistantContext(): Promise<AdvisorContext>;
   editTask(taskId: number, edit: TaskEdit): Promise<void>;
   /** Which providers have a key; the keys themselves never leave the shell. */

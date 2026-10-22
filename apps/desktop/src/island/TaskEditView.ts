@@ -1,5 +1,6 @@
-import { PRIORITIES, TASK_STATUSES, type ProjectSummary, type TaskDetails, type TaskEdit } from "../backend/contracts";
+import { ITEM_KINDS, PRIORITIES, TASK_STATUSES, type ProjectSummary, type TaskDetails, type TaskEdit } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
+import { TagText } from "../dom/TagText";
 import type { Translator } from "../i18n/Translator";
 import { ProjectPicker } from "./ProjectPicker";
 
@@ -16,6 +17,8 @@ interface TaskEditFields {
   remindAt: HTMLInputElement;
   priority: HTMLSelectElement;
   status: HTMLSelectElement;
+  kind: HTMLSelectElement;
+  tags: HTMLInputElement;
   notes: HTMLTextAreaElement;
 }
 
@@ -76,6 +79,12 @@ export class TaskEditView {
         TASK_STATUSES.map((status): [string, string] => [status, this.translator.text(`status.${status}`)]),
         task.status,
       ),
+      kind: this.select(
+        "edit-kind",
+        ITEM_KINDS.map((kind): [string, string] => [kind, this.translator.text(`kind.${kind}`)]),
+        task.kind,
+      ),
+      tags: this.input("text", "edit-tags", TagText.format(task.tags)),
       notes: ElementFactory.create("textarea", {
         className: "edit-notes",
         attributes: { id: "edit-notes", rows: "2", placeholder: this.translator.text("edit.notes_placeholder") },
@@ -92,6 +101,8 @@ export class TaskEditView {
         this.field("edit.field.remind", fields.remindAt),
         this.field("capture.field.priority", fields.priority),
         this.field("capture.field.status", fields.status),
+        this.field("edit.field.kind", fields.kind),
+        this.field("edit.field.tags", fields.tags),
         this.field("edit.field.notes", fields.notes, "edit-field-wide"),
         this.actions(),
       ],
@@ -122,6 +133,8 @@ export class TaskEditView {
       remindAt: fields.remindAt.value ? `${fields.remindAt.value}:00` : null,
       priority: fields.priority.value as TaskEdit["priority"],
       status: fields.status.value as TaskEdit["status"],
+      kind: fields.kind.value as TaskEdit["kind"],
+      tags: TagText.parse(fields.tags.value),
     });
   }
 
