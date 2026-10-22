@@ -1,11 +1,11 @@
 {
-  "version": "0.3.1-rc.2",
-  "notes": "Reminders have their own view in Tasks, with their moment and repeat.",
-  "pub_date": "2026-10-22T19:05:44.683Z",
+  "version": "0.3.1-rc.3",
+  "notes": "The island no longer cuts its content when the box grows.",
+  "pub_date": "2026-10-22T19:08:35.291Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbWhpS21BbWttbWdlT3QvSHo1MXNHc0ZwaWZZSUYzRHJ2TUNmc0VVeHlGVUZ5bUdYM3NLa2d6SGlEdXZYcTdSbG5kWC81Ulh5cThVWVJHYXJBclRod0EwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjk1OTE5CWZpbGU6VGlraV8wLjMuMS1yYy4yX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMuMS1yYy4yCk1tTnJUWno2cThnZnBobEhoNFlWZXVPdDlSanl1aFdHN0toQ0duN0p4ZTlpdEd5TG9ZUjA2VUJPQVVaVFI4RyttYXZadENMRytza01FTmhYdUdKcUR3PT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.3.1-rc.2/Tiki_0.3.1-rc.2_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbW9BQ0YrQmhuVEhtWUt1RnJqY09peWpxTEZFYmR6SzJrRlVYaTlIcmhUbTZHVXAxelp1bVF0R2k5Y1p3WHdHbmRMY2tvMkt2NGxSZ3p3djcxcE14Y1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjk2MTA2CWZpbGU6VGlraV8wLjMuMS1yYy4zX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMuMS1yYy4zClp0NVdnRkRINlRBbXNPY1pydThEcmZ0ZjBhd0Z0eXhzNW1kV09tL0hZWkZJNmdZSHIwaHhvZWZIYmpRSG1NMndpZjRDMkw5YkNoY2hzTHNXTkFxQUJnPT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.3.1-rc.3/Tiki_0.3.1-rc.3_x64-setup.exe"
     }
   }
 }
