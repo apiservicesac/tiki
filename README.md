@@ -35,6 +35,14 @@ docker/                  Toolchains: core (Rust), ui (Node), windows (cross-comp
 | `workspace` | `TikiWorkspace`, the single entry point every client uses |
 | `settings` | `TikiSettings`, the only place with tunable values |
 
+## AI
+
+The AI library (`apps/desktop/src/ai`) wraps the official Anthropic and OpenAI SDKs; the
+shell adds the key, which never reaches the interface. Prompts are built from harness pieces
+(`ai/harness`): persona, guardrails, memory (project notes and the user's capture
+corrections), the guide of actions Tiki may propose, and one skill per job (capture, brief,
+answer). Tiki never changes anything by itself: proposed actions wait for the user's click.
+
 ## Plugins
 
 Every external system is a plugin offering one or both connection kinds:
@@ -75,9 +83,11 @@ The `Windows installer` GitHub workflow builds the same installer natively on Wi
 - Updates are signed. The private key lives outside the repository in
   `~/.tauri/tiki-updater.key` (back it up: without it, installed copies cannot be updated);
   the public key is in `tauri.conf.json`. Release steps:
-  1. `make windows-installer` builds and signs the installer.
-  2. `make update-manifest VERSION=X.Y.Z-rc.N NOTES='…'` writes `updates/latest.json`.
-  3. Publish the GitHub release with the installer, then commit and push `updates/latest.json`
+  1. `ANTHROPIC_API_KEY=… make eval-ai` measures the AI on real sentences
+     (`apps/desktop/tests/evals`); it should stay at 85% or more.
+  2. `make windows-installer` builds and signs the installer.
+  3. `make update-manifest VERSION=X.Y.Z-rc.N NOTES='…'` writes `updates/latest.json`.
+  4. Publish the GitHub release with the installer, then commit and push `updates/latest.json`
      (installed copies read it from `main`).
 - Everything in the repository is written in English: code, comments, commits, changelog
   and release notes. Only the interface texts in `locales/` are translated.

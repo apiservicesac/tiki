@@ -87,7 +87,7 @@
     "settings.ai.remove_key": "Remove key",
     "settings.ai.connected": "Connected · the key is stored in Windows",
     "settings.ai.model": "Model",
-    "settings.ai.privacy": "Capture sends only the sentence and your project names. Summaries and answers send the titles, projects and dates of your open tasks; never your notes.",
+    "settings.ai.privacy": "Capture sends the sentence, your project names and your recent corrections. Summaries, answers and proposed changes send your open items and your project notes; never each task's notes. Tiki never changes anything without your click.",
     "provider.anthropic": "Anthropic (Claude)",
     "provider.openai": "OpenAI",
     "capture.thinking": "Tiki is thinking…",
@@ -128,7 +128,7 @@
     "ask.failed": "I could not answer right now. Check your key or try again.",
     "ask.needs_key": "Add an AI key in Settings to ask Tiki.",
     "ask.open_settings": "Open Settings",
-    "ask.privacy": "Titles, projects and dates of your open tasks are sent; never your notes.",
+    "ask.privacy": "Your open items and project notes are sent; never each task's notes. Changes Tiki proposes wait for your click.",
 
     "update.available.title": "Tiki {version} is ready",
     "update.available.body": "Install it from Settings › Updates.",

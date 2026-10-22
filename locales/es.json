@@ -87,7 +87,7 @@
     "settings.ai.remove_key": "Quitar clave",
     "settings.ai.connected": "Conectado · la clave está guardada en Windows",
     "settings.ai.model": "Modelo",
-    "settings.ai.privacy": "Para capturar se envía solo la frase y los nombres de tus proyectos. Para resumir o responder, los títulos, proyectos y fechas de tus tareas abiertas; nunca las notas.",
+    "settings.ai.privacy": "Para capturar se envía la frase, los nombres de tus proyectos y tus correcciones recientes. Para resumir, responder y proponer cambios: tus tareas abiertas y las notas de tus proyectos; nunca las notas de cada tarea. Tiki nunca cambia nada sin tu clic.",
     "provider.anthropic": "Anthropic (Claude)",
     "provider.openai": "OpenAI",
     "capture.thinking": "Tiki está pensando…",
@@ -128,7 +128,7 @@
     "ask.failed": "No pude responder ahora. Revisa tu clave o inténtalo de nuevo.",
     "ask.needs_key": "Agrega una clave de IA en Ajustes para preguntarle a Tiki.",
     "ask.open_settings": "Ir a Ajustes",
-    "ask.privacy": "Se envían los títulos, proyectos y fechas de tus tareas abiertas; nunca las notas.",
+    "ask.privacy": "Se envían tus tareas abiertas y las notas de tus proyectos; nunca las notas de cada tarea. Los cambios que propone Tiki esperan tu clic.",
 
     "update.available.title": "Tiki {version} está lista",
     "update.available.body": "Instálala desde Ajustes › Actualizaciones.",
