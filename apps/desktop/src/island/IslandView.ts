@@ -266,7 +266,7 @@ export class IslandView {
           handlers,
         );
       case "agenda":
-        return this.agenda.render(state.snapshot.openItems, new Date(), handlers);
+        return this.agenda.render(state.snapshot.openItems, state.snapshot.meetings, new Date(), handlers);
     }
   }
 }

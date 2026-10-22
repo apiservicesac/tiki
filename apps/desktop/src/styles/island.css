@@ -1239,8 +1239,19 @@ button.island-notice {
 
 .picker-create { color: var(--island-good); font-weight: 600; }
 
-/* Agenda: reminders by day, with their time first and a bell. */
-.agenda-row { grid-template-columns: 44px minmax(0, 1fr) auto 28px; }
+/* Agenda: reminders and meetings by day, with their time first and a bell or a calendar. */
+.agenda-row { grid-template-columns: 80px minmax(0, 1fr) auto 28px; }
+.agenda-meeting { grid-template-columns: 80px minmax(0, 1fr) auto auto; }
+.agenda-join {
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--island-good);
+  color: #fff;
+  font: 600 11px var(--font-body);
+  cursor: pointer;
+}
+.agenda-join:hover { filter: brightness(1.1); }
 .agenda-time { font: 600 12px var(--font-mono); color: var(--kind-instance-text); }
 .agenda-bell { display: flex; color: var(--island-faint); }
 .agenda-bell svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
