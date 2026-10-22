@@ -6,6 +6,14 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.1-rc.2] - 2026-10-22
+
+### Fixed
+- Reminders had no place of their own: they were mixed with tasks in the Tasks tab. Tasks now
+  has Pending, Reminders and Delivered; Reminders lists every reminder by time with how often
+  it repeats ("Fri 23 · 11:00 · Every day"), and Pending shows only tasks.
+- The receipt counts only tasks as pending, not reminders.
+
 ## [0.3.1-rc.1] - 2026-10-22
 
 ### Changed
