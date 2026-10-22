@@ -7,3 +7,6 @@ apps/desktop/src-tauri/gen/
 *.db-journal
 .env
 .DS_Store
+
+# Local planning notes, never published
+PLAN.md
