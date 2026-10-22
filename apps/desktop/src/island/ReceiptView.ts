@@ -10,7 +10,7 @@ export class ReceiptView {
   constructor(private readonly translator: Translator) {}
 
   render(snapshot: IslandSnapshot, alert: TikiAlert | null, dayBrief: string | null): HTMLElement {
-    const openCount = snapshot.openItems.length;
+    const openCount = snapshot.openItems.filter((item) => item.urgency !== "reminder").length;
     const blocks = snapshot.sections.length > 0
       ? snapshot.sections.map((section) =>
         ElementFactory.create("section", {

@@ -250,6 +250,7 @@ export class FakeBackend implements TikiBackend {
     const sales = { taskId: 2, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon" as const, priority: "normal" as const, tags: ["ventas"] };
     const vacation = { taskId: 4, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En curso", urgency: "normal" as const, priority: "normal" as const, tags: [] };
     const github = { taskId: 5, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "3 días", urgency: "waiting" as const, priority: "normal" as const, tags: [] };
+    const water = { taskId: 8, title: "Tomar agua", projectName: null, projectColor: null, detailLabel: "Vie 23 · 11:00 · Cada día", urgency: "reminder" as const, priority: "normal" as const, tags: [] };
     const zones = { taskId: 6, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "1 día", urgency: "waiting" as const, priority: "normal" as const, tags: [] };
     return {
       mood: "worried",
@@ -266,7 +267,7 @@ export class FakeBackend implements TikiBackend {
         { key: "due_soon", title: "Vence pronto", items: [tracking, sales] },
         { key: "follow_up", title: "Toca insistir", items: [github] },
       ],
-      openItems: [access, tracking, sales, vacation, github, zones],
+      openItems: [access, tracking, sales, vacation, github, zones, water],
       focus: { item: access, reason: "Está atrasada" },
     };
   }

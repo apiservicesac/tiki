@@ -194,6 +194,17 @@ describe("IslandController", () => {
     expect(root.querySelectorAll(".tasks-tab .island-row")).toHaveLength(2);
   });
 
+  it("lists reminders apart from tasks, by time with their repeat", () => {
+    controller.selectTab("all_tasks");
+    expect(root.querySelector('.tasks-tab [data-task-id="8"]')).toBeNull();
+
+    root.querySelector<HTMLButtonElement>('[data-view="reminders"]')?.click();
+    expect(controller.currentState.tasksView).toBe("reminders");
+    const rows = [...root.querySelectorAll(".tasks-tab .island-row")];
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.querySelector(".island-when")?.textContent).toBe("Vie 23 · 11:00 · Cada día");
+  });
+
   it("keeps the search text when the island refreshes", async () => {
     controller.selectTab("all_tasks");
     const search = root.querySelector<HTMLInputElement>("#tasks-search");

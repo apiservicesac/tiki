@@ -6,7 +6,9 @@ import type { Translator } from "../i18n/Translator";
 import { ProjectPicker } from "./ProjectPicker";
 import type { TaskListHandlers, TaskListView } from "./TaskListView";
 
-export type TasksView = "pending" | "delivered";
+/** Pending tasks, every reminder by time, or the delivered history. */
+export const TASKS_VIEWS = Object.freeze(["pending", "reminders", "delivered"] as const);
+export type TasksView = (typeof TASKS_VIEWS)[number];
 
 export interface TasksTabData {
   /** Every open item. */
@@ -142,7 +144,7 @@ export class TasksTabView {
 
   private drawToggle(): void {
     const view = this.data?.view ?? "pending";
-    const buttons = (["pending", "delivered"] as const).map((option) => {
+    const buttons = TASKS_VIEWS.map((option) => {
       const button = ElementFactory.create("button", {
         className: option === view ? "tasks-toggle-option tasks-toggle-on" : "tasks-toggle-option",
         text: this.translator.text(`tasks.view.${option}`),
@@ -164,17 +166,35 @@ export class TasksTabView {
       return;
     }
     const query = this.search?.value ?? "";
-    const rows = data.view === "pending"
-      ? this.pendingRows(data.items, query, handlers)
-      : this.deliveredRows(data.delivered, query, handlers);
-    const emptyKey = data.view === "pending" ? "tasks.empty_pending" : "tasks.empty_delivered";
+    const rows = this.rows(data, query, handlers);
+    const emptyKey = `tasks.empty_${data.view}`;
     this.list.replaceChildren(
       ...(rows.length > 0 ? rows : [ElementFactory.create("p", { className: "island-empty", text: this.translator.text(emptyKey) })]),
     );
   }
 
+  private rows(data: TasksTabData, query: string, handlers: TaskListHandlers): HTMLElement[] {
+    switch (data.view) {
+      case "pending":
+        return this.pendingRows(data.items, query, handlers);
+      case "reminders":
+        return this.reminderRows(data.items, query, handlers);
+      case "delivered":
+        return this.deliveredRows(data.delivered, query, handlers);
+    }
+  }
+
+  /** Every reminder, earliest first, with its moment and repeat; not grouped by project. */
+  private reminderRows(openItems: SnapshotItem[], query: string, handlers: TaskListHandlers): HTMLElement[] {
+    return openItems
+      .filter((item) => item.urgency === "reminder" && this.keeps(item.title, item.projectName, item.tags, query))
+      .map((item) => this.taskList.row(item, handlers));
+  }
+
+  /** Tasks only, grouped by project; reminders have their own view. */
   private pendingRows(openItems: SnapshotItem[], query: string, handlers: TaskListHandlers): HTMLElement[] {
-    const items = openItems.filter((item) => this.keeps(item.title, item.projectName, item.tags, query));
+    const items = openItems.filter((item) =>
+      item.urgency !== "reminder" && this.keeps(item.title, item.projectName, item.tags, query));
     return this.groups(items).flatMap((group) => [
       this.groupHeader(group),
       ...group.items.map((item) => this.taskList.row(item, handlers)),
