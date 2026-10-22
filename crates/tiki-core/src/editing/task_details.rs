@@ -1,7 +1,7 @@
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::Serialize;
 
-use crate::domain::{ItemKind, Priority, ProjectDirectory, Task, TaskId, TaskStatus};
+use crate::domain::{ItemKind, Priority, ProjectDirectory, Repeat, Task, TaskId, TaskStatus};
 use crate::error::{TikiError, TikiResult};
 
 /// A task as the edit form shows it; the project comes by name.
@@ -18,6 +18,8 @@ pub struct TaskDetails {
     pub remind_at: Option<NaiveDateTime>,
     pub kind: ItemKind,
     pub tags: Vec<String>,
+    pub repeat: Repeat,
+    pub waiting_for: String,
 }
 
 impl TaskDetails {
@@ -33,6 +35,8 @@ impl TaskDetails {
             remind_at: task.remind_at,
             kind: task.kind,
             tags: task.tags.clone(),
+            repeat: task.repeat,
+            waiting_for: task.waiting_for.clone(),
         })
     }
 }

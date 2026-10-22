@@ -1,7 +1,7 @@
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 
-use super::{ItemKind, Priority, ProjectId, TaskId, TaskOrigin, TaskStatus};
+use super::{ItemKind, Priority, ProjectId, Repeat, TaskId, TaskOrigin, TaskStatus};
 use crate::error::{TikiError, TikiResult};
 
 /// A piece of work the user has to finish or follow up.
@@ -23,6 +23,10 @@ pub struct Task {
     pub remind_at: Option<NaiveDateTime>,
     /// Lowercase tags without "#" (see `Tags`).
     pub tags: Vec<String>,
+    /// How often a reminder comes back after it rings.
+    pub repeat: Repeat,
+    /// Who or what a waiting task waits for, as the user wrote it ("Lucía's answer").
+    pub waiting_for: String,
     pub origin: TaskOrigin,
 }
 
@@ -46,6 +50,8 @@ impl Task {
             completed_on: None,
             remind_at: None,
             tags: Vec::new(),
+            repeat: Repeat::Never,
+            waiting_for: String::new(),
             origin: TaskOrigin::Manual,
         })
     }
@@ -83,9 +89,9 @@ impl Task {
     /// Moves the task to a new status, keeping track of when it started waiting and when it
     /// was delivered. Reopening a delivered task clears its delivery day.
     pub fn move_to(&mut self, status: TaskStatus, today: NaiveDate) {
-        if status == TaskStatus::WaitingOnOthers && self.status != TaskStatus::WaitingOnOthers {
+        if status == TaskStatus::Waiting && self.status != TaskStatus::Waiting {
             self.waiting_since = Some(today);
-        } else if status != TaskStatus::WaitingOnOthers {
+        } else if status != TaskStatus::Waiting {
             self.waiting_since = None;
         }
         if status == TaskStatus::Done && self.status != TaskStatus::Done {
@@ -117,9 +123,7 @@ impl Task {
     /// Days the task has been waiting on others, if it is waiting.
     pub fn days_waiting(&self, today: NaiveDate) -> Option<i64> {
         match self.status {
-            TaskStatus::WaitingOnOthers => {
-                self.waiting_since.map(|since| (today - since).num_days())
-            }
+            TaskStatus::Waiting => self.waiting_since.map(|since| (today - since).num_days()),
             _ => None,
         }
     }

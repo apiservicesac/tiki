@@ -2,7 +2,7 @@ use rusqlite::Row;
 use rusqlite::types::Type;
 
 use crate::domain::{
-    ExternalReference, ItemKind, Priority, ProjectId, Task, TaskId, TaskOrigin, TaskStatus,
+    ExternalReference, ItemKind, Priority, ProjectId, Repeat, Task, TaskId, TaskOrigin, TaskStatus,
 };
 
 /// Converts between `tasks` table rows and `Task` values.
@@ -10,7 +10,7 @@ pub struct TaskRowMapper;
 
 impl TaskRowMapper {
     /// Columns in the order `read_row` expects them.
-    pub const COLUMNS: &'static str = "id, kind, tags, title, notes, project_id, status, priority, due_date, \
+    pub const COLUMNS: &'static str = "id, kind, tags, repeat, waiting_for, title, notes, project_id, status, priority, due_date, \
         waiting_since, completed_on, remind_at, origin_plugin, origin_connection, origin_record, \
         origin_url";
 
@@ -19,6 +19,8 @@ impl TaskRowMapper {
             id: Some(TaskId(row.get("id")?)),
             kind: Self::read_kind(row)?,
             tags: Self::read_tags(row)?,
+            repeat: Self::read_repeat(row)?,
+            waiting_for: row.get("waiting_for")?,
             title: row.get("title")?,
             notes: row.get("notes")?,
             project_id: row.get::<_, Option<i64>>("project_id")?.map(ProjectId),
@@ -55,6 +57,11 @@ impl TaskRowMapper {
     fn read_kind(row: &Row<'_>) -> rusqlite::Result<ItemKind> {
         let key: String = row.get("kind")?;
         ItemKind::from_key(&key).map_err(|error| Self::conversion_error(1, error))
+    }
+
+    fn read_repeat(row: &Row<'_>) -> rusqlite::Result<Repeat> {
+        let key: String = row.get("repeat")?;
+        Repeat::from_key(&key).map_err(|error| Self::conversion_error(3, error))
     }
 
     fn read_tags(row: &Row<'_>) -> rusqlite::Result<Vec<String>> {

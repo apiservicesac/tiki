@@ -1,7 +1,7 @@
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::Deserialize;
 
-use crate::domain::{ItemKind, Priority, ProjectId, Tags, Task, TaskStatus};
+use crate::domain::{ItemKind, Priority, ProjectId, Repeat, Tags, Task, TaskStatus};
 use crate::error::{TikiError, TikiResult};
 
 /// The fields the user changed in the edit form. The project comes by name, so the
@@ -21,6 +21,11 @@ pub struct TaskEdit {
     pub kind: ItemKind,
     #[serde(default)]
     pub tags: Vec<String>,
+    #[serde(default)]
+    pub repeat: Repeat,
+    /// Who or what the item waits for, as the user wrote it.
+    #[serde(default)]
+    pub waiting_for: String,
 }
 
 impl TaskEdit {
@@ -43,6 +48,8 @@ impl TaskEdit {
         task.remind_at = self.remind_at;
         task.kind = self.kind;
         task.tags = Tags::normalize(&self.tags);
+        task.repeat = self.repeat;
+        self.waiting_for.trim().clone_into(&mut task.waiting_for);
         task.move_to(self.status, today);
         Ok(())
     }
