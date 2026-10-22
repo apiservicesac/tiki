@@ -194,15 +194,17 @@ describe("IslandController", () => {
     expect(root.querySelectorAll(".tasks-tab .island-row")).toHaveLength(2);
   });
 
-  it("lists reminders apart from tasks, by time with their repeat", () => {
+  it("shows reminders in the Agenda by day, and only tasks in Tasks", () => {
     controller.selectTab("all_tasks");
     expect(root.querySelector('.tasks-tab [data-task-id="8"]')).toBeNull();
+    const views = [...root.querySelectorAll<HTMLElement>("[data-view]")].map((view) => view.dataset.view);
+    expect(views).toEqual(["pending", "delivered"]);
 
-    root.querySelector<HTMLButtonElement>('[data-view="reminders"]')?.click();
-    expect(controller.currentState.tasksView).toBe("reminders");
-    const rows = [...root.querySelectorAll(".tasks-tab .island-row")];
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.querySelector(".island-when")?.textContent).toBe("Vie 23 · 11:00 · Cada día");
+    controller.selectTab("agenda");
+    const row = root.querySelector('.agenda-row[data-task-id="8"]');
+    expect(row?.querySelector(".agenda-time")?.textContent).toBe("11:00");
+    expect(row?.querySelector("small")?.textContent).toBe("Cada día");
+    expect(root.querySelector(".agenda-list .island-group")?.textContent).not.toBe("");
   });
 
   it("keeps the search text when the island refreshes", async () => {
@@ -321,7 +323,7 @@ describe("IslandController", () => {
 
     root.querySelector<HTMLButtonElement>('[data-tab="agenda"]')?.click();
     expect(controller.currentState.tab).toBe("agenda");
-    expect(root.querySelector(".island-empty")).not.toBeNull();
+    expect(root.querySelector(".agenda-list")).not.toBeNull();
   });
 
   it("opens quick capture when the shell asks for it", () => {

@@ -6,8 +6,8 @@ import type { Translator } from "../i18n/Translator";
 import { ProjectPicker } from "./ProjectPicker";
 import type { TaskListHandlers, TaskListView } from "./TaskListView";
 
-/** Pending tasks, every reminder by time, or the delivered history. */
-export const TASKS_VIEWS = Object.freeze(["pending", "reminders", "delivered"] as const);
+/** Pending tasks, or the delivered history. Reminders live in the Agenda. */
+export const TASKS_VIEWS = Object.freeze(["pending", "delivered"] as const);
 export type TasksView = (typeof TASKS_VIEWS)[number];
 
 export interface TasksTabData {
@@ -177,21 +177,12 @@ export class TasksTabView {
     switch (data.view) {
       case "pending":
         return this.pendingRows(data.items, query, handlers);
-      case "reminders":
-        return this.reminderRows(data.items, query, handlers);
       case "delivered":
         return this.deliveredRows(data.delivered, query, handlers);
     }
   }
 
-  /** Every reminder, earliest first, with its moment and repeat; not grouped by project. */
-  private reminderRows(openItems: SnapshotItem[], query: string, handlers: TaskListHandlers): HTMLElement[] {
-    return openItems
-      .filter((item) => item.urgency === "reminder" && this.keeps(item.title, item.projectName, item.tags, query))
-      .map((item) => this.taskList.row(item, handlers));
-  }
-
-  /** Tasks only, grouped by project; reminders have their own view. */
+  /** Tasks only, grouped by project; reminders are in the Agenda. */
   private pendingRows(openItems: SnapshotItem[], query: string, handlers: TaskListHandlers): HTMLElement[] {
     const items = openItems.filter((item) =>
       item.urgency !== "reminder" && this.keeps(item.title, item.projectName, item.tags, query));

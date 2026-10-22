@@ -245,13 +245,13 @@ export class FakeBackend implements TikiBackend {
     const altamira = { projectName: "Altamira", projectColor: "#2F6BD8" };
     const andeanvet = { projectName: "Andeanvet", projectColor: "#17837D" };
     const vapestation = { projectName: "Vapestation", projectColor: "#C2410C" };
-    const access = { taskId: 3, title: "Acceso solo a análisis de facturas de Almendra", ...andeanvet, detailLabel: "1 día de atraso", urgency: "critical" as const, priority: "normal" as const, tags: [] };
-    const tracking = { taskId: 1, title: "Tracking de formularios comerciales", ...altamira, detailLabel: "mañana", urgency: "soon" as const, priority: "high" as const, tags: [] };
-    const sales = { taskId: 2, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon" as const, priority: "normal" as const, tags: ["ventas"] };
-    const vacation = { taskId: 4, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En curso", urgency: "normal" as const, priority: "normal" as const, tags: [] };
-    const github = { taskId: 5, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "3 días", urgency: "waiting" as const, priority: "normal" as const, tags: [] };
-    const water = { taskId: 8, title: "Tomar agua", projectName: null, projectColor: null, detailLabel: "Vie 23 · 11:00 · Cada día", urgency: "reminder" as const, priority: "normal" as const, tags: [] };
-    const zones = { taskId: 6, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "1 día", urgency: "waiting" as const, priority: "normal" as const, tags: [] };
+    const access = { taskId: 3, title: "Acceso solo a análisis de facturas de Almendra", ...andeanvet, detailLabel: "1 día de atraso", urgency: "critical" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const tracking = { taskId: 1, title: "Tracking de formularios comerciales", ...altamira, detailLabel: "mañana", urgency: "soon" as const, priority: "high" as const, tags: [], at: null, repeat: "never" as const };
+    const sales = { taskId: 2, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon" as const, priority: "normal" as const, tags: ["ventas"], at: null, repeat: "never" as const };
+    const vacation = { taskId: 4, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En curso", urgency: "normal" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const github = { taskId: 5, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "3 días", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const water = { taskId: 8, title: "Tomar agua", projectName: null, projectColor: null, detailLabel: "Vie 23 · 11:00 · Cada día", urgency: "reminder" as const, priority: "normal" as const, tags: [], at: "2026-10-23T11:00:00", repeat: "daily" as const };
+    const zones = { taskId: 6, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "1 día", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
     return {
       mood: "worried",
       moodLabel: "ATRASO",

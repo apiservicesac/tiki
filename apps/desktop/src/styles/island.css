@@ -1238,3 +1238,9 @@ button.island-notice {
 .capture-kind[hidden] { display: none; }
 
 .picker-create { color: var(--island-good); font-weight: 600; }
+
+/* Agenda: reminders by day, with their time first and a bell. */
+.agenda-row { grid-template-columns: 44px minmax(0, 1fr) auto 28px; }
+.agenda-time { font: 600 12px var(--font-mono); color: var(--kind-instance-text); }
+.agenda-bell { display: flex; color: var(--island-faint); }
+.agenda-bell svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }

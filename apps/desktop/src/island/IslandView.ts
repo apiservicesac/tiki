@@ -13,6 +13,7 @@ import { ProjectsPanelView, type ProjectsPanelHandlers } from "./ProjectsPanelVi
 import { ReceiptView } from "./ReceiptView";
 import { TaskListView } from "./TaskListView";
 import { TasksTabView, type TasksTabHandlers } from "./TasksTabView";
+import { AgendaView } from "./AgendaView";
 import { TodayView, type TodayHandlers } from "./TodayView";
 import type { HitArea } from "../backend/contracts";
 import { ContentTransition, type ContentSize } from "./ContentTransition";
@@ -42,6 +43,7 @@ export class IslandView {
   private readonly taskEdit: TaskEditView;
   private readonly tasksTab: TasksTabView;
   private readonly today: TodayView;
+  private readonly agenda: AgendaView;
   private readonly projectsPanel: ProjectsPanelView;
   private readonly receipt: ReceiptView;
   /** The views kept between frames are rebuilt when the language changes. */
@@ -68,6 +70,7 @@ export class IslandView {
     this.taskEdit = new TaskEditView(translator);
     this.tasksTab = new TasksTabView(translator, this.taskList);
     this.today = new TodayView(translator, this.taskList);
+    this.agenda = new AgendaView(translator);
     this.projectsPanel = new ProjectsPanelView(translator);
     this.receipt = new ReceiptView(translator);
     this.clip = ElementFactory.create("div", { className: "island-clip" });
@@ -263,10 +266,7 @@ export class IslandView {
           handlers,
         );
       case "agenda":
-        return ElementFactory.create("div", {
-          className: "island-tab-content",
-          children: [this.taskList.render([], this.translator.text(`island.${state.tab}.empty`), handlers)],
-        });
+        return this.agenda.render(state.snapshot.openItems, new Date(), handlers);
     }
   }
 }

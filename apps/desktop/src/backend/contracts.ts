@@ -49,6 +49,9 @@ export interface SnapshotItem {
   priority: Priority;
   /** Lowercase, without "#". */
   tags: string[];
+  /** For reminders: when it rings (`2026-10-23T11:00:00`) and how often it comes back. */
+  at: string | null;
+  repeat: Repeat;
   urgency: Urgency;
 }
 

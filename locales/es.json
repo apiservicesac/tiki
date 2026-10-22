@@ -271,8 +271,10 @@
     "summary.preparing": "Tiki está resumiendo…",
     "island.action.new": "Escribe o pregunta",
 
-    "tasks.view.reminders": "Recordatorios",
-    "tasks.empty_reminders": "No tienes recordatorios. Escribe uno en la caja: «recuérdame…»",
+
+    "agenda.empty": "Sin recordatorios por ahora. Escribe «recuérdame…» en la caja. Las reuniones de tu calendario también llegarán aquí.",
+    "agenda.today": "Hoy",
+    "agenda.tomorrow": "Mañana",
 
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"
