@@ -29,6 +29,8 @@ impl DesktopConfig {
     /// Diagnostics log in the app's log folder, rewritten on every launch.
     pub const LOG_FILE_NAME: &'static str = "tiki.log";
     pub const LOG_LEVEL: &'static str = "info";
+    /// How often the calendars are copied.
+    pub const CALENDAR_SYNC_INTERVAL: Duration = Duration::from_secs(5 * 60);
     /// SQLite file inside the app data folder.
     pub const DATABASE_FILE_NAME: &'static str = "tiki.db";
     pub const TRAY_ID: &'static str = "tiki-tray";

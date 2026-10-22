@@ -7,6 +7,7 @@
 #![allow(clippy::needless_pass_by_value)]
 
 pub mod ai_commands;
+pub mod calendar_commands;
 mod command_error;
 pub mod island_commands;
 pub mod project_commands;

@@ -11,6 +11,8 @@ pub enum ShellEvent {
     BriefReady,
     /// Preferences or AI keys changed in one window; the others reload them.
     PreferencesChanged,
+    /// The calendars were copied again: the Agenda refreshes.
+    CalendarSynced,
 }
 
 impl ShellEvent {
@@ -21,6 +23,7 @@ impl ShellEvent {
             ShellEvent::ToggleIsland => "tiki://toggle-island",
             ShellEvent::BriefReady => "tiki://brief-ready",
             ShellEvent::PreferencesChanged => "tiki://preferences-changed",
+            ShellEvent::CalendarSynced => "tiki://calendar-synced",
         }
     }
 

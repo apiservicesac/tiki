@@ -280,6 +280,8 @@
     "notify.meetings_today": "Meetings today: {count} · the first at {time}",
     "focus.free_time": "{minutes} min free before “{meeting}”",
 
+    "calendar.signed_in_page": "Done: your calendar is connected. You can go back to Tiki.",
+
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"
   },

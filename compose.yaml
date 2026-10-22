@@ -38,6 +38,10 @@ services:
       <<: *host-environment
       TAURI_SIGNING_PRIVATE_KEY: ${TAURI_SIGNING_PRIVATE_KEY:-}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}
+      # Calendar app registrations (public client ids), read from ~/.tauri/tiki-oauth.env.
+      TIKI_MICROSOFT_CLIENT_ID: ${TIKI_MICROSOFT_CLIENT_ID:-}
+      TIKI_GOOGLE_CLIENT_ID: ${TIKI_GOOGLE_CLIENT_ID:-}
+      TIKI_GOOGLE_CLIENT_SECRET: ${TIKI_GOOGLE_CLIENT_SECRET:-}
     build:
       context: .
       dockerfile: docker/windows.Dockerfile

@@ -8,6 +8,7 @@ use crate::ai::{AiCredentials, AiProxy};
 use crate::app_state::AppState;
 use crate::app_updates::AppUpdates;
 use crate::brief_reminders::BriefReminders;
+use crate::calendar::CalendarSync;
 use crate::click_through::ClickThrough;
 use crate::commands;
 use crate::diagnostics_log::DiagnosticsLog;
@@ -35,6 +36,7 @@ impl TikiDesktopApp {
             ))
             .plugin(tauri_plugin_notification::init())
             .plugin(tauri_plugin_updater::Builder::new().build())
+            .plugin(tauri_plugin_opener::init())
             .plugin(tauri_plugin_autostart::init(
                 MacosLauncher::LaunchAgent,
                 None,
@@ -65,6 +67,11 @@ impl TikiDesktopApp {
                 commands::system_commands::app_version,
                 commands::system_commands::check_for_update,
                 commands::system_commands::install_update,
+                commands::calendar_commands::calendar_status,
+                commands::calendar_commands::connect_calendar,
+                commands::calendar_commands::disconnect_calendar,
+                commands::calendar_commands::sync_calendars,
+                commands::calendar_commands::open_meeting_link,
                 commands::ai_commands::ai_status,
                 commands::ai_commands::save_ai_key,
                 commands::ai_commands::remove_ai_key,
@@ -94,6 +101,7 @@ impl TikiDesktopApp {
         app.manage(Arc::clone(&click_through));
         ClickThrough::start(app.handle().clone(), click_through);
         BriefReminders::start(app.handle().clone());
+        CalendarSync::start(app.handle().clone());
         AppUpdates::watch(app.handle().clone(), Translator::new(preferences.locale)?);
         Ok(())
     }

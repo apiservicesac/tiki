@@ -31,6 +31,7 @@ impl BriefReminders {
             let mut alerts: Vec<TikiAlert> =
                 workspace.take_due_notification(now)?.into_iter().collect();
             alerts.extend(workspace.take_due_task_reminders(now)?);
+            alerts.extend(workspace.take_due_meeting_alerts(now)?);
             Ok((alerts, workspace.preferences().windows_notifications))
         });
         match due {

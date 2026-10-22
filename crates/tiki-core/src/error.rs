@@ -36,6 +36,9 @@ pub enum TikiError {
     #[error("AI request failed: {0}")]
     Ai(String),
 
+    #[error("calendar error: {0}")]
+    Calendar(String),
+
     #[error("plugin error: {0}")]
     Plugin(String),
 }

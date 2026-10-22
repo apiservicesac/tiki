@@ -280,6 +280,8 @@
     "notify.meetings_today": "Reuniones hoy: {count} · la primera a las {time}",
     "focus.free_time": "{minutes} min libres antes de «{meeting}»",
 
+    "calendar.signed_in_page": "Listo: tu calendario quedó conectado. Ya puedes volver a Tiki.",
+
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"
   },
