@@ -727,15 +727,15 @@ button.island-row-text {
 
 .settings-advanced-arrow { color: var(--island-muted); }
 
-/* Tasks tab, client panel and receipt use the whole card: no big mascot beside them. */
+/* Tasks tab, project panel and receipt use the whole card: no big mascot beside them. */
 .island-card[data-tab="all_tasks"][data-panel="tasks"],
-.island-card[data-panel="clients"],
+.island-card[data-panel="projects"],
 .island-card[data-panel="brief"] {
   grid-template-columns: minmax(0, 1fr);
 }
 
 .island-card[data-tab="all_tasks"][data-panel="tasks"] .island-card-mascot,
-.island-card[data-panel="clients"] .island-card-mascot,
+.island-card[data-panel="projects"] .island-card-mascot,
 .island-card[data-panel="brief"] .island-card-mascot {
   display: none;
 }
@@ -824,7 +824,7 @@ button.island-row-text {
 
 .island-row-check svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
 
-/* Client picker: a button with a searchable list under it. */
+/* Project picker: a button with a searchable list under it. */
 .picker { position: relative; }
 
 .picker-trigger {
@@ -935,12 +935,12 @@ button.island-row-text {
 .picker-action:hover { background: var(--island-soft); color: var(--island-text); }
 .edit-field .picker-trigger { max-width: none; width: 100%; box-sizing: border-box; }
 
-/* Client panel */
-.clients-panel { display: grid; gap: 10px; }
-.clients-new { margin-top: 0; }
-.clients-list { max-height: 330px; gap: 2px; }
+/* Project panel */
+.projects-panel { display: grid; gap: 10px; }
+.projects-new { margin-top: 0; }
+.projects-list { max-height: 330px; gap: 2px; }
 
-.client-row {
+.project-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -948,19 +948,19 @@ button.island-row-text {
   border-radius: 12px;
 }
 
-.client-row:hover { background: var(--island-soft); }
-.client-name { flex: 1; min-width: 0; font-size: 13px; }
-.client-name small { display: block; font-size: 11.5px; color: var(--island-muted); }
+.project-row:hover { background: var(--island-soft); }
+.project-name { flex: 1; min-width: 0; font-size: 13px; }
+.project-name small { display: block; font-size: 11.5px; color: var(--island-muted); }
 
-.client-row-editing {
+.project-row-editing {
   display: grid;
   gap: 8px;
   background: var(--island-soft);
 }
 
-.client-palette { display: flex; flex-wrap: wrap; gap: 6px; }
+.project-palette { display: flex; flex-wrap: wrap; gap: 6px; }
 
-.client-swatch {
+.project-swatch {
   width: 20px;
   height: 20px;
   border: 2px solid transparent;
@@ -968,9 +968,9 @@ button.island-row-text {
   cursor: pointer;
 }
 
-.client-swatch-on { border-color: var(--island-text); }
+.project-swatch-on { border-color: var(--island-text); }
 
-.client-remove-confirm {
+.project-remove-confirm {
   padding: 5px 10px;
   border: 0;
   border-radius: 10px;
@@ -1098,3 +1098,14 @@ button.island-notice {
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Cards without the big mascot keep the same margin on both sides. */
+.island-card[data-tab="all_tasks"][data-panel="tasks"] .island-card-body,
+.island-card[data-panel="projects"] .island-card-body,
+.island-card[data-panel="brief"] .island-card-body {
+  padding: 14px 16px;
+}
+
+/* The picker's arrow sits at the far right, whatever the label's length. */
+.picker-trigger .picker-label { flex: 1; text-align: left; }
+.picker-trigger .picker-chevron { margin-left: auto; }
