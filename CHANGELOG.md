@@ -6,6 +6,27 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.1-rc.1] - 2026-10-22
+
+### Changed
+- One box for everything (the + button and Ctrl+Alt+Space): write a task, a reminder or a
+  question. With AI, Enter reads it and either fills the item's fields to review, or answers
+  and proposes changes you apply with a click. Ask Tiki is no longer a separate panel.
+- Tasks and reminders are different things. A reminder is only a moment and how often it
+  repeats (every day, weekdays, weekly, monthly); when it rings you mark it done or snooze
+  it (+10 min, +1 h, tomorrow). A task keeps its work fields.
+- Four general statuses: To do, In progress, Waiting, Done ("Testing" becomes In progress).
+- Waiting tasks keep who or what they wait for as free text, and Tiki reminds you to follow
+  up after a few days.
+- No lists to maintain: a project you name for the first time is created when saving (the
+  picker offers "Create «name»"), and the AI may name one from your sentence.
+- Today shows only today: overdue, due soon, today's reminders and follow-ups, with "Now: do
+  X" on top and one summary card (the latest reminder with its buttons, or the AI brief).
+  Tasks shows everything.
+- Priority counts: urgent and important items come first and show "!!" or "!".
+- The Tickets tab is hidden until a ticket connector arrives; the mascot says "TODO BIEN"
+  instead of "200 OK".
+
 ## [0.3.0-rc.1] - 2026-10-22
 
 ### Added
