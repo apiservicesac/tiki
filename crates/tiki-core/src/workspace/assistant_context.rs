@@ -29,8 +29,8 @@ pub struct AssistantProject {
     pub notes: String,
 }
 
-/// What the assistant receives to summarize, answer or propose actions: open items and the
-/// notes of the projects that have them.
+/// What the assistant receives to summarize, answer or propose actions: open items, and every
+/// project with the notes the user wrote for it (empty when none).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssistantContext {
@@ -42,11 +42,8 @@ pub struct AssistantContext {
 impl AssistantContext {
     pub fn build(tasks: &[Task], projects: &ProjectDirectory, now: NaiveDateTime) -> Self {
         let today = now.date();
-        let mut noted: Vec<&Project> = projects
-            .projects()
-            .filter(|project| !project.notes.trim().is_empty())
-            .collect();
-        noted.sort_by(|first, second| first.name.cmp(&second.name));
+        let mut known: Vec<&Project> = projects.projects().collect();
+        known.sort_by(|first, second| first.name.cmp(&second.name));
         Self {
             now,
             open_tasks: tasks
@@ -67,7 +64,7 @@ impl AssistantContext {
                     })
                 })
                 .collect(),
-            projects: noted
+            projects: known
                 .into_iter()
                 .map(|project| AssistantProject {
                     name: project.name.clone(),

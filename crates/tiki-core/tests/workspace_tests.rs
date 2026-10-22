@@ -166,8 +166,9 @@ fn the_assistant_sees_open_tasks_without_their_private_notes() {
         .unwrap();
     assert!(waiting.waiting_days.is_some());
 
-    let json = serde_json::to_string(&context).unwrap();
-    assert!(!json.contains("\"notes\":\"\""));
+    // Each task's private notes never go to the assistant.
+    let tasks_json = serde_json::to_string(&context.open_tasks).unwrap();
+    assert!(!tasks_json.contains("notes"));
 }
 
 #[test]
@@ -255,11 +256,13 @@ fn the_assistant_reads_project_notes_and_task_ids() {
         .unwrap();
 
     let context = workspace.assistant_context().unwrap();
-    assert_eq!(context.projects.len(), 1);
-    assert_eq!(
-        context.projects[0].notes,
-        "Contacto: Lucía, prefiere correos cortos."
-    );
+    let altamira = context
+        .projects
+        .iter()
+        .find(|project| project.name == "Altamira")
+        .unwrap();
+    assert_eq!(altamira.notes, "Contacto: Lucía, prefiere correos cortos.");
+    assert_eq!(context.projects.len(), 3);
     assert!(context.open_tasks.iter().all(|task| task.task_id.0 > 0));
 }
 
