@@ -55,13 +55,15 @@ UPDATER_KEY := $(HOME)/.tauri/tiki-updater.key
 # Calendar sign-in registrations (Azure and Google Cloud), kept out of the repository:
 # TIKI_MICROSOFT_CLIENT_ID=…, TIKI_GOOGLE_CLIENT_ID=…, TIKI_GOOGLE_CLIENT_SECRET=…
 OAUTH_ENV := $(HOME)/.tauri/tiki-oauth.env
+# Parallel compile jobs for the installer; more runs out of memory on 8 GB machines.
+BUILD_JOBS ?= 2
 
 windows-installer:
 	@test -f $(UPDATER_KEY) || (echo "Missing $(UPDATER_KEY): the update signing key" && exit 1)
 	@test -f $(OAUTH_ENV) || echo "Note: no $(OAUTH_ENV); this build cannot connect calendars"
 	set -a; [ -f $(OAUTH_ENV) ] && . $(OAUTH_ENV); set +a; \
 	TAURI_SIGNING_PRIVATE_KEY="$$(cat $(UPDATER_KEY))" TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" \
-		$(COMPOSE) windows npm run tauri build -- --runner cargo-xwin --target $(WINDOWS_TARGET)
+		$(COMPOSE) -e CARGO_BUILD_JOBS=$(BUILD_JOBS) windows npm run tauri build -- --runner cargo-xwin --target $(WINDOWS_TARGET)
 	@echo "Installer: target/$(WINDOWS_TARGET)/release/bundle/nsis/"
 
 # After `make windows-installer`: writes updates/latest.json for installed copies to find.
