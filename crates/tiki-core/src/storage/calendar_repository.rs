@@ -67,7 +67,7 @@ impl<'connection> CalendarRepository<'connection> {
     }
 
     /// Replaces the account's meetings between `from` and `to` with `meetings`, keeping
-    /// whether each one was already announced.
+    /// whether each one was already announced. Meetings before `from` are past and dropped.
     pub fn replace_meetings(
         &self,
         account_id: AccountId,
@@ -106,6 +106,10 @@ impl<'connection> CalendarRepository<'connection> {
             "DELETE FROM meetings WHERE account_id = ?1 AND starts_at >= ?2 AND starts_at < ?3
                 AND external_id NOT IN (SELECT value FROM json_each(?4))",
             params![account_id.0, from, to, kept_json],
+        )?;
+        transaction.execute(
+            "DELETE FROM meetings WHERE account_id = ?1 AND starts_at < ?2",
+            params![account_id.0, from],
         )?;
         transaction.commit()?;
         Ok(())

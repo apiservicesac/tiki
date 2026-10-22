@@ -151,3 +151,28 @@ fn now_counts_the_free_time_before_the_next_meeting_and_the_brief_names_meetings
             .ends_with("Reuniones hoy: 1 · la primera a las 10:00")
     );
 }
+
+#[test]
+fn past_meetings_are_not_kept() {
+    let workspace = workspace_at(at(21, 9, 0));
+    let account = workspace
+        .connect_calendar(CalendarProvider::Google, "yo@gmail.com")
+        .unwrap();
+    workspace
+        .store_meetings(
+            account,
+            &[
+                meeting("old", "Ayer", at(20, 10, 0), 30),
+                meeting("today", "Hoy", at(21, 10, 0), 30),
+            ],
+        )
+        .unwrap();
+
+    let snapshot = workspace.island_snapshot().unwrap();
+    let titles: Vec<&str> = snapshot
+        .meetings
+        .iter()
+        .map(|meeting| meeting.title.as_str())
+        .collect();
+    assert_eq!(titles, ["Hoy"]);
+}
