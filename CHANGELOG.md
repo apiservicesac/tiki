@@ -6,6 +6,16 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Calendars: connect Microsoft 365 / Outlook and Google accounts from Settings › Accounts.
+  Tiki signs in in the browser, only reads the calendar and keeps the sign-in in Windows
+  Credential Manager. Meetings sync every 5 minutes.
+- Meetings in the Agenda, next to reminders and ordered by time, with their place and a Join
+  button for video calls.
+- A notch alert 15 minutes before each meeting, with Join.
+- "Now" counts the free time before the next meeting, and the morning brief lists the day's
+  meetings.
+
 ## [0.3.1-rc.4] - 2026-10-22
 
 ### Changed
