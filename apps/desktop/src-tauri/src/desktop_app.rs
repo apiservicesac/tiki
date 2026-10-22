@@ -42,6 +42,7 @@ impl TikiDesktopApp {
             .invoke_handler(tauri::generate_handler![
                 commands::island_commands::island_snapshot,
                 commands::island_commands::move_task,
+                commands::island_commands::snooze,
                 commands::island_commands::save_confirmed_capture,
                 commands::island_commands::project_names,
                 commands::island_commands::task_details,
