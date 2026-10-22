@@ -1,5 +1,5 @@
 import type {
-  ClientSummary,
+  ProjectSummary,
   DeliveredItem,
   IslandPlacement,
   IslandSnapshot,
@@ -18,9 +18,9 @@ export type IslandMode = (typeof ISLAND_MODES)[number];
 
 /**
  * What the expanded island shows in its card: the tabs, or a panel such as quick capture,
- * a task being edited, the client list or the brief drawn as a receipt.
+ * a task being edited, the project list or the brief drawn as a receipt.
  */
-export type IslandPanel = "tasks" | "capture" | "settings" | "edit" | "ask" | "clients" | "brief";
+export type IslandPanel = "tasks" | "capture" | "settings" | "edit" | "ask" | "projects" | "brief";
 
 export type IslandTab = "today" | "all_tasks" | "tickets" | "agenda";
 
@@ -39,16 +39,16 @@ export interface IslandState {
   tab: IslandTab;
   placement: IslandPlacement;
   snapshot: IslandSnapshot;
-  /** The user's clients with their workload, busiest first. */
-  clients: ClientSummary[];
-  /** Colors a client can take. */
-  clientColors: string[];
+  /** The user's projects with their workload, busiest first. */
+  projects: ProjectSummary[];
+  /** Colors a project can take. */
+  projectColors: string[];
   /** Delivered tasks, most recent first. */
   delivered: DeliveredItem[];
   /** Pending or delivered, in the Tasks tab. */
   tasksView: TasksView;
-  /** The client panel opened to create a client: its name box gets the focus. */
-  creatingClient: boolean;
+  /** The project panel opened to create a project: its name box gets the focus. */
+  creatingProject: boolean;
   /** A short-lived mood (happy after capturing) that overrides the snapshot's mood. */
   reactionMood: MoodName | null;
   /** The latest reminder: shown in the notch, then above the Today list until seen. */

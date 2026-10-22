@@ -1,9 +1,9 @@
-import type { ClientSummary, DeliveredItem, SnapshotItem, SnapshotSection, Urgency } from "../backend/contracts";
+import type { ProjectSummary, DeliveredItem, SnapshotItem, SnapshotSection, Urgency } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import { TextMatcher } from "../dom/TextMatcher";
 import type { Translator } from "../i18n/Translator";
-import { ClientPicker } from "./ClientPicker";
+import { ProjectPicker } from "./ProjectPicker";
 import type { TaskListHandlers, TaskListView } from "./TaskListView";
 
 export type TasksView = "pending" | "delivered";
@@ -11,17 +11,17 @@ export type TasksView = "pending" | "delivered";
 export interface TasksTabData {
   sections: SnapshotSection[];
   delivered: DeliveredItem[];
-  clients: ClientSummary[];
+  projects: ProjectSummary[];
   view: TasksView;
 }
 
 export interface TasksTabHandlers extends TaskListHandlers {
   onSelectTasksView: (view: TasksView) => void;
-  /** Opens the client panel; `createNew` focuses the new-client box. */
-  onManageClients: (createNew: boolean) => void;
+  /** Opens the project panel; `createNew` focuses the new-project box. */
+  onManageProjects: (createNew: boolean) => void;
 }
 
-interface ClientGroup {
+interface ProjectGroup {
   name: string | null;
   color: string | null;
   items: SnapshotItem[];
@@ -30,7 +30,7 @@ interface ClientGroup {
 }
 
 /**
- * The Tasks tab: every task, grouped by client, with a search box, a client picker and the
+ * The Tasks tab: every task, grouped by project, with a search box, a project picker and the
  * pending or delivered view. Built once and kept, so typing in the search box survives the
  * island's refreshes; only the list is redrawn.
  */
@@ -46,8 +46,8 @@ export class TasksTabView {
   private search: HTMLInputElement | null = null;
   private toggle: HTMLElement | null = null;
   private list: HTMLElement | null = null;
-  private readonly picker = new ClientPicker();
-  private clientFilter: string | null = null;
+  private readonly picker = new ProjectPicker();
+  private projectFilter: string | null = null;
   private data: TasksTabData | null = null;
   private handlers: TasksTabHandlers | null = null;
 
@@ -59,8 +59,8 @@ export class TasksTabView {
   render(data: TasksTabData, handlers: TasksTabHandlers): HTMLElement {
     this.data = data;
     this.handlers = handlers;
-    if (this.clientFilter !== null && !data.clients.some((client) => client.name === this.clientFilter)) {
-      this.clientFilter = null;
+    if (this.projectFilter !== null && !data.projects.some((project) => project.name === this.projectFilter)) {
+      this.projectFilter = null;
     }
     this.element ??= this.build();
     this.redraw();
@@ -70,7 +70,7 @@ export class TasksTabView {
   /** Forgets the tab, so it is rebuilt in a new language. */
   reset(): void {
     this.element = null;
-    this.clientFilter = null;
+    this.projectFilter = null;
   }
 
   private build(): HTMLElement {
@@ -119,20 +119,20 @@ export class TasksTabView {
       return;
     }
     this.picker.update({
-      id: "tasks-client-picker",
+      id: "tasks-project-picker",
       options: [
-        { value: null, label: this.translator.text("tasks.all_clients"), color: null },
-        ...data.clients.map((client) => ({ value: client.name, label: client.name, color: client.color, count: client.openCount })),
+        { value: null, label: this.translator.text("tasks.all_projects"), color: null },
+        ...data.projects.map((project) => ({ value: project.name, label: project.name, color: project.color, count: project.openCount })),
       ],
-      selected: this.clientFilter,
-      searchPlaceholder: this.translator.text("tasks.search_client"),
-      emptyText: this.translator.text("tasks.no_client_match"),
+      selected: this.projectFilter,
+      searchPlaceholder: this.translator.text("tasks.search_project"),
+      emptyText: this.translator.text("tasks.no_project_match"),
       actions: [
-        { label: this.translator.text("tasks.new_client"), onPress: () => this.handlers?.onManageClients(true) },
-        { label: this.translator.text("tasks.manage_clients"), onPress: () => this.handlers?.onManageClients(false) },
+        { label: this.translator.text("tasks.new_project"), onPress: () => this.handlers?.onManageProjects(true) },
+        { label: this.translator.text("tasks.manage_projects"), onPress: () => this.handlers?.onManageProjects(false) },
       ],
       onSelect: (value) => {
-        this.clientFilter = value;
+        this.projectFilter = value;
         this.redraw();
       },
     });
@@ -174,7 +174,7 @@ export class TasksTabView {
   private pendingRows(sections: SnapshotSection[], query: string, handlers: TaskListHandlers): HTMLElement[] {
     const items = sections
       .flatMap((section) => section.items)
-      .filter((item) => this.keeps(item.title, item.clientName, query));
+      .filter((item) => this.keeps(item.title, item.projectName, query));
     return this.groups(items).flatMap((group) => [
       this.groupHeader(group),
       ...group.items.map((item) => this.taskList.row(item, handlers)),
@@ -183,24 +183,24 @@ export class TasksTabView {
 
   private deliveredRows(delivered: DeliveredItem[], query: string, handlers: TaskListHandlers): HTMLElement[] {
     return delivered
-      .filter((item) => this.keeps(item.title, item.clientName, query))
+      .filter((item) => this.keeps(item.title, item.projectName, query))
       .map((item) => this.taskList.deliveredRow(item, handlers.onOpenTask));
   }
 
-  /** Whether a task passes the client filter and the search (title or client name). */
-  private keeps(title: string, clientName: string | null, query: string): boolean {
-    if (this.clientFilter !== null && clientName !== this.clientFilter) {
+  /** Whether a task passes the project filter and the search (title or project name). */
+  private keeps(title: string, projectName: string | null, query: string): boolean {
+    if (this.projectFilter !== null && projectName !== this.projectFilter) {
       return false;
     }
-    return TextMatcher.matches(title, query) || (clientName !== null && TextMatcher.matches(clientName, query));
+    return TextMatcher.matches(title, query) || (projectName !== null && TextMatcher.matches(projectName, query));
   }
 
-  /** One group per client: the most pressing first, then the busiest, tasks without client last. */
-  private groups(items: SnapshotItem[]): ClientGroup[] {
-    const groups = new Map<string, ClientGroup>();
+  /** One group per project: the most pressing first, then the busiest, tasks without project last. */
+  private groups(items: SnapshotItem[]): ProjectGroup[] {
+    const groups = new Map<string, ProjectGroup>();
     items.forEach((item) => {
-      const key = item.clientName ?? "";
-      const group = groups.get(key) ?? { name: item.clientName, color: item.clientColor, items: [], rank: Number.MAX_SAFE_INTEGER };
+      const key = item.projectName ?? "";
+      const group = groups.get(key) ?? { name: item.projectName, color: item.projectColor, items: [], rank: Number.MAX_SAFE_INTEGER };
       group.items.push(item);
       group.rank = Math.min(group.rank, TasksTabView.URGENCY_RANK[item.urgency]);
       groups.set(key, group);
@@ -215,14 +215,14 @@ export class TasksTabView {
     });
   }
 
-  private groupHeader(group: ClientGroup): HTMLElement {
+  private groupHeader(group: ProjectGroup): HTMLElement {
     const dot = ElementFactory.create("i", { className: "tasks-group-dot" });
     dot.style.background = group.color ?? "var(--island-faint)";
     return ElementFactory.create("div", {
       className: "island-group tasks-group",
       children: [
         dot,
-        ElementFactory.create("span", { text: group.name ?? this.translator.text("edit.no_client") }),
+        ElementFactory.create("span", { text: group.name ?? this.translator.text("edit.no_project") }),
         ElementFactory.create("span", { className: "tasks-group-count", text: String(group.items.length) }),
       ],
     });

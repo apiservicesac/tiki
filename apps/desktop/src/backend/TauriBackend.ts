@@ -5,13 +5,11 @@ import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest
 import type {
   AiProviderStatus,
   AvailableUpdate,
-  ClientChange,
-  ClientSummary,
+  ProjectChange,
+  ProjectSummary,
   DeliveredItem,
   TikiAlert,
-  CaptureIntent,
   HitArea,
-  CaptureOutcome,
   IslandSnapshot,
   TaskDetails,
   TaskEdit,
@@ -24,14 +22,6 @@ import type {
 export class TauriBackend implements TikiBackend {
   islandSnapshot(): Promise<IslandSnapshot> {
     return invoke<IslandSnapshot>("island_snapshot");
-  }
-
-  previewCapture(sentence: string): Promise<CaptureIntent> {
-    return invoke<CaptureIntent>("preview_capture", { sentence });
-  }
-
-  capture(sentence: string): Promise<CaptureOutcome> {
-    return invoke<CaptureOutcome>("capture", { sentence });
   }
 
   async moveTask(taskId: number, status: TaskStatus): Promise<void> {
@@ -50,32 +40,32 @@ export class TauriBackend implements TikiBackend {
     await invoke("save_confirmed_capture", { capture });
   }
 
-  clientNames(): Promise<string[]> {
-    return invoke<string[]>("client_names");
+  projectNames(): Promise<string[]> {
+    return invoke<string[]>("project_names");
   }
 
   taskDetails(taskId: number): Promise<TaskDetails> {
     return invoke<TaskDetails>("task_details", { taskId });
   }
 
-  clientSummaries(): Promise<ClientSummary[]> {
-    return invoke<ClientSummary[]>("client_summaries");
+  projectSummaries(): Promise<ProjectSummary[]> {
+    return invoke<ProjectSummary[]>("project_summaries");
   }
 
-  createClient(name: string): Promise<number> {
-    return invoke<number>("create_client", { name });
+  createProject(name: string): Promise<number> {
+    return invoke<number>("create_project", { name });
   }
 
-  async changeClient(clientId: number, change: ClientChange): Promise<void> {
-    await invoke("change_client", { clientId, change });
+  async changeProject(projectId: number, change: ProjectChange): Promise<void> {
+    await invoke("change_project", { projectId, change });
   }
 
-  async removeClient(clientId: number): Promise<void> {
-    await invoke("remove_client", { clientId });
+  async removeProject(projectId: number): Promise<void> {
+    await invoke("remove_project", { projectId });
   }
 
-  clientColors(): Promise<string[]> {
-    return invoke<string[]>("client_colors");
+  projectColors(): Promise<string[]> {
+    return invoke<string[]>("project_colors");
   }
 
   deliveredTasks(): Promise<DeliveredItem[]> {

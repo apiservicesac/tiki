@@ -3,12 +3,10 @@ import type {
   AiProviderStatus,
   AvailableUpdate,
   TikiAlert,
-  CaptureIntent,
-  ClientChange,
-  ClientSummary,
+  ProjectChange,
+  ProjectSummary,
   DeliveredItem,
   HitArea,
-  CaptureOutcome,
   IslandSnapshot,
   TaskDetails,
   TaskEdit,
@@ -24,19 +22,18 @@ import { FakeShell } from "./FakeShell";
  * asked for and lets tests fire shell events.
  */
 export class FakeBackend implements TikiBackend {
-  readonly capturedSentences: string[] = [];
   readonly movedTasks: Array<{ taskId: number; status: TaskStatus }> = [];
   readonly hitAreas: HitArea[] = [];
   readonly confirmedCaptures: InterpretedCapture[] = [];
   readonly editedTasks: Array<{ taskId: number; edit: TaskEdit }> = [];
-  clients: ClientSummary[] = [
-    { clientId: 1, name: "Altamira", color: "#2F6BD8", openCount: 2, pressingCount: 2 },
-    { clientId: 2, name: "Andeanvet", color: "#17837D", openCount: 3, pressingCount: 1 },
-    { clientId: 3, name: "Vapestation", color: "#C2410C", openCount: 1, pressingCount: 0 },
+  projects: ProjectSummary[] = [
+    { projectId: 1, name: "Altamira", color: "#2F6BD8", openCount: 2, pressingCount: 2 },
+    { projectId: 2, name: "Andeanvet", color: "#17837D", openCount: 3, pressingCount: 1 },
+    { projectId: 3, name: "Vapestation", color: "#C2410C", openCount: 1, pressingCount: 0 },
   ];
   delivered: DeliveredItem[] = [
-    { taskId: 9, title: "Reporte de ventas de septiembre", clientName: "Altamira", clientColor: "#2F6BD8", deliveredLabel: "hoy" },
-    { taskId: 8, title: "Ajuste del acta CAPEX", clientName: null, clientColor: null, deliveredLabel: "ayer" },
+    { taskId: 9, title: "Reporte de ventas de septiembre", projectName: "Altamira", projectColor: "#2F6BD8", deliveredLabel: "hoy" },
+    { taskId: 8, title: "Ajuste del acta CAPEX", projectName: null, projectColor: null, deliveredLabel: "ayer" },
   ];
   savedPreferences: UserPreferences = {
     locale: "spanish",
@@ -65,18 +62,6 @@ export class FakeBackend implements TikiBackend {
     return this.snapshot;
   }
 
-  async previewCapture(sentence: string): Promise<CaptureIntent> {
-    const trimmed = sentence.trim();
-    return trimmed.startsWith("+")
-      ? { kind: "client", name: trimmed.slice(1).trim() }
-      : { kind: "task", title: trimmed, clientId: null, clientName: null, dueDate: null, remindAt: null };
-  }
-
-  async capture(sentence: string): Promise<CaptureOutcome> {
-    this.capturedSentences.push(sentence.trim());
-    return { kind: "task", id: this.capturedSentences.length };
-  }
-
   async moveTask(taskId: number, status: TaskStatus): Promise<void> {
     this.movedTasks.push({ taskId, status });
   }
@@ -93,29 +78,29 @@ export class FakeBackend implements TikiBackend {
     this.confirmedCaptures.push(capture);
   }
 
-  async clientNames(): Promise<string[]> {
-    return this.clients.map((client) => client.name);
+  async projectNames(): Promise<string[]> {
+    return this.projects.map((project) => project.name);
   }
 
-  async clientSummaries(): Promise<ClientSummary[]> {
-    return this.clients;
+  async projectSummaries(): Promise<ProjectSummary[]> {
+    return this.projects;
   }
 
-  async createClient(name: string): Promise<number> {
-    const clientId = Math.max(0, ...this.clients.map((client) => client.clientId)) + 1;
-    this.clients = [...this.clients, { clientId, name, color: "#7357E8", openCount: 0, pressingCount: 0 }];
-    return clientId;
+  async createProject(name: string): Promise<number> {
+    const projectId = Math.max(0, ...this.projects.map((project) => project.projectId)) + 1;
+    this.projects = [...this.projects, { projectId, name, color: "#7357E8", openCount: 0, pressingCount: 0 }];
+    return projectId;
   }
 
-  async changeClient(clientId: number, change: ClientChange): Promise<void> {
-    this.clients = this.clients.map((client) => (client.clientId === clientId ? { ...client, ...change } : client));
+  async changeProject(projectId: number, change: ProjectChange): Promise<void> {
+    this.projects = this.projects.map((project) => (project.projectId === projectId ? { ...project, ...change } : project));
   }
 
-  async removeClient(clientId: number): Promise<void> {
-    this.clients = this.clients.filter((client) => client.clientId !== clientId);
+  async removeProject(projectId: number): Promise<void> {
+    this.projects = this.projects.filter((project) => project.projectId !== projectId);
   }
 
-  async clientColors(): Promise<string[]> {
+  async projectColors(): Promise<string[]> {
     return ["#2F6BD8", "#17837D", "#C2410C", "#7357E8"];
   }
 
@@ -129,7 +114,7 @@ export class FakeBackend implements TikiBackend {
       taskId,
       title: item?.title ?? "",
       notes: "",
-      clientName: item?.clientName ?? null,
+      projectName: item?.projectName ?? null,
       dueDate: "2026-10-22",
       priority: "normal",
       status: "to_do",
@@ -141,7 +126,7 @@ export class FakeBackend implements TikiBackend {
     return {
       today: "2026-10-21",
       openTasks: [
-        { title: "Tracking de formularios", clientName: "Altamira", status: "to_do", priority: "high", dueDate: "2026-10-22", waitingDays: null },
+        { title: "Tracking de formularios", projectName: "Altamira", status: "to_do", priority: "high", dueDate: "2026-10-22", waitingDays: null },
       ],
     };
   }
@@ -220,9 +205,9 @@ export class FakeBackend implements TikiBackend {
 
   /** The user's real pending work on Wednesday, October 21, 2026. */
   static sampleSnapshot(): IslandSnapshot {
-    const altamira = { clientName: "Altamira", clientColor: "#2F6BD8" };
-    const andeanvet = { clientName: "Andeanvet", clientColor: "#17837D" };
-    const vapestation = { clientName: "Vapestation", clientColor: "#C2410C" };
+    const altamira = { projectName: "Altamira", projectColor: "#2F6BD8" };
+    const andeanvet = { projectName: "Andeanvet", projectColor: "#17837D" };
+    const vapestation = { projectName: "Vapestation", projectColor: "#C2410C" };
     return {
       mood: "worried",
       moodLabel: "ATRASO",

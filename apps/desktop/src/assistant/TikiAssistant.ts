@@ -44,11 +44,11 @@ export class TikiAssistant {
     return this.ai.availableModels(provider, this.configured[provider]);
   }
 
-  /** Reads a sentence with the chosen model; only the sentence and client names are sent. */
+  /** Reads a sentence with the chosen model; only the sentence and project names are sent. */
   async interpret(sentence: string, preferences: UserPreferences): Promise<InterpretedCapture> {
-    const clientNames = await this.backend.clientNames();
+    const projectNames = await this.backend.projectNames();
     const interpreter = new CaptureInterpreter(this.ai.model(preferences.aiProvider, preferences.aiModel));
-    return interpreter.interpret(sentence, { clientNames, today: new Date() });
+    return interpreter.interpret(sentence, { projectNames, today: new Date() });
   }
 
   /** A short AI brief of the user's open tasks. */

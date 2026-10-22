@@ -1,7 +1,7 @@
-import { PRIORITIES, TASK_STATUSES, type ClientSummary, type TaskDetails, type TaskEdit } from "../backend/contracts";
+import { PRIORITIES, TASK_STATUSES, type ProjectSummary, type TaskDetails, type TaskEdit } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
-import { ClientPicker } from "./ClientPicker";
+import { ProjectPicker } from "./ProjectPicker";
 
 export interface TaskEditHandlers {
   onSave: (taskId: number, edit: TaskEdit) => void;
@@ -10,8 +10,8 @@ export interface TaskEditHandlers {
 
 interface TaskEditFields {
   title: HTMLInputElement;
-  /** The chosen client's name, or `null` for no client. */
-  client: { value: string | null };
+  /** The chosen project's name, or `null` for no project. */
+  project: { value: string | null };
   dueDate: HTMLInputElement;
   remindAt: HTMLInputElement;
   priority: HTMLSelectElement;
@@ -29,10 +29,10 @@ export class TaskEditView {
 
   constructor(private readonly translator: Translator) {}
 
-  render(task: TaskDetails, clients: readonly ClientSummary[], handlers: TaskEditHandlers): HTMLElement {
+  render(task: TaskDetails, projects: readonly ProjectSummary[], handlers: TaskEditHandlers): HTMLElement {
     this.handlers = handlers;
     if (this.shown?.taskId !== task.taskId) {
-      this.shown = { taskId: task.taskId, element: this.build(task, clients) };
+      this.shown = { taskId: task.taskId, element: this.build(task, projects) };
     }
     return this.shown.element;
   }
@@ -42,27 +42,27 @@ export class TaskEditView {
     this.shown = null;
   }
 
-  private build(task: TaskDetails, clients: readonly ClientSummary[]): HTMLElement {
-    const client = { value: task.clientName };
-    const picker = new ClientPicker();
+  private build(task: TaskDetails, projects: readonly ProjectSummary[]): HTMLElement {
+    const project = { value: task.projectName };
+    const picker = new ProjectPicker();
     const drawPicker = () => picker.update({
-      id: "edit-client",
+      id: "edit-project",
       options: [
-        { value: null, label: this.translator.text("edit.no_client"), color: null },
-        ...clients.map((summary) => ({ value: summary.name, label: summary.name, color: summary.color })),
+        { value: null, label: this.translator.text("edit.no_project"), color: null },
+        ...projects.map((summary) => ({ value: summary.name, label: summary.name, color: summary.color })),
       ],
-      selected: client.value,
-      searchPlaceholder: this.translator.text("tasks.search_client"),
-      emptyText: this.translator.text("tasks.no_client_match"),
+      selected: project.value,
+      searchPlaceholder: this.translator.text("tasks.search_project"),
+      emptyText: this.translator.text("tasks.no_project_match"),
       onSelect: (value) => {
-        client.value = value;
+        project.value = value;
         drawPicker();
       },
     });
     drawPicker();
     const fields: TaskEditFields = {
       title: this.input("text", "edit-title", task.title),
-      client,
+      project,
       dueDate: this.input("date", "edit-due", task.dueDate ?? ""),
       // The picker shows minutes; the core sends seconds too.
       remindAt: this.input("datetime-local", "edit-remind", task.remindAt?.slice(0, 16) ?? ""),
@@ -87,7 +87,7 @@ export class TaskEditView {
       className: "edit-form",
       children: [
         this.field("edit.field.title", fields.title, "edit-field-wide"),
-        this.field("capture.field.client", picker.element, "", "div"),
+        this.field("capture.field.project", picker.element, "", "div"),
         this.field("capture.field.due", fields.dueDate),
         this.field("edit.field.remind", fields.remindAt),
         this.field("capture.field.priority", fields.priority),
@@ -117,7 +117,7 @@ export class TaskEditView {
     this.handlers?.onSave(taskId, {
       title: fields.title.value.trim(),
       notes: fields.notes.value.trim(),
-      clientName: fields.client.value,
+      projectName: fields.project.value,
       dueDate: fields.dueDate.value || null,
       remindAt: fields.remindAt.value ? `${fields.remindAt.value}:00` : null,
       priority: fields.priority.value as TaskEdit["priority"],
@@ -145,7 +145,7 @@ export class TaskEditView {
   }
 
   /**
-   * A label and its control. The client picker goes in a plain block instead of a label:
+   * A label and its control. The project picker goes in a plain block instead of a label:
    * a label would forward clicks inside the open list back to the picker's button.
    */
   private field(labelKey: string, control: HTMLElement, extraClass = "", tag: "label" | "div" = "label"): HTMLElement {

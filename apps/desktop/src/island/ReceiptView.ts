@@ -27,7 +27,7 @@ export class ReceiptView {
               ElementFactory.create("div", {
                 className: "receipt-line",
                 children: [
-                  ElementFactory.create("span", { text: item.clientName ? `${item.title} · ${item.clientName}` : item.title }),
+                  ElementFactory.create("span", { text: item.projectName ? `${item.title} · ${item.projectName}` : item.title }),
                   ElementFactory.create("em", { className: `receipt-when-${item.urgency}`, text: item.detailLabel }),
                 ],
               })),

@@ -2,9 +2,9 @@ import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import { TextMatcher } from "../dom/TextMatcher";
 
-/** One choice of the picker: a client, or a special entry such as "All" or "No client". */
-export interface ClientPickerOption {
-  /** The client's name, or `null` for the special entry. */
+/** One choice of the picker: a project, or a special entry such as "All" or "No project". */
+export interface ProjectPickerOption {
+  /** The project's name, or `null` for the special entry. */
   value: string | null;
   label: string;
   color: string | null;
@@ -12,34 +12,34 @@ export interface ClientPickerOption {
   count?: number;
 }
 
-export interface ClientPickerAction {
+export interface ProjectPickerAction {
   label: string;
   onPress: () => void;
 }
 
-export interface ClientPickerConfig {
+export interface ProjectPickerConfig {
   id: string;
-  options: ClientPickerOption[];
+  options: ProjectPickerOption[];
   selected: string | null;
   searchPlaceholder: string;
   emptyText: string;
-  /** Extra entries under the list, such as "New client". */
-  actions?: ClientPickerAction[];
+  /** Extra entries under the list, such as "New project". */
+  actions?: ProjectPickerAction[];
   onSelect: (value: string | null) => void;
 }
 
 /**
- * A button that opens a searchable list of clients. Works the same with three clients or
+ * A button that opens a searchable list of projects. Works the same with three projects or
  * fifty: the list scrolls and the search box narrows it as the user types.
  */
-export class ClientPicker {
+export class ProjectPicker {
   readonly element: HTMLElement;
   private readonly trigger: HTMLButtonElement;
   private readonly popover: HTMLElement;
   private readonly search: HTMLInputElement;
   private readonly list: HTMLElement;
   private readonly footer: HTMLElement;
-  private config: ClientPickerConfig | null = null;
+  private config: ProjectPickerConfig | null = null;
   private readonly closeOnOutsideClick = (event: PointerEvent) => {
     if (!this.element.contains(event.target as Node)) {
       this.close();
@@ -72,7 +72,7 @@ export class ClientPicker {
     this.element = ElementFactory.create("div", { className: "picker", children: [this.trigger, this.popover] });
   }
 
-  update(config: ClientPickerConfig): void {
+  update(config: ProjectPickerConfig): void {
     this.config = config;
     this.trigger.id = config.id;
     this.search.placeholder = config.searchPlaceholder;
@@ -120,8 +120,8 @@ export class ClientPicker {
     );
   }
 
-  /** Special entries always show; clients only when they match the search. */
-  private matchingOptions(config: ClientPickerConfig): ClientPickerOption[] {
+  /** Special entries always show; projects only when they match the search. */
+  private matchingOptions(config: ProjectPickerConfig): ProjectPickerOption[] {
     const query = this.search.value;
     return config.options.filter((option) => option.value === null || TextMatcher.matches(option.label, query));
   }
@@ -146,7 +146,7 @@ export class ClientPicker {
     this.config?.onSelect(value);
   }
 
-  private optionButton(option: ClientPickerOption, selected: boolean): HTMLElement {
+  private optionButton(option: ProjectPickerOption, selected: boolean): HTMLElement {
     const button = ElementFactory.create("button", {
       className: selected ? "picker-option picker-option-on" : "picker-option",
       attributes: { type: "button", role: "option", "aria-selected": String(selected), "data-value": option.value ?? "" },
@@ -159,7 +159,7 @@ export class ClientPicker {
     return button;
   }
 
-  private optionContent(option: ClientPickerOption): HTMLElement[] {
+  private optionContent(option: ProjectPickerOption): HTMLElement[] {
     const dot = ElementFactory.create("span", { className: "picker-dot" });
     dot.style.background = option.color ?? "transparent";
     if (!option.color) {
@@ -174,7 +174,7 @@ export class ClientPicker {
     ];
   }
 
-  private actionButton(action: ClientPickerAction): HTMLElement {
+  private actionButton(action: ProjectPickerAction): HTMLElement {
     const button = ElementFactory.create("button", {
       className: "picker-action",
       text: action.label,

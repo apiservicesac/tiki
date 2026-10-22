@@ -17,7 +17,7 @@ export class HeaderView {
     settings: "settings.title",
     edit: "edit.title",
     ask: "ask.title",
-    clients: "clients.title",
+    projects: "projects.title",
     brief: "receipt.title",
   });
 

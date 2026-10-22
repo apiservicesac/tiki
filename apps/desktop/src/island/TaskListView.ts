@@ -8,7 +8,7 @@ export interface TaskListHandlers {
   onOpenTask: (taskId: number) => void;
 }
 
-/** Draws grouped task lines, each with its client color and a button to deliver it;
+/** Draws grouped task lines, each with its project color and a button to deliver it;
  * clicking a line opens it for editing. */
 export class TaskListView {
   constructor(private readonly translator: Translator) {}
@@ -30,10 +30,10 @@ export class TaskListView {
     });
   }
 
-  /** One open task: client color, title (opens it), when it is due, and a deliver button. */
+  /** One open task: project color, title (opens it), when it is due, and a deliver button. */
   row(item: SnapshotItem, handlers: TaskListHandlers): HTMLElement {
     const colorBar = ElementFactory.create("span", { className: "island-row-bar" });
-    colorBar.style.background = item.clientColor ?? "var(--island-faint)";
+    colorBar.style.background = item.projectColor ?? "var(--island-faint)";
 
     const deliverButton = ElementFactory.iconButton(
       ICONS.check,
@@ -46,7 +46,7 @@ export class TaskListView {
       className: "island-row-text",
       text: item.title,
       attributes: { type: "button", title: this.translator.text("island.row.edit") },
-      children: item.clientName ? [ElementFactory.create("small", { text: item.clientName })] : [],
+      children: item.projectName ? [ElementFactory.create("small", { text: item.projectName })] : [],
     });
     text.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -68,15 +68,15 @@ export class TaskListView {
     });
   }
 
-  /** One delivered task: client color, title (opens it, to reopen it) and when it was delivered. */
+  /** One delivered task: project color, title (opens it, to reopen it) and when it was delivered. */
   deliveredRow(item: DeliveredItem, onOpen: (taskId: number) => void): HTMLElement {
     const colorBar = ElementFactory.create("span", { className: "island-row-bar" });
-    colorBar.style.background = item.clientColor ?? "var(--island-faint)";
+    colorBar.style.background = item.projectColor ?? "var(--island-faint)";
     const text = ElementFactory.create("button", {
       className: "island-row-text",
       text: item.title,
       attributes: { type: "button", title: this.translator.text("island.row.edit") },
-      children: item.clientName ? [ElementFactory.create("small", { text: item.clientName })] : [],
+      children: item.projectName ? [ElementFactory.create("small", { text: item.projectName })] : [],
     });
     text.addEventListener("click", (event) => {
       event.stopPropagation();

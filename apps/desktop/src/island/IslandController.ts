@@ -1,4 +1,3 @@
-import type { InterpretedCapture } from "../ai";
 import { AssistantActions } from "../assistant/AssistantActions";
 import type { AskView } from "../assistant/AskView";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
@@ -33,8 +32,6 @@ export class IslandController {
   private preferences: UserPreferences;
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
-  /** What the assistant understood from the sentence in the box, waiting for a second Enter. */
-  private pendingCapture: { sentence: string; capture: InterpretedCapture } | null = null;
   private readonly assistantActions: AssistantActions;
   private readonly sound = new AlertSound();
   private readonly view: IslandView;
@@ -63,11 +60,11 @@ export class IslandController {
       tab: "today",
       placement: initialPreferences.islandPlacement,
       snapshot: initialSnapshot,
-      clients: [],
-      clientColors: [],
+      projects: [],
+      projectColors: [],
       delivered: [],
       tasksView: "pending",
-      creatingClient: false,
+      creatingProject: false,
       reactionMood: null,
       editing: null,
       dayBrief: null,
@@ -94,7 +91,7 @@ export class IslandController {
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
     window.addEventListener("resize", this.redrawOnResize);
     await this.loadAssistantStatus();
-    this.update({ clientColors: await this.backend.clientColors() });
+    this.update({ projectColors: await this.backend.projectColors() });
     await this.refresh();
   }
 
@@ -111,14 +108,14 @@ export class IslandController {
     window.removeEventListener("resize", this.redrawOnResize);
   }
 
-  /** The day, the clients and the history, fresh from the core. */
+  /** The day, the projects and the history, fresh from the core. */
   async refresh(): Promise<void> {
-    const [snapshot, clients, delivered] = await Promise.all([
+    const [snapshot, projects, delivered] = await Promise.all([
       this.backend.islandSnapshot(),
-      this.backend.clientSummaries(),
+      this.backend.projectSummaries(),
       this.backend.deliveredTasks(),
     ]);
-    this.update({ snapshot, clients, delivered });
+    this.update({ snapshot, projects, delivered });
   }
 
   toggle(): void {
@@ -141,31 +138,30 @@ export class IslandController {
   }
 
   /**
-   * With an AI key, the first Enter shows what the assistant understood and the second one
-   * saves it. Without a key, for `+Name`, or when the assistant fails, the core's own rules
-   * save the sentence directly.
+   * Enter in quick capture. With an AI key, the first Enter fills the fields from the
+   * sentence for the user to review, and the next one saves. Without a key, the sentence is
+   * the title and the user picks the fields, so Enter saves right away.
    */
-  async submitCapture(sentence: string): Promise<void> {
-    const pending = this.pendingCapture;
-    if (pending?.sentence === sentence) {
-      this.pendingCapture = null;
-      await this.backend.saveConfirmedCapture(pending.capture);
-      await this.finishCapture();
+  async submitCapture(): Promise<void> {
+    if (!this.captureView.isInterpreted && this.assistant.isReady(this.preferences)) {
+      const sentence = this.captureView.values().title;
+      this.captureView.showThinking();
+      try {
+        this.captureView.fill(await this.assistant.interpret(sentence, this.preferences));
+      } catch {
+        this.captureView.showAiFailed();
+      }
       return;
     }
-    if (sentence.trim().startsWith("+") || !this.assistant.isReady(this.preferences)) {
-      await this.captureWithRules(sentence);
+    const capture = this.captureView.values();
+    if (capture.title === "") {
       return;
     }
-    this.cancel("preview");
-    this.captureView.showThinking();
-    try {
-      const capture = await this.assistant.interpret(sentence, this.preferences);
-      this.pendingCapture = { sentence, capture };
-      this.captureView.showInterpreted(capture);
-    } catch {
-      await this.captureWithRules(sentence);
-    }
+    await this.backend.saveConfirmedCapture(capture);
+    this.captureView.reset();
+    await this.refresh();
+    this.openPanel("tasks");
+    this.react("happy");
   }
 
   /** Opens a task in the edit panel. */
@@ -201,8 +197,8 @@ export class IslandController {
     this.update({ mode: "expanded", panel: alert ? "brief" : "tasks" });
   }
 
-  /** Creates, changes or removes a client, then shows the result; a taken name is ignored. */
-  private async clientAction(action: () => Promise<unknown>): Promise<void> {
+  /** Creates, changes or removes a project, then shows the result; a taken name is ignored. */
+  private async projectAction(action: () => Promise<unknown>): Promise<void> {
     try {
       await action();
     } catch {
@@ -273,18 +269,6 @@ export class IslandController {
     });
   }
 
-  private async captureWithRules(sentence: string): Promise<void> {
-    await this.backend.capture(sentence);
-    await this.finishCapture();
-  }
-
-  private async finishCapture(): Promise<void> {
-    this.captureView.reset();
-    await this.refresh();
-    this.openPanel("tasks");
-    this.react("happy");
-  }
-
   /**
    * Resting the pointer on the notch opens it in two steps, like dooai: first the compact
    * island with the day's summary, then the whole island. No click needed.
@@ -314,18 +298,6 @@ export class IslandController {
       return;
     }
     this.schedule("fold", UI_CONFIG.foldDelayMs, () => this.update({ mode: "hidden", panel: "tasks" }));
-  }
-
-  private previewCapture(sentence: string): void {
-    this.pendingCapture = null;
-    if (sentence.trim() === "") {
-      this.cancel("preview");
-      this.captureView.showIntent(null);
-      return;
-    }
-    this.schedule("preview", UI_CONFIG.capturePreviewDelayMs, async () => {
-      this.captureView.showIntent(await this.backend.previewCapture(sentence));
-    });
   }
 
   /** Shows a reaction mood for a moment, then goes back to the resting mood. */
@@ -382,10 +354,10 @@ export class IslandController {
       onOpenAlert: () => void this.openAlert(),
       onShowDelivered: () => this.update({ panel: "tasks", tab: "all_tasks", tasksView: "delivered" }),
       onSelectTasksView: (tasksView) => this.update({ tasksView }),
-      onManageClients: (creatingClient) => this.update({ mode: "expanded", panel: "clients", creatingClient }),
-      onCreateClient: (name) => void this.clientAction(() => this.backend.createClient(name)),
-      onChangeClient: (clientId, change) => void this.clientAction(() => this.backend.changeClient(clientId, change)),
-      onRemoveClient: (clientId) => void this.clientAction(() => this.backend.removeClient(clientId)),
+      onManageProjects: (creatingProject) => this.update({ mode: "expanded", panel: "projects", creatingProject }),
+      onCreateProject: (name) => void this.projectAction(() => this.backend.createProject(name)),
+      onChangeProject: (projectId, change) => void this.projectAction(() => this.backend.changeProject(projectId, change)),
+      onRemoveProject: (projectId) => void this.projectAction(() => this.backend.removeProject(projectId)),
       onPointerEnter: () => this.peek(),
       onPointerLeave: () => this.fold(),
       onSelectTab: (tab) => this.selectTab(tab),
@@ -406,12 +378,9 @@ export class IslandController {
         onCancel: () => this.update({ panel: "tasks", editing: null }),
       },
       capture: {
-        onInput: (sentence) => this.previewCapture(sentence),
-        onSubmit: (sentence) => void this.submitCapture(sentence),
-        onCancel: () => {
-          this.pendingCapture = null;
-          this.openPanel("tasks");
-        },
+        onSubmit: () => void this.submitCapture(),
+        onCancel: () => this.openPanel("tasks"),
+        onOpenAiSettings: () => this.openAdvancedSettings("ai"),
       },
     };
   }

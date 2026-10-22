@@ -32,8 +32,8 @@ export type LocaleName = (typeof LOCALE_NAMES)[number];
 export interface SnapshotItem {
   taskId: number;
   title: string;
-  clientName: string | null;
-  clientColor: string | null;
+  projectName: string | null;
+  projectColor: string | null;
   detailLabel: string;
   urgency: Urgency;
 }
@@ -61,28 +61,12 @@ export interface IslandSnapshot {
   narration: string;
 }
 
-export interface CaptureDraft {
-  title: string;
-  clientId: number | null;
-  clientName: string | null;
-  /** ISO date, for example `2026-10-23`. */
-  dueDate: string | null;
-  /** When to remind, for example `2026-10-23T09:00:00`. */
-  remindAt: string | null;
-}
 
-/** What the core understood from a quick-capture sentence. */
-export type CaptureIntent =
-  | ({ kind: "task" } & CaptureDraft)
-  | { kind: "client"; name: string };
-
-export type CaptureOutcome = { kind: "task" | "client"; id: number };
-
-/** The editable fields of a saved task; the client comes by name. */
+/** The editable fields of a saved task; the project comes by name. */
 export interface TaskEdit {
   title: string;
   notes: string;
-  clientName: string | null;
+  projectName: string | null;
   /** ISO date, for example `2026-10-23`. */
   dueDate: string | null;
   priority: Priority;
@@ -105,9 +89,9 @@ export interface TikiAlert {
   taskId: number | null;
 }
 
-/** One client with their workload, busiest first (see `ClientSummary` in the core). */
-export interface ClientSummary {
-  clientId: number;
+/** One project with their workload, busiest first (see `ProjectSummary` in the core). */
+export interface ProjectSummary {
+  projectId: number;
   name: string;
   color: string;
   openCount: number;
@@ -115,7 +99,7 @@ export interface ClientSummary {
   pressingCount: number;
 }
 
-export interface ClientChange {
+export interface ProjectChange {
   name: string;
   color: string;
 }
@@ -124,8 +108,8 @@ export interface ClientChange {
 export interface DeliveredItem {
   taskId: number;
   title: string;
-  clientName: string | null;
-  clientColor: string | null;
+  projectName: string | null;
+  projectColor: string | null;
   /** "hoy", "ayer" or a short date. */
   deliveredLabel: string;
 }
@@ -178,22 +162,20 @@ export const LOCALE_CODES: Readonly<Record<LocaleName, LocaleCode>> = Object.fre
 /** Everything the interface can ask of the core and the desktop shell. */
 export interface TikiBackend {
   islandSnapshot(): Promise<IslandSnapshot>;
-  previewCapture(sentence: string): Promise<CaptureIntent>;
-  capture(sentence: string): Promise<CaptureOutcome>;
   moveTask(taskId: number, status: TaskStatus): Promise<void>;
   preferences(): Promise<UserPreferences>;
   updatePreferences(preferences: UserPreferences): Promise<void>;
   /** Saves a task exactly as the user confirmed it after the assistant read their sentence. */
   saveConfirmedCapture(capture: InterpretedCapture): Promise<void>;
-  clientNames(): Promise<string[]>;
+  projectNames(): Promise<string[]>;
   taskDetails(taskId: number): Promise<TaskDetails>;
-  clientSummaries(): Promise<ClientSummary[]>;
-  /** Creates a client; returns its id. */
-  createClient(name: string): Promise<number>;
-  changeClient(clientId: number, change: ClientChange): Promise<void>;
-  /** Removes a client; their tasks stay, without client. */
-  removeClient(clientId: number): Promise<void>;
-  clientColors(): Promise<string[]>;
+  projectSummaries(): Promise<ProjectSummary[]>;
+  /** Creates a project; returns its id. */
+  createProject(name: string): Promise<number>;
+  changeProject(projectId: number, change: ProjectChange): Promise<void>;
+  /** Removes a project; their tasks stay, without project. */
+  removeProject(projectId: number): Promise<void>;
+  projectColors(): Promise<string[]>;
   /** Delivered tasks, most recent first. */
   deliveredTasks(): Promise<DeliveredItem[]>;
   /** Open tasks without ids or notes: what the assistant may read. */

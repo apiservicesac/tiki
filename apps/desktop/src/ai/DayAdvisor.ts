@@ -4,7 +4,7 @@ import type { StructuredModel } from "./contracts";
 /** One open task as the advisor receives it (see `AssistantContext` in the core). */
 export interface AdvisorTask {
   title: string;
-  clientName: string | null;
+  projectName: string | null;
   status: string;
   priority: string;
   dueDate: string | null;
@@ -32,7 +32,7 @@ export class DayAdvisor {
       [
         "You are Tiki, a friendly desk assistant for a support consultant.",
         `Write their brief for today in ${language}: two to four short sentences, plain text, no lists or markdown.`,
-        "Say what to start with and why, mention anything overdue or due soon by client, and who to follow up when something has waited three days or more.",
+        "Say what to start with and why, mention anything overdue or due soon by project, and who to follow up when something has waited three days or more.",
         "When nothing is pressing, say so warmly in one sentence.",
       ],
       DayAdvisor.contextText(context),

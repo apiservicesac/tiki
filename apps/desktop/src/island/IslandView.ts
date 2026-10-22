@@ -10,7 +10,7 @@ import type { IslandMode, IslandState } from "./islandState";
 import { NotchView } from "./NotchView";
 import { SettingsView, type SettingsHandlers } from "./SettingsView";
 import { TaskEditView, type TaskEditHandlers } from "./TaskEditView";
-import { ClientsPanelView, type ClientsPanelHandlers } from "./ClientsPanelView";
+import { ProjectsPanelView, type ProjectsPanelHandlers } from "./ProjectsPanelView";
 import { ReceiptView } from "./ReceiptView";
 import { TaskListView } from "./TaskListView";
 import { TasksTabView, type TasksTabHandlers } from "./TasksTabView";
@@ -18,7 +18,7 @@ import type { HitArea } from "../backend/contracts";
 import { ContentTransition, type ContentSize } from "./ContentTransition";
 import { FocusKeeper } from "../dom/FocusKeeper";
 
-export interface IslandViewHandlers extends HeaderHandlers, SettingsHandlers, TasksTabHandlers, ClientsPanelHandlers {
+export interface IslandViewHandlers extends HeaderHandlers, SettingsHandlers, TasksTabHandlers, ProjectsPanelHandlers {
   onExpand: () => void;
   /** "Delivered today" at the end of Today: opens Tasks › Delivered. */
   onShowDelivered: () => void;
@@ -43,7 +43,7 @@ export class IslandView {
   private readonly settings: SettingsView;
   private readonly taskEdit: TaskEditView;
   private readonly tasksTab: TasksTabView;
-  private readonly clientsPanel: ClientsPanelView;
+  private readonly projectsPanel: ProjectsPanelView;
   private readonly receipt: ReceiptView;
   /** The views kept between frames are rebuilt when the language changes. */
   private shownLocale = "";
@@ -69,7 +69,7 @@ export class IslandView {
     this.settings = new SettingsView(translator);
     this.taskEdit = new TaskEditView(translator);
     this.tasksTab = new TasksTabView(translator, this.taskList);
-    this.clientsPanel = new ClientsPanelView(translator);
+    this.projectsPanel = new ProjectsPanelView(translator);
     this.receipt = new ReceiptView(translator);
     this.clip = ElementFactory.create("div", { className: "island-clip" });
     this.notch = this.createNotch();
@@ -99,7 +99,7 @@ export class IslandView {
       this.captureView.reset();
       this.taskEdit.reset();
       this.askView.reset();
-      this.clientsPanel.reset();
+      this.projectsPanel.reset();
     }
     if (this.translator.localeCode !== this.shownLocale) {
       this.tasksTab.reset();
@@ -221,17 +221,17 @@ export class IslandView {
   private cardBody(state: IslandState, preferences: UserPreferences, handlers: IslandViewHandlers): HTMLElement {
     switch (state.panel) {
       case "capture":
-        return this.captureView.render(handlers.capture);
+        return this.captureView.render(handlers.capture, state.projects, this.assistantReady);
       case "settings":
         return this.settings.render(preferences, handlers);
       case "ask":
         return this.askView.render(this.assistantReady, handlers.ask);
       case "edit":
         return state.editing
-          ? this.taskEdit.render(state.editing, state.clients, handlers.edit)
+          ? this.taskEdit.render(state.editing, state.projects, handlers.edit)
           : this.tabContent(state, handlers);
-      case "clients":
-        return this.clientsPanel.render(state.clients, state.clientColors, state.creatingClient, handlers);
+      case "projects":
+        return this.projectsPanel.render(state.projects, state.projectColors, state.creatingProject, handlers);
       case "brief":
         return this.receipt.render(state.snapshot, state.alert, state.dayBrief);
       case "tasks":
@@ -269,7 +269,7 @@ export class IslandView {
         return this.todayContent(state, handlers);
       case "all_tasks":
         return this.tasksTab.render(
-          { sections: state.snapshot.sections, delivered: state.delivered, clients: state.clients, view: state.tasksView },
+          { sections: state.snapshot.sections, delivered: state.delivered, projects: state.projects, view: state.tasksView },
           handlers,
         );
       case "tickets":
