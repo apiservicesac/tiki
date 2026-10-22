@@ -6,6 +6,13 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.1-rc.4] - 2026-10-22
+
+### Changed
+- Reminders live in the Agenda: every reminder by day (Today, Tomorrow, then dates), with its
+  time and how often it repeats; calendar meetings will join it in 0.4. The Tasks tab keeps
+  only tasks: Pending and Delivered.
+
 ## [0.3.1-rc.3] - 2026-10-22
 
 ### Fixed
