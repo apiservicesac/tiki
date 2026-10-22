@@ -5,6 +5,8 @@
  */
 export { AiError } from "./AiError";
 export { CaptureInterpreter, type CaptureContext, type InterpretedCapture } from "./CaptureInterpreter";
-export { DayAdvisor, type AdvisorContext, type AdvisorLanguage, type AdvisorTask } from "./DayAdvisor";
+export { DayAdvisor, type AdvisorContext, type AdvisorLanguage, type AdvisorTask, type AskReply } from "./DayAdvisor";
+export type { HarnessLesson } from "./harness/HarnessPieces";
+export { ACTION_TYPES, type ProposedAction } from "./ProposedAction";
 export type { AiModelOption, AiProviderName, ProxiedRequest, ProxiedResponse, StructuredModel } from "./contracts";
 export { TikiAi } from "./TikiAi";
