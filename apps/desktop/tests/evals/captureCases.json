@@ -1,0 +1,18 @@
+{
+  "now": "2026-10-21T17:30:00",
+  "projects": ["Altamira", "Andeanvet", "Vapestation", "Constructora Sur", "Personal"],
+  "cases": [
+    { "sentence": "revisar acceso facturas andeanvet viernes, importante", "expect": { "kind": "task", "projectName": "Andeanvet", "dueDate": "2026-10-23", "priority": "high" } },
+    { "sentence": "avisa a Juan del cambio de precios", "expect": { "kind": "task", "projectName": null, "remindAt": null } },
+    { "sentence": "llamar a las 9 personas del equipo", "expect": { "kind": "task", "remindAt": null } },
+    { "sentence": "revisar informe del lunes con altamira", "expect": { "projectName": "Altamira" } },
+    { "sentence": "reunión con Constructora Sur pasado mañana", "expect": { "projectName": "Constructora Sur", "dueDate": "2026-10-23" } },
+    { "sentence": "enviar acta el 25 de octubre", "expect": { "dueDate": "2026-10-25" } },
+    { "sentence": "revisar la factura en dos días a las 9 de la noche", "expect": { "dueDate": "2026-10-23", "remindAt": "2026-10-23T21:00:00" } },
+    { "sentence": "recuérdame llamar a mamá a las 5", "expect": { "kind": "reminder", "remindAt": "2026-10-22T17:00:00" } },
+    { "sentence": "tomar la pastilla mañana a las 8 am", "expect": { "kind": "reminder", "remindAt": "2026-10-22T08:00:00" } },
+    { "sentence": "urgente: corregir el reporte de retenciones de vapestation hoy #impuestos", "expect": { "projectName": "Vapestation", "dueDate": "2026-10-21", "priority": "urgent", "tags": ["impuestos"] } },
+    { "sentence": "preparar propuesta para constructora sur la próxima semana, sin apuro", "expect": { "projectName": "Constructora Sur", "priority": "low" } },
+    { "sentence": "pay the electricity bill on friday, remind me thursday at 6pm", "expect": { "kind": "task", "dueDate": "2026-10-23", "remindAt": "2026-10-22T18:00:00" } }
+  ]
+}

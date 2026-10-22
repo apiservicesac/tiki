@@ -4,9 +4,10 @@ export HOST_GID := $(shell id -g)
 
 COMPOSE := docker compose run --rm
 
-.PHONY: help images test test-core test-ui lint lint-core lint-ui format ui-install ui-build windows-check windows-installer update-manifest clean
+.PHONY: help images test test-core test-ui lint lint-core lint-ui format ui-install ui-build windows-check windows-installer update-manifest eval-ai clean
 
 help:
+	@echo "make eval-ai            Measure the AI on real sentences with your key"
 	@echo "make update-manifest    Write updates/latest.json after building the installer"
 	@echo "make images             Build the Docker images"
 	@echo "make test               Run every test (Rust core + TypeScript interface)"
@@ -62,6 +63,11 @@ windows-installer:
 update-manifest:
 	@test -n "$(VERSION)" || (echo "Usage: make update-manifest VERSION=0.2.0-rc.1 NOTES='...'" && exit 1)
 	$(COMPOSE) -w /workspace ui node tools/update-manifest.mjs "$(VERSION)" "$(NOTES)"
+
+# Measures the AI on real sentences with your key (costs a few cents). Example:
+#   ANTHROPIC_API_KEY=... make eval-ai      or      TIKI_EVAL_PROVIDER=openai OPENAI_API_KEY=... make eval-ai
+eval-ai:
+	$(COMPOSE) -e TIKI_EVAL_PROVIDER -e TIKI_EVAL_MODEL -e ANTHROPIC_API_KEY -e OPENAI_API_KEY ui npm run eval
 
 clean:
 	rm -rf target apps/desktop/dist
