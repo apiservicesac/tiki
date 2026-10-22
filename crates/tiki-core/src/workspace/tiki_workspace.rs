@@ -1,7 +1,12 @@
-use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, SnapshotPresenter};
+use super::{
+    AssistantContext, Clock, DeliveredItem, IslandSnapshot, SnapshotPresenter, TodaysMeetings,
+};
 use chrono::NaiveDateTime;
 
 use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
+use crate::calendar::{
+    AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting, MeetingItem,
+};
 use crate::capture::{CaptureLesson, ConfirmedCapture};
 use crate::domain::{
     ItemKind, Project, ProjectDirectory, ProjectId, Tags, Task, TaskId, TaskStatus,
@@ -82,11 +87,15 @@ impl TikiWorkspace {
 
     /// What the island shows right now.
     pub fn island_snapshot(&self) -> TikiResult<IslandSnapshot> {
+        let now = self.clock.now();
         let projects = self.project_directory()?;
         let brief = self.brief(&projects)?;
+        let meetings = self.calendar_book().agenda(now)?;
+        let next_meeting = CalendarBook::next_today(&meetings, now);
         let mood = MoodResolver::new(&self.settings).resolve(&MoodSignals {
             brief: &brief,
-            minutes_to_next_meeting: None,
+            minutes_to_next_meeting: next_meeting
+                .map(|meeting| (meeting.starts_at - now).num_minutes()),
             focus_mode: self.preferences.focus_mode,
         });
         let delivered_today = self
@@ -97,6 +106,11 @@ impl TikiWorkspace {
             &brief,
             mood,
             delivered_today,
+            &TodaysMeetings {
+                now,
+                next: next_meeting.cloned(),
+                agenda: meetings.clone(),
+            },
         ))
     }
 
@@ -128,9 +142,75 @@ impl TikiWorkspace {
             log.mark_sent(BriefMoment::Morning, now.date())?;
         }
         let brief = self.brief(&self.project_directory()?)?;
-        Ok(Some(
-            NotificationComposer::new(&self.translator).compose(&brief, moment),
-        ))
+        let composer = NotificationComposer::new(&self.translator);
+        let mut alert = composer.compose(&brief, moment);
+        if moment == BriefMoment::Morning {
+            let meetings = self.calendar_book().agenda(now)?;
+            let today: Vec<&MeetingItem> = meetings
+                .iter()
+                .filter(|meeting| meeting.starts_at.date() == now.date())
+                .collect();
+            if let Some(line) = composer.meetings_line(&today) {
+                alert.body = format!("{}\n{line}", alert.body);
+            }
+        }
+        Ok(Some(alert))
+    }
+
+    /// "Meeting in 15 min" alerts for meetings about to start; each is announced once.
+    /// Nothing is announced while notifications are off or focus mode is on.
+    pub fn take_due_meeting_alerts(&self, now: NaiveDateTime) -> TikiResult<Vec<TikiAlert>> {
+        if !self.preferences.allows_notifications() {
+            return Ok(Vec::new());
+        }
+        let composer = NotificationComposer::new(&self.translator);
+        Ok(self
+            .calendar_book()
+            .take_starting_soon(now)?
+            .iter()
+            .map(|meeting| composer.compose_meeting(meeting, now))
+            .collect())
+    }
+
+    pub fn calendar_accounts(&self) -> TikiResult<Vec<CalendarAccount>> {
+        self.calendar_book().accounts()
+    }
+
+    pub fn calendar_account(&self, account_id: AccountId) -> TikiResult<CalendarAccount> {
+        self.calendar_book().find(account_id)
+    }
+
+    /// Remembers a calendar account the user signed in to.
+    pub fn connect_calendar(
+        &self,
+        provider: CalendarProvider,
+        email: &str,
+    ) -> TikiResult<AccountId> {
+        self.calendar_book().connect(provider, email)
+    }
+
+    /// Forgets an account and its meetings.
+    pub fn disconnect_calendar(&self, account_id: AccountId) -> TikiResult<()> {
+        self.calendar_book().disconnect(account_id)
+    }
+
+    /// The window of days the calendar copy covers, from the start of today.
+    pub fn calendar_window(&self) -> (NaiveDateTime, NaiveDateTime) {
+        let from = self.clock.today().and_time(chrono::NaiveTime::MIN);
+        let to = from
+            .checked_add_days(chrono::Days::new(self.settings.agenda_days))
+            .unwrap_or(from);
+        (from, to)
+    }
+
+    /// Replaces what Tiki knows of an account's meetings in the calendar window.
+    pub fn store_meetings(&self, account_id: AccountId, meetings: &[Meeting]) -> TikiResult<()> {
+        let (from, to) = self.calendar_window();
+        self.calendar_book().store(account_id, from, to, meetings)
+    }
+
+    fn calendar_book(&self) -> CalendarBook<'_> {
+        CalendarBook::new(&self.database, &self.settings)
     }
 
     /// Task reminders whose time has come; each one is cleared so it rings once. Nothing is

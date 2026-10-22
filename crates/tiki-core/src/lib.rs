@@ -5,6 +5,7 @@
 
 pub mod ai;
 pub mod briefing;
+pub mod calendar;
 pub mod capture;
 pub mod domain;
 pub mod editing;

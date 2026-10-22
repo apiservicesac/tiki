@@ -14,5 +14,5 @@ pub use delivered_item::DeliveredItem;
 pub use island_snapshot::{
     FocusSuggestion, IslandSnapshot, SnapshotItem, SnapshotSection, Urgency,
 };
-pub use snapshot_presenter::SnapshotPresenter;
+pub use snapshot_presenter::{SnapshotPresenter, TodaysMeetings};
 pub use tiki_workspace::TikiWorkspace;

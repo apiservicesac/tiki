@@ -276,6 +276,10 @@
     "agenda.today": "Today",
     "agenda.tomorrow": "Tomorrow",
 
+    "notify.meeting.title": "Meeting in {minutes} min",
+    "notify.meetings_today": "Meetings today: {count} · the first at {time}",
+    "focus.free_time": "{minutes} min free before “{meeting}”",
+
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"
   },

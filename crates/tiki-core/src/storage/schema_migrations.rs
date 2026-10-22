@@ -13,6 +13,7 @@ impl SchemaMigrations {
             M::up(Self::CLIENTS_BECOME_PROJECTS),
             M::up(Self::KINDS_TAGS_NOTES_AND_LESSONS),
             M::up(Self::GENERAL_STATUSES_REPEATS_AND_FOLLOW_UPS),
+            M::up(Self::CALENDARS),
         ])
     }
 
@@ -45,6 +46,32 @@ impl SchemaMigrations {
         CREATE UNIQUE INDEX tasks_by_external_record
             ON tasks(origin_plugin, origin_connection, origin_record)
             WHERE origin_plugin IS NOT NULL;
+    ";
+
+    /// Connected calendar accounts and the local copy of their meetings.
+    const CALENDARS: &'static str = "
+        CREATE TABLE calendar_accounts (
+            id       INTEGER PRIMARY KEY,
+            provider TEXT NOT NULL,
+            email    TEXT NOT NULL,
+            UNIQUE (provider, email)
+        );
+
+        CREATE TABLE meetings (
+            id          INTEGER PRIMARY KEY,
+            account_id  INTEGER NOT NULL REFERENCES calendar_accounts(id) ON DELETE CASCADE,
+            external_id TEXT NOT NULL,
+            title       TEXT NOT NULL,
+            starts_at   TEXT NOT NULL,
+            ends_at     TEXT NOT NULL,
+            all_day     INTEGER NOT NULL DEFAULT 0,
+            location    TEXT NOT NULL DEFAULT '',
+            join_url    TEXT,
+            alerted     INTEGER NOT NULL DEFAULT 0,
+            UNIQUE (account_id, external_id)
+        );
+
+        CREATE INDEX meetings_by_start ON meetings(starts_at);
     ";
 
     /// Four general statuses instead of a consultant's five, repeating reminders, and what a

@@ -15,6 +15,8 @@ pub enum AlertKind {
     Reminder,
     /// A waiting item whose follow-up day came.
     FollowUp,
+    /// A meeting starting soon.
+    Meeting,
 }
 
 impl From<BriefMoment> for AlertKind {
@@ -36,4 +38,6 @@ pub struct TikiAlert {
     pub body: String,
     /// The task a task reminder is about.
     pub task_id: Option<TaskId>,
+    /// A link to open from the alert: the meeting's video call.
+    pub link: Option<String>,
 }

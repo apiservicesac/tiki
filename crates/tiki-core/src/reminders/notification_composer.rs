@@ -2,6 +2,7 @@ use chrono::NaiveDate;
 
 use super::{AlertKind, TikiAlert};
 use crate::briefing::{BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, DailyBrief};
+use crate::calendar::MeetingItem;
 use crate::domain::{ItemKind, Task, TaskStatus};
 use crate::i18n::Translator;
 
@@ -60,7 +61,42 @@ impl<'translator> NotificationComposer<'translator> {
                 .text(&format!("notify.{}.title", Self::alert_key(kind))),
             body: lines.join("\n"),
             task_id: task.id,
+            link: None,
         }
+    }
+
+    /// "Meeting in 12 min": its title, its time and where.
+    pub fn compose_meeting(&self, meeting: &MeetingItem, now: chrono::NaiveDateTime) -> TikiAlert {
+        let minutes = (meeting.starts_at - now).num_minutes().max(0);
+        let mut details = vec![format!(
+            "{}–{}",
+            meeting.starts_at.format("%H:%M"),
+            meeting.ends_at.format("%H:%M")
+        )];
+        if !meeting.location.is_empty() {
+            details.push(meeting.location.clone());
+        }
+        TikiAlert {
+            kind: AlertKind::Meeting,
+            title: self
+                .translator
+                .format("notify.meeting.title", &[("minutes", &minutes.to_string())]),
+            body: format!("{}\n{}", meeting.title, details.join(" · ")),
+            task_id: None,
+            link: meeting.join_url.clone(),
+        }
+    }
+
+    /// "Meetings today: 3 · the first at 10:00", for the morning brief.
+    pub fn meetings_line(&self, meetings_today: &[&MeetingItem]) -> Option<String> {
+        let first = meetings_today.iter().find(|meeting| !meeting.all_day)?;
+        Some(self.translator.format(
+            "notify.meetings_today",
+            &[
+                ("count", &meetings_today.len().to_string()),
+                ("time", &first.starts_at.format("%H:%M").to_string()),
+            ],
+        ))
     }
 
     fn alert_key(kind: AlertKind) -> &'static str {
@@ -79,6 +115,7 @@ impl<'translator> NotificationComposer<'translator> {
         TikiAlert {
             kind: AlertKind::from(moment),
             task_id: None,
+            link: None,
             title: self
                 .translator
                 .text(&format!("notify.{}.title", moment.key())),

@@ -1,10 +1,20 @@
+use chrono::NaiveDateTime;
+
 use super::{FocusSuggestion, IslandSnapshot, SnapshotItem, SnapshotSection, Urgency};
 use crate::briefing::{
     BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, BriefNarrator, DailyBrief,
 };
+use crate::calendar::MeetingItem;
 use crate::domain::{Priority, ProjectDirectory, Repeat};
 use crate::i18n::{DateFormatter, Translator};
 use crate::mood::Mood;
+
+/// The calendar side of the snapshot: the Agenda's meetings and the next one today.
+pub struct TodaysMeetings {
+    pub now: NaiveDateTime,
+    pub next: Option<MeetingItem>,
+    pub agenda: Vec<MeetingItem>,
+}
 
 /// Translates a brief and a mood into an `IslandSnapshot`.
 pub struct SnapshotPresenter<'context> {
@@ -25,6 +35,7 @@ impl<'context> SnapshotPresenter<'context> {
         brief: &DailyBrief,
         mood: Mood,
         delivered_today: usize,
+        meetings: &TodaysMeetings,
     ) -> IslandSnapshot {
         let todays_reminders: Vec<BriefItem> = brief
             .reminders
@@ -80,7 +91,8 @@ impl<'context> SnapshotPresenter<'context> {
             ),
             sections,
             open_items,
-            focus: self.focus(brief),
+            focus: self.focus(brief, meetings),
+            meetings: meetings.agenda.clone(),
             narration: BriefNarrator::new(self.translator).narrate(brief, BriefMoment::Morning),
         }
     }
@@ -125,7 +137,20 @@ impl<'context> SnapshotPresenter<'context> {
 
     /// What to do now: the most important overdue item, else what is due today, else urgent
     /// or important work, else what is due soon, else a follow-up to send.
-    fn focus(&self, brief: &DailyBrief) -> Option<FocusSuggestion> {
+    fn focus(&self, brief: &DailyBrief, meetings: &TodaysMeetings) -> Option<FocusSuggestion> {
+        let mut focus = self.focus_item(brief)?;
+        if let Some(next) = &meetings.next {
+            let minutes = (next.starts_at - meetings.now).num_minutes();
+            let free = self.translator.format(
+                "focus.free_time",
+                &[("minutes", &minutes.to_string()), ("meeting", &next.title)],
+            );
+            focus.reason = format!("{} · {free}", focus.reason);
+        }
+        Some(focus)
+    }
+
+    fn focus_item(&self, brief: &DailyBrief) -> Option<FocusSuggestion> {
         let due_today = |item: &&BriefItem| item.detail == BriefDetail::DueIn { days: 0 };
         let important = |item: &&BriefItem| item.priority >= Priority::High;
         let candidates: [(Option<&BriefItem>, &str, Urgency); 5] = [

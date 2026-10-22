@@ -2,6 +2,7 @@ use serde::Serialize;
 
 use chrono::NaiveDateTime;
 
+use crate::calendar::MeetingItem;
 use crate::domain::{Priority, Repeat, TaskId};
 use crate::mood::Mood;
 
@@ -77,6 +78,8 @@ pub struct IslandSnapshot {
     pub open_items: Vec<SnapshotItem>,
     /// What to do now, with why; `None` when nothing presses.
     pub focus: Option<FocusSuggestion>,
+    /// Meetings from today on, for the Agenda.
+    pub meetings: Vec<MeetingItem>,
     /// The brief as Tiki says it out loud.
     pub narration: String,
 }
