@@ -1,14 +1,14 @@
 use rusqlite::Row;
 use rusqlite::types::Type;
 
-use crate::domain::{ClientId, ExternalReference, Priority, Task, TaskId, TaskOrigin, TaskStatus};
+use crate::domain::{ExternalReference, Priority, ProjectId, Task, TaskId, TaskOrigin, TaskStatus};
 
 /// Converts between `tasks` table rows and `Task` values.
 pub struct TaskRowMapper;
 
 impl TaskRowMapper {
     /// Columns in the order `read_row` expects them.
-    pub const COLUMNS: &'static str = "id, title, notes, client_id, status, priority, due_date, \
+    pub const COLUMNS: &'static str = "id, title, notes, project_id, status, priority, due_date, \
         waiting_since, completed_on, remind_at, origin_plugin, origin_connection, origin_record, \
         origin_url";
 
@@ -17,7 +17,7 @@ impl TaskRowMapper {
             id: Some(TaskId(row.get("id")?)),
             title: row.get("title")?,
             notes: row.get("notes")?,
-            client_id: row.get::<_, Option<i64>>("client_id")?.map(ClientId),
+            project_id: row.get::<_, Option<i64>>("project_id")?.map(ProjectId),
             status: Self::read_status(row)?,
             priority: Self::read_priority(row)?,
             due_date: row.get("due_date")?,

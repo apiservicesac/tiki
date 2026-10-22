@@ -31,11 +31,11 @@ pub fn save_confirmed_capture(
     Ok(())
 }
 
-/// Client names only: the context the assistant needs to recognize them in a sentence.
+/// Project names only: the context the assistant needs to recognize them in a sentence.
 #[tauri::command]
-pub fn client_names(state: State<'_, AppState>) -> CommandResult<Vec<String>> {
-    let clients = state.with_workspace(|workspace| workspace.clients())?;
-    Ok(clients.into_iter().map(|client| client.name).collect())
+pub fn project_names(state: State<'_, AppState>) -> CommandResult<Vec<String>> {
+    let projects = state.with_workspace(|workspace| workspace.projects())?;
+    Ok(projects.into_iter().map(|project| project.name).collect())
 }
 
 #[tauri::command]

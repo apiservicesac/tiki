@@ -1,12 +1,12 @@
 use serde::Serialize;
 
-use crate::domain::ClientId;
+use crate::domain::ProjectId;
 
-/// One client as the client lists show it: with how much work is open for them.
+/// One project as the project lists show it: with how much work is open for them.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ClientSummary {
-    pub client_id: ClientId,
+pub struct ProjectSummary {
+    pub project_id: ProjectId,
     pub name: String,
     pub color: String,
     /// Tasks not delivered yet.

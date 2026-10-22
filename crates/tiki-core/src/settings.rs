@@ -24,8 +24,8 @@ pub struct TikiSettings {
     pub daily_focus_task_count: usize,
     /// How many delivered tasks the history shows, most recent first.
     pub delivered_history_limit: usize,
-    /// Colors given to new clients, in turn.
-    pub client_colors: Vec<String>,
+    /// Colors given to new projects, in turn.
+    pub project_colors: Vec<String>,
 }
 
 impl Default for TikiSettings {
@@ -39,8 +39,8 @@ impl Default for TikiSettings {
             meeting_alert_minutes: 15,
             daily_focus_task_count: 3,
             delivered_history_limit: 300,
-            // Sixteen colors that read on dark and light, so even many clients repeat little.
-            client_colors: [
+            // Sixteen colors that read on dark and light, so even many projects repeat little.
+            project_colors: [
                 "#2F6BD8", "#17837D", "#C2410C", "#7357E8", "#B0397A", "#B45309", "#0E7490",
                 "#4D7C0F", "#BE123C", "#6D28D9", "#0369A1", "#A16207", "#15803D", "#9333EA",
                 "#DB2777", "#475569",

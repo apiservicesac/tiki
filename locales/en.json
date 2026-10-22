@@ -43,7 +43,7 @@
     "narration.due_soon": "Due soon: {items}.",
     "narration.your_turn": "Your turn: {items}.",
     "narration.waiting": "Waiting for a reply: {items}.",
-    "narration.item_with_client": "{title} for {client}",
+    "narration.item_with_project": "{title} for {project}",
     "narration.list_separator": ", ",
     "narration.list_last_separator": " and ",
 

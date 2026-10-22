@@ -1,15 +1,15 @@
 mod support;
 
 use support::{SampleWorkspace, TestDay};
-use tiki_core::clients::ClientChange;
-use tiki_core::domain::ClientId;
+use tiki_core::domain::ProjectId;
+use tiki_core::projects::ProjectChange;
 use tiki_core::workspace::{FixedClock, TikiWorkspace};
 use tiki_core::{TikiError, TikiSettings};
 
-/// The sample clients' ids, kept after the database moves into the workspace.
+/// The sample projects' ids, kept after the database moves into the workspace.
 struct SampleIds {
-    andeanvet: ClientId,
-    vapestation: ClientId,
+    andeanvet: ProjectId,
+    vapestation: ProjectId,
 }
 
 fn sample_workspace() -> (TikiWorkspace, SampleIds) {
@@ -35,69 +35,69 @@ fn sample_workspace() -> (TikiWorkspace, SampleIds) {
 }
 
 #[test]
-fn clients_are_listed_busiest_first_with_their_workload() {
+fn projects_are_listed_busiest_first_with_their_workload() {
     let (workspace, ids) = sample_workspace();
-    let summaries = workspace.client_summaries().unwrap();
+    let summaries = workspace.project_summaries().unwrap();
 
     let names: Vec<&str> = summaries
         .iter()
-        .map(|client| client.name.as_str())
+        .map(|project| project.name.as_str())
         .collect();
     assert_eq!(names, ["Altamira", "Andeanvet", "Vapestation"]);
     let andeanvet = summaries
         .iter()
-        .find(|client| client.client_id == ids.andeanvet)
+        .find(|project| project.project_id == ids.andeanvet)
         .unwrap();
     assert_eq!(andeanvet.open_count, 3);
     assert_eq!(andeanvet.pressing_count, 1);
 }
 
 #[test]
-fn a_client_can_be_renamed_and_recolored_but_not_to_a_taken_name() {
+fn a_project_can_be_renamed_and_recolored_but_not_to_a_taken_name() {
     let (workspace, ids) = sample_workspace();
     workspace
-        .change_client(
+        .change_project(
             ids.vapestation,
-            ClientChange {
+            ProjectChange {
                 name: "  Vape Station  ".into(),
                 color: "#0E7490".into(),
             },
         )
         .unwrap();
     let renamed = workspace
-        .client_summaries()
+        .project_summaries()
         .unwrap()
         .into_iter()
-        .find(|client| client.client_id == ids.vapestation)
+        .find(|project| project.project_id == ids.vapestation)
         .unwrap();
     assert_eq!(renamed.name, "Vape Station");
     assert_eq!(renamed.color, "#0E7490");
 
-    let taken = workspace.change_client(
+    let taken = workspace.change_project(
         ids.vapestation,
-        ClientChange {
+        ProjectChange {
             name: "altamira".into(),
             color: "#0E7490".into(),
         },
     );
-    assert!(matches!(taken, Err(TikiError::DuplicateClientName(_))));
+    assert!(matches!(taken, Err(TikiError::DuplicateProjectName(_))));
     assert!(matches!(
-        workspace.add_client("ALTAMIRA"),
-        Err(TikiError::DuplicateClientName(_))
+        workspace.add_project("ALTAMIRA"),
+        Err(TikiError::DuplicateProjectName(_))
     ));
 }
 
 #[test]
-fn removing_a_client_keeps_its_tasks_without_client() {
+fn removing_a_project_keeps_its_tasks_without_project() {
     let (workspace, ids) = sample_workspace();
-    workspace.remove_client(ids.andeanvet).unwrap();
+    workspace.remove_project(ids.andeanvet).unwrap();
 
     assert!(
         workspace
-            .client_summaries()
+            .project_summaries()
             .unwrap()
             .iter()
-            .all(|client| client.client_id != ids.andeanvet)
+            .all(|project| project.project_id != ids.andeanvet)
     );
     let snapshot = workspace.island_snapshot().unwrap();
     let all_items: Vec<_> = snapshot
@@ -109,6 +109,6 @@ fn removing_a_client_keeps_its_tasks_without_client() {
     assert!(
         all_items
             .iter()
-            .all(|item| item.client_name.as_deref() != Some("Andeanvet"))
+            .all(|item| item.project_name.as_deref() != Some("Andeanvet"))
     );
 }

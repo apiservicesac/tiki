@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 
 use super::{BriefDetail, BriefItem, DailyBrief};
-use crate::domain::{ClientDirectory, Task, TaskId, TaskStatus};
+use crate::domain::{ProjectDirectory, Task, TaskId, TaskStatus};
 use crate::settings::TikiSettings;
 
 /// Sorts open tasks into the sections of the daily brief.
@@ -14,11 +14,16 @@ impl<'settings> DailyBriefBuilder<'settings> {
         Self { settings }
     }
 
-    pub fn build(&self, tasks: &[Task], clients: &ClientDirectory, today: NaiveDate) -> DailyBrief {
+    pub fn build(
+        &self,
+        tasks: &[Task],
+        projects: &ProjectDirectory,
+        today: NaiveDate,
+    ) -> DailyBrief {
         let mut brief = DailyBrief::empty(today);
         for task in tasks.iter().filter(|task| task.status.is_open()) {
             if let Some(task_id) = task.id {
-                self.place(&mut brief, task, task_id, clients);
+                self.place(&mut brief, task, task_id, projects);
             }
         }
         brief
@@ -31,10 +36,10 @@ impl<'settings> DailyBriefBuilder<'settings> {
         brief: &mut DailyBrief,
         task: &Task,
         task_id: TaskId,
-        clients: &ClientDirectory,
+        projects: &ProjectDirectory,
     ) {
         let today = brief.date;
-        let line = |detail| Self::line(task, task_id, clients, detail);
+        let line = |detail| Self::line(task, task_id, projects, detail);
 
         if let Some(days) = task.days_waiting(today) {
             let waiting_line = line(BriefDetail::Waiting { days });
@@ -60,13 +65,13 @@ impl<'settings> DailyBriefBuilder<'settings> {
     fn line(
         task: &Task,
         task_id: TaskId,
-        clients: &ClientDirectory,
+        projects: &ProjectDirectory,
         detail: BriefDetail,
     ) -> BriefItem {
         BriefItem {
             task_id,
             title: task.title.clone(),
-            client_name: clients.name_of(task.client_id).map(str::to_owned),
+            project_name: projects.name_of(task.project_id).map(str::to_owned),
             detail,
         }
     }

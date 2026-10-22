@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[serde(transparent)]
 pub struct TaskId(pub i64);
 
-/// Database identifier of a client.
+/// Database identifier of a project.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct ClientId(pub i64);
+pub struct ProjectId(pub i64);

@@ -5,7 +5,7 @@
 #![allow(dead_code)]
 
 use chrono::NaiveDate;
-use tiki_core::domain::{Client, ClientDirectory, ClientId, Task, TaskStatus};
+use tiki_core::domain::{Project, ProjectDirectory, ProjectId, Task, TaskStatus};
 use tiki_core::storage::Database;
 
 pub struct TestDay;
@@ -21,26 +21,26 @@ impl TestDay {
     }
 }
 
-/// A database filled with the clients and tasks from the user's list.
+/// A database filled with the projects and tasks from the user's list.
 pub struct SampleWorkspace {
     pub database: Database,
-    pub altamira: ClientId,
-    pub andeanvet: ClientId,
-    pub vapestation: ClientId,
+    pub altamira: ProjectId,
+    pub andeanvet: ProjectId,
+    pub vapestation: ProjectId,
 }
 
 impl SampleWorkspace {
     pub fn create() -> Self {
         let database = Database::open_in_memory().expect("in-memory database");
-        let clients = database.clients();
-        let altamira = clients
-            .insert(&Client::new("Altamira", "#2F6BD8"))
+        let projects = database.projects();
+        let altamira = projects
+            .insert(&Project::new("Altamira", "#2F6BD8"))
             .expect("insert");
-        let andeanvet = clients
-            .insert(&Client::new("Andeanvet", "#17837D"))
+        let andeanvet = projects
+            .insert(&Project::new("Andeanvet", "#17837D"))
             .expect("insert");
-        let vapestation = clients
-            .insert(&Client::new("Vapestation", "#C2410C"))
+        let vapestation = projects
+            .insert(&Project::new("Vapestation", "#C2410C"))
             .expect("insert");
 
         let workspace = Self {
@@ -53,8 +53,8 @@ impl SampleWorkspace {
         workspace
     }
 
-    pub fn directory(&self) -> ClientDirectory {
-        ClientDirectory::new(self.database.clients().list().expect("list clients"))
+    pub fn directory(&self) -> ProjectDirectory {
+        ProjectDirectory::new(self.database.projects().list().expect("list projects"))
     }
 
     fn insert_sample_tasks(&self) {
@@ -62,34 +62,34 @@ impl SampleWorkspace {
         let tasks = vec![
             Task::new("Tracking de formularios comerciales")
                 .unwrap()
-                .with_client(self.altamira)
+                .with_project(self.altamira)
                 .with_due_date(TestDay::october(22)),
             Task::new("Mejora en el módulo de Ventas")
                 .unwrap()
-                .with_client(self.altamira)
+                .with_project(self.altamira)
                 .with_due_date(TestDay::october(23)),
             Task::new("Acceso solo a análisis de facturas de Almendra")
                 .unwrap()
-                .with_client(self.andeanvet)
+                .with_project(self.andeanvet)
                 .with_due_date(TestDay::october(20)),
             Self::moved(
                 Task::new("Saldo vacacional con solicitud rechazada")
                     .unwrap()
-                    .with_client(self.andeanvet),
+                    .with_project(self.andeanvet),
                 TaskStatus::Testing,
                 today,
             ),
             Self::moved(
                 Task::new("Permisos de GitHub para retenciones de IGV")
                     .unwrap()
-                    .with_client(self.vapestation),
+                    .with_project(self.vapestation),
                 TaskStatus::WaitingOnOthers,
                 TestDay::october(18),
             ),
             Self::moved(
                 Task::new("Confirmación de zonas del dashboard CxC")
                     .unwrap()
-                    .with_client(self.andeanvet),
+                    .with_project(self.andeanvet),
                 TaskStatus::WaitingOnOthers,
                 TestDay::october(20),
             ),

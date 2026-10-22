@@ -16,15 +16,15 @@ impl<'translator> NotificationComposer<'translator> {
         Self { translator }
     }
 
-    /// The reminder of one task: its title, its client and when it is due.
+    /// The reminder of one task: its title, its project and when it is due.
     pub fn compose_task(
         &self,
         task: &Task,
-        client_name: Option<&str>,
+        project_name: Option<&str>,
         today: NaiveDate,
     ) -> TikiAlert {
         let mut lines = vec![task.title.clone()];
-        let mut context: Vec<String> = client_name.map(str::to_owned).into_iter().collect();
+        let mut context: Vec<String> = project_name.map(str::to_owned).into_iter().collect();
         if let Some(days) = task.days_until_due(today) {
             let detail = if days < 0 {
                 BriefDetail::Overdue { days: -days }
@@ -112,10 +112,10 @@ impl<'translator> NotificationComposer<'translator> {
     }
 
     fn item(&self, item: &BriefItem) -> String {
-        match &item.client_name {
-            Some(client) => self.translator.format(
-                "narration.item_with_client",
-                &[("title", &item.title), ("client", client)],
+        match &item.project_name {
+            Some(project) => self.translator.format(
+                "narration.item_with_project",
+                &[("title", &item.title), ("project", project)],
             ),
             None => item.title.clone(),
         }

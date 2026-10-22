@@ -1,4 +1,4 @@
-//! The entry point clients use: one object that answers "what does the island show now?"
+//! The entry point projects use: one object that answers "what does the island show now?"
 //! and applies the user's actions, so every platform shares the same behavior.
 
 mod assistant_context;

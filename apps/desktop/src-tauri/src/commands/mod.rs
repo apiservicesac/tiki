@@ -7,9 +7,9 @@
 #![allow(clippy::needless_pass_by_value)]
 
 pub mod ai_commands;
-pub mod client_commands;
 mod command_error;
 pub mod island_commands;
+pub mod project_commands;
 pub mod settings_commands;
 pub mod system_commands;
 pub mod window_commands;

@@ -1,7 +1,7 @@
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 
-use super::{ClientId, Priority, TaskId, TaskOrigin, TaskStatus};
+use super::{Priority, ProjectId, TaskId, TaskOrigin, TaskStatus};
 use crate::error::{TikiError, TikiResult};
 
 /// A piece of work the user has to finish or follow up.
@@ -10,7 +10,7 @@ pub struct Task {
     pub id: Option<TaskId>,
     pub title: String,
     pub notes: String,
-    pub client_id: Option<ClientId>,
+    pub project_id: Option<ProjectId>,
     pub status: TaskStatus,
     pub priority: Priority,
     pub due_date: Option<NaiveDate>,
@@ -34,7 +34,7 @@ impl Task {
             id: None,
             title,
             notes: String::new(),
-            client_id: None,
+            project_id: None,
             status: TaskStatus::ToDo,
             priority: Priority::default(),
             due_date: None,
@@ -46,8 +46,8 @@ impl Task {
     }
 
     #[must_use]
-    pub fn with_client(mut self, client_id: ClientId) -> Self {
-        self.client_id = Some(client_id);
+    pub fn with_project(mut self, project_id: ProjectId) -> Self {
+        self.project_id = Some(project_id);
         self
     }
 

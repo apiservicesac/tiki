@@ -17,14 +17,14 @@ impl<'connection> TaskRepository<'connection> {
     pub fn insert(&self, task: &Task) -> TikiResult<TaskId> {
         let (plugin, connection_id, record, url) = TaskRowMapper::origin_columns(&task.origin);
         self.connection.execute(
-            "INSERT INTO tasks (title, notes, client_id, status, priority, due_date, waiting_since,
+            "INSERT INTO tasks (title, notes, project_id, status, priority, due_date, waiting_since,
                                 completed_on, remind_at,
                                 origin_plugin, origin_connection, origin_record, origin_url)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 task.title,
                 task.notes,
-                task.client_id.map(|client| client.0),
+                task.project_id.map(|project| project.0),
                 task.status.key(),
                 task.priority.key(),
                 task.due_date,
@@ -44,7 +44,7 @@ impl<'connection> TaskRepository<'connection> {
         let task_id = task.id.ok_or(TikiError::UnsavedTask)?;
         let changed_rows = self.connection.execute(
             "UPDATE tasks
-                SET title = ?2, notes = ?3, client_id = ?4, status = ?5, priority = ?6,
+                SET title = ?2, notes = ?3, project_id = ?4, status = ?5, priority = ?6,
                     due_date = ?7, waiting_since = ?8, completed_on = ?9, remind_at = ?10,
                     updated_at = CURRENT_TIMESTAMP
               WHERE id = ?1",
@@ -52,7 +52,7 @@ impl<'connection> TaskRepository<'connection> {
                 task_id.0,
                 task.title,
                 task.notes,
-                task.client_id.map(|client| client.0),
+                task.project_id.map(|project| project.0),
                 task.status.key(),
                 task.priority.key(),
                 task.due_date,

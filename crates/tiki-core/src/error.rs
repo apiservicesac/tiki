@@ -24,11 +24,11 @@ pub enum TikiError {
     #[error("the task has not been saved yet")]
     UnsavedTask,
 
-    #[error("a client needs a name")]
-    EmptyClientName,
+    #[error("a project needs a name")]
+    EmptyProjectName,
 
-    #[error("a client named {0} already exists")]
-    DuplicateClientName(String),
+    #[error("a project named {0} already exists")]
+    DuplicateProjectName(String),
 
     #[error("a task needs a title")]
     EmptyTaskTitle,

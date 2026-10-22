@@ -19,8 +19,8 @@ pub enum Urgency {
 pub struct SnapshotItem {
     pub task_id: TaskId,
     pub title: String,
-    pub client_name: Option<String>,
-    pub client_color: Option<String>,
+    pub project_name: Option<String>,
+    pub project_color: Option<String>,
     pub detail_label: String,
     pub urgency: Urgency,
 }

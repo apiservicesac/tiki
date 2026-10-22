@@ -3,7 +3,7 @@ mod support;
 use support::{SampleWorkspace, TestDay};
 use tiki_core::TikiSettings;
 use tiki_core::briefing::{DailyBrief, DailyBriefBuilder};
-use tiki_core::domain::ClientDirectory;
+use tiki_core::domain::ProjectDirectory;
 use tiki_core::mood::{Mood, MoodResolver, MoodSignals};
 
 fn resolve(brief: &DailyBrief, minutes_to_next_meeting: Option<i64>, focus_mode: bool) -> Mood {
@@ -24,7 +24,7 @@ fn sample_brief() -> DailyBrief {
 
 fn empty_brief() -> DailyBrief {
     let settings = TikiSettings::default();
-    DailyBriefBuilder::new(&settings).build(&[], &ClientDirectory::default(), TestDay::today())
+    DailyBriefBuilder::new(&settings).build(&[], &ProjectDirectory::default(), TestDay::today())
 }
 
 #[test]

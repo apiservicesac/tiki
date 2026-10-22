@@ -10,7 +10,7 @@ fn tasks_survive_a_round_trip() {
     let workspace = SampleWorkspace::create();
     let original = Task::new("Revisar acta CAPEX")
         .unwrap()
-        .with_client(workspace.altamira)
+        .with_project(workspace.altamira)
         .with_due_date(TestDay::october(23))
         .with_notes("Ajustar generación del acta")
         .with_origin(TaskOrigin::External(ExternalReference {
@@ -26,7 +26,7 @@ fn tasks_survive_a_round_trip() {
     assert_eq!(stored.id, Some(task_id));
     assert_eq!(stored.title, original.title);
     assert_eq!(stored.notes, original.notes);
-    assert_eq!(stored.client_id, original.client_id);
+    assert_eq!(stored.project_id, original.project_id);
     assert_eq!(stored.due_date, original.due_date);
     assert_eq!(stored.origin, original.origin);
 }
@@ -73,15 +73,15 @@ fn finding_a_missing_task_reports_not_found() {
 }
 
 #[test]
-fn clients_are_found_by_name_ignoring_case() {
+fn projects_are_found_by_name_ignoring_case() {
     let workspace = SampleWorkspace::create();
-    let client = workspace
+    let project = workspace
         .database
-        .clients()
+        .projects()
         .find_by_name("andeanvet")
         .unwrap();
     assert_eq!(
-        client.and_then(|client| client.id),
+        project.and_then(|project| project.id),
         Some(workspace.andeanvet)
     );
 }

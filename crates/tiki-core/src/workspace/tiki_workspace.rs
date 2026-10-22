@@ -3,18 +3,18 @@ use chrono::NaiveDateTime;
 
 use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
 use crate::capture::ConfirmedCapture;
-use crate::clients::{ClientBook, ClientChange, ClientSummary};
-use crate::domain::{Client, ClientDirectory, ClientId, Task, TaskId, TaskStatus};
+use crate::domain::{Project, ProjectDirectory, ProjectId, Task, TaskId, TaskStatus};
 use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
 use crate::mood::{MoodResolver, MoodSignals};
 use crate::preferences::UserPreferences;
+use crate::projects::{ProjectBook, ProjectChange, ProjectSummary};
 use crate::reminders::{NotificationComposer, ReminderPlanner, TikiAlert};
 use crate::settings::TikiSettings;
 use crate::storage::Database;
 
-/// Owns the user's data and settings and exposes the actions every client needs.
+/// Owns the user's data and settings and exposes the actions every project needs.
 pub struct TikiWorkspace {
     database: Database,
     settings: TikiSettings,
@@ -80,8 +80,8 @@ impl TikiWorkspace {
 
     /// What the island shows right now.
     pub fn island_snapshot(&self) -> TikiResult<IslandSnapshot> {
-        let clients = self.client_directory()?;
-        let brief = self.brief(&clients)?;
+        let projects = self.project_directory()?;
+        let brief = self.brief(&projects)?;
         let mood = MoodResolver::new(&self.settings).resolve(&MoodSignals {
             brief: &brief,
             minutes_to_next_meeting: None,
@@ -91,7 +91,7 @@ impl TikiWorkspace {
             .database
             .tasks()
             .count_delivered_on(self.clock.today())?;
-        Ok(SnapshotPresenter::new(&self.translator, &clients).present(
+        Ok(SnapshotPresenter::new(&self.translator, &projects).present(
             &brief,
             mood,
             delivered_today,
@@ -103,7 +103,7 @@ impl TikiWorkspace {
         let tasks = self.database.tasks().list_open()?;
         Ok(AssistantContext::build(
             &tasks,
-            &self.client_directory()?,
+            &self.project_directory()?,
             self.clock.today(),
         ))
     }
@@ -125,7 +125,7 @@ impl TikiWorkspace {
             // A late start skips the morning brief instead of sending both at once.
             log.mark_sent(BriefMoment::Morning, now.date())?;
         }
-        let brief = self.brief(&self.client_directory()?)?;
+        let brief = self.brief(&self.project_directory()?)?;
         Ok(Some(
             NotificationComposer::new(&self.translator).compose(&brief, moment),
         ))
@@ -137,23 +137,23 @@ impl TikiWorkspace {
         if !self.preferences.allows_notifications() {
             return Ok(Vec::new());
         }
-        let clients = self.client_directory()?;
+        let projects = self.project_directory()?;
         let composer = NotificationComposer::new(&self.translator);
         let today = now.date();
         let mut alerts = Vec::new();
         for mut task in self.database.tasks().list_reminders_due(now)? {
-            alerts.push(composer.compose_task(&task, clients.name_of(task.client_id), today));
+            alerts.push(composer.compose_task(&task, projects.name_of(task.project_id), today));
             task.remind_at = None;
             self.database.tasks().update(&task)?;
         }
         Ok(alerts)
     }
 
-    /// Saves a task exactly as the user confirmed it; an unknown client name is left out.
+    /// Saves a task exactly as the user confirmed it; an unknown project name is left out.
     pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
         let mut task = Task::new(capture.title)?.with_priority(capture.priority);
         task.due_date = capture.due_date;
-        task.client_id = self.client_id_by_name(capture.client_name.as_deref())?;
+        task.project_id = self.project_id_by_name(capture.project_name.as_deref())?;
         task.remind_at = capture.remind_at;
         self.database.tasks().insert(&task)
     }
@@ -161,14 +161,14 @@ impl TikiWorkspace {
     /// A saved task as the edit form shows it.
     pub fn task_details(&self, task_id: TaskId) -> TikiResult<TaskDetails> {
         let task = self.database.tasks().find(task_id)?;
-        TaskDetails::from_task(&task, &self.client_directory()?)
+        TaskDetails::from_task(&task, &self.project_directory()?)
     }
 
-    /// Saves the user's changes to a task; an unknown client name leaves it without client.
+    /// Saves the user's changes to a task; an unknown project name leaves it without project.
     pub fn edit_task(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
-        let client_id = self.client_id_by_name(edit.client_name.as_deref())?;
-        edit.apply_to(&mut task, client_id, self.clock.today())?;
+        let project_id = self.project_id_by_name(edit.project_name.as_deref())?;
+        edit.apply_to(&mut task, project_id, self.clock.today())?;
         self.database.tasks().update(&task)
     }
 
@@ -178,16 +178,16 @@ impl TikiWorkspace {
             .database
             .tasks()
             .list_delivered(self.settings.delivered_history_limit)?;
-        let clients = self.client_directory()?;
+        let projects = self.project_directory()?;
         let today = self.clock.today();
         Ok(tasks
             .iter()
-            .filter_map(|task| DeliveredItem::present(task, &clients, &self.translator, today))
+            .filter_map(|task| DeliveredItem::present(task, &projects, &self.translator, today))
             .collect())
     }
 
-    pub fn clients(&self) -> TikiResult<Vec<Client>> {
-        self.database.clients().list()
+    pub fn projects(&self) -> TikiResult<Vec<Project>> {
+        self.database.projects().list()
     }
 
     pub fn move_task(&self, task_id: TaskId, status: TaskStatus) -> TikiResult<()> {
@@ -196,45 +196,45 @@ impl TikiWorkspace {
         self.database.tasks().update(&task)
     }
 
-    /// Saves a client with the next color of the palette.
-    pub fn add_client(&self, name: &str) -> TikiResult<ClientId> {
-        self.client_book().create(name)
+    /// Saves a project with the next color of the palette.
+    pub fn add_project(&self, name: &str) -> TikiResult<ProjectId> {
+        self.project_book().create(name)
     }
 
-    /// Every client with their open and pressing work, busiest first.
-    pub fn client_summaries(&self) -> TikiResult<Vec<ClientSummary>> {
+    /// Every project with their open and pressing work, busiest first.
+    pub fn project_summaries(&self) -> TikiResult<Vec<ProjectSummary>> {
         let open_tasks = self.database.tasks().list_open()?;
-        self.client_book()
+        self.project_book()
             .summaries(&open_tasks, self.clock.today())
     }
 
-    pub fn change_client(&self, client_id: ClientId, change: ClientChange) -> TikiResult<()> {
-        self.client_book().change(client_id, change)
+    pub fn change_project(&self, project_id: ProjectId, change: ProjectChange) -> TikiResult<()> {
+        self.project_book().change(project_id, change)
     }
 
-    /// Removes a client; their tasks stay, without client.
-    pub fn remove_client(&self, client_id: ClientId) -> TikiResult<()> {
-        self.client_book().remove(client_id)
+    /// Removes a project; their tasks stay, without project.
+    pub fn remove_project(&self, project_id: ProjectId) -> TikiResult<()> {
+        self.project_book().remove(project_id)
     }
 
-    /// The colors new clients get, offered when changing one.
-    pub fn client_colors(&self) -> &[String] {
-        &self.settings.client_colors
+    /// The colors new projects get, offered when changing one.
+    pub fn project_colors(&self) -> &[String] {
+        &self.settings.project_colors
     }
 
-    fn client_book(&self) -> ClientBook<'_> {
-        ClientBook::new(&self.database, &self.settings)
+    fn project_book(&self) -> ProjectBook<'_> {
+        ProjectBook::new(&self.database, &self.settings)
     }
 
-    fn client_id_by_name(&self, name: Option<&str>) -> TikiResult<Option<ClientId>> {
+    fn project_id_by_name(&self, name: Option<&str>) -> TikiResult<Option<ProjectId>> {
         let Some(name) = name.map(str::trim).filter(|name| !name.is_empty()) else {
             return Ok(None);
         };
         Ok(self
             .database
-            .clients()
+            .projects()
             .find_by_name(name)?
-            .and_then(|client| client.id))
+            .and_then(|project| project.id))
     }
 
     fn reschedule_moved_briefs(&self, preferences: &UserPreferences) -> TikiResult<()> {
@@ -259,12 +259,12 @@ impl TikiWorkspace {
         Ok(())
     }
 
-    fn brief(&self, clients: &ClientDirectory) -> TikiResult<DailyBrief> {
+    fn brief(&self, projects: &ProjectDirectory) -> TikiResult<DailyBrief> {
         let tasks = self.database.tasks().list_open()?;
-        Ok(DailyBriefBuilder::new(&self.settings).build(&tasks, clients, self.clock.today()))
+        Ok(DailyBriefBuilder::new(&self.settings).build(&tasks, projects, self.clock.today()))
     }
 
-    fn client_directory(&self) -> TikiResult<ClientDirectory> {
-        Ok(ClientDirectory::new(self.database.clients().list()?))
+    fn project_directory(&self) -> TikiResult<ProjectDirectory> {
+        Ok(ProjectDirectory::new(self.database.projects().list()?))
     }
 }

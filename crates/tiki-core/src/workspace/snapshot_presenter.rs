@@ -1,20 +1,20 @@
 use super::{IslandSnapshot, SnapshotItem, SnapshotSection, Urgency};
 use crate::briefing::{BriefDetailFormatter, BriefItem, BriefMoment, BriefNarrator, DailyBrief};
-use crate::domain::ClientDirectory;
+use crate::domain::ProjectDirectory;
 use crate::i18n::{DateFormatter, Translator};
 use crate::mood::Mood;
 
 /// Translates a brief and a mood into an `IslandSnapshot`.
 pub struct SnapshotPresenter<'context> {
     translator: &'context Translator,
-    clients: &'context ClientDirectory,
+    projects: &'context ProjectDirectory,
 }
 
 impl<'context> SnapshotPresenter<'context> {
-    pub fn new(translator: &'context Translator, clients: &'context ClientDirectory) -> Self {
+    pub fn new(translator: &'context Translator, projects: &'context ProjectDirectory) -> Self {
         Self {
             translator,
-            clients,
+            projects,
         }
     }
 
@@ -80,8 +80,8 @@ impl<'context> SnapshotPresenter<'context> {
                 .map(|item| SnapshotItem {
                     task_id: item.task_id,
                     title: item.title.clone(),
-                    client_name: item.client_name.clone(),
-                    client_color: self.client_color(item),
+                    project_name: item.project_name.clone(),
+                    project_color: self.project_color(item),
                     detail_label: detail_formatter.label(item.detail, brief.date),
                     urgency,
                 })
@@ -89,11 +89,11 @@ impl<'context> SnapshotPresenter<'context> {
         }
     }
 
-    fn client_color(&self, item: &BriefItem) -> Option<String> {
-        let name = item.client_name.as_deref()?;
-        self.clients
-            .clients()
-            .find(|client| client.name == name)
-            .map(|client| client.color.clone())
+    fn project_color(&self, item: &BriefItem) -> Option<String> {
+        let name = item.project_name.as_deref()?;
+        self.projects
+            .projects()
+            .find(|project| project.name == name)
+            .map(|project| project.color.clone())
     }
 }

@@ -1,4 +1,4 @@
-//! Rules shared by every client that talks to an AI provider.
+//! Rules shared by every project that talks to an AI provider.
 
 mod ai_provider;
 

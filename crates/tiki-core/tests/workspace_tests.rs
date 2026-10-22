@@ -47,7 +47,7 @@ fn the_snapshot_is_translated_and_ready_to_draw() {
     let due_soon = &snapshot.sections[1];
     assert_eq!(due_soon.title, "Vence pronto");
     assert_eq!(due_soon.items[0].detail_label, "mañana");
-    assert_eq!(due_soon.items[0].client_color.as_deref(), Some("#2F6BD8"));
+    assert_eq!(due_soon.items[0].project_color.as_deref(), Some("#2F6BD8"));
     assert_eq!(due_soon.items[0].urgency, Urgency::Soon);
 }
 
@@ -104,12 +104,12 @@ fn preferences_are_saved_and_applied() {
 }
 
 #[test]
-fn a_confirmed_capture_is_saved_with_its_client_priority_and_date() {
+fn a_confirmed_capture_is_saved_with_its_project_priority_and_date() {
     let workspace = sample_workspace();
     workspace
         .save_confirmed(ConfirmedCapture {
             title: "Revisar acceso de Almendra".into(),
-            client_name: Some("andeanvet".into()),
+            project_name: Some("andeanvet".into()),
             due_date: Some(TestDay::october(22)),
             priority: Priority::High,
             remind_at: None,
@@ -122,15 +122,15 @@ fn a_confirmed_capture_is_saved_with_its_client_priority_and_date() {
         .iter()
         .find(|item| item.title == "Revisar acceso de Almendra")
         .unwrap();
-    assert_eq!(saved.client_name.as_deref(), Some("Andeanvet"));
+    assert_eq!(saved.project_name.as_deref(), Some("Andeanvet"));
 }
 
 #[test]
-fn an_unknown_client_name_is_left_out_instead_of_failing() {
+fn an_unknown_project_name_is_left_out_instead_of_failing() {
     let workspace = sample_workspace();
     let saved = workspace.save_confirmed(ConfirmedCapture {
         title: "Llamar".into(),
-        client_name: Some("Cliente que no existe".into()),
+        project_name: Some("Proyecto que no existe".into()),
         due_date: None,
         priority: Priority::Normal,
         remind_at: None,

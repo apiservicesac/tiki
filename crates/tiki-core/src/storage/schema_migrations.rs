@@ -10,6 +10,7 @@ impl SchemaMigrations {
             M::up(Self::PREFERENCES),
             M::up(Self::REMINDER_LOG),
             M::up(Self::DELIVERY_AND_TASK_REMINDERS),
+            M::up(Self::CLIENTS_BECOME_PROJECTS),
         ])
     }
 
@@ -42,6 +43,12 @@ impl SchemaMigrations {
         CREATE UNIQUE INDEX tasks_by_external_record
             ON tasks(origin_plugin, origin_connection, origin_record)
             WHERE origin_plugin IS NOT NULL;
+    ";
+
+    /// Tiki groups work by project (a client, a product, a team or personal), not by client.
+    const CLIENTS_BECOME_PROJECTS: &'static str = "
+        ALTER TABLE clients RENAME TO projects;
+        ALTER TABLE tasks RENAME COLUMN client_id TO project_id;
     ";
 
     const DELIVERY_AND_TASK_REMINDERS: &'static str = "

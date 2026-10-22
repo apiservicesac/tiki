@@ -21,6 +21,6 @@ pub enum BriefDetail {
 pub struct BriefItem {
     pub task_id: TaskId,
     pub title: String,
-    pub client_name: Option<String>,
+    pub project_name: Option<String>,
     pub detail: BriefDetail,
 }

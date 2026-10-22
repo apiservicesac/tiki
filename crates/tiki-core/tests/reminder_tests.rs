@@ -208,7 +208,7 @@ fn a_task_reminder_rings_once_at_its_time() {
     workspace
         .save_confirmed(ConfirmedCapture {
             title: "Llamar".into(),
-            client_name: Some("Altamira".into()),
+            project_name: Some("Altamira".into()),
             due_date: Some(TestDay::october(22)),
             priority: Priority::Normal,
             remind_at: Some(TestDay::october(22).and_hms_opt(10, 0, 0).unwrap()),

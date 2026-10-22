@@ -41,10 +41,10 @@ impl<'translator> BriefNarrator<'translator> {
     }
 
     fn spoken_item(&self, item: &BriefItem) -> String {
-        match &item.client_name {
-            Some(client) => self.translator.format(
-                "narration.item_with_client",
-                &[("title", &item.title), ("client", client)],
+        match &item.project_name {
+            Some(project) => self.translator.format(
+                "narration.item_with_project",
+                &[("title", &item.title), ("project", project)],
             ),
             None => item.title.clone(),
         }
