@@ -10,6 +10,8 @@ export interface TodayHandlers extends TaskListHandlers {
   onDismissAlert: () => void;
   /** Puts off the reminder of the latest alert. */
   onSnooze: (taskId: number, minutes: number) => void;
+  /** Opens a meeting's video call. */
+  onJoinMeeting: (url: string) => void;
   onPrepareBrief: () => void;
   /** "Delivered today" at the end: opens Tasks › Delivered. */
   onShowDelivered: () => void;
@@ -103,7 +105,10 @@ export class TodayView {
     return [prepare];
   }
 
-  /** A reminder offers Done and Snooze; a brief or a task reminder opens what it is about. */
+  /**
+   * A reminder offers Done and Snooze, a meeting with a video call offers Join; a brief or a
+   * task reminder opens what it is about.
+   */
   private alertCard(alert: TikiAlert, handlers: TodayHandlers): HTMLElement {
     const open = ElementFactory.create("button", {
       className: "island-notice-open",
@@ -117,18 +122,26 @@ export class TodayView {
       event.stopPropagation();
       handlers.onOpenAlert();
     });
-    const taskId = alert.taskId;
-    const buttons = alert.kind === "reminder" && taskId !== null
-      ? [
-        this.button("alert.done", "alert-done", handlers.onDismissAlert),
-        ...UI_CONFIG.snoozeMinutes.map(({ minutes, labelKey }) =>
-          this.button(labelKey, `alert-snooze-${minutes}`, () => handlers.onSnooze(taskId, minutes))),
-      ]
-      : [];
+    const buttons = this.alertButtons(alert, handlers);
     return ElementFactory.create("div", {
       className: "island-notice",
       children: [open, ...(buttons.length > 0 ? [ElementFactory.create("div", { className: "island-notice-actions", children: buttons })] : [])],
     });
+  }
+
+  private alertButtons(alert: TikiAlert, handlers: TodayHandlers): HTMLElement[] {
+    const { taskId, link } = alert;
+    if (alert.kind === "reminder" && taskId !== null) {
+      return [
+        this.button("alert.done", "alert-done", handlers.onDismissAlert),
+        ...UI_CONFIG.snoozeMinutes.map(({ minutes, labelKey }) =>
+          this.button(labelKey, `alert-snooze-${minutes}`, () => handlers.onSnooze(taskId, minutes))),
+      ];
+    }
+    if (alert.kind === "meeting" && link !== null) {
+      return [this.button("meeting.join", "alert-join", () => handlers.onJoinMeeting(link))];
+    }
+    return [];
   }
 
   private button(labelKey: string, id: string, onPress: () => void): HTMLElement {

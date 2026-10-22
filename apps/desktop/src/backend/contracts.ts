@@ -80,6 +80,8 @@ export interface IslandSnapshot {
   openItems: SnapshotItem[];
   /** What to do now, and why; `null` when nothing presses. */
   focus: { item: SnapshotItem; reason: string } | null;
+  /** Meetings from today on, from the connected calendars. */
+  meetings: MeetingItem[];
   narration: string;
 }
 
@@ -108,12 +110,41 @@ export interface TaskDetails extends TaskEdit {
 
 /** An alert already written in the user's language (see `TikiAlert` in the core). */
 export interface TikiAlert {
-  kind: "morning" | "evening" | "task" | "reminder" | "follow_up";
+  kind: "morning" | "evening" | "task" | "reminder" | "follow_up" | "meeting";
   title: string;
   /** Lines separated by line breaks. */
   body: string;
   /** The task a task reminder is about. */
   taskId: number | null;
+  /** A link to open from the alert: the meeting's video call. */
+  link: string | null;
+}
+
+/** A meeting copied from a connected calendar (see `MeetingItem` in the core). */
+export interface MeetingItem {
+  title: string;
+  /** Local time, for example `2026-10-23T14:30:00`. */
+  startsAt: string;
+  endsAt: string;
+  allDay: boolean;
+  location: string;
+  joinUrl: string | null;
+  accountEmail: string;
+}
+
+export const CALENDAR_PROVIDERS = Object.freeze(["microsoft", "google"] as const);
+export type CalendarProvider = (typeof CALENDAR_PROVIDERS)[number];
+
+export interface CalendarAccount {
+  accountId: number;
+  provider: CalendarProvider;
+  email: string;
+}
+
+/** Connected accounts, and the providers this build can connect. */
+export interface CalendarStatus {
+  accounts: CalendarAccount[];
+  available: CalendarProvider[];
 }
 
 /** One project with their workload, busiest first (see `ProjectSummary` in the core). */
@@ -222,6 +253,13 @@ export interface TikiBackend {
   removeAiKey(provider: AiProviderName): Promise<void>;
   /** The transport the official AI SDKs use: the shell adds the key and sends the request. */
   aiFetch(request: ProxiedRequest): Promise<ProxiedResponse>;
+  calendarStatus(): Promise<CalendarStatus>;
+  /** Signs in in the browser and copies the account's meetings. */
+  connectCalendar(provider: CalendarProvider): Promise<CalendarAccount>;
+  disconnectCalendar(accountId: number): Promise<void>;
+  syncCalendars(): Promise<void>;
+  /** Opens a meeting's video call (https only). */
+  openMeetingLink(url: string): Promise<void>;
   /** Opens the advanced settings window, optionally on one section. */
   openAdvancedSettings(section?: string): Promise<void>;
   autostartEnabled(): Promise<boolean>;

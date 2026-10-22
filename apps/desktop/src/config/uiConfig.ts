@@ -41,4 +41,5 @@ export const SHELL_EVENTS = Object.freeze({
   toggleIsland: "tiki://toggle-island",
   briefReady: "tiki://brief-ready",
   preferencesChanged: "tiki://preferences-changed",
+  calendarSynced: "tiki://calendar-synced",
 });

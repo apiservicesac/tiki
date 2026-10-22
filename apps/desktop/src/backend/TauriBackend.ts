@@ -5,6 +5,9 @@ import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest
 import type {
   AiProviderStatus,
   AvailableUpdate,
+  CalendarAccount,
+  CalendarProvider,
+  CalendarStatus,
   CaptureLesson,
   ProjectChange,
   ProjectSummary,
@@ -107,6 +110,26 @@ export class TauriBackend implements TikiBackend {
 
   aiFetch(request: ProxiedRequest): Promise<ProxiedResponse> {
     return invoke<ProxiedResponse>("ai_fetch", { request });
+  }
+
+  calendarStatus(): Promise<CalendarStatus> {
+    return invoke<CalendarStatus>("calendar_status");
+  }
+
+  connectCalendar(provider: CalendarProvider): Promise<CalendarAccount> {
+    return invoke<CalendarAccount>("connect_calendar", { provider });
+  }
+
+  async disconnectCalendar(accountId: number): Promise<void> {
+    await invoke("disconnect_calendar", { accountId });
+  }
+
+  async syncCalendars(): Promise<void> {
+    await invoke("sync_calendars");
+  }
+
+  async openMeetingLink(url: string): Promise<void> {
+    await invoke("open_meeting_link", { url });
   }
 
   async openAdvancedSettings(section?: string): Promise<void> {

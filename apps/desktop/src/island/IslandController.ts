@@ -85,6 +85,7 @@ export class IslandController {
       await this.backend.listen(SHELL_EVENTS.toggleIsland, () => this.toggle()),
       await this.backend.onAlert((brief) => void this.announceAlert(brief)),
       await this.backend.listen(SHELL_EVENTS.preferencesChanged, () => void this.reloadPreferences()),
+      await this.backend.listen(SHELL_EVENTS.calendarSynced, () => void this.refresh()),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
     window.addEventListener("resize", this.redrawOnResize);
@@ -202,7 +203,17 @@ export class IslandController {
       await this.openTask(alert.taskId);
       return;
     }
+    if (alert?.kind === "meeting") {
+      this.update({ mode: "expanded", panel: "tasks", tab: "agenda" });
+      return;
+    }
     this.update({ mode: "expanded", panel: alert ? "brief" : "tasks" });
+  }
+
+  /** Opens the video call and puts the meeting alert away. */
+  private async joinMeeting(url: string): Promise<void> {
+    this.update({ alert: null, unreadAlert: false });
+    await this.backend.openMeetingLink(url);
   }
 
   /** Puts off the reminder and puts the alert away. */
@@ -370,6 +381,7 @@ export class IslandController {
       onOpenAlert: () => void this.openAlert(),
       onDismissAlert: () => this.update({ alert: null, unreadAlert: false }),
       onSnooze: (taskId, minutes) => void this.snooze(taskId, minutes),
+      onJoinMeeting: (url) => void this.joinMeeting(url),
       onPrepareBrief: () => void this.assistantActions.prepareDayBrief(),
       onShowDelivered: () => this.update({ panel: "tasks", tab: "all_tasks", tasksView: "delivered" }),
       onSelectTasksView: (tasksView) => this.update({ tasksView }),
