@@ -6,6 +6,13 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.1-rc.3] - 2026-10-22
+
+### Fixed
+- The island cut its content when it grew without a redraw, for example when the AI filled
+  the fields of the box or a reminder was chosen. The notch now follows its content's size,
+  and the click area with it.
+
 ## [0.3.1-rc.2] - 2026-10-22
 
 ### Fixed
