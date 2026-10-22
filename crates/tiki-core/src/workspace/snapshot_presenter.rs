@@ -1,6 +1,8 @@
-use super::{IslandSnapshot, SnapshotItem, SnapshotSection, Urgency};
-use crate::briefing::{BriefDetailFormatter, BriefItem, BriefMoment, BriefNarrator, DailyBrief};
-use crate::domain::ProjectDirectory;
+use super::{FocusSuggestion, IslandSnapshot, SnapshotItem, SnapshotSection, Urgency};
+use crate::briefing::{
+    BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, BriefNarrator, DailyBrief,
+};
+use crate::domain::{Priority, ProjectDirectory};
 use crate::i18n::{DateFormatter, Translator};
 use crate::mood::Mood;
 
@@ -24,16 +26,32 @@ impl<'context> SnapshotPresenter<'context> {
         mood: Mood,
         delivered_today: usize,
     ) -> IslandSnapshot {
+        let todays_reminders: Vec<BriefItem> = brief
+            .reminders
+            .iter()
+            .filter(|item| matches!(item.detail, BriefDetail::RemindAt { at } if at.date() == brief.date))
+            .cloned()
+            .collect();
         let sections = [
             ("overdue", &brief.overdue, Urgency::Critical),
             ("due_soon", &brief.due_soon, Urgency::Soon),
-            ("your_turn", &brief.your_turn, Urgency::Normal),
-            ("waiting", &brief.waiting, Urgency::Waiting),
-            ("reminders", &brief.reminders, Urgency::Reminder),
+            ("reminders", &todays_reminders, Urgency::Reminder),
+            ("follow_up", &brief.needs_follow_up, Urgency::Waiting),
         ]
         .into_iter()
         .filter(|(_, items, _)| !items.is_empty())
         .map(|(key, items, urgency)| self.section(key, items, urgency, brief))
+        .collect();
+        let open_items: Vec<SnapshotItem> = [
+            (&brief.overdue, Urgency::Critical),
+            (&brief.due_soon, Urgency::Soon),
+            (&brief.your_turn, Urgency::Normal),
+            (&brief.waiting, Urgency::Waiting),
+            (&brief.reminders, Urgency::Reminder),
+        ]
+        .into_iter()
+        .flat_map(|(items, urgency)| items.iter().map(move |item| (item, urgency)))
+        .map(|(item, urgency)| self.item(item, urgency, brief))
         .collect();
 
         IslandSnapshot {
@@ -61,6 +79,8 @@ impl<'context> SnapshotPresenter<'context> {
                 ],
             ),
             sections,
+            open_items,
+            focus: self.focus(brief),
             narration: BriefNarrator::new(self.translator).narrate(brief, BriefMoment::Morning),
         }
     }
@@ -72,23 +92,59 @@ impl<'context> SnapshotPresenter<'context> {
         urgency: Urgency,
         brief: &DailyBrief,
     ) -> SnapshotSection {
-        let detail_formatter = BriefDetailFormatter::new(self.translator);
         SnapshotSection {
             key: key.to_owned(),
             title: self.translator.text(&format!("brief.section.{key}")),
             items: items
                 .iter()
-                .map(|item| SnapshotItem {
-                    task_id: item.task_id,
-                    title: item.title.clone(),
-                    project_name: item.project_name.clone(),
-                    project_color: self.project_color(item),
-                    detail_label: detail_formatter.label(item.detail, brief.date),
-                    tags: item.tags.clone(),
-                    urgency,
-                })
+                .map(|item| self.item(item, urgency, brief))
                 .collect(),
         }
+    }
+
+    fn item(&self, item: &BriefItem, urgency: Urgency, brief: &DailyBrief) -> SnapshotItem {
+        SnapshotItem {
+            task_id: item.task_id,
+            title: item.title.clone(),
+            project_name: item.project_name.clone(),
+            project_color: self.project_color(item),
+            detail_label: BriefDetailFormatter::new(self.translator).label(item.detail, brief.date),
+            priority: item.priority,
+            tags: item.tags.clone(),
+            urgency,
+        }
+    }
+
+    /// What to do now: the most important overdue item, else what is due today, else urgent
+    /// or important work, else what is due soon, else a follow-up to send.
+    fn focus(&self, brief: &DailyBrief) -> Option<FocusSuggestion> {
+        let due_today = |item: &&BriefItem| item.detail == BriefDetail::DueIn { days: 0 };
+        let important = |item: &&BriefItem| item.priority >= Priority::High;
+        let candidates: [(Option<&BriefItem>, &str, Urgency); 5] = [
+            (brief.overdue.first(), "focus.overdue", Urgency::Critical),
+            (
+                brief.due_soon.iter().find(due_today),
+                "focus.due_today",
+                Urgency::Soon,
+            ),
+            (
+                brief.your_turn.iter().find(important),
+                "focus.important",
+                Urgency::Normal,
+            ),
+            (brief.due_soon.first(), "focus.due_soon", Urgency::Soon),
+            (
+                brief.needs_follow_up.first(),
+                "focus.follow_up",
+                Urgency::Waiting,
+            ),
+        ];
+        candidates.into_iter().find_map(|(item, reason, urgency)| {
+            item.map(|item| FocusSuggestion {
+                item: self.item(item, urgency, brief),
+                reason: self.translator.text(reason),
+            })
+        })
     }
 
     fn project_color(&self, item: &BriefItem) -> Option<String> {

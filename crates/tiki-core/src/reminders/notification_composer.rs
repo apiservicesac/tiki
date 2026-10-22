@@ -2,7 +2,7 @@ use chrono::NaiveDate;
 
 use super::{AlertKind, TikiAlert};
 use crate::briefing::{BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, DailyBrief};
-use crate::domain::Task;
+use crate::domain::{ItemKind, Task, TaskStatus};
 use crate::i18n::Translator;
 
 /// Writes the short notification for a brief: counts first, then what to start with and
@@ -23,8 +23,25 @@ impl<'translator> NotificationComposer<'translator> {
         project_name: Option<&str>,
         today: NaiveDate,
     ) -> TikiAlert {
+        let kind = match (task.kind, task.status) {
+            (ItemKind::Reminder, _) => AlertKind::Reminder,
+            (_, TaskStatus::Waiting) => AlertKind::FollowUp,
+            _ => AlertKind::Task,
+        };
         let mut lines = vec![task.title.clone()];
         let mut context: Vec<String> = project_name.map(str::to_owned).into_iter().collect();
+        if kind == AlertKind::FollowUp {
+            let days = task.days_waiting(today).unwrap_or_default().to_string();
+            context.push(if task.waiting_for.is_empty() {
+                self.translator
+                    .format("notify.follow_up.days", &[("days", &days)])
+            } else {
+                self.translator.format(
+                    "notify.follow_up.waiting_for",
+                    &[("who", &task.waiting_for), ("days", &days)],
+                )
+            });
+        }
         if let Some(days) = task.days_until_due(today) {
             let detail = if days < 0 {
                 BriefDetail::Overdue { days: -days }
@@ -37,10 +54,20 @@ impl<'translator> NotificationComposer<'translator> {
             lines.push(context.join(" · "));
         }
         TikiAlert {
-            kind: AlertKind::Task,
-            title: self.translator.text("notify.task.title"),
+            kind,
+            title: self
+                .translator
+                .text(&format!("notify.{}.title", Self::alert_key(kind))),
             body: lines.join("\n"),
             task_id: task.id,
+        }
+    }
+
+    fn alert_key(kind: AlertKind) -> &'static str {
+        match kind {
+            AlertKind::Reminder => "reminder",
+            AlertKind::FollowUp => "follow_up",
+            _ => "task",
         }
     }
 

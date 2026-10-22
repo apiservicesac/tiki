@@ -44,7 +44,12 @@ fn the_snapshot_is_translated_and_ready_to_draw() {
         .iter()
         .map(|section| section.key.as_str())
         .collect();
-    assert_eq!(keys, ["overdue", "due_soon", "your_turn", "waiting"]);
+    // Today only shows what presses today; every open item is in `open_items`.
+    assert_eq!(keys, ["overdue", "due_soon", "follow_up"]);
+    assert_eq!(snapshot.open_items.len(), 7);
+    let focus = snapshot.focus.as_ref().unwrap();
+    assert_eq!(focus.reason, "Está atrasada");
+    assert_eq!(focus.item.title, snapshot.sections[0].items[0].title);
 
     let due_soon = &snapshot.sections[1];
     assert_eq!(due_soon.title, "Vence pronto");
@@ -117,6 +122,8 @@ fn a_confirmed_capture_is_saved_with_its_project_priority_and_date() {
             remind_at: None,
             kind: ItemKind::Task,
             tags: Vec::new(),
+            repeat: tiki_core::domain::Repeat::Never,
+            waiting_for: None,
         })
         .unwrap();
 
@@ -140,6 +147,8 @@ fn an_unknown_project_name_is_left_out_instead_of_failing() {
         remind_at: None,
         kind: ItemKind::Task,
         tags: Vec::new(),
+        repeat: tiki_core::domain::Repeat::Never,
+        waiting_for: None,
     });
     assert!(saved.is_ok());
 }
@@ -153,7 +162,7 @@ fn the_assistant_sees_open_tasks_without_their_private_notes() {
     let waiting = context
         .open_tasks
         .iter()
-        .find(|task| task.status == TaskStatus::WaitingOnOthers)
+        .find(|task| task.status == TaskStatus::Waiting)
         .unwrap();
     assert!(waiting.waiting_days.is_some());
 
@@ -178,6 +187,8 @@ fn tags_are_normalized_and_standalone_reminders_list_apart_from_work() {
                 "facturación".into(),
                 " Cierre de mes ".into(),
             ],
+            repeat: tiki_core::domain::Repeat::Never,
+            waiting_for: None,
         })
         .unwrap();
     assert_eq!(
@@ -194,6 +205,8 @@ fn tags_are_normalized_and_standalone_reminders_list_apart_from_work() {
             remind_at: Some(today.and_hms_opt(17, 0, 0).unwrap()),
             kind: tiki_core::domain::ItemKind::Reminder,
             tags: Vec::new(),
+            repeat: tiki_core::domain::Repeat::Never,
+            waiting_for: None,
         })
         .unwrap();
     let snapshot = workspace.island_snapshot().unwrap();

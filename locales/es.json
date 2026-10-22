@@ -3,10 +3,9 @@
     "app.name": "Tiki",
 
     "status.to_do": "Por hacer",
-    "status.in_progress": "En progreso",
-    "status.testing": "En prueba",
-    "status.waiting_on_others": "Esperando a otro",
-    "status.done": "Entregado",
+    "status.in_progress": "En curso",
+    "status.waiting": "Esperando",
+    "status.done": "Hecha",
 
     "priority.low": "Baja",
     "priority.normal": "Normal",
@@ -47,7 +46,7 @@
     "narration.list_separator": ", ",
     "narration.list_last_separator": " y ",
 
-    "mood.label.calm": "200 OK",
+    "mood.label.calm": "TODO BIEN",
     "mood.label.hurry": "¡HOY!",
     "mood.label.worried": "ATRASO",
     "mood.label.alert": "15 MIN",
@@ -189,7 +188,7 @@
     "history.today": "hoy",
     "history.yesterday": "ayer",
 
-    "notify.task.title": "Recordatorio",
+    "notify.task.title": "Aviso de tarea",
 
     "island.tab.all_tasks": "Tareas",
     "island.delivered_today": "Entregado hoy ({count})",
@@ -239,6 +238,19 @@
     "ask.applied": "Hecho ✓",
     "ask.apply_failed": "No se pudo",
     "ask.apply_all": "Aplicar todo",
+
+    "notify.reminder.title": "Recordatorio",
+    "notify.follow_up.title": "Toca insistir",
+    "notify.follow_up.days": "Esperando hace {days} días",
+    "notify.follow_up.waiting_for": "Esperando: {who} · hace {days} días",
+
+    "brief.section.follow_up": "Toca insistir",
+    "focus.overdue": "Está atrasada",
+    "focus.due_today": "Vence hoy",
+    "focus.important": "Es prioritaria",
+    "focus.due_soon": "Vence pronto",
+    "focus.follow_up": "Toca insistir",
+    "focus.title": "Ahora",
 
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}"

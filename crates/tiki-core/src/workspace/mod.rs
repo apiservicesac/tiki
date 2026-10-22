@@ -11,6 +11,8 @@ mod tiki_workspace;
 pub use assistant_context::{AssistantContext, AssistantProject, AssistantTask};
 pub use clock::{Clock, FixedClock, SystemClock};
 pub use delivered_item::DeliveredItem;
-pub use island_snapshot::{IslandSnapshot, SnapshotItem, SnapshotSection, Urgency};
+pub use island_snapshot::{
+    FocusSuggestion, IslandSnapshot, SnapshotItem, SnapshotSection, Urgency,
+};
 pub use snapshot_presenter::SnapshotPresenter;
 pub use tiki_workspace::TikiWorkspace;

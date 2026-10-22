@@ -4,9 +4,8 @@
 
     "status.to_do": "To do",
     "status.in_progress": "In progress",
-    "status.testing": "Testing",
-    "status.waiting_on_others": "Waiting on others",
-    "status.done": "Delivered",
+    "status.waiting": "Waiting",
+    "status.done": "Done",
 
     "priority.low": "Low",
     "priority.normal": "Normal",
@@ -47,7 +46,7 @@
     "narration.list_separator": ", ",
     "narration.list_last_separator": " and ",
 
-    "mood.label.calm": "200 OK",
+    "mood.label.calm": "ALL GOOD",
     "mood.label.hurry": "TODAY!",
     "mood.label.worried": "LATE",
     "mood.label.alert": "15 MIN",
@@ -189,7 +188,7 @@
     "history.today": "today",
     "history.yesterday": "yesterday",
 
-    "notify.task.title": "Reminder",
+    "notify.task.title": "Task reminder",
 
     "island.tab.all_tasks": "Tasks",
     "island.delivered_today": "Delivered today ({count})",
@@ -239,6 +238,19 @@
     "ask.applied": "Done ✓",
     "ask.apply_failed": "Could not apply",
     "ask.apply_all": "Apply all",
+
+    "notify.reminder.title": "Reminder",
+    "notify.follow_up.title": "Time to follow up",
+    "notify.follow_up.days": "Waiting for {days} days",
+    "notify.follow_up.waiting_for": "Waiting for: {who} · {days} days",
+
+    "brief.section.follow_up": "Follow up",
+    "focus.overdue": "It is overdue",
+    "focus.due_today": "Due today",
+    "focus.important": "It is important",
+    "focus.due_soon": "Due soon",
+    "focus.follow_up": "Time to follow up",
+    "focus.title": "Now",
 
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}"

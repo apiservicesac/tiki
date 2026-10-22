@@ -145,25 +145,48 @@ impl TikiWorkspace {
         let mut alerts = Vec::new();
         for mut task in self.database.tasks().list_reminders_due(now)? {
             alerts.push(composer.compose_task(&task, projects.name_of(task.project_id), today));
-            task.remind_at = None;
+            let rang_at = task.remind_at.take();
             if task.kind == ItemKind::Reminder {
-                // A standalone reminder has nothing left to do once it rang.
-                task.move_to(TaskStatus::Done, today);
+                // A repeating reminder comes back; a one-time reminder is done once it rang.
+                task.remind_at = rang_at.and_then(|at| task.repeat.next_after(at, now));
+                if task.remind_at.is_none() {
+                    task.move_to(TaskStatus::Done, today);
+                }
             }
             self.database.tasks().update(&task)?;
         }
         Ok(alerts)
     }
 
-    /// Saves a task exactly as the user confirmed it; an unknown project name is left out.
+    /// Saves an item exactly as the user confirmed it. A project named for the first time is
+    /// created on the spot: Tiki never asks the user to keep a list of projects.
     pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
+        let status = capture.status();
         let mut task = Task::new(capture.title)?.with_priority(capture.priority);
         task.due_date = capture.due_date;
-        task.project_id = self.project_id_by_name(capture.project_name.as_deref())?;
+        task.project_id = self.project_named(capture.project_name.as_deref())?;
         task.remind_at = capture.remind_at;
         task.kind = capture.kind;
         task.tags = Tags::normalize(&capture.tags);
+        task.repeat = capture.repeat;
+        capture
+            .waiting_for
+            .unwrap_or_default()
+            .trim()
+            .clone_into(&mut task.waiting_for);
+        task.move_to(status, self.clock.today());
+        self.schedule_follow_up(&mut task, false);
         self.database.tasks().insert(&task)
+    }
+
+    /// Puts off a reminder for `minutes`; a reminder that already rang comes back to life.
+    pub fn snooze(&self, task_id: TaskId, minutes: i64) -> TikiResult<()> {
+        let mut task = self.database.tasks().find(task_id)?;
+        task.remind_at = Some(self.clock.now() + chrono::Duration::minutes(minutes));
+        if task.status == TaskStatus::Done {
+            task.move_to(TaskStatus::ToDo, self.clock.today());
+        }
+        self.database.tasks().update(&task)
     }
 
     /// A saved task as the edit form shows it.
@@ -172,11 +195,13 @@ impl TikiWorkspace {
         TaskDetails::from_task(&task, &self.project_directory()?)
     }
 
-    /// Saves the user's changes to a task; an unknown project name leaves it without project.
+    /// Saves the user's changes to an item; a new project name creates the project.
     pub fn edit_task(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
-        let project_id = self.project_id_by_name(edit.project_name.as_deref())?;
+        let was_waiting = task.status == TaskStatus::Waiting;
+        let project_id = self.project_named(edit.project_name.as_deref())?;
         edit.apply_to(&mut task, project_id, self.clock.today())?;
+        self.schedule_follow_up(&mut task, was_waiting);
         self.database.tasks().update(&task)
     }
 
@@ -214,8 +239,24 @@ impl TikiWorkspace {
 
     pub fn move_task(&self, task_id: TaskId, status: TaskStatus) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
+        let was_waiting = task.status == TaskStatus::Waiting;
         task.move_to(status, self.clock.today());
+        self.schedule_follow_up(&mut task, was_waiting);
         self.database.tasks().update(&task)
+    }
+
+    /// An item that starts waiting gets a reminder to follow up after a few days, unless the
+    /// user already set one.
+    fn schedule_follow_up(&self, task: &mut Task, was_waiting: bool) {
+        if task.status != TaskStatus::Waiting || was_waiting || task.remind_at.is_some() {
+            return;
+        }
+        let since = task.waiting_since.unwrap_or_else(|| self.clock.today());
+        task.remind_at = since
+            .checked_add_days(chrono::Days::new(
+                self.settings.follow_up_after_days.unsigned_abs(),
+            ))
+            .map(|day| day.and_time(self.settings.follow_up_time));
     }
 
     /// Saves a project with the next color of the palette.
@@ -248,15 +289,15 @@ impl TikiWorkspace {
         ProjectBook::new(&self.database, &self.settings)
     }
 
-    fn project_id_by_name(&self, name: Option<&str>) -> TikiResult<Option<ProjectId>> {
+    /// The project with this name, created when it does not exist yet; `None` for no name.
+    fn project_named(&self, name: Option<&str>) -> TikiResult<Option<ProjectId>> {
         let Some(name) = name.map(str::trim).filter(|name| !name.is_empty()) else {
             return Ok(None);
         };
-        Ok(self
-            .database
-            .projects()
-            .find_by_name(name)?
-            .and_then(|project| project.id))
+        match self.database.projects().find_by_name(name)? {
+            Some(project) => Ok(project.id),
+            None => self.project_book().create(name).map(Some),
+        }
     }
 
     fn reschedule_moved_briefs(&self, preferences: &UserPreferences) -> TikiResult<()> {

@@ -45,10 +45,12 @@ fn editing_a_task_changes_its_fields_and_project() {
                 project_name: Some("altamira".into()),
                 due_date: Some(TestDay::october(30)),
                 priority: Priority::Urgent,
-                status: TaskStatus::WaitingOnOthers,
+                status: TaskStatus::Waiting,
                 remind_at: Some(TestDay::october(29).and_hms_opt(16, 0, 0).unwrap()),
                 kind: ItemKind::Task,
                 tags: Vec::new(),
+                repeat: tiki_core::domain::Repeat::Never,
+                waiting_for: String::new(),
             },
         )
         .unwrap();
@@ -59,7 +61,7 @@ fn editing_a_task_changes_its_fields_and_project() {
     assert_eq!(details.project_name.as_deref(), Some("Altamira"));
     assert_eq!(details.due_date, Some(TestDay::october(30)));
     assert_eq!(details.priority, Priority::Urgent);
-    assert_eq!(details.status, TaskStatus::WaitingOnOthers);
+    assert_eq!(details.status, TaskStatus::Waiting);
     assert_eq!(
         details.remind_at,
         Some(TestDay::october(29).and_hms_opt(16, 0, 0).unwrap())
@@ -84,6 +86,8 @@ fn a_task_cannot_lose_its_title() {
             remind_at: None,
             kind: ItemKind::Task,
             tags: Vec::new(),
+            repeat: tiki_core::domain::Repeat::Never,
+            waiting_for: String::new(),
         },
     );
     assert!(matches!(result, Err(TikiError::EmptyTaskTitle)));

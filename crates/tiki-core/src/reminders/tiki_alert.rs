@@ -11,6 +11,10 @@ pub enum AlertKind {
     Evening,
     /// The reminder the user set on one task.
     Task,
+    /// A standalone reminder: the user can mark it done or snooze it.
+    Reminder,
+    /// A waiting item whose follow-up day came.
+    FollowUp,
 }
 
 impl From<BriefMoment> for AlertKind {

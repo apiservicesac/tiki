@@ -216,6 +216,8 @@ fn a_task_reminder_rings_once_at_its_time() {
             remind_at: Some(TestDay::october(22).and_hms_opt(10, 0, 0).unwrap()),
             kind: ItemKind::Task,
             tags: Vec::new(),
+            repeat: tiki_core::domain::Repeat::Never,
+            waiting_for: None,
         })
         .unwrap();
 
@@ -228,9 +230,124 @@ fn a_task_reminder_rings_once_at_its_time() {
     let alerts = workspace.take_due_task_reminders(ten).unwrap();
     assert_eq!(alerts.len(), 1);
     assert_eq!(alerts[0].kind, AlertKind::Task);
-    assert_eq!(alerts[0].title, "Recordatorio");
+    assert_eq!(alerts[0].title, "Aviso de tarea");
     assert!(alerts[0].body.starts_with("Llamar\nAltamira · "));
     assert!(alerts[0].task_id.is_some());
 
     assert_eq!(workspace.take_due_task_reminders(ten).unwrap(), Vec::new());
+}
+
+fn reminder(title: &str, at: NaiveDateTime, repeat: tiki_core::domain::Repeat) -> ConfirmedCapture {
+    ConfirmedCapture {
+        title: title.into(),
+        project_name: None,
+        due_date: None,
+        priority: Priority::Normal,
+        remind_at: Some(at),
+        kind: tiki_core::domain::ItemKind::Reminder,
+        tags: Vec::new(),
+        repeat,
+        waiting_for: None,
+    }
+}
+
+#[test]
+fn a_repeating_reminder_comes_back_and_a_one_time_reminder_is_done() {
+    use tiki_core::domain::Repeat;
+    let workspace = sample_workspace();
+    let pill = workspace
+        .save_confirmed(reminder("Tomar la pastilla", today_at(8, 0), Repeat::Daily))
+        .unwrap();
+    workspace
+        .save_confirmed(reminder("Llamar a mamá", today_at(17, 0), Repeat::Never))
+        .unwrap();
+
+    let alerts = workspace.take_due_task_reminders(today_at(18, 0)).unwrap();
+    assert_eq!(alerts.len(), 2);
+    assert!(alerts.iter().all(|alert| alert.kind == AlertKind::Reminder));
+    assert_eq!(alerts[0].title, "Recordatorio");
+
+    let pill_details = workspace.task_details(pill).unwrap();
+    assert_eq!(
+        pill_details.remind_at,
+        Some(TestDay::october(22).and_hms_opt(8, 0, 0).unwrap())
+    );
+    assert_eq!(workspace.island_snapshot().unwrap().delivered_today, 1);
+}
+
+#[test]
+fn snoozing_a_reminder_that_rang_brings_it_back() {
+    use tiki_core::domain::{Repeat, TaskStatus};
+    let workspace = TikiWorkspace::new(
+        SampleWorkspace::create().database,
+        TikiSettings::default(),
+        Box::new(FixedClock::at(today_at(17, 1))),
+    )
+    .unwrap();
+    let call = workspace
+        .save_confirmed(reminder("Llamar a mamá", today_at(17, 0), Repeat::Never))
+        .unwrap();
+    workspace.take_due_task_reminders(today_at(17, 1)).unwrap();
+    assert_eq!(
+        workspace.task_details(call).unwrap().status,
+        TaskStatus::Done
+    );
+
+    workspace.snooze(call, 10).unwrap();
+    let details = workspace.task_details(call).unwrap();
+    assert_eq!(details.status, TaskStatus::ToDo);
+    assert_eq!(details.remind_at, Some(today_at(17, 11)));
+}
+
+#[test]
+fn waiting_on_someone_schedules_a_follow_up_reminder() {
+    let workspace = sample_workspace();
+    let contract = workspace
+        .save_confirmed(ConfirmedCapture {
+            title: "Contrato firmado".into(),
+            project_name: Some("Constructora Sur".into()),
+            due_date: None,
+            priority: Priority::Normal,
+            remind_at: None,
+            kind: tiki_core::domain::ItemKind::Task,
+            tags: Vec::new(),
+            repeat: tiki_core::domain::Repeat::Never,
+            waiting_for: Some(" respuesta de Lucía ".into()),
+        })
+        .unwrap();
+
+    let details = workspace.task_details(contract).unwrap();
+    assert_eq!(details.status, tiki_core::domain::TaskStatus::Waiting);
+    assert_eq!(details.waiting_for, "respuesta de Lucía");
+    assert_eq!(details.project_name.as_deref(), Some("Constructora Sur"));
+    assert_eq!(
+        details.remind_at,
+        Some(TestDay::october(24).and_hms_opt(9, 0, 0).unwrap())
+    );
+
+    let alerts = workspace
+        .take_due_task_reminders(TestDay::october(24).and_hms_opt(9, 0, 0).unwrap())
+        .unwrap();
+    let follow_up = alerts
+        .iter()
+        .find(|alert| alert.task_id == Some(contract))
+        .unwrap();
+    assert_eq!(follow_up.kind, AlertKind::FollowUp);
+    assert_eq!(follow_up.title, "Toca insistir");
+    assert!(
+        follow_up
+            .body
+            .contains("Esperando: respuesta de Lucía · hace 3 días")
+    );
+}
+
+#[test]
+fn weekday_repeats_skip_the_weekend() {
+    use tiki_core::domain::Repeat;
+    let friday = TestDay::october(23).and_hms_opt(9, 0, 0).unwrap();
+    assert_eq!(
+        Repeat::Weekdays.next_after(friday, friday),
+        Some(TestDay::october(26).and_hms_opt(9, 0, 0).unwrap())
+    );
+    assert_eq!(Repeat::Never.next_after(friday, friday), None);
 }

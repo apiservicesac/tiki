@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::domain::TaskId;
+use crate::domain::{Priority, TaskId};
 use crate::mood::Mood;
 
 /// How pressing a line is; the interface turns it into a color.
@@ -24,6 +24,7 @@ pub struct SnapshotItem {
     pub project_name: Option<String>,
     pub project_color: Option<String>,
     pub detail_label: String,
+    pub priority: Priority,
     pub tags: Vec<String>,
     pub urgency: Urgency,
 }
@@ -36,6 +37,14 @@ pub struct SnapshotSection {
     pub key: String,
     pub title: String,
     pub items: Vec<SnapshotItem>,
+}
+
+/// The one item Tiki suggests doing now, and the reason in the user's language.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FocusSuggestion {
+    pub item: SnapshotItem,
+    pub reason: String,
 }
 
 /// Everything the island needs to draw itself, in the user's language.
@@ -57,7 +66,12 @@ pub struct IslandSnapshot {
     pub closed_summary: String,
     /// Subtitle of the Today tab.
     pub today_subtitle: String,
+    /// Today only: overdue, due soon, today's reminders and follow-ups to send.
     pub sections: Vec<SnapshotSection>,
+    /// Every open item, for the Tasks tab.
+    pub open_items: Vec<SnapshotItem>,
+    /// What to do now, with why; `None` when nothing presses.
+    pub focus: Option<FocusSuggestion>,
     /// The brief as Tiki says it out loud.
     pub narration: String,
 }

@@ -102,11 +102,7 @@ fn removing_a_project_keeps_its_tasks_without_project() {
             .all(|project| project.project_id != ids.andeanvet)
     );
     let snapshot = workspace.island_snapshot().unwrap();
-    let all_items: Vec<_> = snapshot
-        .sections
-        .iter()
-        .flat_map(|section| &section.items)
-        .collect();
+    let all_items = &snapshot.open_items;
     assert_eq!(all_items.len(), 7);
     assert!(
         all_items

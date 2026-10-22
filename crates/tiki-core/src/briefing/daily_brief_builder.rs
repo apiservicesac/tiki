@@ -26,6 +26,16 @@ impl<'settings> DailyBriefBuilder<'settings> {
                 self.place(&mut brief, task, task_id, projects);
             }
         }
+        // Within each section, the most important first; the stable sort keeps the date order.
+        for section in [
+            &mut brief.overdue,
+            &mut brief.due_soon,
+            &mut brief.your_turn,
+            &mut brief.waiting,
+            &mut brief.needs_follow_up,
+        ] {
+            section.sort_by_key(|item| std::cmp::Reverse(item.priority));
+        }
         brief.reminders.sort_by_key(|item| match item.detail {
             BriefDetail::RemindAt { at } => Some(at),
             _ => None,
@@ -85,6 +95,7 @@ impl<'settings> DailyBriefBuilder<'settings> {
             title: task.title.clone(),
             project_name: projects.name_of(task.project_id).map(str::to_owned),
             tags: task.tags.clone(),
+            priority: task.priority,
             detail,
         }
     }
