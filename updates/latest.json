@@ -1,11 +1,11 @@
 {
-  "version": "0.2.2-rc.1",
-  "notes": "Tasks tab with clients and history, client panel, task reminders and the brief as a receipt.",
-  "pub_date": "2026-10-21T23:50:32.391Z",
+  "version": "0.2.2-rc.2",
+  "notes": "Projects instead of clients; quick capture with fields filled by AI or picked by you; no word rules.",
+  "pub_date": "2026-10-22T00:13:02.889Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbWxta2VNQ1d1RjluV0hXOUlBS2N4dnhCWndKUWM3OTlzZlJ1bitCYVJlOG0vK3Z1SURtVlAxOHNlNXdvdnVoT2hsaW1xeWxCTWJsOXR4UVZoSDRMMGdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjI2NjIzCWZpbGU6VGlraV8wLjIuMi1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMi1yYy4xCkdCL21uM3lvWEFkV3M4V3VCMzBKczJKUDJpMmRUcUhUZklpTlBvTG1oZkcza0tJa3Q1TmVGWjFMM2QvZGt3UjMxTlcxbWs5YkdONStUR2lRWmRKeERBPT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.2-rc.1/Tiki_0.2.2-rc.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXRMYysweE5KMi9kRzljVEdjVElGQ1VSMDhnTVpmbS9yNWY3KzhTQm8vN2V2QkJzK0Y3WnRBcWNJdW9XUmt4aGprVXVudnN5T2ZLMmoyaXhFdXhTUlFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjI3OTczCWZpbGU6VGlraV8wLjIuMi1yYy4yX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMi1yYy4yCmpxbGRXV2diTjdGeFMyQTV2YkovTFZSeDlLZTd5Tjc5cVF1V1pqenFVMTlOR1JwbkFUU0E5eEZiYjFQRFZVS1dneG96WEo0dzdxTWJkdXl3ZDdXY0F3PT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.2.2-rc.2/Tiki_0.2.2-rc.2_x64-setup.exe"
     }
   }
 }
