@@ -11,6 +11,7 @@ impl SchemaMigrations {
             M::up(Self::REMINDER_LOG),
             M::up(Self::DELIVERY_AND_TASK_REMINDERS),
             M::up(Self::CLIENTS_BECOME_PROJECTS),
+            M::up(Self::KINDS_TAGS_NOTES_AND_LESSONS),
         ])
     }
 
@@ -43,6 +44,22 @@ impl SchemaMigrations {
         CREATE UNIQUE INDEX tasks_by_external_record
             ON tasks(origin_plugin, origin_connection, origin_record)
             WHERE origin_plugin IS NOT NULL;
+    ";
+
+    /// Standalone reminders next to tasks, tags across projects, notes per project, and the
+    /// corrections the user made to what the AI understood.
+    const KINDS_TAGS_NOTES_AND_LESSONS: &'static str = "
+        ALTER TABLE tasks ADD COLUMN kind TEXT NOT NULL DEFAULT 'task';
+        ALTER TABLE tasks ADD COLUMN tags TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE projects ADD COLUMN notes TEXT NOT NULL DEFAULT '';
+
+        CREATE TABLE capture_lessons (
+            id         INTEGER PRIMARY KEY,
+            sentence   TEXT NOT NULL,
+            understood TEXT NOT NULL,
+            corrected  TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
     ";
 
     /// Tiki groups work by project (a client, a product, a team or personal), not by client.

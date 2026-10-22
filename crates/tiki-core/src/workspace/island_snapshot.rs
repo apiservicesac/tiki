@@ -11,6 +11,8 @@ pub enum Urgency {
     Soon,
     Waiting,
     Normal,
+    /// A standalone reminder.
+    Reminder,
 }
 
 /// One task line, already translated and ready to draw.
@@ -22,6 +24,7 @@ pub struct SnapshotItem {
     pub project_name: Option<String>,
     pub project_color: Option<String>,
     pub detail_label: String,
+    pub tags: Vec<String>,
     pub urgency: Urgency,
 }
 

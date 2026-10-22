@@ -33,6 +33,20 @@ impl<'translator> BriefDetailFormatter<'translator> {
             BriefDetail::InStatus { status } => {
                 self.translator.text(&format!("status.{}", status.key()))
             }
+            BriefDetail::RemindAt { at } => self.moment_label(at, today),
+        }
+    }
+
+    /// "17:00" today, "vie 23 · 09:00" another day.
+    fn moment_label(&self, at: chrono::NaiveDateTime, today: NaiveDate) -> String {
+        let time = at.format("%H:%M").to_string();
+        if at.date() == today {
+            time
+        } else {
+            format!(
+                "{} · {time}",
+                DateFormatter::new(self.translator).short(at.date())
+            )
         }
     }
 

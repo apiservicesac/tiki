@@ -3,7 +3,10 @@ use std::path::Path;
 use rusqlite::Connection;
 
 use super::schema_migrations::SchemaMigrations;
-use super::{PreferencesRepository, ProjectRepository, ReminderLogRepository, TaskRepository};
+use super::{
+    CaptureLessonRepository, PreferencesRepository, ProjectRepository, ReminderLogRepository,
+    TaskRepository,
+};
 use crate::error::TikiResult;
 
 /// An open, migrated SQLite database.
@@ -36,6 +39,10 @@ impl Database {
 
     pub fn reminder_log(&self) -> ReminderLogRepository<'_> {
         ReminderLogRepository::new(&self.connection)
+    }
+
+    pub fn capture_lessons(&self) -> CaptureLessonRepository<'_> {
+        CaptureLessonRepository::new(&self.connection)
     }
 
     fn prepare(mut connection: Connection) -> TikiResult<Self> {

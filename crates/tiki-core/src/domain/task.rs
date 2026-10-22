@@ -1,13 +1,14 @@
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 
-use super::{Priority, ProjectId, TaskId, TaskOrigin, TaskStatus};
+use super::{ItemKind, Priority, ProjectId, TaskId, TaskOrigin, TaskStatus};
 use crate::error::{TikiError, TikiResult};
 
 /// A piece of work the user has to finish or follow up.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Task {
     pub id: Option<TaskId>,
+    pub kind: ItemKind,
     pub title: String,
     pub notes: String,
     pub project_id: Option<ProjectId>,
@@ -20,6 +21,8 @@ pub struct Task {
     pub completed_on: Option<NaiveDate>,
     /// When Tiki should remind the user about this task; cleared once it has.
     pub remind_at: Option<NaiveDateTime>,
+    /// Lowercase tags without "#" (see `Tags`).
+    pub tags: Vec<String>,
     pub origin: TaskOrigin,
 }
 
@@ -32,6 +35,7 @@ impl Task {
         }
         Ok(Self {
             id: None,
+            kind: ItemKind::Task,
             title,
             notes: String::new(),
             project_id: None,
@@ -41,6 +45,7 @@ impl Task {
             waiting_since: None,
             completed_on: None,
             remind_at: None,
+            tags: Vec::new(),
             origin: TaskOrigin::Manual,
         })
     }

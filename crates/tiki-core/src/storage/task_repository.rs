@@ -19,8 +19,9 @@ impl<'connection> TaskRepository<'connection> {
         self.connection.execute(
             "INSERT INTO tasks (title, notes, project_id, status, priority, due_date, waiting_since,
                                 completed_on, remind_at,
-                                origin_plugin, origin_connection, origin_record, origin_url)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+                                origin_plugin, origin_connection, origin_record, origin_url,
+                                kind, tags)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
             params![
                 task.title,
                 task.notes,
@@ -35,6 +36,8 @@ impl<'connection> TaskRepository<'connection> {
                 connection_id,
                 record,
                 url,
+                task.kind.key(),
+                TaskRowMapper::tags_column(&task.tags),
             ],
         )?;
         Ok(TaskId(self.connection.last_insert_rowid()))
@@ -46,7 +49,7 @@ impl<'connection> TaskRepository<'connection> {
             "UPDATE tasks
                 SET title = ?2, notes = ?3, project_id = ?4, status = ?5, priority = ?6,
                     due_date = ?7, waiting_since = ?8, completed_on = ?9, remind_at = ?10,
-                    updated_at = CURRENT_TIMESTAMP
+                    kind = ?11, tags = ?12, updated_at = CURRENT_TIMESTAMP
               WHERE id = ?1",
             params![
                 task_id.0,
@@ -59,6 +62,8 @@ impl<'connection> TaskRepository<'connection> {
                 task.waiting_since,
                 task.completed_on,
                 task.remind_at,
+                task.kind.key(),
+                TaskRowMapper::tags_column(&task.tags),
             ],
         )?;
         if changed_rows == 0 {

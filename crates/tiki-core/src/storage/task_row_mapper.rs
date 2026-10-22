@@ -1,20 +1,24 @@
 use rusqlite::Row;
 use rusqlite::types::Type;
 
-use crate::domain::{ExternalReference, Priority, ProjectId, Task, TaskId, TaskOrigin, TaskStatus};
+use crate::domain::{
+    ExternalReference, ItemKind, Priority, ProjectId, Task, TaskId, TaskOrigin, TaskStatus,
+};
 
 /// Converts between `tasks` table rows and `Task` values.
 pub struct TaskRowMapper;
 
 impl TaskRowMapper {
     /// Columns in the order `read_row` expects them.
-    pub const COLUMNS: &'static str = "id, title, notes, project_id, status, priority, due_date, \
+    pub const COLUMNS: &'static str = "id, kind, tags, title, notes, project_id, status, priority, due_date, \
         waiting_since, completed_on, remind_at, origin_plugin, origin_connection, origin_record, \
         origin_url";
 
     pub fn read_row(row: &Row<'_>) -> rusqlite::Result<Task> {
         Ok(Task {
             id: Some(TaskId(row.get("id")?)),
+            kind: Self::read_kind(row)?,
+            tags: Self::read_tags(row)?,
             title: row.get("title")?,
             notes: row.get("notes")?,
             project_id: row.get::<_, Option<i64>>("project_id")?.map(ProjectId),
@@ -41,6 +45,23 @@ impl TaskRowMapper {
                 reference.url.as_deref(),
             ),
         }
+    }
+
+    /// Tags are stored as a JSON array of strings.
+    pub fn tags_column(tags: &[String]) -> String {
+        serde_json::to_string(tags).unwrap_or_else(|_| "[]".to_owned())
+    }
+
+    fn read_kind(row: &Row<'_>) -> rusqlite::Result<ItemKind> {
+        let key: String = row.get("kind")?;
+        ItemKind::from_key(&key).map_err(|error| Self::conversion_error(1, error))
+    }
+
+    fn read_tags(row: &Row<'_>) -> rusqlite::Result<Vec<String>> {
+        let json: String = row.get("tags")?;
+        serde_json::from_str(&json).map_err(|error| {
+            rusqlite::Error::FromSqlConversionFailure(2, Type::Text, Box::new(error))
+        })
     }
 
     fn read_status(row: &Row<'_>) -> rusqlite::Result<TaskStatus> {

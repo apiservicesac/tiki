@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 
 use super::{BriefDetail, BriefItem, DailyBrief};
-use crate::domain::{ProjectDirectory, Task, TaskId, TaskStatus};
+use crate::domain::{ItemKind, ProjectDirectory, Task, TaskId, TaskStatus};
 use crate::settings::TikiSettings;
 
 /// Sorts open tasks into the sections of the daily brief.
@@ -26,6 +26,10 @@ impl<'settings> DailyBriefBuilder<'settings> {
                 self.place(&mut brief, task, task_id, projects);
             }
         }
+        brief.reminders.sort_by_key(|item| match item.detail {
+            BriefDetail::RemindAt { at } => Some(at),
+            _ => None,
+        });
         brief
     }
 
@@ -40,6 +44,14 @@ impl<'settings> DailyBriefBuilder<'settings> {
     ) {
         let today = brief.date;
         let line = |detail| Self::line(task, task_id, projects, detail);
+
+        // Standalone reminders are not work: they only list when they ring.
+        if task.kind == ItemKind::Reminder {
+            if let Some(at) = task.remind_at {
+                brief.reminders.push(line(BriefDetail::RemindAt { at }));
+            }
+            return;
+        }
 
         if let Some(days) = task.days_waiting(today) {
             let waiting_line = line(BriefDetail::Waiting { days });
@@ -72,6 +84,7 @@ impl<'settings> DailyBriefBuilder<'settings> {
             task_id,
             title: task.title.clone(),
             project_name: projects.name_of(task.project_id).map(str::to_owned),
+            tags: task.tags.clone(),
             detail,
         }
     }

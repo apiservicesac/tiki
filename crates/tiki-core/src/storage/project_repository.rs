@@ -15,8 +15,8 @@ impl<'connection> ProjectRepository<'connection> {
 
     pub fn insert(&self, project: &Project) -> TikiResult<ProjectId> {
         self.connection.execute(
-            "INSERT INTO projects (name, color) VALUES (?1, ?2)",
-            params![project.name, project.color],
+            "INSERT INTO projects (name, color, notes) VALUES (?1, ?2, ?3)",
+            params![project.name, project.color, project.notes],
         )?;
         Ok(ProjectId(self.connection.last_insert_rowid()))
     }
@@ -27,8 +27,8 @@ impl<'connection> ProjectRepository<'connection> {
             id: 0,
         })?;
         let changed_rows = self.connection.execute(
-            "UPDATE projects SET name = ?2, color = ?3 WHERE id = ?1",
-            params![project_id.0, project.name, project.color],
+            "UPDATE projects SET name = ?2, color = ?3, notes = ?4 WHERE id = ?1",
+            params![project_id.0, project.name, project.color, project.notes],
         )?;
         if changed_rows == 0 {
             return Err(TikiError::NotFound {
@@ -50,7 +50,7 @@ impl<'connection> ProjectRepository<'connection> {
         let project = self
             .connection
             .query_row(
-                "SELECT id, name, color FROM projects WHERE name = ?1 COLLATE NOCASE",
+                "SELECT id, name, color, notes FROM projects WHERE name = ?1 COLLATE NOCASE",
                 params![name],
                 Self::read_row,
             )
@@ -61,7 +61,7 @@ impl<'connection> ProjectRepository<'connection> {
     pub fn list(&self) -> TikiResult<Vec<Project>> {
         let mut statement = self
             .connection
-            .prepare("SELECT id, name, color FROM projects ORDER BY name")?;
+            .prepare("SELECT id, name, color, notes FROM projects ORDER BY name")?;
         let projects = statement
             .query_map([], Self::read_row)?
             .collect::<Result<Vec<_>, _>>()?;
@@ -73,6 +73,7 @@ impl<'connection> ProjectRepository<'connection> {
             id: Some(ProjectId(row.get("id")?)),
             name: row.get("name")?,
             color: row.get("color")?,
+            notes: row.get("notes")?,
         })
     }
 }

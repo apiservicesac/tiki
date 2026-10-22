@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use serde::Serialize;
 
 use crate::domain::{TaskId, TaskStatus};
@@ -14,6 +15,8 @@ pub enum BriefDetail {
     Waiting { days: i64 },
     /// No date pressure; shows the current status.
     InStatus { status: TaskStatus },
+    /// A standalone reminder that rings at this moment.
+    RemindAt { at: NaiveDateTime },
 }
 
 /// One line of the brief.
@@ -22,5 +25,6 @@ pub struct BriefItem {
     pub task_id: TaskId,
     pub title: String,
     pub project_name: Option<String>,
+    pub tags: Vec<String>,
     pub detail: BriefDetail,
 }

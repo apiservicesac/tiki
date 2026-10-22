@@ -29,6 +29,7 @@ impl<'context> SnapshotPresenter<'context> {
             ("due_soon", &brief.due_soon, Urgency::Soon),
             ("your_turn", &brief.your_turn, Urgency::Normal),
             ("waiting", &brief.waiting, Urgency::Waiting),
+            ("reminders", &brief.reminders, Urgency::Reminder),
         ]
         .into_iter()
         .filter(|(_, items, _)| !items.is_empty())
@@ -83,6 +84,7 @@ impl<'context> SnapshotPresenter<'context> {
                     project_name: item.project_name.clone(),
                     project_color: self.project_color(item),
                     detail_label: detail_formatter.label(item.detail, brief.date),
+                    tags: item.tags.clone(),
                     urgency,
                 })
                 .collect(),

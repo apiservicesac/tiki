@@ -13,6 +13,8 @@ pub struct DailyBrief {
     pub waiting: Vec<BriefItem>,
     /// Waiting items that passed the follow-up threshold.
     pub needs_follow_up: Vec<BriefItem>,
+    /// Standalone reminders still to ring, earliest first.
+    pub reminders: Vec<BriefItem>,
 }
 
 impl DailyBrief {
@@ -25,6 +27,7 @@ impl DailyBrief {
             your_turn: Vec::new(),
             waiting: Vec::new(),
             needs_follow_up: Vec::new(),
+            reminders: Vec::new(),
         }
     }
 
