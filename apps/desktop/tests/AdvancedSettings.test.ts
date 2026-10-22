@@ -102,4 +102,23 @@ describe("AdvancedSettingsApp", () => {
     await vi.waitFor(() => expect(root.querySelector("h1")?.textContent).toBe("Plugins and sources"));
     expect(root.querySelectorAll(".catalog-card")).toHaveLength(6);
   });
+
+  it("connects and disconnects calendar accounts", async () => {
+    await startOn("accounts");
+    await vi.waitFor(() => expect(root.querySelector('[data-provider="google"]')).not.toBeNull());
+    expect(root.querySelector(".settings-calendars")?.textContent).toContain("Aún no hay ninguno.");
+
+    root.querySelector<HTMLButtonElement>('[data-provider="google"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector(".calendar-account")?.textContent).toContain("ana@google.test"));
+
+    root.querySelector<HTMLButtonElement>('[data-account="1"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector(".calendar-account")).toBeNull());
+  });
+
+  it("disables the providers this build cannot connect", async () => {
+    backend.calendar = { accounts: [], available: ["google"] };
+    await startOn("accounts");
+    await vi.waitFor(() => expect(root.querySelector<HTMLButtonElement>('[data-provider="microsoft"]')?.disabled).toBe(true));
+    expect(root.querySelector<HTMLButtonElement>('[data-provider="google"]')?.disabled).toBe(false);
+  });
 });

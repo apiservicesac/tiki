@@ -2,6 +2,9 @@ import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest
 import type {
   AiProviderStatus,
   AvailableUpdate,
+  CalendarAccount,
+  CalendarProvider,
+  CalendarStatus,
   CaptureLesson,
   TikiAlert,
   ProjectChange,
@@ -55,6 +58,8 @@ export class FakeBackend implements TikiBackend {
   readonly aiKeys = new Map<AiProviderName, string>();
   /** Plays the AI provider: what the official SDK receives back through the shell. */
   aiShell = new FakeShell(() => ({}));
+  calendar: CalendarStatus = { accounts: [], available: ["microsoft", "google"] };
+  readonly openedLinks: string[] = [];
   private readonly listeners = new Map<string, () => void>();
 
   constructor(private readonly snapshot: IslandSnapshot = FakeBackend.sampleSnapshot()) {}
@@ -188,6 +193,26 @@ export class FakeBackend implements TikiBackend {
     return this.aiShell.send(request);
   }
 
+  async calendarStatus(): Promise<CalendarStatus> {
+    return this.calendar;
+  }
+
+  async connectCalendar(provider: CalendarProvider): Promise<CalendarAccount> {
+    const account = { accountId: this.calendar.accounts.length + 1, provider, email: `ana@${provider}.test` };
+    this.calendar = { ...this.calendar, accounts: [...this.calendar.accounts, account] };
+    return account;
+  }
+
+  async disconnectCalendar(accountId: number): Promise<void> {
+    this.calendar = { ...this.calendar, accounts: this.calendar.accounts.filter((account) => account.accountId !== accountId) };
+  }
+
+  async syncCalendars(): Promise<void> {}
+
+  async openMeetingLink(url: string): Promise<void> {
+    this.openedLinks.push(url);
+  }
+
   async autostartEnabled(): Promise<boolean> {
     return this.autostart;
   }
@@ -269,6 +294,17 @@ export class FakeBackend implements TikiBackend {
       ],
       openItems: [access, tracking, sales, vacation, github, zones, water],
       focus: { item: access, reason: "Está atrasada" },
+      meetings: [
+        {
+          title: "Daily de Altamira",
+          startsAt: "2026-10-23T09:00:00",
+          endsAt: "2026-10-23T09:30:00",
+          allDay: false,
+          location: "Teams",
+          joinUrl: "https://teams.microsoft.com/l/meetup-join/daily",
+          accountEmail: "ana@microsoft.test",
+        },
+      ],
     };
   }
 }

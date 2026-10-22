@@ -18,6 +18,7 @@ const EVENING_BRIEF = {
   title: "Cierre del día",
   body: "Atrasado: 1 · Vence pronto: 2 · Esperando: 2\nMañana vence: Tracking",
   taskId: null,
+  link: null,
 };
 
 describe("IslandController", () => {
@@ -205,6 +206,16 @@ describe("IslandController", () => {
     expect(row?.querySelector(".agenda-time")?.textContent).toBe("11:00");
     expect(row?.querySelector("small")?.textContent).toBe("Cada día");
     expect(root.querySelector(".agenda-list .island-group")?.textContent).not.toBe("");
+  });
+
+  it("puts calendar meetings in the Agenda, by time, with a Join button", async () => {
+    controller.selectTab("agenda");
+    const rows = [...root.querySelectorAll<HTMLElement>(".agenda-row")];
+    expect(rows.map((row) => row.querySelector(".agenda-time")?.textContent)).toEqual(["09:00–09:30", "11:00"]);
+    expect(rows[0]?.querySelector(".island-row-text")?.textContent).toBe("Daily de AltamiraTeams");
+
+    rows[0]?.querySelector<HTMLButtonElement>(".agenda-join")?.click();
+    await vi.waitFor(() => expect(backend.openedLinks).toEqual(["https://teams.microsoft.com/l/meetup-join/daily"]));
   });
 
   it("keeps the search text when the island refreshes", async () => {
@@ -447,7 +458,7 @@ describe("IslandController", () => {
   });
 
   it("opens the task of a task reminder", async () => {
-    backend.deliverAlert({ kind: "task", title: "Recordatorio", body: "Tracking de formularios\nAltamira · mañana", taskId: 1 });
+    backend.deliverAlert({ kind: "task", title: "Recordatorio", body: "Tracking de formularios\nAltamira · mañana", taskId: 1, link: null });
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
 
     notch()?.click();
@@ -464,12 +475,30 @@ describe("IslandController", () => {
 
   it("lets the user mark a reminder done or snooze it from Today", async () => {
     controller.setMode("expanded");
-    backend.deliverAlert({ kind: "reminder", title: "Recordatorio", body: "Llamar a mamá", taskId: 7 });
+    backend.deliverAlert({ kind: "reminder", title: "Recordatorio", body: "Llamar a mamá", taskId: 7, link: null });
     await vi.waitFor(() => expect(root.querySelector("#alert-snooze-10")).not.toBeNull());
 
     root.querySelector<HTMLButtonElement>("#alert-snooze-10")?.click();
     await vi.waitFor(() => expect(backend.snoozed).toEqual([{ taskId: 7, minutes: 10 }]));
     await vi.waitFor(() => expect(root.querySelector(".island-notice")).toBeNull());
+  });
+
+  it("offers Join on a meeting alert and opens the call", async () => {
+    controller.setMode("expanded");
+    backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", body: "Daily\n09:00–09:30", taskId: null, link: "https://meet.google.com/abc" });
+    await vi.waitFor(() => expect(root.querySelector("#alert-join")).not.toBeNull());
+
+    root.querySelector<HTMLButtonElement>("#alert-join")?.click();
+    await vi.waitFor(() => expect(backend.openedLinks).toEqual(["https://meet.google.com/abc"]));
+    expect(controller.currentState.alert).toBeNull();
+  });
+
+  it("opens the Agenda from a meeting alert in the notch", async () => {
+    backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", body: "Daily", taskId: null, link: null });
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
+
+    notch()?.click();
+    await vi.waitFor(() => expect(controller.currentState.tab).toBe("agenda"));
   });
 
   it("switches tabs instantly, without fading the card", () => {
