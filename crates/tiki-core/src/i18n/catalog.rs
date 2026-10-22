@@ -13,29 +13,11 @@ pub struct DateNames {
     pub months: Vec<String>,
 }
 
-/// Words the quick capture understands in this language.
-#[derive(Debug, Clone, Deserialize)]
-pub struct CaptureVocabulary {
-    pub today: Vec<String>,
-    pub tomorrow: Vec<String>,
-    /// One list of accepted words per weekday, Monday first.
-    pub weekdays: Vec<Vec<String>>,
-    /// Small words dropped from the title when they introduce a date ("para viernes").
-    pub connector_words: Vec<String>,
-    /// Words that ask for a reminder ("avísame", "remind").
-    pub remind_words: Vec<String>,
-    /// Words that only go with a reminder word and leave the title ("me" in "remind me").
-    pub remind_fillers: Vec<String>,
-    /// Words that announce a time ("a las 9", "at 5").
-    pub time_markers: Vec<String>,
-}
-
 /// One language file from `/locales`, parsed.
 #[derive(Debug, Clone, Deserialize)]
 pub struct LocaleCatalog {
     pub messages: HashMap<String, String>,
     pub dates: DateNames,
-    pub capture: CaptureVocabulary,
 }
 
 impl LocaleCatalog {

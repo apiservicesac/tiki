@@ -234,22 +234,5 @@
     "weekdays": ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"],
     "weekdays_short": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
     "months": ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
-  },
-  "capture": {
-    "today": ["hoy"],
-    "tomorrow": ["mañana"],
-    "weekdays": [
-      ["lunes"],
-      ["martes"],
-      ["miércoles"],
-      ["jueves"],
-      ["viernes"],
-      ["sábado"],
-      ["domingo"]
-    ],
-    "connector_words": ["el", "este", "para", "hasta", "de", "a", "con", "las", "la"],
-    "remind_words": ["avisame", "recuerdame", "avisa", "recuerda"],
-    "remind_fillers": [],
-    "time_markers": ["las", "la"]
   }
 }

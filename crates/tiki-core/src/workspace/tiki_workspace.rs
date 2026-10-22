@@ -2,9 +2,7 @@ use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, SnapshotPres
 use chrono::NaiveDateTime;
 
 use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
-use crate::capture::{
-    CaptureIntent, CaptureIntentReader, CaptureOutcome, ConfirmedCapture, QuickCaptureParser,
-};
+use crate::capture::ConfirmedCapture;
 use crate::clients::{ClientBook, ClientChange, ClientSummary};
 use crate::domain::{Client, ClientDirectory, ClientId, Task, TaskId, TaskStatus};
 use crate::editing::{TaskDetails, TaskEdit};
@@ -151,30 +149,6 @@ impl TikiWorkspace {
         Ok(alerts)
     }
 
-    /// Reads a quick-capture sentence without saving it, so the user can confirm it.
-    pub fn preview_capture(&self, sentence: &str) -> TikiResult<CaptureIntent> {
-        let clients = self.database.clients().list()?;
-        let task_parser = QuickCaptureParser::new(
-            &self.translator.catalog().capture,
-            &clients,
-            self.settings.default_reminder_time,
-        );
-        CaptureIntentReader::new(&task_parser).read(sentence, self.clock.today())
-    }
-
-    /// Reads a quick-capture sentence and saves the task or client it describes.
-    pub fn capture(&self, sentence: &str) -> TikiResult<CaptureOutcome> {
-        match self.preview_capture(sentence)? {
-            CaptureIntent::Task(draft) => {
-                let mut task = draft.into_task()?;
-                self.move_past_reminder_to_tomorrow(&mut task);
-                let task_id = self.database.tasks().insert(&task)?;
-                Ok(CaptureOutcome::Task(task_id))
-            }
-            CaptureIntent::Client { name } => Ok(CaptureOutcome::Client(self.add_client(&name)?)),
-        }
-    }
-
     /// Saves a task exactly as the user confirmed it; an unknown client name is left out.
     pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
         let mut task = Task::new(capture.title)?.with_priority(capture.priority);
@@ -261,16 +235,6 @@ impl TikiWorkspace {
             .clients()
             .find_by_name(name)?
             .and_then(|client| client.id))
-    }
-
-    /// "Avísame a las 9" said at 17:00 means tomorrow at 9, not a reminder in the past.
-    fn move_past_reminder_to_tomorrow(&self, task: &mut Task) {
-        let now = self.clock.now();
-        if task.due_date.is_none()
-            && let Some(remind_at) = task.remind_at.filter(|remind_at| *remind_at <= now)
-        {
-            task.remind_at = remind_at.checked_add_days(chrono::Days::new(1));
-        }
     }
 
     fn reschedule_moved_briefs(&self, preferences: &UserPreferences) -> TikiResult<()> {

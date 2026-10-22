@@ -5,7 +5,7 @@ use chrono::NaiveTime;
 use support::{SampleWorkspace, TestDay};
 use tiki_core::TikiSettings;
 use tiki_core::ai::AiProvider;
-use tiki_core::capture::{CaptureIntent, CaptureOutcome, ConfirmedCapture};
+use tiki_core::capture::ConfirmedCapture;
 use tiki_core::domain::{Priority, TaskStatus};
 use tiki_core::i18n::Locale;
 use tiki_core::mood::Mood;
@@ -62,24 +62,6 @@ fn switching_to_english_translates_the_snapshot() {
 }
 
 #[test]
-fn capturing_a_sentence_creates_a_task_for_the_client() {
-    let workspace = sample_workspace();
-    workspace
-        .capture("revisar permisos de Vapestation mañana")
-        .unwrap();
-
-    let snapshot = workspace.island_snapshot().unwrap();
-    let due_soon = snapshot
-        .sections
-        .iter()
-        .find(|section| section.key == "due_soon")
-        .unwrap();
-    assert!(due_soon.items.iter().any(|item| {
-        item.title == "Revisar permisos" && item.client_name.as_deref() == Some("Vapestation")
-    }));
-}
-
-#[test]
 fn delivering_the_overdue_task_calms_tiki_down_to_hurry() {
     let workspace = sample_workspace();
     let overdue_id = workspace.island_snapshot().unwrap().sections[0].items[0].task_id;
@@ -94,28 +76,6 @@ fn focus_mode_puts_tiki_to_sleep() {
     let mut workspace = sample_workspace();
     workspace.set_focus_mode(true).unwrap();
     assert_eq!(workspace.island_snapshot().unwrap().mood_label, "ZZZ");
-}
-
-#[test]
-fn a_plus_sign_creates_a_client_that_capture_then_recognizes() {
-    let workspace = sample_workspace();
-
-    let outcome = workspace.capture("+Constructora").unwrap();
-    assert!(matches!(outcome, CaptureOutcome::Client(_)));
-
-    let intent = workspace
-        .preview_capture("visitar constructora jueves")
-        .unwrap();
-    let CaptureIntent::Task(draft) = intent else {
-        panic!("expected a task");
-    };
-    assert_eq!(draft.client_name.as_deref(), Some("Constructora"));
-    assert_eq!(draft.due_date, Some(TestDay::october(22)));
-}
-
-#[test]
-fn a_plus_sign_alone_is_rejected() {
-    assert!(sample_workspace().capture("+   ").is_err());
 }
 
 #[test]

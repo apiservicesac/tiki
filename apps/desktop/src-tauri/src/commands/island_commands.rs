@@ -1,5 +1,5 @@
 use tauri::State;
-use tiki_core::capture::{CaptureIntent, CaptureOutcome, ConfirmedCapture};
+use tiki_core::capture::ConfirmedCapture;
 use tiki_core::domain::{TaskId, TaskStatus};
 use tiki_core::editing::{TaskDetails, TaskEdit};
 use tiki_core::workspace::{AssistantContext, DeliveredItem, IslandSnapshot};
@@ -10,19 +10,6 @@ use crate::app_state::AppState;
 #[tauri::command]
 pub fn island_snapshot(state: State<'_, AppState>) -> CommandResult<IslandSnapshot> {
     Ok(state.with_workspace(|workspace| workspace.island_snapshot())?)
-}
-
-#[tauri::command]
-pub fn preview_capture(
-    state: State<'_, AppState>,
-    sentence: String,
-) -> CommandResult<CaptureIntent> {
-    Ok(state.with_workspace(|workspace| workspace.preview_capture(&sentence))?)
-}
-
-#[tauri::command]
-pub fn capture(state: State<'_, AppState>, sentence: String) -> CommandResult<CaptureOutcome> {
-    Ok(state.with_workspace(|workspace| workspace.capture(&sentence))?)
 }
 
 #[tauri::command]

@@ -234,22 +234,5 @@
     "weekdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
     "weekdays_short": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-  },
-  "capture": {
-    "today": ["today"],
-    "tomorrow": ["tomorrow"],
-    "weekdays": [
-      ["monday", "mon"],
-      ["tuesday", "tue"],
-      ["wednesday", "wed"],
-      ["thursday", "thu"],
-      ["friday", "fri"],
-      ["saturday", "sat"],
-      ["sunday", "sun"]
-    ],
-    "connector_words": ["on", "by", "this", "next", "for", "to", "with", "at"],
-    "remind_words": ["remind", "alert"],
-    "remind_fillers": ["me"],
-    "time_markers": ["at"]
   }
 }
