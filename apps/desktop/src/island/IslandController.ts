@@ -365,6 +365,7 @@ export class IslandController {
 
   private handlers(): IslandViewHandlers {
     return {
+      onContentResize: () => this.hitAreaReporter.report(this.view.hitArea()),
       onExpand: () => (this.state.mode === "alert" ? void this.openAlert() : this.setMode("expanded")),
       onOpenAlert: () => void this.openAlert(),
       onDismissAlert: () => this.update({ alert: null, unreadAlert: false }),

@@ -21,6 +21,8 @@ import { FocusKeeper } from "../dom/FocusKeeper";
 export interface IslandViewHandlers
   extends HeaderHandlers, SettingsHandlers, TasksTabHandlers, ProjectsPanelHandlers, TodayHandlers {
   onExpand: () => void;
+  /** The island changed size without a redraw: the click-through area must follow. */
+  onContentResize: () => void;
   onPointerEnter: () => void;
   onPointerLeave: () => void;
   capture: CaptureViewHandlers;
@@ -70,7 +72,7 @@ export class IslandView {
     this.receipt = new ReceiptView(translator);
     this.clip = ElementFactory.create("div", { className: "island-clip" });
     this.notch = this.createNotch();
-    this.contentTransition = new ContentTransition(this.clip);
+    this.contentTransition = new ContentTransition(this.clip, (size) => this.followContent(size));
     root.style.setProperty("--island-open-duration", `${UI_CONFIG.motion.openMs}ms`);
     root.style.setProperty("--island-close-duration", `${UI_CONFIG.motion.closeMs}ms`);
     root.style.setProperty("--island-content-out-duration", `${UI_CONFIG.motion.contentOutMs}ms`);
@@ -166,6 +168,15 @@ export class IslandView {
       }
     });
     return notch;
+  }
+
+  /** The content changed size by itself: the notch follows, and the click area too. */
+  private followContent(size: ContentSize): void {
+    if (size.width === this.notchSize.width && size.height === this.notchSize.height) {
+      return;
+    }
+    this.resizeNotch(size);
+    this.handlers?.onContentResize();
   }
 
   /** Gives the notch its new size; CSS animates growing and shrinking with different curves. */
