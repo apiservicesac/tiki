@@ -6,6 +6,23 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.2-rc.2] - 2026-10-22
+
+### Changed
+- Tiki groups work by **project** instead of client: a project can be a client, a product,
+  a team or personal. Existing clients become projects, with their tasks and colors.
+- Quick capture is a sentence with fields under it: project (picker with search), due date,
+  reminder and priority. With an AI key, Enter fills the fields from the sentence, written
+  any way you like, and you review them before saving with a second Enter. Without a key,
+  the sentence is the title and you pick the fields.
+- The AI capture understands any way of saying a day ("the 25th", "in two days", "next
+  week") and reminders with their time.
+
+### Removed
+- The word-rules reading of quick capture (fixed words for days, times, "avísame" and
+  "+Name"): it misread sentences such as "avisa a Juan…" or "a las 9 personas". Projects are
+  created from the project picker or the project panel.
+
 ## [0.2.2-rc.1] - 2026-10-21
 
 ### Added
