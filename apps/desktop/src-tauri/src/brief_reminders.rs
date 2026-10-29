@@ -50,7 +50,7 @@ impl BriefReminders {
         app.notification()
             .builder()
             .title(&alert.title)
-            .body(&alert.notification_body())
+            .body(alert.notification_body())
             .show()
     }
 }
