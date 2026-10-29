@@ -4,7 +4,7 @@ use rusqlite::{Connection, OptionalExtension, params};
 use crate::ai::AiProvider;
 use crate::error::{TikiError, TikiResult};
 use crate::i18n::Locale;
-use crate::preferences::{IslandPlacement, UserPreferences};
+use crate::preferences::{IslandPlacement, QuietHours, UserPreferences};
 
 /// Reads and writes the user's preferences as key/value rows.
 pub struct PreferencesRepository<'connection> {
@@ -57,6 +57,17 @@ impl<'connection> PreferencesRepository<'connection> {
             windows_notifications: self
                 .flag(UserPreferences::WINDOWS_NOTIFICATIONS_KEY)?
                 .unwrap_or(defaults.windows_notifications),
+            quiet_hours: QuietHours {
+                enabled: self
+                    .flag(UserPreferences::QUIET_HOURS_ENABLED_KEY)?
+                    .unwrap_or(defaults.quiet_hours.enabled),
+                from: self
+                    .time(UserPreferences::QUIET_HOURS_FROM_KEY)?
+                    .unwrap_or(defaults.quiet_hours.from),
+                until: self
+                    .time(UserPreferences::QUIET_HOURS_UNTIL_KEY)?
+                    .unwrap_or(defaults.quiet_hours.until),
+            },
         })
     }
 
@@ -83,6 +94,14 @@ impl<'connection> PreferencesRepository<'connection> {
                 UserPreferences::EVENING_BRIEF_TIME_KEY,
                 preferences.evening_brief_time,
             ),
+            (
+                UserPreferences::QUIET_HOURS_FROM_KEY,
+                preferences.quiet_hours.from,
+            ),
+            (
+                UserPreferences::QUIET_HOURS_UNTIL_KEY,
+                preferences.quiet_hours.until,
+            ),
         ] {
             self.store(key, &time.format(UserPreferences::TIME_FORMAT).to_string())?;
         }
@@ -95,6 +114,10 @@ impl<'connection> PreferencesRepository<'connection> {
             (
                 UserPreferences::WINDOWS_NOTIFICATIONS_KEY,
                 preferences.windows_notifications,
+            ),
+            (
+                UserPreferences::QUIET_HOURS_ENABLED_KEY,
+                preferences.quiet_hours.enabled,
             ),
         ] {
             self.store(key, &flag.to_string())?;
