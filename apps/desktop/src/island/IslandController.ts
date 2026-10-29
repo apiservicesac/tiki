@@ -234,6 +234,7 @@ export class IslandController {
       onSearchSessions: (text) => void this.sessions.search(text),
       onRetryTranscription: (sessionId) => void this.sessions.retry(sessionId),
       onDeleteSession: (sessionId) => void this.sessions.delete(sessionId),
+      onExportSession: (sessionId) => void this.sessions.export(sessionId),
       onWriteSessionNotes: (sessionId) => void this.sessionNotes.write(sessionId),
       onApplySessionTask: (actionItemId) => void this.sessionNotes.applyTask(actionItemId),
       onDeliverTask: (taskId) => void this.items.deliver(taskId),

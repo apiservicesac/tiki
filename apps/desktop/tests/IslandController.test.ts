@@ -703,6 +703,12 @@ describe("IslandController", () => {
     expect(root.querySelector<HTMLVideoElement>("video.session-player")?.currentTime).toBe(5);
   });
 
+  it("exports a session to the user's Downloads", async () => {
+    await controller.openSession(2);
+    root.querySelector<HTMLButtonElement>(".session-export")?.click();
+    await vi.waitFor(() => expect(backend.exportedSessions).toEqual([2]));
+  });
+
   it("deletes a session only after a second press", async () => {
     await controller.openSession(2);
     root.querySelector<HTMLButtonElement>(".session-delete")?.click();

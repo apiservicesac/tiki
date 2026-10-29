@@ -9,6 +9,7 @@ import type { OpenSession } from "./islandState";
 
 export interface SessionDetailHandlers {
   onDeleteSession: (sessionId: number) => void;
+  onExportSession: (sessionId: number) => void;
   onRetryTranscription: (sessionId: number) => void;
   onWriteSessionNotes: (sessionId: number) => void;
   onApplySessionTask: (actionItemId: number) => void;
@@ -31,7 +32,7 @@ interface ShownLine {
  * One recorded session: its player, the AI notes (summary, key points, decisions and the
  * proposed tasks, each created with one click), the transcript labelled "You" and "Others"
  * that follows the player (the line being said is highlighted, and clicking a line plays
- * from there), and deleting it. The player is kept between redraws, so a refresh never
+ * from there), and exporting or deleting it. The player is kept between redraws, so a refresh never
  * stops playback.
  */
 export class SessionDetailView {
@@ -230,6 +231,10 @@ export class SessionDetailView {
         remove.textContent = this.translator.text("session.delete_confirm");
       }
     });
-    return ElementFactory.create("div", { className: "session-actions", children: [...retry, remove] });
+    const exportSession = ElementFactory.textButton({
+      className: "settings-button settings-button-quiet session-export",
+      text: this.translator.text("session.export"),
+    }, () => handlers.onExportSession(sessionId));
+    return ElementFactory.create("div", { className: "session-actions", children: [...retry, exportSession, remove] });
   }
 }

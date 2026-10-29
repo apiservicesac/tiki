@@ -177,6 +177,10 @@ export class TauriBackend implements TikiBackend {
     await this.call("retry_transcription", { sessionId });
   }
 
+  async exportSession(sessionId: number): Promise<void> {
+    await this.call("export_session", { sessionId });
+  }
+
   sessionStorage(): Promise<SessionStorage> {
     return this.call<SessionStorage>("session_storage");
   }

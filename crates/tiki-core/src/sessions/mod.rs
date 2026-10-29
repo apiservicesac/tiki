@@ -9,6 +9,7 @@ mod recording_suggestion_policy;
 mod retention_policy;
 mod session;
 mod session_clock;
+mod session_export;
 mod session_notes;
 mod session_search_hit;
 mod session_service;
@@ -26,6 +27,7 @@ pub use recording_suggestion_policy::{PresenceSignals, RecordingCue, RecordingSu
 pub use retention_policy::RetentionPolicy;
 pub use session::Session;
 pub use session_clock::SessionClock;
+pub use session_export::SessionExport;
 pub use session_notes::{ProposedSessionTask, SessionActionItem, SessionNotes};
 pub use session_search_hit::SessionSearchHit;
 pub use session_service::SessionService;

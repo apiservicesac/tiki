@@ -476,6 +476,8 @@ export interface TikiBackend {
   /** Forgets a session and its files; tasks made from it stay. */
   deleteSession(sessionId: number): Promise<void>;
   retryTranscription(sessionId: number): Promise<void>;
+  /** Writes the session (media, transcript and notes) to the user's Downloads and shows the folder. */
+  exportSession(sessionId: number): Promise<void>;
   sessionStorage(): Promise<SessionStorage>;
   /** Saves the notes the AI wrote for a session and the tasks they propose. */
   saveSessionNotes(sessionId: number, notes: WrittenSessionNotes): Promise<void>;

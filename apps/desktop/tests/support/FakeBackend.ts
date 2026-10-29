@@ -331,6 +331,12 @@ export class FakeBackend implements TikiBackend {
     this.retriedTranscriptions.push(sessionId);
   }
 
+  readonly exportedSessions: number[] = [];
+
+  async exportSession(sessionId: number): Promise<void> {
+    this.exportedSessions.push(sessionId);
+  }
+
   async sessionStorage(): Promise<SessionStorage> {
     return { mediaBytes: 24_000_000, mediaDays: 90 };
   }

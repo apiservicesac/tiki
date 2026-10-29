@@ -6,9 +6,10 @@ use tiki_core::TikiError;
 use tiki_core::activity::ItemEvent;
 use tiki_core::alerts::AlertKind;
 use tiki_core::calendar::{CalendarProvider, Meeting};
+use tiki_core::i18n::{Locale, Translator};
 use tiki_core::sessions::{
-    MeetingLink, ProposedSessionTask, RecordingMode, RetentionPolicy, SessionId, SessionNotes,
-    SessionStatus, Speaker, Transcript, TranscriptSegment,
+    MeetingLink, ProposedSessionTask, RecordingMode, RetentionPolicy, SessionExport, SessionId,
+    SessionNotes, SessionStatus, Speaker, Transcript, TranscriptSegment,
 };
 use tiki_core::storage::Database;
 
@@ -489,3 +490,49 @@ fn the_snapshot_shows_the_session_being_recorded() {
     assert!(!recording.paused);
 }
 
+#[test]
+fn a_session_exports_as_subtitles_text_and_markdown_notes() {
+    let workspace = workspace();
+    let session_id = transcribed(
+        &workspace,
+        vec![
+            line(Speaker::Others, 0, "Revisemos la facturación"),
+            line(Speaker::You, 65_250, "Mañana envío el informe"),
+        ],
+    );
+    let notes = SessionNotes {
+        summary: "Se revisó la facturación.".to_owned(),
+        key_points: vec!["Octubre cerrado".to_owned()],
+        decisions: Vec::new(),
+    };
+    let proposed = [ProposedSessionTask {
+        title: "Enviar el informe".to_owned(),
+        due_date: None,
+    }];
+    workspace
+        .sessions()
+        .save_notes(session_id, &notes, &proposed)
+        .unwrap();
+    let details = workspace.sessions().details(session_id).unwrap();
+    let translator = Translator::new(Locale::Spanish).unwrap();
+    let export = SessionExport::new(&translator);
+
+    assert_eq!(
+        export.folder_name(&details),
+        "Tiki · 2026-10-21 · Sesión del Mié 21, 10-00"
+    );
+    assert_eq!(
+        export.subtitles(&details.transcript),
+        "1\n00:00:00,000 --> 00:00:01,000\nOtros: Revisemos la facturación\n\n\
+         2\n00:01:05,250 --> 00:01:06,250\nTú: Mañana envío el informe\n"
+    );
+    assert_eq!(
+        export.text(&details.transcript),
+        "[00:00:00] Otros: Revisemos la facturación\n[00:01:05] Tú: Mañana envío el informe"
+    );
+    assert_eq!(
+        export.notes(&details).unwrap(),
+        "# Sesión del Mié 21, 10:00\n\nMié 21 · 10:00\n\n## Resumen\n\nSe revisó la facturación.\n\n\
+         ## Puntos clave\n\n- Octubre cerrado\n\n## Tareas propuestas\n\n- [ ] Enviar el informe\n"
+    );
+}

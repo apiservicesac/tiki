@@ -4,8 +4,8 @@ import type { IslandStore } from "./IslandStore";
 
 /**
  * The Sessions tab's actions: loading the sessions, opening one (at a search hit), searching
- * the transcripts, deleting a session, retrying its transcription and following the model
- * download.
+ * the transcripts, exporting or deleting a session, retrying its transcription and following
+ * the model download.
  */
 export class SessionsFlow {
   constructor(
@@ -51,6 +51,16 @@ export class SessionsFlow {
     await this.backend.deleteSession(sessionId);
     this.close();
     await this.store.refresh();
+  }
+
+  /** Writes the session to the user's Downloads; the shell shows the folder. */
+  async export(sessionId: number): Promise<void> {
+    try {
+      await this.backend.exportSession(sessionId);
+      this.store.react("happy");
+    } catch {
+      this.store.react("worried");
+    }
   }
 
   async retry(sessionId: number): Promise<void> {

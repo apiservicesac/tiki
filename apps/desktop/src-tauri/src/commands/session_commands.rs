@@ -1,5 +1,6 @@
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
+use tauri_plugin_opener::OpenerExt;
 use tiki_core::domain::TaskId;
 use tiki_core::sessions::{
     ActionItemId, ProposedSessionTask, RecordingMode, SessionDetails, SessionId, SessionNotes,
@@ -9,6 +10,7 @@ use tiki_recording::video::CaptureTarget;
 
 use super::command_error::{CommandError, CommandResult};
 use crate::app_state::AppState;
+use crate::session_exporter::SessionExporter;
 use crate::session_files::SessionFiles;
 use crate::session_recorder::SessionRecorder;
 use crate::shell_events::ShellEvent;
@@ -174,4 +176,13 @@ pub fn apply_session_task(
             .sessions()
             .apply_action_item(ActionItemId(action_item_id))
     })?)
+}
+
+/// Writes the session to the user's Downloads and shows the folder.
+#[tauri::command]
+pub fn export_session(app: AppHandle, session_id: i64) -> CommandResult<()> {
+    let folder = SessionExporter::export(&app, SessionId(session_id))?;
+    app.opener()
+        .reveal_item_in_dir(folder)
+        .map_err(|error| CommandError::new(&error))
 }

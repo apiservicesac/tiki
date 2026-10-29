@@ -18,6 +18,7 @@ mod island_window;
 mod recorder_error;
 #[cfg(windows)]
 mod registry_consent_store;
+mod session_exporter;
 mod session_files;
 mod session_recorder;
 mod session_recovery;
