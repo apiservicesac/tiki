@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiki — your work assistant in the notch</title>
+<meta name="description" content="Tiki is a Windows desktop assistant that lives in a notch at the top of the screen and keeps your tasks, reminders and meetings in one place.">
+<style>
+  :root { --text: #1d1d1f; --muted: #5f6368; --bg: #ffffff; --line: #e5e5ea; --accent: #2f6bd8; --notch: #0a0a0d; --eye: #f6c768; }
+  @media (prefers-color-scheme: dark) {
+    :root { --text: #f2f2f7; --muted: #a1a1aa; --bg: #141416; --line: #2c2c30; --accent: #7aa7ff; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 0 16px 64px; }
+  .notch { display: flex; justify-content: center; }
+  .notch div { display: flex; gap: 10px; align-items: center; justify-content: center; width: 220px; height: 44px; border-radius: 0 0 22px 22px; background: var(--notch); }
+  .notch span { width: 9px; height: 17px; border-radius: 5px; background: var(--eye); box-shadow: 0 0 6px var(--eye); }
+  h1 { font-size: 34px; margin: 40px 0 4px; }
+  h2 { font-size: 20px; margin: 32px 0 8px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .lead { font-size: 19px; color: var(--muted); margin: 0 0 24px; }
+  a { color: var(--accent); }
+  li { margin: 6px 0; }
+  .button { display: inline-block; padding: 10px 18px; border-radius: 999px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 600; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+  .lang { margin-top: 48px; padding-top: 8px; border-top: 3px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="notch" aria-hidden="true"><div><span></span><span></span></div></div>
+<main>
+
+<h1>Tiki</h1>
+<p class="lead">Your work assistant on Windows, always in sight in the notch at the top of the screen.
+Nothing slips, and you always know what to do now. · <a href="#es">En español</a></p>
+
+<p><a class="button" href="https://github.com/apiservicesac/tiki/releases">Download for Windows</a></p>
+
+<h2>What Tiki does</h2>
+<ul>
+  <li><strong>Captures</strong> a task or a reminder from one sentence, the way you would say it.</li>
+  <li><strong>Organizes</strong> your work by project, with tags, follow-ups and a trash you can restore from.</li>
+  <li><strong>Reminds you at the right moment</strong>: reminders, follow-ups, a morning brief, an end-of-day close and
+    an alert before each meeting, with a Join button for video calls.</li>
+  <li><strong>Knows when to keep quiet</strong>: alerts arrive without sound at night and during calls.</li>
+</ul>
+
+<h2>Your calendar</h2>
+<p>If you connect a Google or Microsoft 365 account, Tiki <strong>only reads</strong> your calendar events
+(title, time, place and video-call link) to show them in its Agenda and remind you before each meeting.
+Tiki never creates, changes or deletes events, and your calendar data stays on your computer.
+Read the <a href="privacy-policy.html">privacy policy</a> for the details.</p>
+
+<h2>Your data stays with you</h2>
+<p>Tiki runs on your computer and keeps everything in a local database. There is no Tiki server that
+receives your data, and nothing is sold or used for advertising.</p>
+
+<section class="lang" id="es" lang="es">
+<h1>Tiki</h1>
+<p class="lead">Tu asistente de trabajo en Windows, siempre a la vista en el notch de arriba de la pantalla.
+Que no se te pase nada y que siempre sepas qué hacer ahora.</p>
+<p><a class="button" href="https://github.com/apiservicesac/tiki/releases">Descargar para Windows</a></p>
+<h2>Tu calendario</h2>
+<p>Si conectas una cuenta de Google o de Microsoft 365, Tiki <strong>solo lee</strong> tus eventos (título, hora,
+lugar y enlace de la videollamada) para mostrarlos en su Agenda y avisarte antes de cada reunión. Nunca crea,
+cambia ni borra eventos, y los datos se quedan en tu computadora. Más detalles en la
+<a href="privacy-policy.html">política de privacidad</a>.</p>
+</section>
+
+<footer>
+  Tiki is developed by API SERVICE SAC (GitHub: <a href="https://github.com/Josuesp1620">Josuesp1620</a>) ·
+  <a href="mailto:principal@apiservicesac.com">principal@apiservicesac.com</a> ·
+  <a href="privacy-policy.html">Privacy policy</a> ·
+  <a href="https://github.com/apiservicesac/tiki">Source code</a>
+</footer>
+
+</main>
+</body>
+</html>
