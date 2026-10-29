@@ -86,22 +86,6 @@ impl Task {
         self
     }
 
-    /// Moves the task to a new status, keeping track of when it started waiting and when it
-    /// was delivered. Reopening a delivered task clears its delivery day.
-    pub fn move_to(&mut self, status: TaskStatus, today: NaiveDate) {
-        if status == TaskStatus::Waiting && self.status != TaskStatus::Waiting {
-            self.waiting_since = Some(today);
-        } else if status != TaskStatus::Waiting {
-            self.waiting_since = None;
-        }
-        if status == TaskStatus::Done && self.status != TaskStatus::Done {
-            self.completed_on = Some(today);
-        } else if status != TaskStatus::Done {
-            self.completed_on = None;
-        }
-        self.status = status;
-    }
-
     /// Days until the due date: negative when overdue, `None` without a due date.
     pub fn days_until_due(&self, today: NaiveDate) -> Option<i64> {
         self.due_date.map(|due| (due - today).num_days())

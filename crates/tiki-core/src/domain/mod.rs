@@ -9,6 +9,7 @@ mod project_directory;
 mod repeat;
 mod tags;
 mod task;
+mod task_lifecycle;
 mod task_origin;
 mod task_status;
 

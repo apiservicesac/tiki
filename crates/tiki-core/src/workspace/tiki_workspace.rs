@@ -9,7 +9,7 @@ use crate::calendar::{
 };
 use crate::capture::{CaptureLesson, ConfirmedCapture};
 use crate::domain::{
-    FollowUpPolicy, ItemKind, Project, ProjectDirectory, ProjectId, Tags, Task, TaskId, TaskStatus,
+    FollowUpPolicy, Project, ProjectDirectory, ProjectId, Tags, Task, TaskId, TaskStatus,
 };
 use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
@@ -225,14 +225,7 @@ impl TikiWorkspace {
         let mut alerts = Vec::new();
         for mut task in self.database.tasks().list_reminders_due(now)? {
             alerts.push(composer.compose_task(&task, projects.name_of(task.project_id), today));
-            let rang_at = task.remind_at.take();
-            if task.kind == ItemKind::Reminder {
-                // A repeating reminder comes back; a one-time reminder is done once it rang.
-                task.remind_at = rang_at.and_then(|at| task.repeat.next_after(at, now));
-                if task.remind_at.is_none() {
-                    task.move_to(TaskStatus::Done, today);
-                }
-            }
+            task.ring(now);
             self.database.tasks().update(&task)?;
         }
         Ok(alerts)
@@ -262,10 +255,7 @@ impl TikiWorkspace {
     /// Puts off a reminder for `minutes`; a reminder that already rang comes back to life.
     pub fn snooze(&self, task_id: TaskId, minutes: i64) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
-        task.remind_at = Some(self.clock.now() + chrono::Duration::minutes(minutes));
-        if task.status == TaskStatus::Done {
-            task.move_to(TaskStatus::ToDo, self.clock.today());
-        }
+        task.snooze(self.clock.now() + chrono::Duration::minutes(minutes));
         self.database.tasks().update(&task)
     }
 
