@@ -4,8 +4,9 @@ import { ElementFactory } from "../dom/ElementFactory";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
 
 /**
- * Content of the folded island. Resting, it shows Tiki with the day's summary when something
- * needs attention, or Tiki alone when the day is clear. Compact adds the mood word.
+ * Content of the folded island. Resting, it shows Tiki's face with the day's summary when
+ * something needs attention, or the face alone when the day is clear. Compact adds the mood
+ * word. The mood color (eyes, glow, chip) comes from the stylesheet through `data-mood`.
  *
  * The summary is written as text for the top and bottom edges and as count bubbles for the
  * left and right edges; the stylesheet shows the one that fits the orientation.
@@ -14,7 +15,7 @@ export class NotchView {
   constructor(private readonly mascot: MascotRenderer) {}
 
   hidden(snapshot: IslandSnapshot, mood: MoodName, unread: boolean): HTMLElement {
-    const mascot = this.mascotOf(snapshot, mood, UI_CONFIG.mascotSize.hidden);
+    const mascot = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.hidden);
     const unreadDot = unread ? [ElementFactory.create("span", { className: "notch-unread", attributes: { "aria-hidden": "true" } })] : [];
     if (snapshot.attentionCount === 0) {
       return ElementFactory.create("div", { className: "notch-hidden", children: [mascot, ...unreadDot] });
@@ -23,7 +24,6 @@ export class NotchView {
       className: "notch-hidden notch-hidden-busy",
       children: [
         mascot,
-        ElementFactory.create("span", { className: "notch-name", text: "Tiki" }),
         this.summaryText(snapshot),
         this.countBubbles(snapshot),
         ...unreadDot,
@@ -38,7 +38,7 @@ export class NotchView {
       className: "notch-alert",
       attributes: { role: "status", "aria-live": "polite" },
       children: [
-        this.mascotOf(snapshot, mood, UI_CONFIG.mascotSize.alert),
+        this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.alert),
         ElementFactory.create("span", {
           className: "notch-alert-text",
           children: [
@@ -54,7 +54,7 @@ export class NotchView {
     return ElementFactory.create("div", {
       className: "notch-compact",
       children: [
-        this.mascotOf(snapshot, mood, UI_CONFIG.mascotSize.compact),
+        this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.compact),
         this.summaryText(snapshot),
         this.countBubbles(snapshot),
         ElementFactory.create("span", {

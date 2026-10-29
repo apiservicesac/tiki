@@ -46,8 +46,8 @@ describe("IslandController", () => {
     expect(root.dataset.placement).toBe("top");
   });
 
-  it("shows Tiki and the day's summary while resting when work is pending", () => {
-    expect(root.querySelector(".notch-hidden-busy .notch-name")?.textContent).toBe("Tiki");
+  it("shows Tiki's face and the day's summary while resting when work is pending", () => {
+    expect(root.querySelector(".notch-hidden-busy .mascot-worried")).not.toBeNull();
     expect(root.querySelector(".notch-hidden-busy .notch-summary")?.textContent).toBe("3 hoy · 2 esperando");
   });
 
