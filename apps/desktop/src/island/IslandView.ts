@@ -256,7 +256,7 @@ export class IslandView {
         return this.projectsPanel.render(state.projects, state.projectColors, state.creatingProject, handlers);
       case "brief":
         return this.receipt.render(state.snapshot, state.alert, state.dayBrief);
-      case "tasks":
+      case "tabs":
         return this.tabContent(state, handlers);
     }
   }

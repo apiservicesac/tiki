@@ -481,20 +481,20 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 }
 
 /* Tasks tab, project panel and receipt use the whole card: no big mascot beside them. */
-.island-card[data-tab="all_tasks"][data-panel="tasks"],
+.island-card[data-tab="all_tasks"][data-panel="tabs"],
 .island-card[data-panel="projects"],
 .island-card[data-panel="brief"] {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.island-card[data-tab="all_tasks"][data-panel="tasks"] .island-card-mascot,
+.island-card[data-tab="all_tasks"][data-panel="tabs"] .island-card-mascot,
 .island-card[data-panel="projects"] .island-card-mascot,
 .island-card[data-panel="brief"] .island-card-mascot {
   display: none;
 }
 
 /* Cards without the big mascot keep the same margin on both sides. */
-.island-card[data-tab="all_tasks"][data-panel="tasks"] .island-card-body,
+.island-card[data-tab="all_tasks"][data-panel="tabs"] .island-card-body,
 .island-card[data-panel="projects"] .island-card-body,
 .island-card[data-panel="brief"] .island-card-body {
   padding: 14px 16px;

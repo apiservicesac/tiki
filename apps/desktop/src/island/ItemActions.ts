@@ -17,7 +17,7 @@ export class ItemActions {
   async save(taskId: number, edit: TaskEdit): Promise<void> {
     await this.backend.editTask(taskId, edit);
     await this.store.refresh();
-    this.store.update({ panel: "tasks", editing: null });
+    this.store.update({ panel: "tabs", editing: null });
     this.store.react(edit.status === "done" ? "happy" : "curious");
   }
 

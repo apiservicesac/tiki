@@ -19,7 +19,7 @@ export type IslandMode = (typeof ISLAND_MODES)[number];
  * What the expanded island shows in its card: the tabs, or a panel such as quick capture,
  * a task being edited, the project list or the brief drawn as a receipt.
  */
-export type IslandPanel = "tasks" | "capture" | "settings" | "edit" | "projects" | "brief";
+export type IslandPanel = "tabs" | "capture" | "settings" | "edit" | "projects" | "brief";
 
 /** Pending tasks, or the delivered history, in the Tasks tab. Reminders live in the Agenda. */
 export const TASKS_VIEWS = Object.freeze(["pending", "delivered"] as const);
@@ -69,7 +69,7 @@ export interface IslandState {
 /** How the island starts, before it knows where it sits and what the day holds. */
 export const ISLAND_STATE_DEFAULTS: Readonly<Omit<IslandState, "placement" | "snapshot">> = Object.freeze({
   mode: "hidden",
-  panel: "tasks",
+  panel: "tabs",
   tab: "today",
   projects: [],
   projectColors: [],

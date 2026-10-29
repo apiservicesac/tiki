@@ -54,7 +54,7 @@ export class CaptureFlow {
     }
     this.view.reset();
     await this.store.refresh();
-    this.store.update({ mode: "expanded", panel: "tasks" });
+    this.store.update({ mode: "expanded", panel: "tabs" });
     this.store.react("happy");
   }
 }

@@ -12,7 +12,7 @@ export interface HeaderHandlers {
 /** Top row of the expanded island: tabs on the left, actions on the right. */
 export class HeaderView {
   private static readonly PANEL_TITLES: Readonly<Record<IslandPanel, string>> = Object.freeze({
-    tasks: "island.tab.today",
+    tabs: "island.tab.today",
     capture: "island.action.new",
     settings: "settings.title",
     edit: "edit.title",
@@ -23,7 +23,7 @@ export class HeaderView {
   constructor(private readonly translator: Translator) {}
 
   render(panel: IslandPanel, activeTab: IslandTab, handlers: HeaderHandlers): HTMLElement {
-    const leading = panel === "tasks"
+    const leading = panel === "tabs"
       ? this.tabs(activeTab, handlers.onSelectTab)
       : this.backButton(panel, handlers.onOpenPanel);
 
@@ -58,7 +58,7 @@ export class HeaderView {
     return ElementFactory.create("div", {
       className: "island-head-title",
       children: [
-        ElementFactory.iconButton(ICONS.back, this.translator.text("island.action.back"), () => onOpenPanel("tasks")),
+        ElementFactory.iconButton(ICONS.back, this.translator.text("island.action.back"), () => onOpenPanel("tabs")),
         ElementFactory.create("strong", { text: this.translator.text(titleKey) }),
       ],
     });

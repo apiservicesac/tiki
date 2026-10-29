@@ -55,7 +55,7 @@ export class IslandController {
     this.state = { ...ISLAND_STATE_DEFAULTS, placement: initialPreferences.islandPlacement, snapshot: initialSnapshot };
     // Leaving the island folds it, unless the user is in a panel or typing.
     this.modes = new IslandModeMachine(() => this.state.mode, (mode) => this.showMode(mode), {
-      panel: () => this.state.panel !== "tasks",
+      panel: () => this.state.panel !== "tabs",
       typing: () => this.view.isTyping(),
     });
     const store = this.store();
@@ -120,7 +120,7 @@ export class IslandController {
   }
 
   selectTab(tab: IslandTab): void {
-    this.update({ tab, panel: "tasks", mode: "expanded" });
+    this.update({ tab, panel: "tabs", mode: "expanded" });
   }
 
   submitCapture(): Promise<void> {
@@ -140,7 +140,7 @@ export class IslandController {
 
   /** A mode chosen by the machine or the user; leaving the expanded island goes back to the tabs. */
   private showMode(mode: IslandMode): void {
-    this.update({ mode, panel: mode === "expanded" ? this.state.panel : "tasks" });
+    this.update({ mode, panel: mode === "expanded" ? this.state.panel : "tabs" });
   }
 
   private react(mood: MoodName): void {
@@ -186,7 +186,7 @@ export class IslandController {
       onSnooze: (taskId, minutes) => void this.items.snooze(taskId, minutes),
       onJoinMeeting: (url) => void this.items.joinMeeting(url),
       onPrepareBrief: () => void this.assistantActions.prepareDayBrief(),
-      onShowDelivered: () => this.update({ panel: "tasks", tab: "all_tasks", tasksView: "delivered" }),
+      onShowDelivered: () => this.update({ panel: "tabs", tab: "all_tasks", tasksView: "delivered" }),
       onSelectTasksView: (tasksView) => this.update({ tasksView }),
       onManageProjects: (creatingProject) => this.update({ mode: "expanded", panel: "projects", creatingProject }),
       onCreateProject: (name) => void this.items.createProject(name),
@@ -203,11 +203,11 @@ export class IslandController {
       onOpenAdvancedSettings: () => this.openAdvancedSettings(),
       edit: {
         onSave: (taskId, edit) => void this.items.save(taskId, edit),
-        onCancel: () => this.update({ panel: "tasks", editing: null }),
+        onCancel: () => this.update({ panel: "tabs", editing: null }),
       },
       capture: {
         onSubmit: () => void this.submitCapture(),
-        onCancel: () => this.openPanel("tasks"),
+        onCancel: () => this.openPanel("tabs"),
         onOpenAiSettings: () => this.openAdvancedSettings("ai"),
       },
     };

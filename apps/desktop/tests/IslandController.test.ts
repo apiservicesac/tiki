@@ -165,7 +165,7 @@ describe("IslandController", () => {
         waitingFor: "",
       },
     });
-    await vi.waitFor(() => expect(controller.currentState.panel).toBe("tasks"));
+    await vi.waitFor(() => expect(controller.currentState.panel).toBe("tabs"));
   });
 
   it("lists every pending task by project in the Tasks tab, with search and project filter", () => {
@@ -367,7 +367,7 @@ describe("IslandController", () => {
         waitingFor: null,
       },
     ]);
-    expect(controller.currentState.panel).toBe("tasks");
+    expect(controller.currentState.panel).toBe("tabs");
     expect(notch()?.dataset.mood).toBe("happy");
   });
   it("moves the island when another edge is chosen in Settings", async () => {
@@ -601,7 +601,7 @@ describe("IslandController with the AI assistant", () => {
     expect(backend.confirmedCaptures[0]).toMatchObject({ title: "Revisar acceso de facturas", projectName: "Andeanvet", dueDate: "2026-10-24" });
     await vi.waitFor(() => expect(backend.lessons).toHaveLength(1));
     expect(backend.lessons[0]).toMatchObject({ understood: { dueDate: "2026-10-23" }, corrected: { dueDate: "2026-10-24" } });
-    expect(controller.currentState.panel).toBe("tasks");
+    expect(controller.currentState.panel).toBe("tabs");
   });
 
   it("reads a repeating reminder and shows only its moment and repeat", async () => {

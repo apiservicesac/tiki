@@ -44,9 +44,9 @@ export class AlertFlow {
     if (alert && alert.taskId !== null) {
       await this.items.open(alert.taskId);
     } else if (alert?.kind === "meeting") {
-      this.store.update({ mode: "expanded", panel: "tasks", tab: "agenda" });
+      this.store.update({ mode: "expanded", panel: "tabs", tab: "agenda" });
     } else {
-      this.store.update({ mode: "expanded", panel: alert ? "brief" : "tasks" });
+      this.store.update({ mode: "expanded", panel: alert ? "brief" : "tabs" });
     }
   }
 
