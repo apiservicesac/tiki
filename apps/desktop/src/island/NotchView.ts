@@ -1,6 +1,7 @@
 import type { TikiAlert, IslandSnapshot, MoodName } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
+import type { Translator } from "../i18n/Translator";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
 
 /**
@@ -12,7 +13,10 @@ import type { MascotRenderer } from "../mascot/MascotRenderer";
  * left and right edges; the stylesheet shows the one that fits the orientation.
  */
 export class NotchView {
-  constructor(private readonly mascot: MascotRenderer) {}
+  constructor(
+    private readonly mascot: MascotRenderer,
+    private readonly translator: Translator,
+  ) {}
 
   hidden(snapshot: IslandSnapshot, mood: MoodName, unread: boolean): HTMLElement {
     const mascot = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.hidden);
@@ -31,21 +35,30 @@ export class NotchView {
     });
   }
 
-  /** The notch grown a little: Tiki, the reminder's title and its first line, cut with "…". */
+  /**
+   * The notch grown to announce something: Tiki's face with ripples, the kind of alert, its
+   * title and first line (cut with "…"), and a thin countdown until the notch folds back.
+   * The aura around the notch comes from the stylesheet (`data-mode="alert"`).
+   */
   alert(snapshot: IslandSnapshot, alert: TikiAlert, mood: MoodName): HTMLElement {
     const preview = alert.body.split("\n").join(" · ");
+    const kindLabel = this.translator.text(UI_CONFIG.alertStyles[alert.kind].labelKey);
+    const face = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.alert);
+    face.classList.add("notch-alert-face");
     return ElementFactory.create("div", {
       className: "notch-alert",
-      attributes: { role: "status", "aria-live": "polite" },
+      attributes: { role: "status", "aria-live": "polite", "data-alert-kind": alert.kind },
       children: [
-        this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.alert),
+        face,
         ElementFactory.create("span", {
           className: "notch-alert-text",
           children: [
+            ElementFactory.create("span", { className: "notch-alert-kind", text: kindLabel }),
             ElementFactory.create("strong", { text: alert.title }),
             ElementFactory.create("span", { className: "notch-alert-preview", text: preview }),
           ],
         }),
+        ElementFactory.create("span", { className: "notch-alert-countdown", attributes: { "aria-hidden": "true" } }),
       ],
     });
   }

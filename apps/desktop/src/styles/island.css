@@ -473,13 +473,14 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 
 /* Alert: the notch grown a little to show a reminder, with Tiki bouncing in. */
 .notch-alert {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: var(--notch-alert-width);
   height: var(--notch-alert-height);
   box-sizing: border-box;
-  padding: 0 18px 0 12px;
+  padding: 0 18px 0 14px;
   cursor: pointer;
 }
 
@@ -490,8 +491,31 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   min-width: 0;
 }
 
+/* The kind of alert, in the alert's color, like a status line: "● REMINDER". */
+.notch-alert-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 10px/1.2 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--mood-color) var(--mood-ink-mix), var(--island-text));
+}
+
+.notch-alert-kind::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mood-color);
+  box-shadow: 0 0 6px var(--mood-color);
+}
+
 .notch-alert-text strong {
-  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
   font-weight: 700;
 }
 
@@ -502,6 +526,77 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   font-size: 11.5px;
   color: var(--island-muted);
 }
+
+/* Ripples leave Tiki's face when the alert arrives. */
+.notch-alert-face {
+  position: relative;
+  flex: none;
+}
+
+.notch-alert-face::before,
+.notch-alert-face::after {
+  content: "";
+  position: absolute;
+  inset: -4px -2px;
+  border: 1.5px solid var(--mood-color);
+  border-radius: 99px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* A thin line along the bottom edge that runs out when the notch is about to fold. */
+.notch-alert-countdown {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 5px;
+  height: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--mood-color) 25%, transparent);
+  overflow: hidden;
+}
+
+.notch-alert-countdown::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--mood-color);
+  transform-origin: left center;
+}
+
+/*
+ * While an alert is announced, a wide aura in the alert's color spreads from the notch over
+ * the screen, so it is noticed from the corner of the eye. It sits behind the notch, so it
+ * never tints it, and it never takes clicks.
+ */
+#island-root { position: relative; }
+
+#island-root::before {
+  content: "";
+  position: absolute;
+  width: 560px;
+  height: 170px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--mood-color) 45%, transparent), transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--island-close-duration) var(--ease-in-out);
+}
+
+#island-root[data-placement="top"]::before { top: 0; left: 50%; transform: translate(-50%, -32%); }
+#island-root[data-placement="bottom"]::before { bottom: 0; left: 50%; transform: translate(-50%, 32%); }
+#island-root[data-placement="left"]::before,
+#island-root[data-placement="right"]::before { top: 50%; width: 230px; height: 420px; }
+#island-root[data-placement="left"]::before { left: 0; transform: translate(-32%, -50%); }
+#island-root[data-placement="right"]::before { right: 0; transform: translate(32%, -50%); }
+
+#island-root:has(> .island-notch[data-mode="alert"])::before { opacity: 1; }
+
+/* The notch grows from its screen edge, so it never leaves it while it bounces. */
+[data-placement="top"] .island-notch { transform-origin: top center; }
+[data-placement="bottom"] .island-notch { transform-origin: bottom center; }
+[data-placement="left"] .island-notch { transform-origin: center left; }
+[data-placement="right"] .island-notch { transform-origin: center right; }
 
 [data-orientation="vertical"] .notch-alert {
   flex-direction: column;
@@ -550,10 +645,19 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  #island-root:has(> .island-notch[data-mode="alert"])::before { animation: alert-aura 2.4s ease-in-out infinite; }
+  .island-notch[data-mode="alert"] { animation: alert-arrive 0.7s var(--ease-out); }
+  .notch-alert-face::before { animation: alert-ripple 1.6s var(--ease-out) 3; }
+  .notch-alert-face::after { animation: alert-ripple 1.6s var(--ease-out) 0.5s 3; }
+  .notch-alert-countdown::after { animation: alert-countdown var(--alert-duration) linear forwards; }
   .notch-unread { animation: alert-pulse 1.8s ease-in-out infinite; }
 }
 
 @keyframes alert-pulse { 50% { opacity: 0.45; } }
+@keyframes alert-aura { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+@keyframes alert-arrive { 0% { transform: scale(0.96); } 55% { transform: scale(1.03); } 100% { transform: none; } }
+@keyframes alert-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
+@keyframes alert-countdown { to { transform: scaleX(0); } }
 
 @media (prefers-reduced-motion: reduce) {
   .island-notch { transition: none; }

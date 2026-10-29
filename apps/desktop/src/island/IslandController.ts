@@ -83,7 +83,7 @@ export class IslandController {
       await this.backend.listen(SHELL_EVENTS.openCapture, () => this.openPanel("capture")),
       await this.backend.listen(SHELL_EVENTS.openSettings, () => this.openPanel("settings")),
       await this.backend.listen(SHELL_EVENTS.toggleIsland, () => this.toggle()),
-      await this.backend.onAlert((brief) => void this.announceAlert(brief)),
+      await this.backend.onAlert((alert) => void this.announceAlert(alert)),
       await this.backend.listen(SHELL_EVENTS.preferencesChanged, () => void this.reloadPreferences()),
       await this.backend.listen(SHELL_EVENTS.calendarSynced, () => void this.refresh()),
     );
@@ -273,16 +273,16 @@ export class IslandController {
    * chimes. It folds back after a moment, leaving a dot until the island is opened. If the
    * user already has the island open, the reminder just appears above the Today list.
    */
-  async announceAlert(brief: TikiAlert): Promise<void> {
+  async announceAlert(alert: TikiAlert): Promise<void> {
     await this.refresh();
     void this.assistantActions.prepareDayBrief();
     const alreadyOpen = this.state.mode === "expanded";
-    this.update({ alert: brief, unreadAlert: !alreadyOpen });
+    this.update({ alert, unreadAlert: !alreadyOpen });
     if (this.preferences.alertSound) {
       this.sound.play();
     }
-    this.react("curious");
     if (alreadyOpen) {
+      this.react(UI_CONFIG.alertStyles[alert.kind].mood);
       return;
     }
     ["peek", "unfold", "fold"].forEach((timer) => this.cancel(timer));

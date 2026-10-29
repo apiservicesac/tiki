@@ -63,7 +63,7 @@ export class IslandView {
     private readonly mascot: MascotRenderer,
     private readonly captureView: CaptureView,
   ) {
-    this.notchView = new NotchView(mascot);
+    this.notchView = new NotchView(mascot, translator);
     this.header = new HeaderView(translator);
     this.taskList = new TaskListView(translator);
     this.settings = new SettingsView(translator);
@@ -79,19 +79,22 @@ export class IslandView {
     root.style.setProperty("--island-open-duration", `${UI_CONFIG.motion.openMs}ms`);
     root.style.setProperty("--island-close-duration", `${UI_CONFIG.motion.closeMs}ms`);
     root.style.setProperty("--island-content-out-duration", `${UI_CONFIG.motion.contentOutMs}ms`);
+    root.style.setProperty("--alert-duration", `${UI_CONFIG.alertDurationMs}ms`);
     root.replaceChildren(this.notch);
   }
 
   render(state: IslandState, preferences: UserPreferences, handlers: IslandViewHandlers, assistantReady: boolean): void {
     this.assistantReady = assistantReady;
     this.handlers = handlers;
-    const mood = state.reactionMood ?? state.snapshot.mood;
+    const mood = IslandView.moodOf(state);
     this.root.dataset.placement = state.placement;
     this.root.dataset.orientation = IslandView.isVertical(state) ? "vertical" : "horizontal";
     this.root.ownerDocument.body.dataset.placement = state.placement;
     this.root.ownerDocument.documentElement.lang = this.translator.localeCode;
     this.notch.dataset.mode = state.mode;
     this.notch.dataset.mood = mood;
+    // The root carries the mood too: the alert aura behind the notch takes its color.
+    this.root.dataset.mood = mood;
 
     // Content cross-fades only when the island changes shape (hidden, compact, expanded).
     // Tabs and panels swap instantly, so switching them never flashes an empty card.
@@ -147,6 +150,17 @@ export class IslandView {
 
   stop(): void {
     this.contentTransition.stop();
+  }
+
+  /**
+   * The face Tiki makes: the alert's own while one is announced in the notch, then a short
+   * reaction (happy after capturing), then the mood of the day.
+   */
+  private static moodOf(state: IslandState): MoodName {
+    if (state.mode === "alert" && state.alert) {
+      return UI_CONFIG.alertStyles[state.alert.kind].mood;
+    }
+    return state.reactionMood ?? state.snapshot.mood;
   }
 
   /** On the left and right edges the island is a column: everything stacks vertically. */

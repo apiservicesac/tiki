@@ -1,3 +1,5 @@
+import type { MoodName, TikiAlert } from "../backend/contracts";
+
 /** Every tunable value of the interface lives here, nowhere else. */
 export const UI_CONFIG = Object.freeze({
   /** How long a reaction mood (happy, curious) shows before going back to the resting mood. */
@@ -13,6 +15,18 @@ export const UI_CONFIG = Object.freeze({
   unfoldDelayMs: 800,
   /** A reminder stays in the grown notch this long, then folds leaving an unread dot. */
   alertDurationMs: 12_000,
+  /**
+   * How each kind of alert presents itself in the notch: the face Tiki makes (and so the
+   * color of the eyes, the aura and the countdown) and the translation key of its label.
+   */
+  alertStyles: Object.freeze({
+    reminder: Object.freeze({ mood: "hurry", labelKey: "alert.kind.reminder" }),
+    task: Object.freeze({ mood: "hurry", labelKey: "alert.kind.task" }),
+    follow_up: Object.freeze({ mood: "impatient", labelKey: "alert.kind.follow_up" }),
+    meeting: Object.freeze({ mood: "alert", labelKey: "alert.kind.meeting" }),
+    morning: Object.freeze({ mood: "calm", labelKey: "alert.kind.morning" }),
+    evening: Object.freeze({ mood: "curious", labelKey: "alert.kind.evening" }),
+  } satisfies Record<TikiAlert["kind"], { mood: MoodName; labelKey: string }>),
   /** The island's chime: two notes, each this long, at a gentle volume (0 to 1). */
   alertChime: Object.freeze({ notesHz: Object.freeze([880, 1318.5]), noteSeconds: 0.16, volume: 0.12 }),
   /** The snooze buttons of a reminder: minutes, and the translation key of the label. */

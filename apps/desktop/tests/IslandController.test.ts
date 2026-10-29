@@ -440,6 +440,20 @@ describe("IslandController", () => {
     expect(root.querySelector(".notch-unread")).not.toBeNull();
   });
 
+  it("announces an alert with its kind, its own face and color, then goes back to the day's mood", async () => {
+    vi.useFakeTimers();
+    backend.deliverAlert({ kind: "meeting", title: "Daily", body: "En 15 min", taskId: null, link: null });
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
+    expect(root.querySelector(".notch-alert")?.getAttribute("data-alert-kind")).toBe("meeting");
+    expect(root.querySelector(".notch-alert-kind")?.textContent).toBe("Reunión");
+    expect(notch()?.dataset.mood).toBe(UI_CONFIG.alertStyles.meeting.mood);
+    expect(root.dataset.mood).toBe(UI_CONFIG.alertStyles.meeting.mood);
+    expect(root.querySelector(".notch-alert-countdown")).not.toBeNull();
+
+    vi.advanceTimersByTime(UI_CONFIG.alertDurationMs);
+    expect(notch()?.dataset.mood).toBe("worried");
+  });
+
   it("opens the brief as a receipt on click and puts it away after reading", async () => {
     backend.deliverAlert(EVENING_BRIEF);
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
