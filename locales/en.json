@@ -95,7 +95,7 @@
 
     "capture.placeholder": "Write a task, a reminder, or ask Tiki",
     "capture.field.project": "Project",
-    "capture.field.due": "Due",
+    "capture.field.due": "Due date",
     "capture.field.status": "Status",
 
     "edit.title": "Edit task",
@@ -239,7 +239,7 @@
     "capture.field.remind": "Remind me",
 
     "capture.hint_ai": "Write it your way and Enter: Tiki keeps it, answers or proposes changes · Esc closes",
-    "capture.hint_manual": "Pick project, date and reminder; Enter saves · Esc closes",
+    "capture.hint_manual": "Enter saves · Esc closes",
     "capture.review": "Check the fields; Enter saves · Esc closes",
     "capture.ai_failed": "I could not read it now; fill the fields and Enter saves",
     "capture.set_up_ai": "Set up AI",

@@ -36,8 +36,8 @@ export interface ProjectChoice {
 
 /**
  * The fields of an item, built the same way in quick capture and in the edit form: inputs,
- * the priority, repeat, kind and status lists, the reminder's moment, the project picker,
- * and each control under its label.
+ * the priority, repeat and status lists, the task-or-reminder toggle, the reminder's moment,
+ * the project picker, and each control under its label.
  */
 export class ItemFieldsBuilder {
   constructor(private readonly translator: Translator) {}
@@ -64,8 +64,14 @@ export class ItemFieldsBuilder {
     return this.select(id, REPEATS, "repeat", selected);
   }
 
-  kind(id: string, selected: ItemKind): HTMLSelectElement {
-    return this.select(id, ITEM_KINDS, "kind", selected);
+  /** Task or reminder, as two buttons side by side; `onSelect` receives the one chosen. */
+  kindToggle(selected: ItemKind, onSelect: (kind: ItemKind) => void): HTMLElement {
+    const options = ITEM_KINDS.map((kind) => ElementFactory.textButton({
+      className: kind === selected ? "tasks-toggle-option tasks-toggle-on" : "tasks-toggle-option",
+      text: this.translator.text(`kind.${kind}`),
+      attributes: { role: "radio", "aria-checked": String(kind === selected), "data-kind": kind },
+    }, () => onSelect(kind)));
+    return ElementFactory.create("div", { className: "tasks-toggle item-kind", attributes: { role: "radiogroup" }, children: options });
   }
 
   status(id: string, selected: TaskStatus): HTMLSelectElement {

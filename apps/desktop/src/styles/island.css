@@ -1071,6 +1071,9 @@ button.island-row-text {
 
 .edit-field-wide { grid-column: 1 / -1; }
 
+/* Task or reminder: as wide as its two choices, not the whole row. */
+.item-kind { justify-self: start; }
+
 .edit-notes {
   resize: none;
   padding: 7px 12px;

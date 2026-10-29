@@ -1,5 +1,5 @@
 import { BackendError } from "../backend/BackendError";
-import type { ProjectSummary, TaskDetails, TaskEdit } from "../backend/contracts";
+import type { ItemKind, ProjectSummary, TaskDetails, TaskEdit } from "../backend/contracts";
 import { CoreDateTimeText } from "../backend/CoreDateTimeText";
 import { ElementFactory } from "../dom/ElementFactory";
 import { TagText } from "../dom/TagText";
@@ -23,7 +23,8 @@ interface TaskEditFields {
   priority: HTMLSelectElement;
   status: HTMLSelectElement;
   waitingFor: HTMLInputElement;
-  kind: HTMLSelectElement;
+  /** Task or reminder, chosen with the toggle at the top of the form. */
+  kind: { value: ItemKind };
   tags: HTMLInputElement;
   notes: HTMLTextAreaElement;
 }
@@ -72,8 +73,11 @@ export class TaskEditView {
         value: task.waitingFor,
         placeholder: this.translator.text("edit.waiting_placeholder"),
       }),
-      kind: this.fieldsBuilder.kind("edit-kind", task.kind),
-      tags: this.fieldsBuilder.input("text", "edit-tags", { value: TagText.format(task.tags) }),
+      kind: { value: task.kind },
+      tags: this.fieldsBuilder.input("text", "edit-tags", {
+        value: TagText.format(task.tags),
+        placeholder: this.translator.text("edit.tags_placeholder"),
+      }),
       notes: ElementFactory.create("textarea", {
         className: "edit-notes",
         attributes: { id: "edit-notes", rows: "2", placeholder: this.translator.text("edit.notes_placeholder") },
@@ -84,8 +88,7 @@ export class TaskEditView {
     problem.hidden = true;
 
     const form = ElementFactory.create("form", { className: "edit-form" });
-    const layout = () => form.replaceChildren(...this.layout(fields, picker.element), problem, this.actions());
-    fields.kind.addEventListener("change", layout);
+    const layout = () => form.replaceChildren(...this.layout(fields, picker.element, layout), problem, this.actions());
     fields.status.addEventListener("change", layout);
     layout();
     form.addEventListener("submit", (event) => {
@@ -102,10 +105,14 @@ export class TaskEditView {
   }
 
   /** The fields of the item's kind; "waits for" only while the task is waiting. The problem line and the buttons follow. */
-  private layout(fields: TaskEditFields, projectPicker: HTMLElement): HTMLElement[] {
+  private layout(fields: TaskEditFields, projectPicker: HTMLElement, relayout: () => void): HTMLElement[] {
+    const kindToggle = this.fieldsBuilder.kindToggle(fields.kind.value, (kind) => {
+      fields.kind.value = kind;
+      relayout();
+    });
     const header = [
+      this.fieldsBuilder.field("edit.field.kind", kindToggle, { wide: true, block: true }),
       this.fieldsBuilder.field("edit.field.title", fields.title, { wide: true }),
-      this.fieldsBuilder.field("edit.field.kind", fields.kind),
     ];
     if (fields.kind.value === "reminder") {
       return [
@@ -144,7 +151,7 @@ export class TaskEditView {
       remindAt: CoreDateTimeText.fromPicker(fields.remindAt.value),
       priority: reminder ? "normal" : (fields.priority.value as TaskEdit["priority"]),
       status: reminder ? "to_do" : (fields.status.value as TaskEdit["status"]),
-      kind: fields.kind.value as TaskEdit["kind"],
+      kind: fields.kind.value,
       tags: reminder ? [] : TagText.parse(fields.tags.value),
       repeat: reminder ? (fields.repeat.value as TaskEdit["repeat"]) : "never",
       waitingFor: !reminder && fields.status.value === "waiting" ? fields.waitingFor.value.trim() : "",

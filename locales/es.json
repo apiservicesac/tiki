@@ -95,7 +95,7 @@
 
     "capture.placeholder": "Escribe una tarea, un aviso o pregúntale a Tiki",
     "capture.field.project": "Proyecto",
-    "capture.field.due": "Fecha",
+    "capture.field.due": "Fecha de entrega",
     "capture.field.status": "Estado",
 
     "edit.title": "Editar tarea",
@@ -239,7 +239,7 @@
     "capture.field.remind": "Avisarme",
 
     "capture.hint_ai": "Escribe como quieras y Enter: Tiki lo guarda, responde o propone cambios · Esc cierra",
-    "capture.hint_manual": "Elige proyecto, fecha y aviso; Enter guarda · Esc cierra",
+    "capture.hint_manual": "Enter guarda · Esc cierra",
     "capture.review": "Revisa los campos; Enter guarda · Esc cierra",
     "capture.ai_failed": "No pude entenderlo ahora; completa los campos y Enter guarda",
     "capture.set_up_ai": "Configurar IA",
