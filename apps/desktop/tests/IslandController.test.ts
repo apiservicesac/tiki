@@ -203,7 +203,7 @@ describe("IslandController", () => {
     controller.selectTab("all_tasks");
     expect(root.querySelector('.tasks-tab [data-task-id="8"]')).toBeNull();
     const views = [...root.querySelectorAll<HTMLElement>("[data-view]")].map((view) => view.dataset.view);
-    expect(views).toEqual(["pending", "delivered"]);
+    expect(views).toEqual(["pending", "delivered", "trash"]);
 
     controller.selectTab("agenda");
     const row = root.querySelector('.agenda-row[data-task-id="8"]');
@@ -496,6 +496,15 @@ describe("IslandController", () => {
 
     vi.advanceTimersByTime(UI_CONFIG.alertDurationMs);
     expect(notch()?.dataset.mood).toBe("worried");
+  });
+
+  it("sends the task being edited to the trash and goes back to the tabs", async () => {
+    controller.setMode("expanded");
+    root.querySelector<HTMLButtonElement>('[data-task-id="1"] .island-row-text')?.click();
+    await vi.waitFor(() => expect(root.querySelector("#edit-trash")).not.toBeNull());
+    root.querySelector<HTMLButtonElement>("#edit-trash")?.click();
+    await vi.waitFor(() => expect(controller.currentState.panel).toBe("tabs"));
+    expect(backend.trash.some((item) => item.taskId === 1)).toBe(true);
   });
 
   it("keeps the alert in the notch untouched while other things redraw the island", async () => {

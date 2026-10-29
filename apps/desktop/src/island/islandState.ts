@@ -6,6 +6,7 @@ import type {
   MoodName,
   TaskDetails,
   TikiAlert,
+  TrashedItem,
 } from "../backend/contracts";
 
 /**
@@ -21,8 +22,8 @@ export type IslandMode = (typeof ISLAND_MODES)[number];
  */
 export type IslandPanel = "tabs" | "capture" | "settings" | "edit" | "projects" | "brief";
 
-/** Pending tasks, or the delivered history, in the Tasks tab. Reminders live in the Agenda. */
-export const TASKS_VIEWS = Object.freeze(["pending", "delivered"] as const);
+/** Pending tasks, the delivered history or the trash, in the Tasks tab. Reminders live in the Agenda. */
+export const TASKS_VIEWS = Object.freeze(["pending", "delivered", "trash"] as const);
 export type TasksView = (typeof TASKS_VIEWS)[number];
 
 /** Tickets join as a tab when a ticket connector arrives. */
@@ -41,6 +42,10 @@ export interface IslandState {
   projectColors: string[];
   /** Delivered tasks, most recent first. */
   delivered: DeliveredItem[];
+  /** Items in the trash, most recently trashed first. */
+  trashed: TrashedItem[];
+  /** Days an item stays in the trash before it is deleted forever. */
+  trashRetentionDays: number;
   /** Pending or delivered, in the Tasks tab. */
   tasksView: TasksView;
   /** A short-lived mood (happy after capturing) that overrides the snapshot's mood. */
@@ -65,6 +70,8 @@ export const ISLAND_STATE_DEFAULTS: Readonly<Omit<IslandState, "placement" | "sn
   projects: [],
   projectColors: [],
   delivered: [],
+  trashed: [],
+  trashRetentionDays: 0,
   tasksView: "pending",
   reactionMood: null,
   alert: null,

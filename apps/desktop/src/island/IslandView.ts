@@ -98,7 +98,14 @@ export class IslandView {
       all_tasks: {
         labelKey: "island.tab.all_tasks",
         render: (state, handlers) => this.tasksTab.render(
-          { items: state.snapshot.openItems, delivered: state.delivered, projects: state.projects, view: state.tasksView },
+          {
+            items: state.snapshot.openItems,
+            delivered: state.delivered,
+            trashed: state.trashed,
+            trashRetentionDays: state.trashRetentionDays,
+            projects: state.projects,
+            view: state.tasksView,
+          },
           handlers,
         ),
       },

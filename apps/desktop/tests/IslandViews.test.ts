@@ -3,6 +3,7 @@ import type { TikiAlert } from "../src/backend/contracts";
 import { Translator } from "../src/i18n/Translator";
 import { AgendaView, type AgendaHandlers } from "../src/island/AgendaView";
 import { TaskListView } from "../src/island/TaskListView";
+import type { TasksView } from "../src/island/islandState";
 import { TasksTabView, type TasksTabHandlers } from "../src/island/TasksTabView";
 import { TodayView, type TodayHandlers } from "../src/island/TodayView";
 import { FakeBackend } from "./support/FakeBackend";
@@ -25,6 +26,9 @@ function recordingHandlers(): TodayHandlers & TasksTabHandlers & AgendaHandlers 
   return {
     onDeliverTask: vi.fn(),
     onReopenTask: vi.fn(),
+    onRestoreTask: vi.fn(),
+    onDeleteForever: vi.fn(),
+    onEmptyTrash: vi.fn(),
     onOpenTask: vi.fn(),
     onOpenAlert: vi.fn(),
     onDismissAlert: vi.fn(),
@@ -126,11 +130,38 @@ describe("TasksTabView", () => {
     view = new TasksTabView(translator, new TaskListView(translator));
   });
 
-  const data = (tasksView: "pending" | "delivered") => ({
+  const TRASHED = new FakeBackend().trash;
+  const data = (tasksView: TasksView) => ({
     items: SNAPSHOT.openItems,
     delivered: DELIVERED,
+    trashed: TRASHED,
+    trashRetentionDays: 30,
     projects: [],
     view: tasksView,
+  });
+
+  it("draws the trash with how long things stay there", () => {
+    const element = view.render(data("trash"), recordingHandlers());
+    expect(element.querySelector(".trash-note")?.textContent).toBe("Lo que pongas aquí se borra solo a los 30 días");
+    expect(element.querySelectorAll(".tasks-list .island-row")).toHaveLength(TRASHED.length);
+  });
+
+  it("restores at once but deletes forever and empties the trash only on a second click", () => {
+    const handlers = recordingHandlers();
+    const element = view.render(data("trash"), handlers);
+    const firstId = TRASHED[0]?.taskId;
+    click(element, `.island-row[data-task-id="${firstId}"] .island-row-reopen`);
+    expect(handlers.onRestoreTask).toHaveBeenCalledWith(firstId);
+
+    click(element, `.island-row[data-task-id="${firstId}"] .island-icon-button`);
+    expect(handlers.onDeleteForever).not.toHaveBeenCalled();
+    click(element, `.island-row[data-task-id="${firstId}"] .trash-confirm`);
+    expect(handlers.onDeleteForever).toHaveBeenCalledWith(firstId);
+
+    click(element, "#trash-empty");
+    expect(handlers.onEmptyTrash).not.toHaveBeenCalled();
+    click(element, "#trash-empty");
+    expect(handlers.onEmptyTrash).toHaveBeenCalledOnce();
   });
 
   it("draws pending tasks grouped by project", () => {

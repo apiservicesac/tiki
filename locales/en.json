@@ -206,7 +206,6 @@
     "history.yesterday": "yesterday",
 
     "trash.title": "Trash",
-    "trash.empty_state": "The trash is empty",
     "trash.move": "Move to trash",
     "trash.restore": "Restore",
     "trash.delete_forever": "Delete forever",
@@ -232,8 +231,10 @@
     "tasks.manage_projects": "Manage projects",
     "tasks.view.pending": "Pending",
     "tasks.view.delivered": "Delivered",
+    "tasks.view.trash": "Trash",
     "tasks.empty_pending": "No pending tasks match.",
     "tasks.empty_delivered": "No delivered tasks match yet.",
+    "tasks.empty_trash": "The trash is empty",
     "projects.title": "Projects",
     "projects.search_or_create": "Search, or type the name of a new project",
     "projects.empty": "No project matches.",

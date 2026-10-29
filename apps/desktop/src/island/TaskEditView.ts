@@ -10,6 +10,8 @@ import { ProjectPicker } from "./ProjectPicker";
 export interface TaskEditHandlers {
   /** Rejects when the core refuses the change; the form then says what to fix. */
   onSave: (taskId: number, edit: TaskEdit) => Promise<void>;
+  /** Sends the item to the trash, where it can still be restored. */
+  onTrash: (taskId: number) => void;
   onCancel: () => void;
 }
 
@@ -88,7 +90,7 @@ export class TaskEditView {
     problem.hidden = true;
 
     const form = ElementFactory.create("form", { className: "edit-form" });
-    const layout = () => form.replaceChildren(...this.layout(fields, picker.element, layout), problem, this.actions());
+    const layout = () => form.replaceChildren(...this.layout(fields, picker.element, layout), problem, this.actions(task.taskId));
     fields.status.addEventListener("change", layout);
     layout();
     form.addEventListener("submit", (event) => {
@@ -161,7 +163,13 @@ export class TaskEditView {
     });
   }
 
-  private actions(): HTMLElement {
+  /** Move to the trash on the left, apart from Cancel and Save on the right. */
+  private actions(taskId: number): HTMLElement {
+    const trash = ElementFactory.textButton({
+      className: "settings-button settings-button-quiet edit-trash",
+      text: this.translator.text("trash.move"),
+      attributes: { id: "edit-trash" },
+    }, () => this.handlers?.onTrash(taskId));
     const cancel = ElementFactory.textButton({
       className: "settings-button settings-button-quiet",
       text: this.translator.text("edit.cancel"),
@@ -172,6 +180,6 @@ export class TaskEditView {
       attributes: { type: "submit" },
     });
     save.addEventListener("click", (event) => event.stopPropagation());
-    return ElementFactory.create("div", { className: "edit-actions edit-field-wide", children: [cancel, save] });
+    return ElementFactory.create("div", { className: "edit-actions edit-field-wide", children: [trash, cancel, save] });
   }
 }

@@ -1,4 +1,4 @@
-import type { ProjectSummary, DeliveredItem, SnapshotItem } from "../backend/contracts";
+import type { ProjectSummary, DeliveredItem, SnapshotItem, TrashedItem } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
@@ -8,16 +8,19 @@ import type { Translator } from "../i18n/Translator";
 import { TASKS_VIEWS, type TasksView } from "./islandState";
 import { ProjectPicker } from "./ProjectPicker";
 import type { TaskListHandlers, TaskListView } from "./TaskListView";
+import { TrashListView, type TrashHandlers } from "./TrashListView";
 
 export interface TasksTabData {
   /** Every open item. */
   items: SnapshotItem[];
   delivered: DeliveredItem[];
+  trashed: TrashedItem[];
+  trashRetentionDays: number;
   projects: ProjectSummary[];
   view: TasksView;
 }
 
-export interface TasksTabHandlers extends TaskListHandlers {
+export interface TasksTabHandlers extends TaskListHandlers, TrashHandlers {
   onSelectTasksView: (view: TasksView) => void;
   /** Opens the project panel, where projects are created, renamed and removed. */
   onManageProjects: () => void;
@@ -41,11 +44,13 @@ interface ProjectGroup {
  * island's refreshes; only the list is redrawn.
  */
 export class TasksTabView {
+
   private element: HTMLElement | null = null;
   private search: HTMLInputElement | null = null;
   private toggle: HTMLElement | null = null;
   private list: HTMLElement | null = null;
   private readonly picker = new ProjectPicker();
+  private readonly trash: TrashListView;
   /** The project whose tasks show, by id; `null` shows every project. */
   private projectFilter: number | null = null;
   private data: TasksTabData | null = null;
@@ -54,7 +59,9 @@ export class TasksTabView {
   constructor(
     private readonly translator: Translator,
     private readonly taskList: TaskListView,
-  ) {}
+  ) {
+    this.trash = new TrashListView(translator);
+  }
 
   render(data: TasksTabData, handlers: TasksTabHandlers): HTMLElement {
     this.data = data;
@@ -144,7 +151,10 @@ export class TasksTabView {
         className: option === view ? "tasks-toggle-option tasks-toggle-on" : "tasks-toggle-option",
         text: this.translator.text(`tasks.view.${option}`),
         attributes: { role: "tab", "aria-selected": String(option === view), "data-view": option },
-      }, () => this.handlers?.onSelectTasksView(option));
+      }, () => {
+        this.trash.reset();
+        this.handlers?.onSelectTasksView(option);
+      });
       return button;
     });
     this.toggle?.replaceChildren(...buttons);
@@ -158,18 +168,19 @@ export class TasksTabView {
     }
     const query = this.search?.value ?? "";
     const rows = this.rows(data, query, handlers);
-    const emptyKey = `tasks.empty_${data.view}`;
     this.list.replaceChildren(
-      ...(rows.length > 0 ? rows : [ElementFactory.create("p", { className: "island-empty", text: this.translator.text(emptyKey) })]),
+      ...(rows.length > 0 ? rows : [ElementFactory.create("p", { className: "island-empty", text: this.translator.text(`tasks.empty_${data.view}`) })]),
     );
   }
 
-  private rows(data: TasksTabData, query: string, handlers: TaskListHandlers): HTMLElement[] {
+  private rows(data: TasksTabData, query: string, handlers: TasksTabHandlers): HTMLElement[] {
     switch (data.view) {
       case "pending":
         return this.pendingRows(data.items, query, handlers);
       case "delivered":
         return this.deliveredRows(data.delivered, query, handlers);
+      case "trash":
+        return this.trash.render(data.trashed, query, data.trashRetentionDays, handlers, () => this.drawList());
     }
   }
 

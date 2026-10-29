@@ -104,12 +104,14 @@ export class IslandController {
 
   /** The day, the projects and the history, fresh from the core. */
   async refresh(): Promise<void> {
-    const [snapshot, projects, delivered] = await Promise.all([
+    const [snapshot, projects, delivered, trashed, trashRetentionDays] = await Promise.all([
       this.backend.islandSnapshot(),
       this.backend.projectSummaries(),
       this.backend.deliveredTasks(),
+      this.backend.trashedItems(),
+      this.backend.trashRetentionDays(),
     ]);
-    this.update({ snapshot, projects, delivered });
+    this.update({ snapshot, projects, delivered, trashed, trashRetentionDays });
   }
 
   setMode(mode: IslandMode): void {
@@ -200,11 +202,15 @@ export class IslandController {
       onClose: () => this.setMode("hidden"),
       onDeliverTask: (taskId) => void this.items.deliver(taskId),
       onReopenTask: (taskId) => void this.items.reopen(taskId),
+      onRestoreTask: (taskId) => void this.items.restore(taskId),
+      onDeleteForever: (taskId) => void this.items.deleteForever(taskId),
+      onEmptyTrash: () => void this.items.emptyTrash(),
       onOpenTask: (taskId) => void this.items.open(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
       onOpenAdvancedSettings: () => this.openAdvancedSettings(),
       edit: {
         onSave: (taskId, edit) => this.items.save(taskId, edit),
+        onTrash: (taskId) => void this.items.trash(taskId),
         onCancel: () => this.update({ panel: "tabs", editing: null }),
       },
       capture: {

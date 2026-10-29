@@ -206,7 +206,6 @@
     "history.yesterday": "ayer",
 
     "trash.title": "Papelera",
-    "trash.empty_state": "La papelera está vacía",
     "trash.move": "Mover a la papelera",
     "trash.restore": "Restaurar",
     "trash.delete_forever": "Borrar para siempre",
@@ -232,8 +231,10 @@
     "tasks.manage_projects": "Gestionar proyectos",
     "tasks.view.pending": "Pendientes",
     "tasks.view.delivered": "Entregadas",
+    "tasks.view.trash": "Papelera",
     "tasks.empty_pending": "No hay tareas pendientes que coincidan.",
     "tasks.empty_delivered": "Todavía no hay tareas entregadas que coincidan.",
+    "tasks.empty_trash": "La papelera está vacía",
     "projects.title": "Proyectos",
     "projects.search_or_create": "Busca o escribe el nombre de un proyecto nuevo",
     "projects.empty": "Ningún proyecto coincide.",

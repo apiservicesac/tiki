@@ -717,6 +717,47 @@ button.island-row-text {
 .island-delivered-link:hover { background: var(--island-soft); }
 
 /* 8. Tasks tab ------------------------------------------------------------------------ */
+/* The trash: how long things stay, Empty trash, and on each item Restore and Delete forever. */
+.trash-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+
+.trash-note {
+  flex: 1;
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--island-muted);
+}
+
+.trash-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trash-empty,
+.trash-confirm {
+  padding: 4px 10px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--island-muted);
+  font: 600 var(--text-2xs) var(--font-body);
+  cursor: pointer;
+}
+
+.trash-empty:hover { background: var(--island-soft); color: var(--island-text); }
+
+/* The second click that deletes for good says so in red. */
+.trash-confirm {
+  border-color: transparent;
+  background: var(--urgency-critical-background);
+  color: var(--urgency-critical-text);
+}
+
 .tasks-tab { display: grid; gap: 10px; }
 
 .tasks-toolbar {
@@ -1101,6 +1142,10 @@ button.island-row-text {
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* Move to the trash stands apart, on the left, so it is never taken for Save. */
+.edit-trash { margin-right: auto; }
+.edit-trash:hover { color: var(--urgency-critical-text); }
 
 /* 14. Settings ------------------------------------------------------------------------ */
 .settings {
