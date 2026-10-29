@@ -189,7 +189,7 @@ export class IslandController {
       onPrepareBrief: () => void this.assistantActions.prepareDayBrief(),
       onShowDelivered: () => this.update({ panel: "tabs", tab: "all_tasks", tasksView: "delivered" }),
       onSelectTasksView: (tasksView) => this.update({ tasksView }),
-      onManageProjects: (creatingProject) => this.update({ mode: "expanded", panel: "projects", creatingProject }),
+      onManageProjects: () => this.update({ mode: "expanded", panel: "projects" }),
       onCreateProject: (name) => void this.items.createProject(name),
       onChangeProject: (projectId, change) => void this.items.changeProject(projectId, change),
       onRemoveProject: (projectId) => void this.items.removeProject(projectId),

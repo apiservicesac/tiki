@@ -43,8 +43,6 @@ export interface IslandState {
   delivered: DeliveredItem[];
   /** Pending or delivered, in the Tasks tab. */
   tasksView: TasksView;
-  /** The project panel opened to create a project: its name box gets the focus. */
-  creatingProject: boolean;
   /** A short-lived mood (happy after capturing) that overrides the snapshot's mood. */
   reactionMood: MoodName | null;
   /** The latest alert: shown in the notch, then above the Today list until seen. */
@@ -68,7 +66,6 @@ export const ISLAND_STATE_DEFAULTS: Readonly<Omit<IslandState, "placement" | "sn
   projectColors: [],
   delivered: [],
   tasksView: "pending",
-  creatingProject: false,
   reactionMood: null,
   alert: null,
   unreadAlert: false,

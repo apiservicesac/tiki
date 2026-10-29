@@ -253,9 +253,10 @@ describe("IslandController", () => {
     [...root.querySelectorAll<HTMLButtonElement>(".picker-action")].find((action) => action.textContent === "Gestionar proyectos")?.click();
     expect(controller.currentState.panel).toBe("projects");
 
-    const name = root.querySelector<HTMLInputElement>("#new-project");
+    const name = root.querySelector<HTMLInputElement>("#projects-search");
     if (name) {
       name.value = "Constructora Sur";
+      name.dispatchEvent(new Event("input"));
     }
     root.querySelector<HTMLButtonElement>("#add-project")?.click();
     await vi.waitFor(() => expect(backend.projects.map((project) => project.name)).toContain("Constructora Sur"));

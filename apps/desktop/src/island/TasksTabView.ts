@@ -19,8 +19,8 @@ export interface TasksTabData {
 
 export interface TasksTabHandlers extends TaskListHandlers {
   onSelectTasksView: (view: TasksView) => void;
-  /** Opens the project panel; `createNew` focuses the new-project box. */
-  onManageProjects: (createNew: boolean) => void;
+  /** Opens the project panel, where projects are created, renamed and removed. */
+  onManageProjects: () => void;
 }
 
 /** What the search and the project filter read from a pending or a delivered item. */
@@ -128,8 +128,7 @@ export class TasksTabView {
       searchPlaceholder: this.translator.text("tasks.search_project"),
       emptyText: this.translator.text("tasks.no_project_match"),
       actions: [
-        { label: this.translator.text("tasks.new_project"), onPress: () => this.handlers?.onManageProjects(true) },
-        { label: this.translator.text("tasks.manage_projects"), onPress: () => this.handlers?.onManageProjects(false) },
+        { label: this.translator.text("tasks.manage_projects"), onPress: () => this.handlers?.onManageProjects() },
       ],
       onSelect: (value) => {
         this.projectFilter = value === null ? null : Number(value);

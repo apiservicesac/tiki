@@ -926,7 +926,18 @@ button.island-row-text {
 
 /* 11. Project panel ------------------------------------------------------------------- */
 .projects-panel { display: grid; gap: 10px; }
-.projects-new { margin-top: 0; }
+.projects-create {
+  padding: 10px 12px;
+  border: 1px dashed var(--island-card-edge);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--island-text);
+  font: 600 var(--text-md) var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.projects-create:hover { background: var(--island-soft); }
 .projects-list { gap: 2px; }
 
 .project-row {

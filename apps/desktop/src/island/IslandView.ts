@@ -315,7 +315,7 @@ export class IslandView {
           ? this.taskEdit.render(state.editing, state.projects, handlers.edit)
           : this.tabContent(state, handlers);
       case "projects":
-        return this.projectsPanel.render(state.projects, state.projectColors, state.creatingProject, handlers);
+        return this.projectsPanel.render(state.projects, state.projectColors, handlers);
       case "brief":
         return this.receipt.render(state.snapshot, state.alert, state.dayBrief);
       case "tabs":
