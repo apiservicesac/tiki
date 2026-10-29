@@ -13,7 +13,9 @@ const DELIVERED = new FakeBackend().delivered;
 const REMINDER_ALERT: TikiAlert = {
   kind: "reminder",
   title: "Tomar agua",
-  body: "Son las 11:00",
+  summary: "Son las 11:00",
+  tips: [],
+  actions: ["open", "done", "snooze"],
   taskId: 8,
   link: null,
 };
@@ -70,6 +72,26 @@ describe("TodayView", () => {
       recordingHandlers(),
     );
     expect(element.querySelector(".island-notice")?.outerHTML).toMatchSnapshot();
+  });
+
+  it("draws the alert's summary and tips and only the actions the core offers", () => {
+    const taskAlarm: TikiAlert = {
+      kind: "task",
+      title: "Aviso de tarea",
+      summary: "Llamar",
+      tips: ["Altamira · mañana"],
+      actions: ["open", "snooze"],
+      taskId: 1,
+      link: null,
+    };
+    const element = view.render(
+      { snapshot: SNAPSHOT, alert: taskAlarm, dayBrief: null, preparingBrief: false, aiReady: true },
+      recordingHandlers(),
+    );
+    const lines = [...element.querySelectorAll(".island-notice p")].map((line) => line.textContent);
+    expect(lines).toEqual(["Llamar", "Altamira · mañana"]);
+    expect(element.querySelector("#alert-done")).toBeNull();
+    expect(element.querySelector("#alert-snooze-10")).not.toBeNull();
   });
 
   it("calls its handlers without letting the click reach the island", () => {

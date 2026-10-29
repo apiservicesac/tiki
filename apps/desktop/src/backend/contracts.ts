@@ -116,13 +116,23 @@ export interface TaskDetails extends TaskEdit {
   taskId: number;
 }
 
+/**
+ * What the user can do with an alert, decided by the core (see `AlertAction`): open what it
+ * is about, put a reminder that rang away, snooze the item's reminder, or join the call.
+ */
+export type AlertAction = "open" | "done" | "snooze" | "join";
+
 /** An alert already written in the user's language (see `TikiAlert` in the core). */
 export interface TikiAlert {
   kind: "morning" | "evening" | "task" | "reminder" | "follow_up" | "meeting";
   title: string;
-  /** Lines separated by line breaks. */
-  body: string;
-  /** The task a task reminder is about. */
+  /** What it is about, in one line: the brief's counts, or the item's or meeting's title. */
+  summary: string;
+  /** The lines after the summary: what to start with, whom to follow up, an item's project and due day. */
+  tips: string[];
+  /** In the order to offer them. */
+  actions: AlertAction[];
+  /** The item an item alert is about. */
   taskId: number | null;
   /** A link to open from the alert: the meeting's video call. */
   link: string | null;

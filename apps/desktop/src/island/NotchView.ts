@@ -37,11 +37,11 @@ export class NotchView {
 
   /**
    * The notch grown to announce something: Tiki's face with ripples, the kind of alert, its
-   * title and first line (cut with "…"), and a thin countdown until the notch folds back.
+   * title and one preview line of its summary and tips (cut with "…"), and a thin countdown until the notch folds back.
    * The aura around the notch comes from the stylesheet (`data-mode="alert"`).
    */
   alert(snapshot: IslandSnapshot, alert: TikiAlert, mood: MoodName): HTMLElement {
-    const preview = alert.body.split("\n").join(UI_CONFIG.textMarks.separator);
+    const preview = [alert.summary, ...alert.tips].join(UI_CONFIG.textMarks.separator);
     const kindLabel = this.translator.text(UI_CONFIG.alertStyles[alert.kind].labelKey);
     const face = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.alert);
     face.classList.add("notch-alert-face");

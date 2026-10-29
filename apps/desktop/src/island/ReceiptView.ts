@@ -70,12 +70,12 @@ export class ReceiptView {
     });
   }
 
-  /** The AI brief when there is one; otherwise what the reminder suggests (start with, follow up). */
+  /** The AI brief when there is one; otherwise the brief's tips (start with, follow up). */
   private suggestion(alert: TikiAlert | null, dayBrief: string | null): string | null {
     if (dayBrief) {
       return dayBrief;
     }
-    const tips = alert?.body.split("\n").slice(1) ?? [];
-    return tips.length > 0 ? tips.join(" ") : null;
+    const tips = alert?.tips ?? [];
+    return tips.length > 0 ? tips.join(UI_CONFIG.textMarks.sentences) : null;
   }
 }

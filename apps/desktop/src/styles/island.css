@@ -702,8 +702,10 @@ button.island-row-text {
   font-size: var(--text-sm);
   line-height: 1.45;
   color: var(--island-text);
-  white-space: pre-line;
 }
+
+/* The summary and its tips read as one block of lines. */
+.island-notice p + p { margin-top: 0; }
 
 .island-notice-actions {
   display: flex;

@@ -43,7 +43,7 @@ export const UI_CONFIG = Object.freeze({
     fadeNotes: 2.2,
     stopNotes: 2.4,
   }),
-  /** The snooze buttons of a reminder: minutes, and the translation key of the label. */
+  /** The snooze buttons of an alert that can be snoozed: minutes, and the translation key of the label. */
   snoozeMinutes: Object.freeze([
     Object.freeze({ minutes: 10, labelKey: "alert.snooze_10" }),
     Object.freeze({ minutes: 60, labelKey: "alert.snooze_60" }),
@@ -65,6 +65,8 @@ export const UI_CONFIG = Object.freeze({
   textMarks: Object.freeze({
     /** Between the parts of one line: "Altamira · #billing". */
     separator: " · ",
+    /** Between the sentences of one paragraph: the tips of a brief on the receipt. */
+    sentences: " ",
     /** Before a title, by priority: "!!" urgent, "!" important; other priorities have none. */
     priority: Object.freeze<Partial<Record<Priority, string>>>({ urgent: "!!", high: "!" }),
   }),
