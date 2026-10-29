@@ -2,6 +2,8 @@
   "messages": {
     "app.name": "Tiki",
 
+    "session.default_title": "Session on {date}, {time}",
+
     "status.to_do": "To do",
     "status.in_progress": "In progress",
     "status.waiting": "Waiting",

@@ -37,6 +37,13 @@ pub struct TikiSettings {
     pub delivered_history_limit: usize,
     /// Colors given to new projects, in turn.
     pub project_colors: Vec<String>,
+    /// A session's media (video or audio) is kept this many days by default; its transcript
+    /// and notes stay for good.
+    pub session_media_days: u64,
+    /// A transcription that fails this many times waits for the user to retry it.
+    pub transcription_attempts: u32,
+    /// How many transcript lines a search returns at most.
+    pub session_search_limit: usize,
 }
 
 impl Default for TikiSettings {
@@ -67,6 +74,9 @@ impl Default for TikiSettings {
             ]
             .map(String::from)
             .to_vec(),
+            session_media_days: 90,
+            transcription_attempts: 3,
+            session_search_limit: 50,
         }
     }
 }

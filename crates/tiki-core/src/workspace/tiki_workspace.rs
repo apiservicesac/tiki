@@ -12,12 +12,13 @@ use crate::i18n::{Locale, Translator};
 use crate::items::ItemService;
 use crate::preferences::UserPreferences;
 use crate::projects::{ProjectBook, ProjectChange, ProjectSummary};
+use crate::sessions::SessionService;
 use crate::settings::TikiSettings;
 use crate::storage::Database;
 
 /// The entry point every platform uses: it owns the user's data, settings, preferences and
 /// clock, and hands each request to the part that owns the rules (`ItemService`,
-/// `AlertScheduler`, `CalendarBook`, `ProjectBook`, `WorkspaceViews`).
+/// `AlertScheduler`, `CalendarBook`, `ProjectBook`, `SessionService`, `WorkspaceViews`).
 pub struct TikiWorkspace {
     database: Database,
     settings: TikiSettings,
@@ -266,6 +267,16 @@ impl TikiWorkspace {
     /// The colors new projects get, offered when changing one.
     pub fn project_colors(&self) -> &[String] {
         &self.settings.project_colors
+    }
+
+    /// Recorded sessions: recording, the transcription queue, notes, search and retention.
+    pub fn sessions(&self) -> SessionService<'_> {
+        SessionService::new(
+            &self.database,
+            &self.settings,
+            &self.translator,
+            self.clock.as_ref(),
+        )
     }
 
     fn views(&self) -> WorkspaceViews<'_> {
