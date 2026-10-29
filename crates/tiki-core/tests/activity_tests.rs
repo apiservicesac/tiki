@@ -153,3 +153,71 @@ fn reminders_never_reach_the_delivered_history_or_the_reports() {
     assert_eq!(workspace.delivered_tasks().unwrap(), Vec::new());
     assert_eq!(workspace.island_snapshot().unwrap().delivered_today, 0);
 }
+
+#[test]
+fn a_follow_up_nudge_is_recorded_as_a_nudge() {
+    let nine = TestDay::october(24).and_hms_opt(9, 0, 0).unwrap();
+    let workspace = TimedWorkspace::sample_at(TestDay::start());
+    let contract = workspace
+        .save_confirmed(ConfirmedCapture {
+            waiting_for: Some("Lucía".into()),
+            ..capture("Contrato firmado", None)
+        })
+        .unwrap();
+    workspace.at(nine).take_due_task_reminders().unwrap();
+
+    let events: Vec<ItemEvent> = workspace
+        .activity_of(contract)
+        .unwrap()
+        .into_iter()
+        .map(|record| record.event)
+        .collect();
+    assert_eq!(events, [ItemEvent::Created, ItemEvent::Nudged]);
+}
+
+#[test]
+fn reports_read_the_deliveries_between_two_days_by_project() {
+    let sample = SampleWorkspace::create();
+    let database: &Database = &sample.database;
+    let deliver = |title: &str, project, day| {
+        let mut task = Task::new(title).unwrap();
+        task.project_id = project;
+        let task_id = database.tasks().insert(&task, TestDay::start()).unwrap();
+        database
+            .activity()
+            .record(
+                task_id,
+                TestDay::october(day).and_hms_opt(12, 0, 0).unwrap(),
+                &[ItemEvent::Delivered],
+            )
+            .unwrap();
+        task_id
+    };
+    let early = deliver("Antes", Some(sample.altamira), 19);
+    let altamira = deliver("Altamira", Some(sample.altamira), 20);
+    let andeanvet = deliver("Andeanvet", Some(sample.andeanvet), 21);
+
+    let activity = database.activity();
+    let week: Vec<_> = activity
+        .deliveries_between(TestDay::october(20), TestDay::october(21), None)
+        .unwrap()
+        .into_iter()
+        .map(|delivery| delivery.item_id)
+        .collect();
+    assert_eq!(week, [altamira, andeanvet]);
+    let for_altamira: Vec<_> = activity
+        .deliveries_between(
+            TestDay::october(19),
+            TestDay::october(21),
+            Some(sample.altamira),
+        )
+        .unwrap()
+        .into_iter()
+        .map(|delivery| delivery.item_id)
+        .collect();
+    assert_eq!(for_altamira, [early, altamira]);
+    assert_eq!(
+        activity.count_delivered_on(TestDay::october(21)).unwrap(),
+        1
+    );
+}

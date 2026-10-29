@@ -44,7 +44,7 @@ impl Task {
     /// as long as the item waits.
     pub fn ring_follow_up(&mut self, now: NaiveDateTime, policy: &FollowUpPolicy) -> ItemEvent {
         self.follow_up_at = policy.next_nudge(now);
-        ItemEvent::Rang
+        ItemEvent::Nudged
     }
 
     /// Puts the reminder off until `until`; a reminder that already rang comes back to life.

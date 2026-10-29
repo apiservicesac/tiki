@@ -21,8 +21,10 @@ pub enum ItemEvent {
     Moved { from: TaskStatus, to: TaskStatus },
     /// Its reminder was put off until this moment.
     Snoozed { until: NaiveDateTime },
-    /// Its reminder or follow-up nudge rang.
+    /// Its reminder rang: a standalone reminder, or the alarm the user set on a task.
     Rang,
+    /// Tiki nudged the user to follow up the item that waits on others.
+    Nudged,
     /// The user delivered the task.
     Delivered,
     /// It came back after being delivered.
@@ -50,6 +52,7 @@ impl ItemEvent {
             ItemEvent::Moved { .. } => "moved",
             ItemEvent::Snoozed { .. } => "snoozed",
             ItemEvent::Rang => "rang",
+            ItemEvent::Nudged => "nudged",
             ItemEvent::Delivered => "delivered",
             ItemEvent::Reopened => "reopened",
         }
