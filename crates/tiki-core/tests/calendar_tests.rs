@@ -208,3 +208,37 @@ fn the_meetings_of_a_day_are_picked_from_the_agenda() {
     assert_eq!(today.len(), 1);
     assert_eq!(today[0].starts_at, at(21, 10, 0));
 }
+
+#[test]
+fn meetings_starting_soon_come_once_earliest_first_with_their_account() {
+    let database = tiki_core::storage::Database::open_in_memory().unwrap();
+    let calendar = database.calendar();
+    let account = calendar
+        .add_account(CalendarProvider::Google, "yo@gmail.com")
+        .unwrap();
+    calendar
+        .replace_meetings(
+            account,
+            at(21, 0, 0),
+            at(22, 0, 0),
+            &[
+                meeting("late", "Segunda", at(21, 10, 10), 30),
+                meeting("early", "Primera", at(21, 10, 5), 30),
+            ],
+        )
+        .unwrap();
+
+    let taken = calendar
+        .take_starting(at(21, 10, 0), at(21, 10, 15))
+        .unwrap();
+    let titles: Vec<&str> = taken.iter().map(|meeting| meeting.title.as_str()).collect();
+    assert_eq!(titles, ["Primera", "Segunda"]);
+    assert_eq!(taken[0].account_email, "yo@gmail.com");
+    assert_eq!(
+        calendar
+            .take_starting(at(21, 10, 0), at(21, 10, 15))
+            .unwrap()
+            .len(),
+        0
+    );
+}

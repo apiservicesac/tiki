@@ -10,10 +10,6 @@ pub struct CalendarRepository<'connection> {
 }
 
 impl<'connection> CalendarRepository<'connection> {
-    /// Timed meetings not announced yet that start after `?1` and up to `?2`.
-    const UNANNOUNCED_STARTING: &'static str =
-        "m.all_day = 0 AND m.alerted = 0 AND m.starts_at > ?1 AND m.starts_at <= ?2";
-
     pub fn new(connection: &'connection Connection) -> Self {
         Self { connection }
     }
@@ -146,21 +142,20 @@ impl<'connection> CalendarRepository<'connection> {
         Ok(meetings)
     }
 
-    /// Timed meetings starting after `now` and up to `until` that were not announced yet;
-    /// they are marked as announced. Run it inside `Database::transaction`, so what is read
-    /// and what is marked always match.
+    /// Timed meetings starting after `now` and up to `until` that were not announced yet,
+    /// earliest first. One statement marks them as announced and returns them.
     pub fn take_starting(
         &self,
         now: NaiveDateTime,
         until: NaiveDateTime,
     ) -> TikiResult<Vec<MeetingItem>> {
-        let mut statement = self.connection.prepare(&format!(
-            "SELECT m.title, m.starts_at, m.ends_at, m.all_day, m.location, m.join_url, a.email
-               FROM meetings m JOIN calendar_accounts a ON a.id = m.account_id
-              WHERE {} ORDER BY m.starts_at",
-            Self::UNANNOUNCED_STARTING
-        ))?;
-        let meetings = statement
+        let mut statement = self.connection.prepare(
+            "UPDATE meetings SET alerted = 1
+              WHERE all_day = 0 AND alerted = 0 AND starts_at > ?1 AND starts_at <= ?2
+              RETURNING title, starts_at, ends_at, all_day, location, join_url,
+                        (SELECT email FROM calendar_accounts WHERE id = meetings.account_id)",
+        )?;
+        let mut meetings = statement
             .query_map(params![now, until], |row| {
                 Ok(MeetingItem {
                     title: row.get(0)?,
@@ -173,13 +168,7 @@ impl<'connection> CalendarRepository<'connection> {
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
-        self.connection.execute(
-            &format!(
-                "UPDATE meetings AS m SET alerted = 1 WHERE {}",
-                Self::UNANNOUNCED_STARTING
-            ),
-            params![now, until],
-        )?;
+        meetings.sort_by_key(|meeting| meeting.starts_at);
         Ok(meetings)
     }
 
