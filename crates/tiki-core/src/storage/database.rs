@@ -4,8 +4,8 @@ use rusqlite::Connection;
 
 use super::schema_migrations::SchemaMigrations;
 use super::{
-    CalendarRepository, CaptureLessonRepository, PreferencesRepository, ProjectRepository,
-    ReminderLogRepository, TaskRepository,
+    BriefLogRepository, CalendarRepository, CaptureLessonRepository, PreferencesRepository,
+    ProjectRepository, TaskRepository,
 };
 use crate::error::TikiResult;
 
@@ -37,8 +37,8 @@ impl Database {
         PreferencesRepository::new(&self.connection)
     }
 
-    pub fn reminder_log(&self) -> ReminderLogRepository<'_> {
-        ReminderLogRepository::new(&self.connection)
+    pub fn brief_log(&self) -> BriefLogRepository<'_> {
+        BriefLogRepository::new(&self.connection)
     }
 
     pub fn calendar(&self) -> CalendarRepository<'_> {

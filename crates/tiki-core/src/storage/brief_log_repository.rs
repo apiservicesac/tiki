@@ -4,12 +4,13 @@ use rusqlite::{Connection, OptionalExtension, params};
 use crate::briefing::BriefMoment;
 use crate::error::TikiResult;
 
-/// Remembers the day each brief was last sent, so it arrives once a day.
-pub struct ReminderLogRepository<'connection> {
+/// Remembers the day each brief was last sent, so it arrives once a day. The table keeps its
+/// first name, `reminder_log`.
+pub struct BriefLogRepository<'connection> {
     connection: &'connection Connection,
 }
 
-impl<'connection> ReminderLogRepository<'connection> {
+impl<'connection> BriefLogRepository<'connection> {
     pub fn new(connection: &'connection Connection) -> Self {
         Self { connection }
     }

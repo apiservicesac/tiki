@@ -128,7 +128,7 @@ impl TikiWorkspace {
         if !self.preferences.allows_notifications() {
             return Ok(None);
         }
-        let log = self.database.reminder_log();
+        let log = self.database.brief_log();
         let moment = BriefPlanner::new(&self.preferences)
             .due_moment(now, |moment| log.last_sent(moment).ok().flatten());
         let Some(moment) = moment else {
@@ -373,7 +373,7 @@ impl TikiWorkspace {
         ];
         for (moment, old_time, new_time) in moves {
             if new_time != old_time && new_time > now {
-                self.database.reminder_log().clear(moment)?;
+                self.database.brief_log().clear(moment)?;
             }
         }
         Ok(())
