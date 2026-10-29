@@ -428,7 +428,6 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   width: var(--notch-head-height);
 }
 
-[data-orientation="vertical"] .notch-name,
 [data-orientation="vertical"] .notch-summary {
   display: none;
 }
@@ -668,13 +667,6 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 @keyframes island-content-in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: none; } }
 @keyframes island-content-out { to { opacity: 0; transform: scale(0.98); } }
 
-/* AI assistant */
-@keyframes capture-thinking {
-  from { opacity: 0.45; }
-  to { opacity: 1; }
-}
-
-
 /* Task editing */
 button.island-row-text {
   padding: 0;
@@ -724,9 +716,9 @@ button.island-row-text {
 [data-orientation="vertical"] .edit-form { grid-template-columns: minmax(0, 1fr); }
 
 /* Ask Tiki */
-.ask {
-  display: grid;
-  gap: 10px;
+@keyframes capture-thinking {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
 }
 
 .ask-answer {
@@ -736,22 +728,6 @@ button.island-row-text {
   line-height: 1.45;
   color: var(--island-text);
   white-space: pre-line;
-}
-
-.ask-answer-thinking { color: var(--island-muted); }
-.ask-answer-failed { color: var(--island-muted); }
-
-@media (prefers-reduced-motion: no-preference) {
-  .ask-answer-thinking { animation: capture-thinking 1.2s ease-in-out infinite alternate; }
-}
-
-.island-brief {
-  margin: 4px 0 8px;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  background: var(--island-soft);
-  font-size: var(--text-md);
-  line-height: 1.45;
 }
 
 /* Link from the island settings to the advanced settings window. */
@@ -1057,16 +1033,6 @@ button.island-row-text {
 
 .island-delivered-link:hover { background: var(--island-soft); }
 
-button.island-notice {
-  display: block;
-  width: 100%;
-  border: 0;
-  color: var(--island-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
 /* The brief as a receipt, as in the design: dashed blocks, a suggestion and the totals. */
 .receipt {
   max-height: 400px;
@@ -1179,9 +1145,6 @@ button.island-notice {
 .capture-kind { justify-self: start; }
 
 /* Actions Tiki proposes in Ask Tiki: each one waits for a click. */
-.ask-actions { display: grid; gap: 6px; }
-.ask-actions:empty { display: none; }
-
 .ask-action {
   display: flex;
   align-items: center;
@@ -1262,15 +1225,6 @@ button.island-notice {
 
 @media (prefers-reduced-motion: no-preference) {
   .island-summary-preparing { animation: capture-thinking 1.2s ease-in-out infinite alternate; }
-}
-
-.island-notice-open strong { font-size: var(--text-md); }
-
-.island-notice-open p {
-  margin: 2px 0 0;
-  font-size: var(--text-sm);
-  line-height: 1.45;
-  white-space: pre-line;
 }
 
 .island-notice-actions {
