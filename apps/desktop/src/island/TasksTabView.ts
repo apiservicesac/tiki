@@ -1,4 +1,5 @@
-import type { ProjectSummary, DeliveredItem, SnapshotItem, Urgency } from "../backend/contracts";
+import type { ProjectSummary, DeliveredItem, SnapshotItem } from "../backend/contracts";
+import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import { TextMatcher } from "../dom/TextMatcher";
@@ -38,14 +39,6 @@ interface ProjectGroup {
  * island's refreshes; only the list is redrawn.
  */
 export class TasksTabView {
-  private static readonly URGENCY_RANK: Readonly<Record<Urgency, number>> = Object.freeze({
-    critical: 0,
-    soon: 1,
-    waiting: 2,
-    normal: 3,
-    reminder: 4,
-  });
-
   private element: HTMLElement | null = null;
   private search: HTMLInputElement | null = null;
   private toggle: HTMLElement | null = null;
@@ -215,7 +208,7 @@ export class TasksTabView {
       const key = item.projectName ?? "";
       const group = groups.get(key) ?? { name: item.projectName, color: item.projectColor, items: [], rank: Number.MAX_SAFE_INTEGER };
       group.items.push(item);
-      group.rank = Math.min(group.rank, TasksTabView.URGENCY_RANK[item.urgency]);
+      group.rank = Math.min(group.rank, UI_CONFIG.urgencyOrder.indexOf(item.urgency));
       groups.set(key, group);
     });
     return [...groups.values()].sort((first, second) => {
