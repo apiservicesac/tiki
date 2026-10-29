@@ -24,6 +24,8 @@ impl DesktopConfig {
     pub const CURSOR_POLL_INTERVAL: Duration = Duration::from_millis(30);
     /// How often the shell asks the core whether a brief notification is due.
     pub const REMINDER_CHECK_INTERVAL: Duration = Duration::from_secs(60);
+    /// How often the shell looks whether another app holds the microphone (a call).
+    pub const CALL_CHECK_INTERVAL: Duration = Duration::from_secs(5);
     /// How often Tiki looks for a new signed version.
     pub const UPDATE_CHECK_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
     /// Diagnostics log in the app's log folder, rewritten on every launch.
