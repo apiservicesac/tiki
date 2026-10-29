@@ -18,6 +18,7 @@ import type {
   TaskEdit,
   TaskStatus,
   TikiBackend,
+  TrashedItem,
   UserPreferences,
 } from "../../src/backend/contracts";
 import { AI_PROVIDERS } from "../../src/backend/contracts";
@@ -42,6 +43,13 @@ export class FakeBackend implements TikiBackend {
     { taskId: 9, title: "Reporte de ventas de septiembre", projectId: 1, projectName: "Altamira", projectColor: "#2F6BD8", tags: ["ventas"], deliveredLabel: "hoy" },
     { taskId: 8, title: "Ajuste del acta CAPEX", projectId: null, projectName: null, projectColor: null, tags: [], deliveredLabel: "ayer" },
   ];
+  /** What the user sent to the trash, newest first. */
+  trash: TrashedItem[] = [
+    { taskId: 21, kind: "task", title: "Cotización de licencias antiguas", projectName: "Vapestation", projectColor: "#C2410C", trashedLabel: "hoy", deletesInLabel: "se borra en 30 días" },
+    { taskId: 22, kind: "reminder", title: "Llamar al banco", projectName: null, projectColor: null, trashedLabel: "hace 3 días", deletesInLabel: "se borra en 27 días" },
+    { taskId: 23, kind: "task", title: "Borrador del acta de septiembre", projectName: "Altamira", projectColor: "#2F6BD8", trashedLabel: "hace 29 días", deletesInLabel: "se borra mañana" },
+  ];
+  readonly restoredItems: number[] = [];
   savedPreferences: UserPreferences = {
     locale: "spanish",
     islandPlacement: "top",
@@ -127,6 +135,35 @@ export class FakeBackend implements TikiBackend {
 
   async deliveredTasks(): Promise<DeliveredItem[]> {
     return this.delivered;
+  }
+
+  async trashItem(taskId: number): Promise<void> {
+    const item = this.snapshot.openItems.find((line) => line.taskId === taskId);
+    if (item) {
+      const { kind, title, projectName, projectColor } = item;
+      this.trash = [{ taskId, kind, title, projectName, projectColor, trashedLabel: "hoy", deletesInLabel: "se borra en 30 días" }, ...this.trash];
+    }
+  }
+
+  async restoreItem(taskId: number): Promise<void> {
+    this.restoredItems.push(taskId);
+    this.trash = this.trash.filter((item) => item.taskId !== taskId);
+  }
+
+  async deleteItemForever(taskId: number): Promise<void> {
+    this.trash = this.trash.filter((item) => item.taskId !== taskId);
+  }
+
+  async emptyTrash(): Promise<void> {
+    this.trash = [];
+  }
+
+  async trashedItems(): Promise<TrashedItem[]> {
+    return this.trash;
+  }
+
+  async trashRetentionDays(): Promise<number> {
+    return 30;
   }
 
   async taskDetails(taskId: number): Promise<TaskDetails> {

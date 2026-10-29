@@ -20,6 +20,7 @@ import type {
   TaskEdit,
   TaskStatus,
   TikiBackend,
+  TrashedItem,
   UserPreferences,
 } from "./contracts";
 
@@ -79,6 +80,30 @@ export class TauriBackend implements TikiBackend {
 
   deliveredTasks(): Promise<DeliveredItem[]> {
     return this.call<DeliveredItem[]>("delivered_tasks");
+  }
+
+  async trashItem(taskId: number): Promise<void> {
+    await this.call("trash_item", { taskId });
+  }
+
+  async restoreItem(taskId: number): Promise<void> {
+    await this.call("restore_item", { taskId });
+  }
+
+  async deleteItemForever(taskId: number): Promise<void> {
+    await this.call("delete_item_forever", { taskId });
+  }
+
+  async emptyTrash(): Promise<void> {
+    await this.call("empty_trash");
+  }
+
+  trashedItems(): Promise<TrashedItem[]> {
+    return this.call<TrashedItem[]>("trashed_items");
+  }
+
+  trashRetentionDays(): Promise<number> {
+    return this.call<number>("trash_retention_days");
   }
 
   captureLessons(): Promise<CaptureLesson[]> {
