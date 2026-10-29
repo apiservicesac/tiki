@@ -1,7 +1,8 @@
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::Deserialize;
 
-use crate::domain::{ItemKind, Priority, Repeat, TaskStatus};
+use crate::domain::{ItemKind, Priority, ProjectId, Repeat, Task, TaskStatus};
+use crate::error::TikiResult;
 
 /// An item the user confirmed after the AI read their sentence, or after picking the fields.
 /// The project comes by name, so the interface never has to know database ids.
@@ -35,5 +36,21 @@ impl ConfirmedCapture {
             Some(text) if !text.is_empty() => TaskStatus::Waiting,
             _ => TaskStatus::ToDo,
         }
+    }
+
+    /// The new item, in "to do" or "waiting" as of `today`; `project_id` is the project
+    /// already resolved by name. The caller normalizes it before saving.
+    pub fn into_task(self, project_id: Option<ProjectId>, today: NaiveDate) -> TikiResult<Task> {
+        let status = self.status();
+        let mut task = Task::new(self.title)?.with_priority(self.priority);
+        task.kind = self.kind;
+        task.project_id = project_id;
+        task.due_date = self.due_date;
+        task.remind_at = self.remind_at;
+        task.tags = self.tags;
+        task.repeat = self.repeat;
+        task.waiting_for = self.waiting_for.unwrap_or_default();
+        task.move_to(status, today);
+        Ok(task)
     }
 }

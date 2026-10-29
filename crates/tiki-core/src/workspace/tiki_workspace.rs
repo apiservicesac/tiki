@@ -7,9 +7,7 @@ use crate::alerts::{BriefPlanner, NotificationComposer, TikiAlert};
 use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
 use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
 use crate::capture::{CaptureLesson, ConfirmedCapture};
-use crate::domain::{
-    FollowUpPolicy, Project, ProjectDirectory, ProjectId, Tags, Task, TaskId, TaskStatus,
-};
+use crate::domain::{FollowUpPolicy, Project, ProjectDirectory, ProjectId, TaskId, TaskStatus};
 use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
@@ -229,21 +227,10 @@ impl TikiWorkspace {
     /// Saves an item exactly as the user confirmed it. A project named for the first time is
     /// created on the spot: Tiki never asks the user to keep a list of projects.
     pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
-        let status = capture.status();
-        let mut task = Task::new(capture.title)?.with_priority(capture.priority);
-        task.due_date = capture.due_date;
-        task.project_id = self.project_named(capture.project_name.as_deref())?;
-        task.remind_at = capture.remind_at;
-        task.kind = capture.kind;
-        task.tags = Tags::normalize(&capture.tags);
-        task.repeat = capture.repeat;
-        capture
-            .waiting_for
-            .unwrap_or_default()
-            .trim()
-            .clone_into(&mut task.waiting_for);
-        task.move_to(status, self.clock.today());
-        self.schedule_follow_up(&mut task, false);
+        let project_id = self.project_named(capture.project_name.as_deref())?;
+        let mut task = capture.into_task(project_id, self.clock.today())?;
+        self.follow_up_policy().update_nudge(&mut task, None);
+        task.normalize()?;
         self.database.tasks().insert(&task)
     }
 
@@ -263,10 +250,12 @@ impl TikiWorkspace {
     /// Saves the user's changes to an item; a new project name creates the project.
     pub fn edit_task(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
-        let was_waiting = task.status == TaskStatus::Waiting;
+        let waiting_since_before = task.waiting_since;
         let project_id = self.project_named(edit.project_name.as_deref())?;
-        edit.apply_to(&mut task, project_id, self.clock.today())?;
-        self.schedule_follow_up(&mut task, was_waiting);
+        edit.apply_to(&mut task, project_id, self.clock.today());
+        self.follow_up_policy()
+            .update_nudge(&mut task, waiting_since_before);
+        task.normalize()?;
         self.database.tasks().update(&task)
     }
 
@@ -304,20 +293,16 @@ impl TikiWorkspace {
 
     pub fn move_task(&self, task_id: TaskId, status: TaskStatus) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
-        let was_waiting = task.status == TaskStatus::Waiting;
+        let waiting_since_before = task.waiting_since;
         task.move_to(status, self.clock.today());
-        self.schedule_follow_up(&mut task, was_waiting);
+        self.follow_up_policy()
+            .update_nudge(&mut task, waiting_since_before);
+        task.normalize()?;
         self.database.tasks().update(&task)
     }
 
-    /// An item that starts waiting gets a reminder to follow up after a few days, unless the
-    /// user already set one.
-    fn schedule_follow_up(&self, task: &mut Task, was_waiting: bool) {
-        if task.status != TaskStatus::Waiting || was_waiting || task.remind_at.is_some() {
-            return;
-        }
-        let since = task.waiting_since.unwrap_or_else(|| self.clock.today());
-        task.remind_at = FollowUpPolicy::new(&self.settings).first_nudge(since);
+    fn follow_up_policy(&self) -> FollowUpPolicy {
+        FollowUpPolicy::new(&self.settings)
     }
 
     /// Saves a project with the next color of the palette.

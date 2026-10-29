@@ -36,6 +36,9 @@ pub enum TikiError {
     #[error("a task needs a title")]
     EmptyTaskTitle,
 
+    #[error("a reminder needs a time to ring")]
+    ReminderNeedsTime,
+
     #[error("AI request failed: {0}")]
     Ai(String),
 

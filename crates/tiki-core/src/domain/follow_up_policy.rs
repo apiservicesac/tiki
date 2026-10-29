@@ -1,5 +1,6 @@
 use chrono::{Days, NaiveDate, NaiveDateTime, NaiveTime};
 
+use super::{Task, TaskStatus};
 use crate::settings::TikiSettings;
 
 /// When an item waiting on others asks the user to follow up. The one place that knows the
@@ -28,5 +29,21 @@ impl FollowUpPolicy {
         since
             .checked_add_days(Days::new(self.after_days.unsigned_abs()))
             .map(|day| day.and_time(self.time))
+    }
+
+    /// Keeps the automatic nudge in step with the status. An item that starts waiting gets
+    /// one, unless the user already set a reminder; an item that stops waiting loses it.
+    /// `waiting_since_before` is the day the item started waiting before the change.
+    pub fn update_nudge(&self, task: &mut Task, waiting_since_before: Option<chrono::NaiveDate>) {
+        let waiting = task.status == TaskStatus::Waiting;
+        match (waiting_since_before, waiting) {
+            (None, true) if task.remind_at.is_none() => {
+                task.remind_at = task.waiting_since.and_then(|since| self.first_nudge(since));
+            }
+            (Some(since), false) if task.remind_at == self.first_nudge(since) => {
+                task.remind_at = None;
+            }
+            _ => {}
+        }
     }
 }
