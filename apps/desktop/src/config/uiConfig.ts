@@ -46,7 +46,7 @@ export const UI_CONFIG = Object.freeze({
     contentOutMs: 180,
   }),
   /** Width of Tiki's face in each place; its height is half of it. */
-  faceWidth: Object.freeze({ hidden: 40, compact: 44, alert: 56, card: 76, settingsTitle: 36, walker: 24 }),
+  faceWidth: Object.freeze({ hidden: 40, compact: 44, alert: 56, card: 76, settingsTitle: 36 }),
 });
 
 /** Names of the events the desktop shell sends to the interface (see `shell_events.rs`). */

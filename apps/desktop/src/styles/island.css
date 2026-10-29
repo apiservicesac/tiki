@@ -480,7 +480,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   width: var(--notch-alert-width);
   height: var(--notch-alert-height);
   box-sizing: border-box;
-  padding: 0 18px 12px 14px;
+  padding: 0 18px 0 14px;
   cursor: pointer;
 }
 
@@ -544,54 +544,25 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   pointer-events: none;
 }
 
-/*
- * The countdown: along the bottom edge a tiny Tiki walks over a faint dotted path towards a
- * glowing goal. It arrives when the notch folds back (`--alert-duration`).
- */
+/* A thin line along the bottom edge that runs out when the notch is about to fold. */
 .notch-alert-countdown {
   position: absolute;
   left: 22px;
   right: 22px;
   bottom: 5px;
-  height: 10px;
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--mood-color) 35%, transparent) 0.9px, transparent 1.4px);
-  background-size: 7px 10px;
-  background-position: left center;
-  background-repeat: repeat-x;
+  height: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--mood-color) 25%, transparent);
+  overflow: hidden;
 }
 
-.notch-alert-goal {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  margin-top: -3px;
-  border-radius: 50%;
-  background: var(--mood-color);
-  box-shadow: 0 0 8px 1px var(--mood-color);
-}
-
-.notch-alert-walker {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  margin-top: -6px;
-  line-height: 0;
-}
-
-/* The path already walked is eaten up behind Tiki, so what is left reads at a glance. */
-.notch-alert-countdown::before {
+.notch-alert-countdown::after {
   content: "";
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0;
-  background: var(--island-notch);
+  inset: 0;
+  background: var(--mood-color);
+  transform-origin: left center;
 }
-
-.notch-alert-walker .mascot-eyes { filter: none; }
 
 /*
  * While an alert is announced, a wide aura in the alert's color spreads from the notch over
@@ -678,10 +649,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   .island-notch[data-mode="alert"] { animation: alert-arrive 0.7s var(--ease-out); }
   .notch-alert-face::before { animation: alert-ripple 1.6s var(--ease-out) 3; }
   .notch-alert-face::after { animation: alert-ripple 1.6s var(--ease-out) 0.5s 3; }
-  .notch-alert-walker { animation: alert-walk var(--alert-duration) linear forwards; }
-  .notch-alert-countdown::before { animation: alert-path-eaten var(--alert-duration) linear forwards; }
-  .notch-alert-walker .mascot { animation: alert-step 0.42s ease-in-out infinite alternate; }
-  .notch-alert-goal { animation: alert-pulse 1.4s ease-in-out infinite; }
+  .notch-alert-countdown::after { animation: alert-countdown var(--alert-duration) linear forwards; }
   .notch-unread { animation: alert-pulse 1.8s ease-in-out infinite; }
 }
 
@@ -689,9 +657,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 @keyframes alert-aura { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
 @keyframes alert-arrive { 0% { transform: scale(0.96); } 55% { transform: scale(1.03); } 100% { transform: none; } }
 @keyframes alert-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
-@keyframes alert-walk { from { left: 0; } to { left: calc(100% - 32px); } }
-@keyframes alert-path-eaten { from { width: 0; } to { width: calc(100% - 32px); } }
-@keyframes alert-step { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-2px) rotate(4deg); } }
+@keyframes alert-countdown { to { transform: scaleX(0); } }
 
 @media (prefers-reduced-motion: reduce) {
   .island-notch { transition: none; }
