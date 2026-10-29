@@ -18,7 +18,7 @@ pub enum Mood {
     Curious,
     /// A task was delivered or a source was connected.
     Happy,
-    /// Focus mode: notifications are silenced.
+    /// Focus mode or the night's quiet hours: Tiki keeps quiet.
     Sleep,
 }
 

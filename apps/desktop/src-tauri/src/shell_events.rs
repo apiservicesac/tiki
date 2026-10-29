@@ -7,12 +7,15 @@ pub enum ShellEvent {
     OpenCapture,
     OpenSettings,
     ToggleIsland,
-    /// An alert is due; the island shows it in the notch (the payload is the alert).
+    /// An alert is due; the island shows it in the notch (the payload is a `DueAlert`: the
+    /// alert and how it reaches the user).
     AlertReady,
     /// Preferences or AI keys changed in one window; the others reload them.
     PreferencesChanged,
     /// The calendars were copied again: the Agenda refreshes.
     CalendarSynced,
+    /// A call started or ended: the island redraws the notch.
+    InCallChanged,
 }
 
 impl ShellEvent {
@@ -24,6 +27,7 @@ impl ShellEvent {
             ShellEvent::AlertReady => "tiki://alert-ready",
             ShellEvent::PreferencesChanged => "tiki://preferences-changed",
             ShellEvent::CalendarSynced => "tiki://calendar-synced",
+            ShellEvent::InCallChanged => "tiki://in-call-changed",
         }
     }
 

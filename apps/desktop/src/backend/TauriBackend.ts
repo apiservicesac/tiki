@@ -13,7 +13,7 @@ import type {
   ProjectChange,
   ProjectSummary,
   DeliveredItem,
-  TikiAlert,
+  DueAlert,
   HitArea,
   IslandSnapshot,
   TaskDetails,
@@ -161,8 +161,8 @@ export class TauriBackend implements TikiBackend {
     await this.call("set_island_hit_area", { area });
   }
 
-  onAlert(handler: (alert: TikiAlert) => void): Promise<() => void> {
-    return listen<TikiAlert>(SHELL_EVENTS.alertReady, (event) => handler(event.payload));
+  onAlert(handler: (alert: DueAlert) => void): Promise<() => void> {
+    return listen<DueAlert>(SHELL_EVENTS.alertReady, (event) => handler(event.payload));
   }
 
   listen(eventName: string, handler: () => void): Promise<() => void> {

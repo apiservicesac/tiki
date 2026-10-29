@@ -1,7 +1,7 @@
 use chrono::NaiveTime;
 use serde::{Deserialize, Serialize};
 
-use super::IslandPlacement;
+use super::{IslandPlacement, QuietHours};
 use crate::ai::AiProvider;
 use crate::i18n::Locale;
 use crate::settings::TikiSettings;
@@ -30,6 +30,8 @@ pub struct UserPreferences {
     pub windows_notifications: bool,
     /// Silences notifications and lets Tiki sleep while the user concentrates.
     pub focus_mode: bool,
+    /// The night: Tiki sleeps, and alerts still reach the island but without a sound.
+    pub quiet_hours: QuietHours,
 }
 
 impl UserPreferences {
@@ -44,6 +46,9 @@ impl UserPreferences {
     pub const FOCUS_MODE_KEY: &'static str = "focus_mode";
     pub const ALERT_SOUND_KEY: &'static str = "alert_sound";
     pub const WINDOWS_NOTIFICATIONS_KEY: &'static str = "windows_notifications";
+    pub const QUIET_HOURS_ENABLED_KEY: &'static str = "quiet_hours_enabled";
+    pub const QUIET_HOURS_FROM_KEY: &'static str = "quiet_hours_from";
+    pub const QUIET_HOURS_UNTIL_KEY: &'static str = "quiet_hours_until";
     /// How times are written in storage.
     pub const TIME_FORMAT: &'static str = "%H:%M";
 
@@ -60,6 +65,7 @@ impl UserPreferences {
             alert_sound: true,
             windows_notifications: true,
             focus_mode: false,
+            quiet_hours: settings.quiet_hours,
         }
     }
 

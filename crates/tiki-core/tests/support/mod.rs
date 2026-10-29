@@ -26,6 +26,11 @@ impl TestDay {
         Self::today().and_time(NaiveTime::MIN)
     }
 
+    /// Mid-morning of today, outside the quiet hours of the night.
+    pub fn working_hours() -> NaiveDateTime {
+        Self::today().and_time(NaiveTime::from_hms_opt(10, 0, 0).expect("valid time"))
+    }
+
     pub fn october(day: u32) -> NaiveDate {
         NaiveDate::from_ymd_opt(2026, 10, day).expect("valid October date")
     }

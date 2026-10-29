@@ -1,6 +1,7 @@
 import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../../src/ai";
 import type {
   AiProviderStatus,
+  AlertDelivery,
   AvailableUpdate,
   CalendarAccount,
   CalendarProvider,
@@ -10,6 +11,7 @@ import type {
   ProjectChange,
   ProjectSummary,
   DeliveredItem,
+  DueAlert,
   HitArea,
   IslandSnapshot,
   TaskDetails,
@@ -51,6 +53,7 @@ export class FakeBackend implements TikiBackend {
     alertSound: true,
     windowsNotifications: true,
     focusMode: false,
+    quietHours: { enabled: true, from: "22:00:00", until: "07:00:00" },
   };
   autostart = false;
   availableUpdate: AvailableUpdate | null = null;
@@ -255,19 +258,22 @@ export class FakeBackend implements TikiBackend {
     return () => this.listeners.delete(eventName);
   }
 
-  private alertHandler: ((alert: TikiAlert) => void) | null = null;
+  private alertHandler: ((alert: DueAlert) => void) | null = null;
 
-  async onAlert(handler: (alert: TikiAlert) => void): Promise<() => void> {
+  async onAlert(handler: (alert: DueAlert) => void): Promise<() => void> {
     this.alertHandler = handler;
     return () => {
       this.alertHandler = null;
     };
   }
 
-  /** Simulates the shell delivering an alert. */
-  deliverAlert(alert: TikiAlert): void {
-    this.alertHandler?.(alert);
+  /** Simulates the shell delivering an alert; unless told otherwise, it may chime. */
+  deliverAlert(alert: TikiAlert, delivery: AlertDelivery = FakeBackend.AUDIBLE): void {
+    this.alertHandler?.({ ...alert, delivery });
   }
+
+  /** How an alert arrives during the day, with every way of reaching the user on. */
+  static readonly AUDIBLE: AlertDelivery = Object.freeze({ sound: true, windowsNotification: true });
 
   /** Simulates the desktop shell emitting an event. */
   emit(eventName: string): void {
@@ -289,6 +295,7 @@ export class FakeBackend implements TikiBackend {
     return {
       mood: "worried",
       moodLabel: "ATRASO",
+      inCall: false,
       attentionCount: 5,
       dueCount: 3,
       waitingCount: 2,

@@ -71,6 +71,8 @@ export interface SnapshotSection {
 export interface IslandSnapshot {
   mood: MoodName;
   moodLabel: string;
+  /** Another app holds the microphone: Tiki keeps quiet until the call ends. */
+  inCall: boolean;
   /** Tasks that need attention: overdue, due soon or waiting on others. */
   attentionCount: number;
   /** Overdue or due soon. */
@@ -153,6 +155,17 @@ export interface AgendaDay {
   entries: AgendaEntry[];
 }
 
+/** Whether an alert chimes and reaches Windows, as the core decided (see `AlertDelivery`). */
+export interface AlertDelivery {
+  sound: boolean;
+  windowsNotification: boolean;
+}
+
+/** An alert as the shell delivers it: with how it reaches the user (see `DueAlert`). */
+export interface DueAlert extends TikiAlert {
+  delivery: AlertDelivery;
+}
+
 /** A meeting copied from a connected calendar (see `MeetingItem` in the core). */
 export interface MeetingItem {
   title: string;
@@ -224,6 +237,14 @@ export interface HitArea {
   height: number;
 }
 
+/** The night: Tiki sleeps and alerts make no sound (see `QuietHours` in the core). */
+export interface QuietHours {
+  enabled: boolean;
+  /** A time of day, "22:00:00" both ways (see `CoreDateTimeText`); the range may cross midnight. */
+  from: string;
+  until: string;
+}
+
 export interface UserPreferences {
   locale: LocaleName;
   islandPlacement: IslandPlacement;
@@ -241,6 +262,7 @@ export interface UserPreferences {
   windowsNotifications: boolean;
   /** Silences notifications and lets Tiki sleep. */
   focusMode: boolean;
+  quietHours: QuietHours;
 }
 
 export const AI_PROVIDERS = Object.freeze(["anthropic", "openai"] as const);
@@ -317,7 +339,7 @@ export interface TikiBackend {
   /** Tells the shell which part of the window is the island; the rest lets clicks through. */
   setHitArea(area: HitArea): Promise<void>;
   /** Calls `handler` with each alert the shell delivers; returns a function that stops listening. */
-  onAlert(handler: (alert: TikiAlert) => void): Promise<() => void>;
+  onAlert(handler: (alert: DueAlert) => void): Promise<() => void>;
   /** Calls `handler` whenever the shell emits `eventName`; returns a function that stops listening. */
   listen(eventName: string, handler: () => void): Promise<() => void>;
 }

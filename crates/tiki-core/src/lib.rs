@@ -18,6 +18,7 @@ pub mod items;
 pub mod mood;
 pub mod plugins;
 pub mod preferences;
+pub mod presence;
 pub mod projects;
 pub mod settings;
 pub mod storage;
