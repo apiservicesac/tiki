@@ -113,7 +113,9 @@ impl<'context> SnapshotPresenter<'context> {
     fn item(&self, item: &BriefItem, urgency: Urgency, brief: &DailyBrief) -> SnapshotItem {
         SnapshotItem {
             task_id: item.task_id,
+            kind: item.kind,
             title: item.title.clone(),
+            project_id: item.project_id,
             project_name: item.project_name.clone(),
             project_color: self.project_color(item),
             detail_label: BriefDetailFormatter::new(self.translator).label(item.detail, brief.date),

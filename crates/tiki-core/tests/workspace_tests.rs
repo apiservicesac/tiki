@@ -59,6 +59,40 @@ fn the_snapshot_is_translated_and_ready_to_draw() {
 }
 
 #[test]
+fn snapshot_items_say_what_they_are_and_which_project_they_belong_to() {
+    let sample = SampleWorkspace::create();
+    let altamira = sample.altamira;
+    let workspace = TimedWorkspace::open(sample.database, TestDay::start());
+    workspace
+        .save_confirmed(ConfirmedCapture {
+            title: "Tomar agua".into(),
+            project_name: None,
+            due_date: None,
+            priority: Priority::Normal,
+            remind_at: Some(TestDay::october(23).and_hms_opt(11, 0, 0).unwrap()),
+            kind: ItemKind::Reminder,
+            tags: Vec::new(),
+            repeat: tiki_core::domain::Repeat::Never,
+            waiting_for: None,
+        })
+        .unwrap();
+
+    let snapshot = workspace.island_snapshot().unwrap();
+    let item = |title: &str| {
+        snapshot
+            .open_items
+            .iter()
+            .find(|item| item.title == title)
+            .unwrap()
+    };
+    assert_eq!(item("Tomar agua").kind, ItemKind::Reminder);
+    assert_eq!(item("Tomar agua").project_id, None);
+    let tracking = item("Tracking de formularios comerciales");
+    assert_eq!(tracking.kind, ItemKind::Task);
+    assert_eq!(tracking.project_id, Some(altamira));
+}
+
+#[test]
 fn switching_to_english_translates_the_snapshot() {
     let mut workspace = sample_workspace();
     workspace.change_locale(Locale::English).unwrap();

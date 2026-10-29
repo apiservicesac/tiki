@@ -3,7 +3,7 @@ use serde::Serialize;
 use chrono::NaiveDateTime;
 
 use crate::calendar::MeetingItem;
-use crate::domain::{Priority, Repeat, TaskId};
+use crate::domain::{ItemKind, Priority, ProjectId, Repeat, TaskId};
 use crate::mood::Mood;
 
 /// How pressing a line is; the interface turns it into a color.
@@ -18,12 +18,15 @@ pub enum Urgency {
     Reminder,
 }
 
-/// One task line, already translated and ready to draw.
+/// One item line, already translated and ready to draw.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SnapshotItem {
     pub task_id: TaskId,
+    /// A task, or a standalone reminder: the Tasks tab lists only tasks, the Agenda both.
+    pub kind: ItemKind,
     pub title: String,
+    pub project_id: Option<ProjectId>,
     pub project_name: Option<String>,
     pub project_color: Option<String>,
     pub detail_label: String,

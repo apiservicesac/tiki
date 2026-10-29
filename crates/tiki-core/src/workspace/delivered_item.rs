@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use serde::Serialize;
 
-use crate::domain::{ProjectDirectory, Task, TaskId};
+use crate::domain::{ProjectDirectory, ProjectId, Task, TaskId};
 use crate::i18n::{DateFormatter, Translator};
 
 /// One delivered task in the history, ready to draw.
@@ -10,6 +10,7 @@ use crate::i18n::{DateFormatter, Translator};
 pub struct DeliveredItem {
     pub task_id: TaskId,
     pub title: String,
+    pub project_id: Option<ProjectId>,
     pub project_name: Option<String>,
     pub project_color: Option<String>,
     /// "hoy", "ayer" or a short date.
@@ -31,6 +32,7 @@ impl DeliveredItem {
         Some(Self {
             task_id: task.id?,
             title: task.title.clone(),
+            project_id: task.project_id,
             project_name: project.map(|project| project.name.clone()),
             project_color: project.map(|project| project.color.clone()),
             delivered_label: Self::label(delivered_on, translator, today),
