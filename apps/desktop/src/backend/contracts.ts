@@ -278,7 +278,17 @@ export interface UserPreferences {
   /** Silences notifications and lets Tiki sleep. */
   focusMode: boolean;
   quietHours: QuietHours;
+  /** The Whisper model sessions are transcribed with. */
+  transcriptionQuality: TranscriptionQuality;
+  /** The AI writes a session's notes as soon as its transcript is ready (with a key). */
+  sessionNotesAutomatic: boolean;
+  /** Days a session's media is kept; its transcript and notes stay. */
+  sessionMediaDays: number;
 }
+
+/** How carefully sessions are transcribed (see `TranscriptionQuality` in the core). */
+export const TRANSCRIPTION_QUALITIES = Object.freeze(["fast", "balanced", "precise"] as const);
+export type TranscriptionQuality = (typeof TRANSCRIPTION_QUALITIES)[number];
 
 export const AI_PROVIDERS = Object.freeze(["anthropic", "openai"] as const);
 

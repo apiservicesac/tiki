@@ -55,6 +55,9 @@ export class FakeBackend implements TikiBackend {
     windowsNotifications: true,
     focusMode: false,
     quietHours: { enabled: true, from: "22:00:00", until: "07:00:00" },
+    transcriptionQuality: "balanced",
+    sessionNotesAutomatic: true,
+    sessionMediaDays: 90,
   };
   autostart = false;
   availableUpdate: AvailableUpdate | null = null;
