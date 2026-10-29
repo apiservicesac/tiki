@@ -14,6 +14,7 @@ impl SchemaMigrations {
             M::up(Self::KINDS_TAGS_NOTES_AND_LESSONS),
             M::up(Self::GENERAL_STATUSES_REPEATS_AND_FOLLOW_UPS),
             M::up(Self::CALENDARS),
+            M::up(Self::TIMELESS_REMINDERS_BECOME_TASKS),
         ])
     }
 
@@ -46,6 +47,12 @@ impl SchemaMigrations {
         CREATE UNIQUE INDEX tasks_by_external_record
             ON tasks(origin_plugin, origin_connection, origin_record)
             WHERE origin_plugin IS NOT NULL;
+    ";
+
+    /// An open reminder without a time showed in no view; as a task it shows in the Tasks tab.
+    const TIMELESS_REMINDERS_BECOME_TASKS: &'static str = "
+        UPDATE tasks SET kind = 'task', repeat = 'never'
+         WHERE kind = 'reminder' AND remind_at IS NULL AND status <> 'done';
     ";
 
     /// Connected calendar accounts and the local copy of their meetings.
@@ -126,4 +133,51 @@ impl SchemaMigrations {
             value TEXT NOT NULL
         );
     ";
+}
+
+#[cfg(test)]
+mod tests {
+    use rusqlite::Connection;
+
+    use super::SchemaMigrations;
+
+    /// A database migrated up to (and including) the step at `index`, counted from zero.
+    fn migrated_through(index: usize) -> Connection {
+        let mut connection = Connection::open_in_memory().unwrap();
+        SchemaMigrations::all()
+            .to_version(&mut connection, index + 1)
+            .unwrap();
+        connection
+    }
+
+    fn finish(connection: &mut Connection) {
+        SchemaMigrations::all().to_latest(connection).unwrap();
+    }
+
+    fn kind_of(connection: &Connection, title: &str) -> String {
+        connection
+            .query_row("SELECT kind FROM tasks WHERE title = ?1", [title], |row| {
+                row.get(0)
+            })
+            .unwrap()
+    }
+
+    #[test]
+    fn open_reminders_without_a_time_become_tasks() {
+        let mut connection = migrated_through(7);
+        connection
+            .execute_batch(
+                "INSERT INTO tasks (title, status, priority, kind, remind_at) VALUES
+                    ('Sin hora', 'to_do', 'normal', 'reminder', NULL),
+                    ('Con hora', 'to_do', 'normal', 'reminder', '2026-10-21 17:00:00'),
+                    ('Ya sonó', 'done', 'normal', 'reminder', NULL);",
+            )
+            .unwrap();
+
+        finish(&mut connection);
+
+        assert_eq!(kind_of(&connection, "Sin hora"), "task");
+        assert_eq!(kind_of(&connection, "Con hora"), "reminder");
+        assert_eq!(kind_of(&connection, "Ya sonó"), "reminder");
+    }
 }
