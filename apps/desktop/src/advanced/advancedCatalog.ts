@@ -2,7 +2,7 @@
  * What the advanced settings list: sections and plugins. Plugins are shown with their real
  * availability; none of them is connected yet.
  */
-export const ADVANCED_SECTIONS = Object.freeze(["general", "ai", "plugins", "accounts", "shortcuts"] as const);
+export const ADVANCED_SECTIONS = Object.freeze(["general", "ai", "sessions", "plugins", "accounts", "shortcuts"] as const);
 export type AdvancedSection = (typeof ADVANCED_SECTIONS)[number];
 
 export type PluginKind = "ticket_source" | "client_instance";

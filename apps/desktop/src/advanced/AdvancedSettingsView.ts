@@ -10,6 +10,7 @@ import { ADVANCED_SECTIONS, PLUGIN_CATALOG, type AdvancedSection } from "./advan
 import { CalendarAccountsView, type CalendarAccountsHandlers } from "./CalendarAccountsView";
 import { CatalogSectionView } from "./CatalogSectionView";
 import { GeneralSectionView, type GeneralSectionHandlers } from "./GeneralSectionView";
+import { SessionsSectionView } from "./SessionsSectionView";
 import { ShortcutsSectionView } from "./ShortcutsSectionView";
 import type { WindowControls } from "./WindowControls";
 
@@ -25,6 +26,7 @@ export class AdvancedSettingsView {
   private static readonly SECTION_ICONS: Readonly<Record<AdvancedSection, string>> = Object.freeze({
     general: ICONS.settings,
     ai: ICONS.sparkle,
+    sessions: ICONS.record,
     plugins: ICONS.plug,
     accounts: ICONS.mail,
     shortcuts: ICONS.keyboard,
@@ -34,6 +36,7 @@ export class AdvancedSettingsView {
   private readonly ai: AiSettingsView;
   private readonly catalog: CatalogSectionView;
   private readonly calendars: CalendarAccountsView;
+  private readonly sessions: SessionsSectionView;
   private readonly shortcuts: ShortcutsSectionView;
   private readonly titleText: HTMLElement;
   private readonly nav: HTMLElement;
@@ -51,6 +54,7 @@ export class AdvancedSettingsView {
     this.ai = new AiSettingsView(translator);
     this.catalog = new CatalogSectionView(translator);
     this.calendars = new CalendarAccountsView(translator);
+    this.sessions = new SessionsSectionView(translator);
     this.shortcuts = new ShortcutsSectionView(translator);
     this.titleText = ElementFactory.create("span", { className: "advanced-title" });
     this.nav = ElementFactory.create("nav", { className: "advanced-nav" });
@@ -98,6 +102,8 @@ export class AdvancedSettingsView {
         return this.general.render(state.autostart, state.updates, handlers);
       case "ai":
         return [this.ai.render(preferences, state.aiSettings, handlers)];
+      case "sessions":
+        return this.sessions.render(preferences, handlers);
       case "plugins":
         return this.catalog.render("advanced.plugins.intro", PLUGIN_CATALOG, "advanced.plugin");
       case "accounts":

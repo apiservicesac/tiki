@@ -13,6 +13,7 @@ import {
   REPEATS,
   SESSION_STATUSES,
   SPEAKERS,
+  TRANSCRIPTION_QUALITIES,
   TASK_STATUSES,
   USER_ERROR_KEYS,
 } from "../src/backend/contracts";
@@ -70,6 +71,7 @@ function builtKeys(): string[] {
     ...RECORDING_MODES.flatMap((mode) => [`record.mode.${mode}`, `record.mode.${mode}.hint`]),
     ...SESSION_STATUSES.flatMap((status) => [`session.status.${status}`, `session.note.${status}`]),
     ...SPEAKERS.map((speaker) => `session.speaker.${speaker}`),
+    ...TRANSCRIPTION_QUALITIES.flatMap((quality) => [`transcription.quality.${quality}`, `transcription.quality.${quality}.hint`]),
   ];
 }
 

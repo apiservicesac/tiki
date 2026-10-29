@@ -121,4 +121,16 @@ describe("AdvancedSettingsApp", () => {
     await vi.waitFor(() => expect(root.querySelector<HTMLButtonElement>('[data-provider="microsoft"]')?.disabled).toBe(true));
     expect(root.querySelector<HTMLButtonElement>('[data-provider="google"]')?.disabled).toBe(false);
   });
+
+  it("chooses the transcription model, the automatic notes and how long media is kept", async () => {
+    await startOn("sessions");
+    const option = (label: string) => [...root.querySelectorAll<HTMLButtonElement>(".settings-option")]
+      .find((button) => button.textContent === label);
+    option("Precisa")?.click();
+    await vi.waitFor(() => expect(backend.savedPreferences.transcriptionQuality).toBe("precise"));
+    option("Escribirlos al terminar la transcripción")?.click();
+    await vi.waitFor(() => expect(backend.savedPreferences.sessionNotesAutomatic).toBe(false));
+    option("30 días")?.click();
+    await vi.waitFor(() => expect(backend.savedPreferences.sessionMediaDays).toBe(30));
+  });
 });

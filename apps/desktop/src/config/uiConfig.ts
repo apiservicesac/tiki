@@ -77,6 +77,8 @@ export const UI_CONFIG = Object.freeze({
   recordingTimerTickMs: 1_000,
   /** Disk usage is shown in megabytes, as the system's file manager does. */
   bytesPerMegabyte: 1_000_000,
+  /** How many days a session's media may be kept, as offered in the advanced settings. */
+  sessionMediaDayChoices: Object.freeze([30, 90, 180, 365]),
   /** The color of a session's status pill in the Sessions tab, as a time-badge tone. */
   sessionStatusTones: Object.freeze({
     recording: "critical",
