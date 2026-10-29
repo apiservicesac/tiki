@@ -85,3 +85,13 @@ fn projects_are_found_by_name_ignoring_case() {
         Some(workspace.andeanvet)
     );
 }
+
+#[test]
+fn updating_a_project_that_was_never_saved_reports_it() {
+    let database = Database::open_in_memory().unwrap();
+    let unsaved = tiki_core::domain::Project::new("Altamira", "#2F6BD8");
+    assert!(matches!(
+        database.projects().update(&unsaved),
+        Err(TikiError::UnsavedProject)
+    ));
+}

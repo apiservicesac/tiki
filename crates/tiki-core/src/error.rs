@@ -24,6 +24,9 @@ pub enum TikiError {
     #[error("the task has not been saved yet")]
     UnsavedTask,
 
+    #[error("the project has not been saved yet")]
+    UnsavedProject,
+
     #[error("a project needs a name")]
     EmptyProjectName,
 

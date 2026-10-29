@@ -22,10 +22,7 @@ impl<'connection> ProjectRepository<'connection> {
     }
 
     pub fn update(&self, project: &Project) -> TikiResult<()> {
-        let project_id = project.id.ok_or(TikiError::NotFound {
-            entity: "project",
-            id: 0,
-        })?;
+        let project_id = project.id.ok_or(TikiError::UnsavedProject)?;
         let changed_rows = self.connection.execute(
             "UPDATE projects SET name = ?2, color = ?3, notes = ?4 WHERE id = ?1",
             params![project_id.0, project.name, project.color, project.notes],
