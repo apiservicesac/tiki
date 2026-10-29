@@ -62,3 +62,21 @@ export interface IslandState {
   /** The task open in the edit panel. */
   editing: TaskDetails | null;
 }
+
+/** How the island starts, before it knows where it sits and what the day holds. */
+export const ISLAND_STATE_DEFAULTS: Readonly<Omit<IslandState, "placement" | "snapshot">> = Object.freeze({
+  mode: "hidden",
+  panel: "tasks",
+  tab: "today",
+  projects: [],
+  projectColors: [],
+  delivered: [],
+  tasksView: "pending",
+  creatingProject: false,
+  reactionMood: null,
+  alert: null,
+  unreadAlert: false,
+  dayBrief: null,
+  preparingBrief: false,
+  editing: null,
+});
