@@ -213,6 +213,7 @@
     "projects.no_open": "Sin tareas abiertas",
     "receipt.title": "Resumen del día",
     "receipt.suggestion": "Sugerencia",
+    "punctuation.label": "{label}: ",
     "receipt.totals": "{open} pendientes · {waiting} esperando · {delivered} entregadas hoy",
     "receipt.all_clear": "Nada pendiente. ¡Día despejado!",
     "edit.field.remind": "Avisarme",
@@ -248,7 +249,7 @@
     "focus.important": "Es prioritaria",
     "focus.due_soon": "Vence pronto",
     "focus.follow_up": "Toca insistir",
-    "focus.title": "Ahora",
+    "focus.label": "Ahora · {reason}",
 
     "capture.field.moment": "Cuándo",
     "capture.field.repeat": "Se repite",
@@ -303,6 +304,7 @@
     "calendar.provider.microsoft": "Microsoft 365 / Outlook",
     "calendar.provider.google": "Google Calendar",
     "meeting.join": "Unirse",
+    "meeting.time_range": "{start}–{end}",
     "meeting.all_day": "Todo el día",
     "meeting.untitled": "(Sin título)"
   },

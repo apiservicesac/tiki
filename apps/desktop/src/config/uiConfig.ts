@@ -1,4 +1,4 @@
-import type { MoodName, TikiAlert } from "../backend/contracts";
+import type { MoodName, Priority, TikiAlert } from "../backend/contracts";
 
 /** Every tunable value of the interface lives here, nowhere else. */
 export const UI_CONFIG = Object.freeze({
@@ -44,6 +44,13 @@ export const UI_CONFIG = Object.freeze({
     closeMs: 360,
     /** The previous content fades out this fast while the new one starts to appear. */
     contentOutMs: 180,
+  }),
+  /** Marks set between or before pieces of text; the same in every language. */
+  textMarks: Object.freeze({
+    /** Between the parts of one line: "Altamira · #billing". */
+    separator: " · ",
+    /** Before a title, by priority: "!!" urgent, "!" important; other priorities have none. */
+    priority: Object.freeze<Partial<Record<Priority, string>>>({ urgent: "!!", high: "!" }),
   }),
   /** Width of Tiki's face in each place; its height is half of it. */
   faceWidth: Object.freeze({ hidden: 40, compact: 44, alert: 56, card: 76, settingsTitle: 36 }),

@@ -1,4 +1,5 @@
 import type { DeliveredItem, Priority, SnapshotItem, SnapshotSection } from "../backend/contracts";
+import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
@@ -100,13 +101,12 @@ export class TaskListView {
   /** "Altamira · #billing" under the title; nothing when the item has neither. */
   private static context(projectName: string | null, tags: readonly string[]): HTMLElement[] {
     const parts = [...(projectName ? [projectName] : []), ...tags.map((tag) => `#${tag}`)];
-    return parts.length > 0 ? [ElementFactory.create("small", { text: parts.join(" · ") })] : [];
+    return parts.length > 0 ? [ElementFactory.create("small", { text: parts.join(UI_CONFIG.textMarks.separator) })] : [];
   }
 
   /** "!!" for urgent and "!" for important work, before the title. */
   private priorityMark(priority: Priority): HTMLElement[] {
-    const marks: Partial<Record<Priority, string>> = { urgent: "!!", high: "!" };
-    const mark = marks[priority];
+    const mark = UI_CONFIG.textMarks.priority[priority];
     return mark
       ? [ElementFactory.create("span", {
         className: `island-priority island-priority-${priority}`,

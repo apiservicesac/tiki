@@ -1,4 +1,5 @@
 import type { IslandSnapshot, TikiAlert } from "../backend/contracts";
+import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 
@@ -27,7 +28,7 @@ export class ReceiptView {
               ElementFactory.create("div", {
                 className: "receipt-line",
                 children: [
-                  ElementFactory.create("span", { text: item.projectName ? `${item.title} · ${item.projectName}` : item.title }),
+                  ElementFactory.create("span", { text: [item.title, ...(item.projectName ? [item.projectName] : [])].join(UI_CONFIG.textMarks.separator) }),
                   ElementFactory.create("em", { className: `receipt-when-${item.urgency}`, text: item.detailLabel }),
                 ],
               })),
@@ -52,7 +53,7 @@ export class ReceiptView {
           ? [ElementFactory.create("p", {
             className: "receipt-tip",
             children: [
-              ElementFactory.create("b", { text: `${this.translator.text("receipt.suggestion")}: ` }),
+              ElementFactory.create("b", { text: this.translator.format("punctuation.label", { label: this.translator.text("receipt.suggestion") }) }),
               document.createTextNode(suggestion),
             ],
           })]

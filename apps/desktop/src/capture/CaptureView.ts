@@ -1,6 +1,7 @@
 import type { InterpretedCapture, ProposedAction } from "../ai";
 import { ProposedActionsView, type ApplyAction } from "../assistant/ProposedActionsView";
 import { ITEM_KINDS, PRIORITIES, REPEATS, type ItemKind, type Priority, type ProjectSummary, type Repeat } from "../backend/contracts";
+import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import { TagText } from "../dom/TagText";
 import type { Translator } from "../i18n/Translator";
@@ -280,7 +281,7 @@ export class CaptureView {
         event.stopPropagation();
         handlers.onOpenAiSettings();
       });
-      children.push(document.createTextNode(" · "), link);
+      children.push(document.createTextNode(UI_CONFIG.textMarks.separator), link);
     }
     this.status.replaceChildren(...children);
   }

@@ -61,7 +61,7 @@ export class TodayView {
       className: "island-focus",
       attributes: { type: "button", id: "today-focus", "data-task-id": String(focus.item.taskId) },
       children: [
-        ElementFactory.create("span", { className: "island-focus-label", text: `${this.translator.text("focus.title")} · ${focus.reason}` }),
+        ElementFactory.create("span", { className: "island-focus-label", text: this.translator.format("focus.label", { reason: focus.reason }) }),
         ElementFactory.create("strong", { text: focus.item.title }),
         ...(focus.item.projectName ? [ElementFactory.create("small", { text: focus.item.projectName })] : []),
       ],

@@ -65,7 +65,7 @@ export class AgendaView {
   private meetingRow(meeting: MeetingItem, handlers: AgendaHandlers): HTMLElement {
     const time = meeting.allDay
       ? this.translator.text("meeting.all_day")
-      : `${meeting.startsAt.slice(11, 16)}–${meeting.endsAt.slice(11, 16)}`;
+      : this.translator.format("meeting.time_range", { start: meeting.startsAt.slice(11, 16), end: meeting.endsAt.slice(11, 16) });
     const title = ElementFactory.create("span", {
       className: "island-row-text",
       text: meeting.title || this.translator.text("meeting.untitled"),
