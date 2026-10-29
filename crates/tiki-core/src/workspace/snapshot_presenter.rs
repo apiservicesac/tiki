@@ -7,7 +7,7 @@ use crate::briefing::{
     FocusReason,
 };
 use crate::calendar::MeetingItem;
-use crate::domain::{ItemKind, ProjectDirectory, TaskId};
+use crate::domain::{ItemKind, ProjectDirectory};
 use crate::i18n::{DateFormatter, Translator};
 use crate::mood::Mood;
 
@@ -42,8 +42,6 @@ impl<'context> SnapshotPresenter<'context> {
     ) -> IslandSnapshot {
         let todays_reminders = brief.reminders_on(brief.date);
         let focus = self.focus(brief, meetings);
-        // The item shown as "Now" is not listed again in the sections below it.
-        let focus_id = focus.as_ref().map(|suggestion| suggestion.item.task_id);
         let sections = [
             ("overdue", &brief.overdue, Urgency::Critical),
             ("due_soon", &brief.due_soon, Urgency::Soon),
@@ -52,8 +50,7 @@ impl<'context> SnapshotPresenter<'context> {
         ]
         .into_iter()
         .filter(|(_, items, _)| !items.is_empty())
-        .map(|(key, items, urgency)| self.section(key, items, urgency, brief, focus_id))
-        .filter(|section| !section.items.is_empty())
+        .map(|(key, items, urgency)| self.section(key, items, urgency, brief))
         .collect();
         let open_items: Vec<SnapshotItem> = [
             (&brief.overdue, Urgency::Critical),
@@ -114,14 +111,12 @@ impl<'context> SnapshotPresenter<'context> {
         items: &[BriefItem],
         urgency: Urgency,
         brief: &DailyBrief,
-        left_out: Option<TaskId>,
     ) -> SnapshotSection {
         SnapshotSection {
             key: key.to_owned(),
             title: self.translator.text(&format!("brief.section.{key}")),
             items: items
                 .iter()
-                .filter(|item| Some(item.task_id) != left_out)
                 .map(|item| self.item(item, urgency, brief))
                 .collect(),
         }

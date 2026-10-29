@@ -18,15 +18,8 @@ fn sample_workspace() -> TikiWorkspace {
     .unwrap()
 }
 
-/// The overdue task of the sample day, which Today shows as "Now".
 fn first_task_id(workspace: &TikiWorkspace) -> TaskId {
-    workspace
-        .island_snapshot()
-        .unwrap()
-        .focus
-        .unwrap()
-        .item
-        .task_id
+    workspace.island_snapshot().unwrap().sections[0].items[0].task_id
 }
 
 #[test]

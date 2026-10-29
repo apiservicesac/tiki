@@ -51,7 +51,7 @@ describe("IslandController", () => {
 
   it("shows Tiki's face and the day's summary while resting when work is pending", () => {
     expect(root.querySelector(".notch-hidden-busy .mascot-worried")).not.toBeNull();
-    expect(root.querySelector(".notch-hidden-busy .notch-summary")?.textContent).toBe("3 hoy · 2 esperando");
+    expect(root.querySelector(".notch-hidden-busy .notch-summary")?.textContent).toBe("3 por atender · 2 esperando");
   });
 
   it("lays the island out vertically on the left and right edges", async () => {
@@ -70,7 +70,7 @@ describe("IslandController", () => {
 
     vi.advanceTimersByTime(UI_CONFIG.peekDelayMs);
     expect(notch()?.dataset.mode).toBe("compact");
-    expect(root.querySelector(".notch-summary")?.textContent).toBe("3 hoy · 2 esperando");
+    expect(root.querySelector(".notch-summary")?.textContent).toBe("3 por atender · 2 esperando");
 
     vi.advanceTimersByTime(UI_CONFIG.unfoldDelayMs);
     expect(notch()?.dataset.mode).toBe("expanded");
@@ -118,8 +118,9 @@ describe("IslandController", () => {
     notch()?.click();
 
     const groups = [...root.querySelectorAll(".island-group")].map((group) => group.textContent);
-    expect(groups).toEqual(["Atrasado", "Vence pronto", "Toca insistir"]);
-    expect(root.querySelectorAll(".island-tab-content .island-row")).toHaveLength(4);
+    // The overdue task is "Now", so it is not listed again below it.
+    expect(groups).toEqual(["Vence pronto", "Toca insistir"]);
+    expect(root.querySelectorAll(".island-tab-content .island-row")).toHaveLength(3);
     expect(root.querySelector("#today-focus")?.textContent).toContain("Ahora · Está atrasada");
     expect(root.querySelector('[data-task-id="1"] .island-priority-high')?.textContent).toBe("!");
   });

@@ -1,4 +1,4 @@
-import type { AlertAction, IslandSnapshot, TikiAlert } from "../backend/contracts";
+import type { AlertAction, IslandSnapshot, SnapshotSection, TikiAlert } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
@@ -38,7 +38,11 @@ export class TodayView {
 
   render(data: TodayData, handlers: TodayHandlers): HTMLElement {
     const subtitle = ElementFactory.create("p", { className: "island-subtitle", text: data.snapshot.todaySubtitle });
-    const list = this.taskList.render(data.snapshot.sections, this.translator.text("island.today.empty"), handlers);
+    const list = this.taskList.render(
+      TodayView.withoutFocus(data.snapshot),
+      this.translator.text("island.today.empty"),
+      handlers,
+    );
     return ElementFactory.create("div", {
       className: "island-tab-content",
       children: [
@@ -49,6 +53,14 @@ export class TodayView {
         ...this.deliveredToday(data.snapshot, handlers),
       ],
     });
+  }
+
+  /** Today's sections without the item already shown as "Now"; a section left empty goes. */
+  private static withoutFocus(snapshot: IslandSnapshot): SnapshotSection[] {
+    const focusId = snapshot.focus?.item.taskId;
+    return snapshot.sections
+      .map((section) => ({ ...section, items: section.items.filter((item) => item.taskId !== focusId) }))
+      .filter((section) => section.items.length > 0);
   }
 
   /** "Now · Due today: Send the report", opening the item. */
