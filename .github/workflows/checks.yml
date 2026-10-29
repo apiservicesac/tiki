@@ -18,3 +18,24 @@ jobs:
         run: make lint
       - name: Test
         run: make test
+
+  # The desktop shell is Windows-only code, so it is checked natively on Windows here
+  # instead of cross-compiling on a developer machine.
+  windows-shell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Install interface dependencies
+        working-directory: apps/desktop
+        run: npm ci
+      - name: Build the interface
+        working-directory: apps/desktop
+        run: npm run build
+      - name: Lint the desktop shell
+        run: cargo clippy -p tiki-desktop -- -D warnings
