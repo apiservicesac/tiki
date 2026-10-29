@@ -6,6 +6,37 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0-rc.1] - 2026-10-29
+
+### Added
+- A new face for Tiki: a dark visor with two eyes whose shape and slow motion tell the mood
+  at a glance, the same in the notch, the card and Settings.
+- The notch glows softly in the mood's color; mood colors are the same everywhere.
+- Alerts stand out: a wide aura in the alert's color, ripples from Tiki's face, the kind of
+  alert on top (reminder, task, follow-up, meeting, morning, end of day) and a line that runs
+  out until the notch folds back.
+- Quiet at night (22:00–07:00 by default, set in the reminder settings): Tiki sleeps, and
+  alerts still show in the notch but without sound or a Windows notification.
+- Quiet during calls: when another app uses the microphone, the notch dims and alerts come
+  without sound or a Windows notification.
+- An activity history of every item (created, edited, moved, snoozed, rang, delivered,
+  reopened), the base for the coming reports.
+- Saving an item that breaks a rule (a reminder without a time) shows a message and keeps
+  the form filled.
+
+### Changed
+- Tasks with an alarm appear in the Agenda next to reminders and meetings, and their alarm
+  can be snoozed.
+- Follow-up nudges have their own schedule and come back every 2 days while the item waits.
+- Reminders no longer count as delivered work.
+- Saved reminders without a time become tasks, so they show again in the Tasks tab.
+
+### Fixed
+- Reopening or snoozing a delivered item erased its delivery.
+- An item moved out of "Waiting" could still ring its automatic follow-up.
+- An alert's countdown restarted when the island redrew while it showed.
+- Light theme colors for the "good" green and the urgency badges.
+
 ## [0.4.0-rc.1] - 2026-10-22
 
 ### Added
