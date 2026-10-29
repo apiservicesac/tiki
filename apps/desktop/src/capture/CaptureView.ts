@@ -1,6 +1,7 @@
 import type { InterpretedCapture, ProposedAction } from "../ai";
 import { ProposedActionsView, type ApplyAction } from "../assistant/ProposedActionsView";
 import { ITEM_KINDS, PRIORITIES, REPEATS, type ItemKind, type Priority, type ProjectSummary, type Repeat } from "../backend/contracts";
+import { CoreDateTimeText } from "../backend/CoreDateTimeText";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import { TagText } from "../dom/TagText";
@@ -97,7 +98,7 @@ export class CaptureView {
       projectName: reminder ? null : this.project,
       dueDate: reminder ? null : this.dueDate?.value || null,
       priority: reminder ? "normal" : ((this.priority?.value as Priority | undefined) ?? "normal"),
-      remindAt: this.remindAt?.value ? `${this.remindAt.value}:00` : null,
+      remindAt: CoreDateTimeText.fromPicker(this.remindAt?.value ?? ""),
       kind: this.kind,
       tags: reminder ? [] : TagText.parse(this.tags?.value ?? ""),
       repeat: reminder ? ((this.repeat?.value as Repeat | undefined) ?? "never") : "never",
@@ -120,7 +121,7 @@ export class CaptureView {
     this.kind = item.kind;
     this.project = item.projectName;
     this.setValue(this.dueDate, item.dueDate ?? "");
-    this.setValue(this.remindAt, item.remindAt?.slice(0, 16) ?? "");
+    this.setValue(this.remindAt, CoreDateTimeText.toPicker(item.remindAt));
     this.setValue(this.priority, item.priority);
     this.setValue(this.repeat, item.repeat);
     this.setValue(this.tags, TagText.format(item.tags));

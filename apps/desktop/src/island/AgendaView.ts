@@ -1,4 +1,5 @@
 import type { MeetingItem, SnapshotItem } from "../backend/contracts";
+import { CoreDateTimeText } from "../backend/CoreDateTimeText";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
@@ -34,7 +35,7 @@ export class AgendaView {
     }
     const days = new Map<string, AgendaEntry[]>();
     entries.forEach((entry) => {
-      const day = entry.at.slice(0, 10);
+      const day = CoreDateTimeText.day(entry.at);
       days.set(day, [...(days.get(day) ?? []), entry]);
     });
     return ElementFactory.create("div", {
@@ -65,7 +66,7 @@ export class AgendaView {
   private meetingRow(meeting: MeetingItem, handlers: AgendaHandlers): HTMLElement {
     const time = meeting.allDay
       ? this.translator.text("meeting.all_day")
-      : this.translator.format("meeting.time_range", { start: meeting.startsAt.slice(11, 16), end: meeting.endsAt.slice(11, 16) });
+      : this.translator.format("meeting.time_range", { start: CoreDateTimeText.time(meeting.startsAt), end: CoreDateTimeText.time(meeting.endsAt) });
     const title = ElementFactory.create("span", {
       className: "island-row-text",
       text: meeting.title || this.translator.text("meeting.untitled"),
@@ -99,7 +100,7 @@ export class AgendaView {
   }
 
   private row(item: SnapshotItem, handlers: TaskListHandlers): HTMLElement {
-    const time = (item.at ?? "").slice(11, 16);
+    const time = item.at === null ? "" : CoreDateTimeText.time(item.at);
     const repeat = item.repeat !== "never" ? this.translator.text(`repeat.${item.repeat}`) : null;
     const title = ElementFactory.create("button", {
       className: "island-row-text",
@@ -127,16 +128,13 @@ export class AgendaView {
 
   /** "Hoy", "Mañana" or the long date. */
   private dayTitle(isoDay: string, today: Date): string {
-    const [year, month, day] = isoDay.split("-").map(Number) as [number, number, number];
-    const date = new Date(year, month - 1, day);
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const days = Math.round((date.getTime() - startOfToday.getTime()) / 86_400_000);
+    const days = CoreDateTimeText.daysFrom(today, isoDay);
     if (days === 0) {
       return this.translator.text("agenda.today");
     }
     if (days === 1) {
       return this.translator.text("agenda.tomorrow");
     }
-    return new Intl.DateTimeFormat(this.translator.localeCode, { weekday: "long", day: "numeric", month: "long" }).format(date);
+    return new Intl.DateTimeFormat(this.translator.localeCode, { weekday: "long", day: "numeric", month: "long" }).format(CoreDateTimeText.startOf(isoDay));
   }
 }

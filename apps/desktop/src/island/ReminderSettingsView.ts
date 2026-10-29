@@ -1,4 +1,5 @@
 import type { UserPreferences } from "../backend/contracts";
+import { CoreDateTimeText } from "../backend/CoreDateTimeText";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 
@@ -63,8 +64,7 @@ export class ReminderSettingsView {
       className: "settings-input settings-time",
       attributes: { type: "time", id: `setting-${field}`, "aria-label": this.translator.text(labelKey) },
     });
-    // The core sends "08:30:00"; the picker shows hours and minutes.
-    input.value = preferences[field].slice(0, 5);
+    input.value = CoreDateTimeText.clock(preferences[field]);
     // The clock icon is hidden; clicking anywhere on the field opens the picker instead.
     input.addEventListener("click", () => input.showPicker?.());
     input.addEventListener("change", () => {

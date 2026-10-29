@@ -1,4 +1,5 @@
 import { ITEM_KINDS, PRIORITIES, REPEATS, TASK_STATUSES, type ProjectSummary, type TaskDetails, type TaskEdit } from "../backend/contracts";
+import { CoreDateTimeText } from "../backend/CoreDateTimeText";
 import { ElementFactory } from "../dom/ElementFactory";
 import { TagText } from "../dom/TagText";
 import type { Translator } from "../i18n/Translator";
@@ -72,8 +73,7 @@ export class TaskEditView {
       title: this.input("text", "edit-title", task.title),
       project,
       dueDate: this.input("date", "edit-due", task.dueDate ?? ""),
-      // The picker shows minutes; the core sends seconds too.
-      remindAt: this.input("datetime-local", "edit-remind", task.remindAt?.slice(0, 16) ?? ""),
+      remindAt: this.input("datetime-local", "edit-remind", CoreDateTimeText.toPicker(task.remindAt)),
       repeat: this.select("edit-repeat", REPEATS.map((repeat): [string, string] => [repeat, this.translator.text(`repeat.${repeat}`)]), task.repeat),
       priority: this.select(
         "edit-priority",
@@ -158,7 +158,7 @@ export class TaskEditView {
       notes: fields.notes.value.trim(),
       projectName: reminder ? null : fields.project.value,
       dueDate: reminder ? null : fields.dueDate.value || null,
-      remindAt: fields.remindAt.value ? `${fields.remindAt.value}:00` : null,
+      remindAt: CoreDateTimeText.fromPicker(fields.remindAt.value),
       priority: reminder ? "normal" : (fields.priority.value as TaskEdit["priority"]),
       status: reminder ? "to_do" : (fields.status.value as TaskEdit["status"]),
       kind: fields.kind.value as TaskEdit["kind"],
