@@ -102,10 +102,12 @@ impl<'connection> TaskRepository<'connection> {
             })
     }
 
-    /// Open items whose reminder or follow-up nudge is due at `now`.
+    /// Open items whose reminder or follow-up nudge is due at `now`; the trash stays silent.
     pub fn list_due_alerts(&self, now: chrono::NaiveDateTime) -> TikiResult<Vec<Task>> {
         let query = format!(
-            "SELECT {} FROM tasks WHERE status <> 'done' AND (remind_at <= ?1 OR follow_up_at <= ?1)
+            "SELECT {} FROM tasks
+              WHERE status <> 'done' AND trashed_at IS NULL
+                AND (remind_at <= ?1 OR follow_up_at <= ?1)
               ORDER BY min(coalesce(remind_at, follow_up_at), coalesce(follow_up_at, remind_at)), id",
             TaskRowMapper::COLUMNS
         );
@@ -116,10 +118,10 @@ impl<'connection> TaskRepository<'connection> {
         Ok(tasks)
     }
 
-    /// Every task that is not delivered yet, earliest due date first.
+    /// Every task that is not delivered yet and not in the trash, earliest due date first.
     pub fn list_open(&self) -> TikiResult<Vec<Task>> {
         let query = format!(
-            "SELECT {} FROM tasks WHERE status <> 'done'
+            "SELECT {} FROM tasks WHERE status <> 'done' AND trashed_at IS NULL
               ORDER BY due_date IS NULL, due_date, id",
             TaskRowMapper::COLUMNS
         );

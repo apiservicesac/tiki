@@ -162,6 +162,17 @@ impl TikiWorkspace {
         )
     }
 
+    /// Sends an item to the trash: it leaves every view, the brief, the reports and the
+    /// alerts until it is restored or deleted forever.
+    pub fn trash_item(&self, task_id: TaskId) -> TikiResult<()> {
+        self.items().trash(task_id)
+    }
+
+    /// Takes an item out of the trash exactly as it was.
+    pub fn restore_item(&self, task_id: TaskId) -> TikiResult<()> {
+        self.items().restore(task_id)
+    }
+
     /// Remembers a correction the user made to an AI capture.
     pub fn record_capture_lesson(&self, lesson: &CaptureLesson) -> TikiResult<()> {
         self.database
