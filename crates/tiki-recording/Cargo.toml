@@ -1,0 +1,17 @@
+[package]
+name = "tiki-recording"
+description = "Recording and local transcription of Tiki's sessions: audio sources, mixing, media writers and Whisper."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+hound = "3.5.1"
+ogg = "0.9.2"
+opus = "0.4.0"
+
+[lints]
+workspace = true

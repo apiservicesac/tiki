@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/tiki-core", "apps/desktop/src-tauri"]
+members = ["crates/tiki-core", "crates/tiki-recording", "apps/desktop/src-tauri"]
 
 [workspace.package]
 version = "0.5.0-rc.1"
@@ -11,6 +11,7 @@ authors = ["API Service SAC"]
 
 [workspace.dependencies]
 tiki-core = { path = "crates/tiki-core" }
+tiki-recording = { path = "crates/tiki-recording" }
 chrono = { version = "0.4.45", features = ["serde"] }
 rusqlite = { version = "0.40.2", features = ["bundled", "chrono"] }
 rusqlite_migration = "2.6.0"
