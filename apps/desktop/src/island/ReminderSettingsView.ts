@@ -65,7 +65,7 @@ export class ReminderSettingsView {
     return button;
   }
 
-  /** A time picker under its label; `onPick` receives the time the user chose ("07:45"). */
+  /** A time picker beside its label; `onPick` receives the time the user chose ("07:45"). */
   private timeRow(labelKey: string, name: string, time: string, onPick: (time: string) => void): HTMLElement {
     const input = ElementFactory.create("input", {
       className: "settings-input settings-time",
