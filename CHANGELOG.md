@@ -6,6 +6,33 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.1-rc.1] - 2026-10-30
+
+### Added
+- A trash: send an item there from its edit form, restore it from Tasks › Trash, delete
+  it forever or empty the trash. Items left there are deleted after 30 days, and
+  removing a project sends its items to the trash.
+- Delivered tasks have a Reopen button.
+
+### Changed
+- Tiki is bigger: type, the notch, the island and the windows grow together, so it reads
+  at a glance on a large screen; on small screens the window fits the free area.
+- Every panel stays inside the window and scrolls when it does not fit, with Tiki's face
+  in the header of every panel.
+- The settings explain each option in one line and group them as alerts, quiet and
+  briefs; the night hours are one row.
+- The notch and Today say "3 to handle" instead of "3 today", waiting badges say
+  "waiting 3 days", and the item shown as Now is not listed again below it.
+- Projects are searched and created from one box.
+- Quick capture and the edit form choose task or reminder with the same toggle.
+- The plugins page shows the next plugin and names the later ones in one line.
+
+### Fixed
+- The edit form lost its buttons at the bottom, and Today with an alert lost its last rows.
+- The deliver check only showed on hover; it now stays visible.
+- On the side edges, the project picker covered the Tasks view toggle.
+- Singular and plural in project counts and the brief totals.
+
 ## [0.5.0-rc.1] - 2026-10-29
 
 ### Added

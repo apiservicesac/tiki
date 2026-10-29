@@ -4634,7 +4634,7 @@ dependencies = [
 
 [[package]]
 name = "tiki-core"
-version = "0.5.0-rc.1"
+version = "0.5.1-rc.1"
 dependencies = [
  "chrono",
  "rusqlite",
@@ -4646,7 +4646,7 @@ dependencies = [
 
 [[package]]
 name = "tiki-desktop"
-version = "0.5.0-rc.1"
+version = "0.5.1-rc.1"
 dependencies = [
  "base64 0.23.1",
  "chrono",
