@@ -27,6 +27,8 @@ jobs:
           TIKI_GOOGLE_CLIENT_ID: ${{ secrets.TIKI_GOOGLE_CLIENT_ID }}
           TIKI_GOOGLE_CLIENT_SECRET: ${{ secrets.TIKI_GOOGLE_CLIENT_SECRET }}
           TIKI_MICROSOFT_CLIENT_ID: ${{ secrets.TIKI_MICROSOFT_CLIENT_ID }}
+          # whisper-rs generates its MSVC bindings with bindgen, from the runner's LLVM.
+          LIBCLANG_PATH: C:\Program Files\LLVM\bin
         run: npm run tauri build
       - uses: actions/upload-artifact@v5
         with:

@@ -7,4 +7,7 @@ RUN rustup component add clippy rustfmt \
     && apt-get install -y --no-install-recommends pkg-config cmake make g++ \
     && rm -rf /var/lib/apt/lists/*
 
+# whisper-rs ships bindings generated for Linux/glibc: use them here instead of needing libclang.
+ENV WHISPER_DONT_GENERATE_BINDINGS=1
+
 WORKDIR /workspace

@@ -1,4 +1,0 @@
-[env]
-# whisper-rs ships ready-made bindings to whisper.cpp; generating them again would need
-# libclang on every machine that builds Tiki.
-WHISPER_DONT_GENERATE_BINDINGS = "1"
