@@ -45,6 +45,9 @@
   /* How much mood color goes into the notch glow, and into chip text over the theme text. */
   --mood-glow-mix: 55%;
   --mood-ink-mix: 100%;
+  /* During a call: the notch glow and Tiki's eyes turn down, so it reads as quiet. */
+  --in-call-glow-mix: 15%;
+  --in-call-eyes-opacity: 0.7;
 
   /* Tiki's visor stays dark in both themes, so the face looks the same everywhere. */
   --face-visor: #050506;

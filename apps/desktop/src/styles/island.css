@@ -90,6 +90,9 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 /* Calm and asleep, Tiki stays quiet: barely a glow. A reminder makes it glow stronger. */
 .island-notch[data-mood="calm"] { --mood-glow-mix: 22%; }
 .island-notch[data-mood="sleep"] { --notch-glow: 0 0 0 transparent; }
+/* In a call Tiki keeps quiet too: a faint glow and dimmer eyes, the same face otherwise. */
+.island-notch[data-activity="in-call"] { --mood-glow-mix: var(--in-call-glow-mix); }
+.island-notch[data-activity="in-call"]:not([data-mode="alert"]) .mascot-eyes { opacity: var(--in-call-eyes-opacity); }
 .island-notch[data-mode="alert"] { --notch-glow: 0 8px 18px -6px color-mix(in srgb, var(--mood-color) 70%, transparent); }
 
 /* Ears: the corner touching both the edge and the notch is filled, the rest is a curve. */

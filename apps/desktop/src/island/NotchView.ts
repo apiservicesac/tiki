@@ -21,11 +21,14 @@ export class NotchView {
   hidden(snapshot: IslandSnapshot, mood: MoodName, unread: boolean): HTMLElement {
     const mascot = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.hidden);
     const unreadDot = unread ? [ElementFactory.create("span", { className: "notch-unread", attributes: { "aria-hidden": "true" } })] : [];
+    // Hovering the resting notch during a call says why Tiki is quiet.
+    const callNote: Record<string, string> = snapshot.inCall ? { title: this.translator.text("island.in_call") } : {};
     if (snapshot.attentionCount === 0) {
-      return ElementFactory.create("div", { className: "notch-hidden", children: [mascot, ...unreadDot] });
+      return ElementFactory.create("div", { className: "notch-hidden", attributes: callNote, children: [mascot, ...unreadDot] });
     }
     return ElementFactory.create("div", {
       className: "notch-hidden notch-hidden-busy",
+      attributes: callNote,
       children: [
         mascot,
         this.summaryText(snapshot),

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AlertDelivery } from "../src/backend/contracts";
+import type { AlertDelivery, IslandSnapshot } from "../src/backend/contracts";
+import { SHELL_EVENTS } from "../src/config/uiConfig";
 import type { IslandController } from "../src/island/IslandController";
 import { AlertSound } from "../src/island/AlertSound";
 import { TikiApp } from "../src/TikiApp";
@@ -12,13 +13,15 @@ describe("Tiki keeping quiet", () => {
   let root: HTMLElement;
   let backend: FakeBackend;
   let controller: IslandController;
+  let snapshot: IslandSnapshot;
 
   const notch = () => root.querySelector<HTMLElement>(".island-notch");
 
   beforeEach(async () => {
     root = document.createElement("div");
     document.body.replaceChildren(root);
-    backend = new FakeBackend();
+    snapshot = FakeBackend.sampleSnapshot();
+    backend = new FakeBackend(snapshot);
     controller = await new TikiApp(root, backend).start();
   });
 
@@ -58,5 +61,18 @@ describe("Tiki keeping quiet", () => {
     await vi.waitFor(() => expect(backend.savedPreferences.quietHours.enabled).toBe(false));
     expect(root.querySelector('[data-setting="settings.quiet_hours"]')?.getAttribute("aria-checked")).toBe("false");
     expect(root.querySelector("#setting-quietHoursFrom")).toBeNull();
+  });
+
+  it("turns the notch quiet while a call is on, and back when it ends", async () => {
+    snapshot.inCall = true;
+    backend.emit(SHELL_EVENTS.inCallChanged);
+    await vi.waitFor(() => expect(notch()?.dataset.activity).toBe("in-call"));
+    expect(notch()?.dataset.mood).toBe("worried");
+    expect(root.querySelector(".notch-hidden")?.getAttribute("title")).toBe("En una llamada: Tiki avisa sin sonido");
+
+    snapshot.inCall = false;
+    backend.emit(SHELL_EVENTS.inCallChanged);
+    await vi.waitFor(() => expect(notch()?.dataset.activity).toBeUndefined());
+    expect(root.querySelector(".notch-hidden")?.hasAttribute("title")).toBe(false);
   });
 });

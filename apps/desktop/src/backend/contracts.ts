@@ -64,6 +64,8 @@ export interface SnapshotSection {
 export interface IslandSnapshot {
   mood: MoodName;
   moodLabel: string;
+  /** Another app holds the microphone: Tiki keeps quiet until the call ends. */
+  inCall: boolean;
   /** Tasks that need attention: overdue, due soon or waiting on others. */
   attentionCount: number;
   /** Overdue or due soon. */

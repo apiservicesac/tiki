@@ -286,6 +286,7 @@ export class FakeBackend implements TikiBackend {
     return {
       mood: "worried",
       moodLabel: "ATRASO",
+      inCall: false,
       attentionCount: 5,
       dueCount: 3,
       waitingCount: 2,

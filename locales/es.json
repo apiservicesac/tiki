@@ -185,6 +185,7 @@
     "settings.alert_sound": "Sonido",
     "settings.windows_notifications": "También en Windows",
     "island.alert.open": "Ver el aviso",
+    "island.in_call": "En una llamada: Tiki avisa sin sonido",
 
     "history.today": "hoy",
     "history.yesterday": "ayer",
