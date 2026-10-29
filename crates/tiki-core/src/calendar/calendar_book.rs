@@ -76,7 +76,8 @@ impl<'context> CalendarBook<'context> {
     /// Timed meetings starting soon that were not announced yet; announced from now on.
     pub fn take_starting_soon(&self, now: NaiveDateTime) -> TikiResult<Vec<MeetingItem>> {
         let until = now + chrono::Duration::minutes(self.settings.meeting_alert_minutes);
-        self.database.calendar().take_starting(now, until)
+        self.database
+            .transaction(|repositories| repositories.calendar().take_starting(now, until))
     }
 
     /// The next timed meeting today, if any.
