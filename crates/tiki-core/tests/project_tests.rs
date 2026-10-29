@@ -110,3 +110,31 @@ fn removing_a_project_keeps_its_tasks_without_project() {
             .all(|item| item.project_name.as_deref() != Some("Andeanvet"))
     );
 }
+
+#[test]
+fn reminders_do_not_count_as_work_in_a_project() {
+    use tiki_core::capture::ConfirmedCapture;
+    use tiki_core::domain::{ItemKind, Priority, Repeat};
+    let (workspace, _) = sample_workspace();
+    workspace
+        .save_confirmed(ConfirmedCapture {
+            title: "Llamar a Lucía".into(),
+            project_name: Some("Altamira".into()),
+            due_date: None,
+            priority: Priority::Normal,
+            remind_at: Some(TestDay::today().and_hms_opt(17, 0, 0).unwrap()),
+            kind: ItemKind::Reminder,
+            tags: Vec::new(),
+            repeat: Repeat::Never,
+            waiting_for: None,
+        })
+        .unwrap();
+
+    let altamira = workspace
+        .project_summaries()
+        .unwrap()
+        .into_iter()
+        .find(|project| project.name == "Altamira")
+        .unwrap();
+    assert_eq!(altamira.open_count, 2);
+}

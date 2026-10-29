@@ -1,27 +1,23 @@
-use super::{
-    AssistantContext, Clock, DeliveredItem, IslandSnapshot, SnapshotPresenter, TodaysMeetings,
-};
 use chrono::NaiveDateTime;
 
-use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
-use crate::calendar::{
-    AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting, MeetingItem,
-};
+use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, WorkspaceViews};
+use crate::activity::ItemEventRecord;
+use crate::alerts::{AlertScheduler, TikiAlert};
+use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
 use crate::capture::{CaptureLesson, ConfirmedCapture};
-use crate::domain::{
-    ItemKind, Project, ProjectDirectory, ProjectId, Tags, Task, TaskId, TaskStatus,
-};
+use crate::domain::{Project, ProjectId, TaskId, TaskStatus};
 use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
-use crate::mood::{MoodResolver, MoodSignals};
+use crate::items::ItemService;
 use crate::preferences::UserPreferences;
 use crate::projects::{ProjectBook, ProjectChange, ProjectSummary};
-use crate::reminders::{NotificationComposer, ReminderPlanner, TikiAlert};
 use crate::settings::TikiSettings;
 use crate::storage::Database;
 
-/// Owns the user's data and settings and exposes the actions every project needs.
+/// The entry point every platform uses: it owns the user's data, settings, preferences and
+/// clock, and hands each request to the part that owns the rules (`ItemService`,
+/// `AlertScheduler`, `CalendarBook`, `ProjectBook`, `WorkspaceViews`).
 pub struct TikiWorkspace {
     database: Database,
     settings: TikiSettings,
@@ -49,6 +45,11 @@ impl TikiWorkspace {
         })
     }
 
+    /// The moment the workspace's clock reads: the one clock every rule uses.
+    pub fn now(&self) -> NaiveDateTime {
+        self.clock.now()
+    }
+
     pub fn settings(&self) -> &TikiSettings {
         &self.settings
     }
@@ -64,7 +65,7 @@ impl TikiWorkspace {
             self.translator = Translator::new(preferences.locale)?;
         }
         self.database.preferences().save(&preferences)?;
-        self.reschedule_moved_briefs(&preferences)?;
+        self.alerts().reschedule_moved_briefs(&preferences)?;
         self.preferences = preferences;
         Ok(())
     }
@@ -87,89 +88,99 @@ impl TikiWorkspace {
 
     /// What the island shows right now.
     pub fn island_snapshot(&self) -> TikiResult<IslandSnapshot> {
-        let now = self.clock.now();
-        let projects = self.project_directory()?;
-        let brief = self.brief(&projects)?;
-        let meetings = self.calendar_book().agenda(now)?;
-        let next_meeting = CalendarBook::next_today(&meetings, now);
-        let mood = MoodResolver::new(&self.settings).resolve(&MoodSignals {
-            brief: &brief,
-            minutes_to_next_meeting: next_meeting
-                .map(|meeting| (meeting.starts_at - now).num_minutes()),
-            focus_mode: self.preferences.focus_mode,
-        });
-        let delivered_today = self
-            .database
-            .tasks()
-            .count_delivered_on(self.clock.today())?;
-        Ok(SnapshotPresenter::new(&self.translator, &projects).present(
-            &brief,
-            mood,
-            delivered_today,
-            &TodaysMeetings {
-                now,
-                next: next_meeting.cloned(),
-                agenda: meetings.clone(),
-            },
-        ))
+        self.views().island_snapshot()
     }
 
-    /// Open tasks in the shape the assistant needs to summarize the day or answer questions.
+    /// Open items in the shape the assistant needs to summarize the day or answer questions.
     pub fn assistant_context(&self) -> TikiResult<AssistantContext> {
-        let tasks = self.database.tasks().list_open()?;
-        Ok(AssistantContext::build(
-            &tasks,
-            &self.project_directory()?,
-            self.clock.now(),
-        ))
+        self.views().assistant_context()
     }
 
-    /// The brief notification due at `now`, if any; it is marked as sent so it arrives once
-    /// a day. Nothing is due while notifications are off or focus mode is on.
-    pub fn take_due_notification(&self, now: NaiveDateTime) -> TikiResult<Option<TikiAlert>> {
-        if !self.preferences.allows_notifications() {
-            return Ok(None);
-        }
-        let log = self.database.reminder_log();
-        let moment = ReminderPlanner::new(&self.preferences)
-            .due_moment(now, |moment| log.last_sent(moment).ok().flatten());
-        let Some(moment) = moment else {
-            return Ok(None);
-        };
-        log.mark_sent(moment, now.date())?;
-        if moment == BriefMoment::Evening {
-            // A late start skips the morning brief instead of sending both at once.
-            log.mark_sent(BriefMoment::Morning, now.date())?;
-        }
-        let brief = self.brief(&self.project_directory()?)?;
-        let composer = NotificationComposer::new(&self.translator);
-        let mut alert = composer.compose(&brief, moment);
-        if moment == BriefMoment::Morning {
-            let meetings = self.calendar_book().agenda(now)?;
-            let today: Vec<&MeetingItem> = meetings
-                .iter()
-                .filter(|meeting| meeting.starts_at.date() == now.date())
-                .collect();
-            if let Some(line) = composer.meetings_line(&today) {
-                alert.body = format!("{}\n{line}", alert.body);
-            }
-        }
-        Ok(Some(alert))
+    /// A saved item as the edit form shows it.
+    pub fn task_details(&self, task_id: TaskId) -> TikiResult<TaskDetails> {
+        self.views().task_details(task_id)
+    }
+
+    /// Delivered items, most recent delivery first, for the history.
+    pub fn delivered_tasks(&self) -> TikiResult<Vec<DeliveredItem>> {
+        self.views().delivered_tasks()
+    }
+
+    /// Everything that happened to an item, oldest first.
+    pub fn activity_of(&self, task_id: TaskId) -> TikiResult<Vec<ItemEventRecord>> {
+        self.database.activity().events_of(task_id)
+    }
+
+    /// Saves an item exactly as the user confirmed it. A project named for the first time is
+    /// created on the spot: Tiki never asks the user to keep a list of projects.
+    pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
+        self.items().capture(capture)
+    }
+
+    /// Saves the user's changes to an item; a new project name creates the project.
+    pub fn edit_task(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
+        self.items().edit(task_id, edit)
+    }
+
+    pub fn move_task(&self, task_id: TaskId, status: TaskStatus) -> TikiResult<()> {
+        self.items().move_to(task_id, status)
+    }
+
+    /// Delivers an item: what the user says with "done" or "entregado".
+    pub fn deliver(&self, task_id: TaskId) -> TikiResult<()> {
+        self.items().move_to(task_id, TaskStatus::Done)
+    }
+
+    /// Brings a delivered item back to "to do"; its delivery stays in the history.
+    pub fn reopen(&self, task_id: TaskId) -> TikiResult<()> {
+        self.items().reopen(task_id)
+    }
+
+    /// Puts the item on hold until `who` answers; a follow-up nudge is scheduled.
+    pub fn wait_for(&self, task_id: TaskId, who: &str) -> TikiResult<()> {
+        self.items().wait_for(task_id, who)
+    }
+
+    /// Puts off an item's reminder until `until`; a reminder that already rang comes back.
+    pub fn snooze(&self, task_id: TaskId, until: NaiveDateTime) -> TikiResult<()> {
+        self.items().snooze(task_id, until)
+    }
+
+    /// Puts off an item's reminder for `minutes` from now, as the alert's buttons do.
+    pub fn snooze_for(&self, task_id: TaskId, minutes: i64) -> TikiResult<()> {
+        self.snooze(
+            task_id,
+            self.clock.now() + chrono::Duration::minutes(minutes),
+        )
+    }
+
+    /// Remembers a correction the user made to an AI capture.
+    pub fn record_capture_lesson(&self, lesson: &CaptureLesson) -> TikiResult<()> {
+        self.database
+            .capture_lessons()
+            .record(lesson, self.settings.capture_lesson_limit)
+    }
+
+    /// The user's recent corrections, newest first, for the AI to learn from.
+    pub fn capture_lessons(&self) -> TikiResult<Vec<CaptureLesson>> {
+        self.database
+            .capture_lessons()
+            .recent(self.settings.capture_lesson_limit)
+    }
+
+    /// The brief due now, if any; it arrives once a day (see `AlertScheduler`).
+    pub fn take_due_notification(&self) -> TikiResult<Option<TikiAlert>> {
+        self.alerts().take_due_brief()
+    }
+
+    /// Reminders and follow-up nudges whose time has come; each rings once.
+    pub fn take_due_task_reminders(&self) -> TikiResult<Vec<TikiAlert>> {
+        self.alerts().take_due_item_alerts()
     }
 
     /// "Meeting in 15 min" alerts for meetings about to start; each is announced once.
-    /// Nothing is announced while notifications are off or focus mode is on.
-    pub fn take_due_meeting_alerts(&self, now: NaiveDateTime) -> TikiResult<Vec<TikiAlert>> {
-        if !self.preferences.allows_notifications() {
-            return Ok(Vec::new());
-        }
-        let composer = NotificationComposer::new(&self.translator);
-        Ok(self
-            .calendar_book()
-            .take_starting_soon(now)?
-            .iter()
-            .map(|meeting| composer.compose_meeting(meeting, now))
-            .collect())
+    pub fn take_due_meeting_alerts(&self) -> TikiResult<Vec<TikiAlert>> {
+        self.alerts().take_due_meeting_alerts()
     }
 
     pub fn calendar_accounts(&self) -> TikiResult<Vec<CalendarAccount>> {
@@ -196,147 +207,17 @@ impl TikiWorkspace {
 
     /// The window of days the calendar copy covers, from the start of today.
     pub fn calendar_window(&self) -> (NaiveDateTime, NaiveDateTime) {
-        let from = self.clock.today().and_time(chrono::NaiveTime::MIN);
-        let to = from
-            .checked_add_days(chrono::Days::new(self.settings.agenda_days))
-            .unwrap_or(from);
-        (from, to)
+        self.calendar_book().window(self.clock.today())
     }
 
     /// Replaces what Tiki knows of an account's meetings in the calendar window.
     pub fn store_meetings(&self, account_id: AccountId, meetings: &[Meeting]) -> TikiResult<()> {
-        let (from, to) = self.calendar_window();
-        self.calendar_book().store(account_id, from, to, meetings)
-    }
-
-    fn calendar_book(&self) -> CalendarBook<'_> {
-        CalendarBook::new(&self.database, &self.settings)
-    }
-
-    /// Task reminders whose time has come; each one is cleared so it rings once. Nothing is
-    /// due while notifications are off or focus mode is on: they ring when it ends.
-    pub fn take_due_task_reminders(&self, now: NaiveDateTime) -> TikiResult<Vec<TikiAlert>> {
-        if !self.preferences.allows_notifications() {
-            return Ok(Vec::new());
-        }
-        let projects = self.project_directory()?;
-        let composer = NotificationComposer::new(&self.translator);
-        let today = now.date();
-        let mut alerts = Vec::new();
-        for mut task in self.database.tasks().list_reminders_due(now)? {
-            alerts.push(composer.compose_task(&task, projects.name_of(task.project_id), today));
-            let rang_at = task.remind_at.take();
-            if task.kind == ItemKind::Reminder {
-                // A repeating reminder comes back; a one-time reminder is done once it rang.
-                task.remind_at = rang_at.and_then(|at| task.repeat.next_after(at, now));
-                if task.remind_at.is_none() {
-                    task.move_to(TaskStatus::Done, today);
-                }
-            }
-            self.database.tasks().update(&task)?;
-        }
-        Ok(alerts)
-    }
-
-    /// Saves an item exactly as the user confirmed it. A project named for the first time is
-    /// created on the spot: Tiki never asks the user to keep a list of projects.
-    pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
-        let status = capture.status();
-        let mut task = Task::new(capture.title)?.with_priority(capture.priority);
-        task.due_date = capture.due_date;
-        task.project_id = self.project_named(capture.project_name.as_deref())?;
-        task.remind_at = capture.remind_at;
-        task.kind = capture.kind;
-        task.tags = Tags::normalize(&capture.tags);
-        task.repeat = capture.repeat;
-        capture
-            .waiting_for
-            .unwrap_or_default()
-            .trim()
-            .clone_into(&mut task.waiting_for);
-        task.move_to(status, self.clock.today());
-        self.schedule_follow_up(&mut task, false);
-        self.database.tasks().insert(&task)
-    }
-
-    /// Puts off a reminder for `minutes`; a reminder that already rang comes back to life.
-    pub fn snooze(&self, task_id: TaskId, minutes: i64) -> TikiResult<()> {
-        let mut task = self.database.tasks().find(task_id)?;
-        task.remind_at = Some(self.clock.now() + chrono::Duration::minutes(minutes));
-        if task.status == TaskStatus::Done {
-            task.move_to(TaskStatus::ToDo, self.clock.today());
-        }
-        self.database.tasks().update(&task)
-    }
-
-    /// A saved task as the edit form shows it.
-    pub fn task_details(&self, task_id: TaskId) -> TikiResult<TaskDetails> {
-        let task = self.database.tasks().find(task_id)?;
-        TaskDetails::from_task(&task, &self.project_directory()?)
-    }
-
-    /// Saves the user's changes to an item; a new project name creates the project.
-    pub fn edit_task(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
-        let mut task = self.database.tasks().find(task_id)?;
-        let was_waiting = task.status == TaskStatus::Waiting;
-        let project_id = self.project_named(edit.project_name.as_deref())?;
-        edit.apply_to(&mut task, project_id, self.clock.today())?;
-        self.schedule_follow_up(&mut task, was_waiting);
-        self.database.tasks().update(&task)
-    }
-
-    /// Remembers a correction the user made to an AI capture.
-    pub fn record_capture_lesson(&self, lesson: &CaptureLesson) -> TikiResult<()> {
-        self.database
-            .capture_lessons()
-            .record(lesson, self.settings.capture_lesson_limit)
-    }
-
-    /// The user's recent corrections, newest first, for the AI to learn from.
-    pub fn capture_lessons(&self) -> TikiResult<Vec<CaptureLesson>> {
-        self.database
-            .capture_lessons()
-            .recent(self.settings.capture_lesson_limit)
-    }
-
-    /// Delivered tasks, most recent first, for the history.
-    pub fn delivered_tasks(&self) -> TikiResult<Vec<DeliveredItem>> {
-        let tasks = self
-            .database
-            .tasks()
-            .list_delivered(self.settings.delivered_history_limit)?;
-        let projects = self.project_directory()?;
-        let today = self.clock.today();
-        Ok(tasks
-            .iter()
-            .filter_map(|task| DeliveredItem::present(task, &projects, &self.translator, today))
-            .collect())
+        self.calendar_book()
+            .store(account_id, self.clock.today(), meetings)
     }
 
     pub fn projects(&self) -> TikiResult<Vec<Project>> {
         self.database.projects().list()
-    }
-
-    pub fn move_task(&self, task_id: TaskId, status: TaskStatus) -> TikiResult<()> {
-        let mut task = self.database.tasks().find(task_id)?;
-        let was_waiting = task.status == TaskStatus::Waiting;
-        task.move_to(status, self.clock.today());
-        self.schedule_follow_up(&mut task, was_waiting);
-        self.database.tasks().update(&task)
-    }
-
-    /// An item that starts waiting gets a reminder to follow up after a few days, unless the
-    /// user already set one.
-    fn schedule_follow_up(&self, task: &mut Task, was_waiting: bool) {
-        if task.status != TaskStatus::Waiting || was_waiting || task.remind_at.is_some() {
-            return;
-        }
-        let since = task.waiting_since.unwrap_or_else(|| self.clock.today());
-        task.remind_at = since
-            .checked_add_days(chrono::Days::new(
-                self.settings.follow_up_after_days.unsigned_abs(),
-            ))
-            .map(|day| day.and_time(self.settings.follow_up_time));
     }
 
     /// Saves a project with the next color of the palette.
@@ -365,49 +246,35 @@ impl TikiWorkspace {
         &self.settings.project_colors
     }
 
+    fn views(&self) -> WorkspaceViews<'_> {
+        WorkspaceViews::new(
+            &self.database,
+            &self.settings,
+            &self.preferences,
+            &self.translator,
+            self.clock.as_ref(),
+        )
+    }
+
+    fn items(&self) -> ItemService<'_> {
+        ItemService::new(&self.database, &self.settings, self.clock.as_ref())
+    }
+
+    fn alerts(&self) -> AlertScheduler<'_> {
+        AlertScheduler::new(
+            &self.database,
+            &self.settings,
+            &self.preferences,
+            &self.translator,
+            self.clock.as_ref(),
+        )
+    }
+
+    fn calendar_book(&self) -> CalendarBook<'_> {
+        CalendarBook::new(&self.database, &self.settings)
+    }
+
     fn project_book(&self) -> ProjectBook<'_> {
         ProjectBook::new(&self.database, &self.settings)
-    }
-
-    /// The project with this name, created when it does not exist yet; `None` for no name.
-    fn project_named(&self, name: Option<&str>) -> TikiResult<Option<ProjectId>> {
-        let Some(name) = name.map(str::trim).filter(|name| !name.is_empty()) else {
-            return Ok(None);
-        };
-        match self.database.projects().find_by_name(name)? {
-            Some(project) => Ok(project.id),
-            None => self.project_book().create(name).map(Some),
-        }
-    }
-
-    fn reschedule_moved_briefs(&self, preferences: &UserPreferences) -> TikiResult<()> {
-        let now = self.clock.now().time();
-        let moves = [
-            (
-                BriefMoment::Morning,
-                self.preferences.morning_brief_time,
-                preferences.morning_brief_time,
-            ),
-            (
-                BriefMoment::Evening,
-                self.preferences.evening_brief_time,
-                preferences.evening_brief_time,
-            ),
-        ];
-        for (moment, old_time, new_time) in moves {
-            if new_time != old_time && new_time > now {
-                self.database.reminder_log().clear(moment)?;
-            }
-        }
-        Ok(())
-    }
-
-    fn brief(&self, projects: &ProjectDirectory) -> TikiResult<DailyBrief> {
-        let tasks = self.database.tasks().list_open()?;
-        Ok(DailyBriefBuilder::new(&self.settings).build(&tasks, projects, self.clock.today()))
-    }
-
-    fn project_directory(&self) -> TikiResult<ProjectDirectory> {
-        Ok(ProjectDirectory::new(self.database.projects().list()?))
     }
 }

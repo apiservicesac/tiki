@@ -13,13 +13,15 @@ pub struct TikiSettings {
     /// When the morning brief is prepared.
     pub morning_brief_time: NaiveTime,
     /// When the end-of-day close is prepared.
-    pub evening_close_time: NaiveTime,
+    pub evening_brief_time: NaiveTime,
     /// A task due within this many days counts as "due soon" (0 = today, 1 = today and tomorrow).
     pub due_soon_window_days: i64,
     /// A follow-up reminder rings at this time of the day it is due.
     pub follow_up_time: NaiveTime,
     /// A task waiting on others for at least this many days asks for a follow-up.
     pub follow_up_after_days: i64,
+    /// While it still waits, the follow-up nudge comes back every this many days.
+    pub follow_up_repeat_days: i64,
     /// The Agenda and the calendar copy cover today and this many days ahead.
     pub agenda_days: u64,
     /// A meeting starting within this many minutes puts Tiki on alert.
@@ -39,10 +41,11 @@ impl Default for TikiSettings {
         Self {
             locale: Locale::Spanish,
             morning_brief_time: NaiveTime::from_hms_opt(8, 30, 0).expect("valid time"),
-            evening_close_time: NaiveTime::from_hms_opt(18, 0, 0).expect("valid time"),
+            evening_brief_time: NaiveTime::from_hms_opt(18, 0, 0).expect("valid time"),
             due_soon_window_days: 2,
             follow_up_time: NaiveTime::from_hms_opt(9, 0, 0).expect("valid time"),
             follow_up_after_days: 3,
+            follow_up_repeat_days: 2,
             meeting_alert_minutes: 15,
             agenda_days: 8,
             daily_focus_task_count: 3,

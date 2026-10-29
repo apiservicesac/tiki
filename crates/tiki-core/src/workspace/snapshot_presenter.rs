@@ -2,10 +2,11 @@ use chrono::NaiveDateTime;
 
 use super::{FocusSuggestion, IslandSnapshot, SnapshotItem, SnapshotSection, Urgency};
 use crate::briefing::{
-    BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, BriefNarrator, DailyBrief,
+    BriefDetailFormatter, BriefItem, BriefMoment, BriefNarrator, DailyBrief, FocusPicker,
+    FocusReason,
 };
 use crate::calendar::MeetingItem;
-use crate::domain::{Priority, ProjectDirectory, Repeat};
+use crate::domain::ProjectDirectory;
 use crate::i18n::{DateFormatter, Translator};
 use crate::mood::Mood;
 
@@ -37,12 +38,7 @@ impl<'context> SnapshotPresenter<'context> {
         delivered_today: usize,
         meetings: &TodaysMeetings,
     ) -> IslandSnapshot {
-        let todays_reminders: Vec<BriefItem> = brief
-            .reminders
-            .iter()
-            .filter(|item| matches!(item.detail, BriefDetail::RemindAt { at, .. } if at.date() == brief.date))
-            .cloned()
-            .collect();
+        let todays_reminders = brief.reminders_on(brief.date);
         let sections = [
             ("overdue", &brief.overdue, Urgency::Critical),
             ("due_soon", &brief.due_soon, Urgency::Soon),
@@ -123,20 +119,13 @@ impl<'context> SnapshotPresenter<'context> {
             detail_label: BriefDetailFormatter::new(self.translator).label(item.detail, brief.date),
             priority: item.priority,
             tags: item.tags.clone(),
-            at: match item.detail {
-                BriefDetail::RemindAt { at, .. } => Some(at),
-                _ => None,
-            },
-            repeat: match item.detail {
-                BriefDetail::RemindAt { repeat, .. } => repeat,
-                _ => Repeat::Never,
-            },
+            at: item.rings_at(),
+            repeat: item.repeat(),
             urgency,
         }
     }
 
-    /// What to do now: the most important overdue item, else what is due today, else urgent
-    /// or important work, else what is due soon, else a follow-up to send.
+    /// What to do now (see `FocusPicker`), with the free time before the next meeting.
     fn focus(&self, brief: &DailyBrief, meetings: &TodaysMeetings) -> Option<FocusSuggestion> {
         let mut focus = self.focus_item(brief)?;
         if let Some(next) = &meetings.next {
@@ -151,40 +140,25 @@ impl<'context> SnapshotPresenter<'context> {
     }
 
     fn focus_item(&self, brief: &DailyBrief) -> Option<FocusSuggestion> {
-        let due_today = |item: &&BriefItem| item.detail == BriefDetail::DueIn { days: 0 };
-        let important = |item: &&BriefItem| item.priority >= Priority::High;
-        let candidates: [(Option<&BriefItem>, &str, Urgency); 5] = [
-            (brief.overdue.first(), "focus.overdue", Urgency::Critical),
-            (
-                brief.due_soon.iter().find(due_today),
-                "focus.due_today",
-                Urgency::Soon,
-            ),
-            (
-                brief.your_turn.iter().find(important),
-                "focus.important",
-                Urgency::Normal,
-            ),
-            (brief.due_soon.first(), "focus.due_soon", Urgency::Soon),
-            (
-                brief.needs_follow_up.first(),
-                "focus.follow_up",
-                Urgency::Waiting,
-            ),
-        ];
-        candidates.into_iter().find_map(|(item, reason, urgency)| {
-            item.map(|item| FocusSuggestion {
-                item: self.item(item, urgency, brief),
-                reason: self.translator.text(reason),
-            })
+        let pick = FocusPicker::pick(brief)?;
+        let urgency = match pick.reason {
+            FocusReason::Overdue => Urgency::Critical,
+            FocusReason::DueToday | FocusReason::DueSoon => Urgency::Soon,
+            FocusReason::Important => Urgency::Normal,
+            FocusReason::FollowUp => Urgency::Waiting,
+        };
+        Some(FocusSuggestion {
+            item: self.item(pick.item, urgency, brief),
+            reason: self
+                .translator
+                .text(&format!("focus.{}", pick.reason.key())),
         })
     }
 
     fn project_color(&self, item: &BriefItem) -> Option<String> {
-        let name = item.project_name.as_deref()?;
+        let project_id = item.project_id?;
         self.projects
-            .projects()
-            .find(|project| project.name == name)
+            .find(project_id)
             .map(|project| project.color.clone())
     }
 }

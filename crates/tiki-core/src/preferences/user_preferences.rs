@@ -54,7 +54,7 @@ impl UserPreferences {
             ai_provider: AiProvider::default(),
             ai_model: None,
             morning_brief_time: settings.morning_brief_time,
-            evening_brief_time: settings.evening_close_time,
+            evening_brief_time: settings.evening_brief_time,
             notifications_enabled: true,
             alert_sound: true,
             windows_notifications: true,

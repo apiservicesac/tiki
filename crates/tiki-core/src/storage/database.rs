@@ -4,8 +4,8 @@ use rusqlite::Connection;
 
 use super::schema_migrations::SchemaMigrations;
 use super::{
-    CalendarRepository, CaptureLessonRepository, PreferencesRepository, ProjectRepository,
-    ReminderLogRepository, TaskRepository,
+    ActivityRepository, BriefLogRepository, CalendarRepository, CaptureLessonRepository,
+    PreferencesRepository, ProjectRepository, Repositories, TaskRepository,
 };
 use crate::error::TikiResult;
 
@@ -26,27 +26,47 @@ impl Database {
     }
 
     pub fn tasks(&self) -> TaskRepository<'_> {
-        TaskRepository::new(&self.connection)
+        self.repositories().tasks()
     }
 
     pub fn projects(&self) -> ProjectRepository<'_> {
-        ProjectRepository::new(&self.connection)
+        self.repositories().projects()
     }
 
     pub fn preferences(&self) -> PreferencesRepository<'_> {
-        PreferencesRepository::new(&self.connection)
+        self.repositories().preferences()
     }
 
-    pub fn reminder_log(&self) -> ReminderLogRepository<'_> {
-        ReminderLogRepository::new(&self.connection)
+    pub fn brief_log(&self) -> BriefLogRepository<'_> {
+        self.repositories().brief_log()
     }
 
     pub fn calendar(&self) -> CalendarRepository<'_> {
-        CalendarRepository::new(&self.connection)
+        self.repositories().calendar()
+    }
+
+    pub fn activity(&self) -> ActivityRepository<'_> {
+        self.repositories().activity()
     }
 
     pub fn capture_lessons(&self) -> CaptureLessonRepository<'_> {
-        CaptureLessonRepository::new(&self.connection)
+        self.repositories().capture_lessons()
+    }
+
+    /// Runs `work` in one transaction: every change it makes is saved together, or, when it
+    /// fails, none is. Transactions do not nest.
+    pub fn transaction<T>(
+        &self,
+        work: impl FnOnce(&Repositories<'_>) -> TikiResult<T>,
+    ) -> TikiResult<T> {
+        let transaction = self.connection.unchecked_transaction()?;
+        let result = work(&Repositories::new(&transaction))?;
+        transaction.commit()?;
+        Ok(result)
+    }
+
+    fn repositories(&self) -> Repositories<'_> {
+        Repositories::new(&self.connection)
     }
 
     fn prepare(mut connection: Connection) -> TikiResult<Self> {

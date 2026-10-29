@@ -16,6 +16,8 @@ pub struct TaskDetails {
     pub priority: Priority,
     pub status: TaskStatus,
     pub remind_at: Option<NaiveDateTime>,
+    /// When Tiki nudges the user to follow up, while the item waits.
+    pub follow_up_at: Option<NaiveDateTime>,
     pub kind: ItemKind,
     pub tags: Vec<String>,
     pub repeat: Repeat,
@@ -33,6 +35,7 @@ impl TaskDetails {
             priority: task.priority,
             status: task.status,
             remind_at: task.remind_at,
+            follow_up_at: task.follow_up_at,
             kind: task.kind,
             tags: task.tags.clone(),
             repeat: task.repeat,

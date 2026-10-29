@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 
 use super::{BriefDetail, BriefItem, DailyBrief};
-use crate::domain::{ItemKind, ProjectDirectory, Task, TaskId, TaskStatus};
+use crate::domain::{FollowUpPolicy, ItemKind, ProjectDirectory, Task, TaskId, TaskStatus};
 use crate::settings::TikiSettings;
 
 /// Sorts open tasks into the sections of the daily brief.
@@ -36,10 +36,7 @@ impl<'settings> DailyBriefBuilder<'settings> {
         ] {
             section.sort_by_key(|item| std::cmp::Reverse(item.priority));
         }
-        brief.reminders.sort_by_key(|item| match item.detail {
-            BriefDetail::RemindAt { at, .. } => Some(at),
-            _ => None,
-        });
+        brief.reminders.sort_by_key(BriefItem::rings_at);
         brief
     }
 
@@ -68,7 +65,7 @@ impl<'settings> DailyBriefBuilder<'settings> {
 
         if let Some(days) = task.days_waiting(today) {
             let waiting_line = line(BriefDetail::Waiting { days });
-            if days >= self.settings.follow_up_after_days {
+            if FollowUpPolicy::new(self.settings).is_due(days) {
                 brief.needs_follow_up.push(waiting_line.clone());
             }
             brief.waiting.push(waiting_line);
@@ -96,6 +93,7 @@ impl<'settings> DailyBriefBuilder<'settings> {
         BriefItem {
             task_id,
             title: task.title.clone(),
+            project_id: task.project_id,
             project_name: projects.name_of(task.project_id).map(str::to_owned),
             tags: task.tags.clone(),
             priority: task.priority,

@@ -17,8 +17,10 @@ pub struct DeliveredItem {
 }
 
 impl DeliveredItem {
+    /// The task as delivered on `delivered_on`; `None` for a task never saved.
     pub fn present(
         task: &Task,
+        delivered_on: NaiveDate,
         projects: &ProjectDirectory,
         translator: &Translator,
         today: NaiveDate,
@@ -31,18 +33,15 @@ impl DeliveredItem {
             title: task.title.clone(),
             project_name: project.map(|project| project.name.clone()),
             project_color: project.map(|project| project.color.clone()),
-            delivered_label: Self::label(task.completed_on, translator, today),
+            delivered_label: Self::label(delivered_on, translator, today),
         })
     }
 
-    fn label(day: Option<NaiveDate>, translator: &Translator, today: NaiveDate) -> String {
-        match day.map(|day| (today - day).num_days()) {
-            Some(0) => translator.text("history.today"),
-            Some(1) => translator.text("history.yesterday"),
-            Some(_) => {
-                day.map_or_else(String::new, |day| DateFormatter::new(translator).short(day))
-            }
-            None => String::new(),
+    fn label(day: NaiveDate, translator: &Translator, today: NaiveDate) -> String {
+        match (today - day).num_days() {
+            0 => translator.text("history.today"),
+            1 => translator.text("history.yesterday"),
+            _ => DateFormatter::new(translator).short(day),
         }
     }
 }

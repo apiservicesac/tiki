@@ -1,23 +1,16 @@
 mod support;
 
 use chrono::{NaiveDateTime, NaiveTime};
-use support::{SampleWorkspace, TestDay};
-use tiki_core::TikiSettings;
+use support::{TestDay, TimedWorkspace};
+use tiki_core::alerts::AlertKind;
 use tiki_core::calendar::{CalendarProvider, Meeting};
-use tiki_core::reminders::AlertKind;
-use tiki_core::workspace::{FixedClock, TikiWorkspace};
 
 fn at(day: u32, hour: u32, minute: u32) -> NaiveDateTime {
     TestDay::october(day).and_time(NaiveTime::from_hms_opt(hour, minute, 0).unwrap())
 }
 
-fn workspace_at(now: NaiveDateTime) -> TikiWorkspace {
-    TikiWorkspace::new(
-        SampleWorkspace::create().database,
-        TikiSettings::default(),
-        Box::new(FixedClock::at(now)),
-    )
-    .unwrap()
+fn workspace_at(now: NaiveDateTime) -> TimedWorkspace {
+    TimedWorkspace::sample_at(now)
 }
 
 fn meeting(id: &str, title: &str, starts_at: NaiveDateTime, minutes: i64) -> Meeting {
@@ -85,10 +78,16 @@ fn a_meeting_about_to_start_is_announced_once_with_its_link() {
         .unwrap();
 
     assert_eq!(
-        workspace.take_due_meeting_alerts(at(21, 9, 40)).unwrap(),
+        workspace
+            .at(at(21, 9, 40))
+            .take_due_meeting_alerts()
+            .unwrap(),
         Vec::new()
     );
-    let alerts = workspace.take_due_meeting_alerts(at(21, 9, 50)).unwrap();
+    let alerts = workspace
+        .at(at(21, 9, 50))
+        .take_due_meeting_alerts()
+        .unwrap();
     assert_eq!(alerts.len(), 1);
     assert_eq!(alerts[0].kind, AlertKind::Meeting);
     assert_eq!(alerts[0].title, "Reunión en 10 min");
@@ -98,7 +97,10 @@ fn a_meeting_about_to_start_is_announced_once_with_its_link() {
         Some("https://teams.microsoft.com/l/meetup")
     );
     assert_eq!(
-        workspace.take_due_meeting_alerts(at(21, 9, 55)).unwrap(),
+        workspace
+            .at(at(21, 9, 55))
+            .take_due_meeting_alerts()
+            .unwrap(),
         Vec::new()
     );
 
@@ -107,7 +109,10 @@ fn a_meeting_about_to_start_is_announced_once_with_its_link() {
         .store_meetings(account, &[meeting("a", "Daily", at(21, 10, 0), 15)])
         .unwrap();
     assert_eq!(
-        workspace.take_due_meeting_alerts(at(21, 9, 56)).unwrap(),
+        workspace
+            .at(at(21, 9, 56))
+            .take_due_meeting_alerts()
+            .unwrap(),
         Vec::new()
     );
     workspace
@@ -115,7 +120,8 @@ fn a_meeting_about_to_start_is_announced_once_with_its_link() {
         .unwrap();
     assert_eq!(
         workspace
-            .take_due_meeting_alerts(at(21, 9, 56))
+            .at(at(21, 9, 56))
+            .take_due_meeting_alerts()
             .unwrap()
             .len(),
         1
@@ -142,7 +148,8 @@ fn now_counts_the_free_time_before_the_next_meeting_and_the_brief_names_meetings
     );
 
     let morning = workspace
-        .take_due_notification(at(21, 9, 15))
+        .at(at(21, 9, 15))
+        .take_due_notification()
         .unwrap()
         .unwrap();
     assert!(
@@ -175,4 +182,63 @@ fn past_meetings_are_not_kept() {
         .map(|meeting| meeting.title.as_str())
         .collect();
     assert_eq!(titles, ["Hoy"]);
+}
+
+#[test]
+fn the_calendar_window_starts_today_and_covers_the_agenda_days() {
+    let workspace = workspace_at(at(21, 15, 30));
+    assert_eq!(workspace.calendar_window(), (at(21, 0, 0), at(29, 0, 0)));
+}
+
+#[test]
+fn the_meetings_of_a_day_are_picked_from_the_agenda() {
+    use tiki_core::calendar::{CalendarBook, MeetingItem};
+    let item = |starts_at| MeetingItem {
+        title: "Daily".into(),
+        starts_at,
+        ends_at: starts_at + chrono::Duration::minutes(15),
+        all_day: false,
+        location: String::new(),
+        join_url: None,
+        account_email: "yo@example.com".into(),
+    };
+    let agenda = [item(at(21, 10, 0)), item(at(22, 10, 0))];
+
+    let today = CalendarBook::meetings_on(&agenda, TestDay::today());
+    assert_eq!(today.len(), 1);
+    assert_eq!(today[0].starts_at, at(21, 10, 0));
+}
+
+#[test]
+fn meetings_starting_soon_come_once_earliest_first_with_their_account() {
+    let database = tiki_core::storage::Database::open_in_memory().unwrap();
+    let calendar = database.calendar();
+    let account = calendar
+        .add_account(CalendarProvider::Google, "yo@gmail.com")
+        .unwrap();
+    calendar
+        .replace_meetings(
+            account,
+            at(21, 0, 0),
+            at(22, 0, 0),
+            &[
+                meeting("late", "Segunda", at(21, 10, 10), 30),
+                meeting("early", "Primera", at(21, 10, 5), 30),
+            ],
+        )
+        .unwrap();
+
+    let taken = calendar
+        .take_starting(at(21, 10, 0), at(21, 10, 15))
+        .unwrap();
+    let titles: Vec<&str> = taken.iter().map(|meeting| meeting.title.as_str()).collect();
+    assert_eq!(titles, ["Primera", "Segunda"]);
+    assert_eq!(taken[0].account_email, "yo@gmail.com");
+    assert_eq!(
+        calendar
+            .take_starting(at(21, 10, 0), at(21, 10, 15))
+            .unwrap()
+            .len(),
+        0
+    );
 }

@@ -78,5 +78,5 @@ pub fn capture_lessons(state: State<'_, AppState>) -> CommandResult<Vec<CaptureL
 /// Puts off a reminder for some minutes; one that already rang comes back.
 #[tauri::command]
 pub fn snooze(state: State<'_, AppState>, task_id: i64, minutes: i64) -> CommandResult<()> {
-    Ok(state.with_workspace(|workspace| workspace.snooze(TaskId(task_id), minutes))?)
+    Ok(state.with_workspace(|workspace| workspace.snooze_for(TaskId(task_id), minutes))?)
 }

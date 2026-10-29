@@ -87,3 +87,93 @@ fn the_english_narration_uses_english_dates_and_lists() {
     assert!(narration.starts_with("Good morning. Today is Wednesday, October 21."));
     assert!(narration.contains(" and "));
 }
+
+#[test]
+fn the_brief_knows_what_is_due_tomorrow() {
+    let brief = sample_brief(&TikiSettings::default());
+    let tomorrow: Vec<String> = brief
+        .due_tomorrow()
+        .into_iter()
+        .map(|item| item.title)
+        .collect();
+    assert_eq!(tomorrow, ["Tracking de formularios comerciales"]);
+}
+
+#[test]
+fn the_brief_lists_the_reminders_of_one_day() {
+    use tiki_core::briefing::BriefItem;
+    use tiki_core::domain::{Priority, Repeat, TaskId};
+    let reminder = |task_id, at| BriefItem {
+        task_id: TaskId(task_id),
+        title: format!("Aviso {task_id}"),
+        project_id: None,
+        project_name: None,
+        tags: Vec::new(),
+        priority: Priority::Normal,
+        detail: BriefDetail::RemindAt {
+            at,
+            repeat: Repeat::Never,
+        },
+    };
+    let mut brief = DailyBrief::empty(TestDay::today());
+    brief.reminders = vec![
+        reminder(1, TestDay::today().and_hms_opt(17, 0, 0).unwrap()),
+        reminder(2, TestDay::october(22).and_hms_opt(9, 0, 0).unwrap()),
+    ];
+
+    let today = brief.reminders_on(TestDay::today());
+    assert_eq!(today.len(), 1);
+    assert_eq!(today[0].task_id, TaskId(1));
+    assert_eq!(
+        brief.reminders_on(TestDay::october(22))[0].task_id,
+        TaskId(2)
+    );
+}
+
+#[test]
+fn each_brief_line_keeps_the_id_of_its_project() {
+    let workspace = SampleWorkspace::create();
+    let tasks = workspace.database.tasks().list_open().unwrap();
+    let brief = DailyBriefBuilder::new(&TikiSettings::default()).build(
+        &tasks,
+        &workspace.directory(),
+        TestDay::today(),
+    );
+
+    assert_eq!(brief.overdue[0].project_id, Some(workspace.andeanvet));
+    assert_eq!(brief.your_turn[1].project_id, None);
+}
+
+#[test]
+fn what_now_starts_with_the_overdue_item_then_today_then_important_work() {
+    use tiki_core::briefing::{FocusPicker, FocusReason};
+    use tiki_core::domain::Priority;
+    let mut brief = sample_brief(&TikiSettings::default());
+
+    let pick = FocusPicker::pick(&brief).unwrap();
+    assert_eq!(pick.reason, FocusReason::Overdue);
+    assert_eq!(
+        pick.item.title,
+        "Acceso solo a análisis de facturas de Almendra"
+    );
+
+    brief.overdue.clear();
+    assert_eq!(
+        FocusPicker::pick(&brief).unwrap().reason,
+        FocusReason::DueSoon
+    );
+
+    brief.your_turn[1].priority = Priority::Urgent;
+    let important = FocusPicker::pick(&brief).unwrap();
+    assert_eq!(important.reason, FocusReason::Important);
+    assert_eq!(important.item.title, "Completar módulo de importaciones");
+
+    brief.due_soon.clear();
+    brief.your_turn.clear();
+    assert_eq!(
+        FocusPicker::pick(&brief).unwrap().reason,
+        FocusReason::FollowUp
+    );
+    brief.needs_follow_up.clear();
+    assert!(FocusPicker::pick(&brief).is_none());
+}

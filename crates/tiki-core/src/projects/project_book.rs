@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 
 use super::{ProjectChange, ProjectSummary};
-use crate::domain::{Project, ProjectId, Task};
+use crate::domain::{Project, ProjectDirectory, ProjectId, Task};
 use crate::error::{TikiError, TikiResult};
 use crate::settings::TikiSettings;
 use crate::storage::Database;
@@ -17,7 +17,8 @@ impl<'context> ProjectBook<'context> {
         Self { database, settings }
     }
 
-    /// Every project, busiest first: pressing work, then open work, then by name.
+    /// Every project, busiest first: pressing work, then open work, then by name. Standalone
+    /// reminders are not work, as in the brief.
     pub fn summaries(
         &self,
         open_tasks: &[Task],
@@ -30,9 +31,9 @@ impl<'context> ProjectBook<'context> {
             .into_iter()
             .filter_map(|project| {
                 let project_id = project.id?;
-                let tasks = open_tasks
-                    .iter()
-                    .filter(|task| task.project_id == Some(project_id) && task.status.is_open());
+                let tasks = open_tasks.iter().filter(|task| {
+                    task.project_id == Some(project_id) && task.counts_as_open_work()
+                });
                 let (open_count, pressing_count) = tasks.fold((0, 0), |(open, pressing), task| {
                     let is_pressing = task.is_overdue(today)
                         || task.is_due_within(today, self.settings.due_soon_window_days);
@@ -56,6 +57,23 @@ impl<'context> ProjectBook<'context> {
                 .then_with(|| first.name.to_lowercase().cmp(&second.name.to_lowercase()))
         });
         Ok(summaries)
+    }
+
+    /// Every project, to look them up by id.
+    pub fn directory(&self) -> TikiResult<ProjectDirectory> {
+        Ok(ProjectDirectory::new(self.database.projects().list()?))
+    }
+
+    /// The project with this name, created when it does not exist yet; `None` for no name.
+    /// Tiki never asks the user to keep a list of projects.
+    pub fn find_or_create(&self, name: Option<&str>) -> TikiResult<Option<ProjectId>> {
+        let Some(name) = name.map(str::trim).filter(|name| !name.is_empty()) else {
+            return Ok(None);
+        };
+        match self.database.projects().find_by_name(name)? {
+            Some(project) => Ok(project.id),
+            None => self.create(name).map(Some),
+        }
     }
 
     /// Saves a new project with the next color of the palette.

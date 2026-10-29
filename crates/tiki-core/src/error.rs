@@ -24,6 +24,9 @@ pub enum TikiError {
     #[error("the task has not been saved yet")]
     UnsavedTask,
 
+    #[error("the project has not been saved yet")]
+    UnsavedProject,
+
     #[error("a project needs a name")]
     EmptyProjectName,
 
@@ -32,6 +35,9 @@ pub enum TikiError {
 
     #[error("a task needs a title")]
     EmptyTaskTitle,
+
+    #[error("a reminder needs a time to ring")]
+    ReminderNeedsTime,
 
     #[error("AI request failed: {0}")]
     Ai(String),

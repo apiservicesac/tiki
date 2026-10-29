@@ -68,6 +68,7 @@ impl<'connection> CalendarRepository<'connection> {
 
     /// Replaces the account's meetings between `from` and `to` with `meetings`, keeping
     /// whether each one was already announced. Meetings before `from` are past and dropped.
+    /// Run it inside `Database::transaction`, so a sync is saved whole or not at all.
     pub fn replace_meetings(
         &self,
         account_id: AccountId,
@@ -75,9 +76,8 @@ impl<'connection> CalendarRepository<'connection> {
         to: NaiveDateTime,
         meetings: &[Meeting],
     ) -> TikiResult<()> {
-        let transaction = self.connection.unchecked_transaction()?;
         for meeting in meetings {
-            transaction.execute(
+            self.connection.execute(
                 "INSERT INTO meetings (account_id, external_id, title, starts_at, ends_at, all_day, location, join_url)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
                  ON CONFLICT(account_id, external_id) DO UPDATE SET
@@ -102,16 +102,15 @@ impl<'connection> CalendarRepository<'connection> {
             .map(|meeting| meeting.external_id.clone())
             .collect();
         let kept_json = serde_json::to_string(&kept).unwrap_or_else(|_| "[]".to_owned());
-        transaction.execute(
+        self.connection.execute(
             "DELETE FROM meetings WHERE account_id = ?1 AND starts_at >= ?2 AND starts_at < ?3
                 AND external_id NOT IN (SELECT value FROM json_each(?4))",
             params![account_id.0, from, to, kept_json],
         )?;
-        transaction.execute(
+        self.connection.execute(
             "DELETE FROM meetings WHERE account_id = ?1 AND starts_at < ?2",
             params![account_id.0, from],
         )?;
-        transaction.commit()?;
         Ok(())
     }
 
@@ -143,40 +142,34 @@ impl<'connection> CalendarRepository<'connection> {
         Ok(meetings)
     }
 
-    /// Timed meetings starting after `now` and up to `until` that were not announced yet;
-    /// they are marked as announced.
+    /// Timed meetings starting after `now` and up to `until` that were not announced yet,
+    /// earliest first. One statement marks them as announced and returns them.
     pub fn take_starting(
         &self,
         now: NaiveDateTime,
         until: NaiveDateTime,
     ) -> TikiResult<Vec<MeetingItem>> {
         let mut statement = self.connection.prepare(
-            "SELECT m.id, m.title, m.starts_at, m.ends_at, m.all_day, m.location, m.join_url, a.email
-               FROM meetings m JOIN calendar_accounts a ON a.id = m.account_id
-              WHERE m.all_day = 0 AND m.alerted = 0 AND m.starts_at > ?1 AND m.starts_at <= ?2
-              ORDER BY m.starts_at",
+            "UPDATE meetings SET alerted = 1
+              WHERE all_day = 0 AND alerted = 0 AND starts_at > ?1 AND starts_at <= ?2
+              RETURNING title, starts_at, ends_at, all_day, location, join_url,
+                        (SELECT email FROM calendar_accounts WHERE id = meetings.account_id)",
         )?;
-        let rows = statement
+        let mut meetings = statement
             .query_map(params![now, until], |row| {
-                Ok((
-                    row.get::<_, i64>(0)?,
-                    MeetingItem {
-                        title: row.get(1)?,
-                        starts_at: row.get(2)?,
-                        ends_at: row.get(3)?,
-                        all_day: row.get(4)?,
-                        location: row.get(5)?,
-                        join_url: row.get(6)?,
-                        account_email: row.get(7)?,
-                    },
-                ))
+                Ok(MeetingItem {
+                    title: row.get(0)?,
+                    starts_at: row.get(1)?,
+                    ends_at: row.get(2)?,
+                    all_day: row.get(3)?,
+                    location: row.get(4)?,
+                    join_url: row.get(5)?,
+                    account_email: row.get(6)?,
+                })
             })?
             .collect::<Result<Vec<_>, _>>()?;
-        for (id, _) in &rows {
-            self.connection
-                .execute("UPDATE meetings SET alerted = 1 WHERE id = ?1", params![id])?;
-        }
-        Ok(rows.into_iter().map(|(_, meeting)| meeting).collect())
+        meetings.sort_by_key(|meeting| meeting.starts_at);
+        Ok(meetings)
     }
 
     fn read_account(row: &Row<'_>) -> rusqlite::Result<CalendarAccount> {

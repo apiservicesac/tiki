@@ -20,7 +20,11 @@ fn tasks_survive_a_round_trip() {
             url: Some("https://altamira.example/odoo/helpdesk/42".into()),
         }));
 
-    let task_id = workspace.database.tasks().insert(&original).unwrap();
+    let task_id = workspace
+        .database
+        .tasks()
+        .insert(&original, TestDay::start())
+        .unwrap();
     let stored = workspace.database.tasks().find(task_id).unwrap();
 
     assert_eq!(stored.id, Some(task_id));
@@ -37,12 +41,16 @@ fn updating_a_task_changes_its_status() {
     let task_id = workspace
         .database
         .tasks()
-        .insert(&Task::new("Probar").unwrap())
+        .insert(&Task::new("Probar").unwrap(), TestDay::start())
         .unwrap();
 
     let mut task = workspace.database.tasks().find(task_id).unwrap();
     task.move_to(TaskStatus::Done, TestDay::today());
-    workspace.database.tasks().update(&task).unwrap();
+    workspace
+        .database
+        .tasks()
+        .update(&task, TestDay::start())
+        .unwrap();
 
     assert_eq!(
         workspace.database.tasks().find(task_id).unwrap().status,
@@ -83,5 +91,68 @@ fn projects_are_found_by_name_ignoring_case() {
     assert_eq!(
         project.and_then(|project| project.id),
         Some(workspace.andeanvet)
+    );
+}
+
+#[test]
+fn updating_a_project_that_was_never_saved_reports_it() {
+    let database = Database::open_in_memory().unwrap();
+    let unsaved = tiki_core::domain::Project::new("Altamira", "#2F6BD8");
+    assert!(matches!(
+        database.projects().update(&unsaved),
+        Err(TikiError::UnsavedProject)
+    ));
+}
+
+#[test]
+fn a_failed_transaction_saves_nothing() {
+    let database = Database::open_in_memory().unwrap();
+    let result: tiki_core::TikiResult<()> = database.transaction(|repositories| {
+        repositories
+            .tasks()
+            .insert(&Task::new("A medias").unwrap(), TestDay::start())?;
+        Err(TikiError::EmptyTaskTitle)
+    });
+
+    assert!(result.is_err());
+    assert_eq!(database.tasks().list_open().unwrap().len(), 0);
+}
+
+#[test]
+fn a_transaction_saves_every_change_together() {
+    let database = Database::open_in_memory().unwrap();
+    database
+        .transaction(|repositories| {
+            repositories
+                .tasks()
+                .insert(&Task::new("Uno").unwrap(), TestDay::start())?;
+            repositories
+                .tasks()
+                .insert(&Task::new("Dos").unwrap(), TestDay::start())
+        })
+        .unwrap();
+
+    assert_eq!(database.tasks().list_open().unwrap().len(), 2);
+}
+
+#[test]
+fn a_task_remembers_when_it_was_created_and_last_changed() {
+    let database = Database::open_in_memory().unwrap();
+    let nine = TestDay::today().and_hms_opt(9, 0, 0).unwrap();
+    let ten = TestDay::today().and_hms_opt(10, 0, 0).unwrap();
+    let task_id = database
+        .tasks()
+        .insert(&Task::new("Probar").unwrap(), nine)
+        .unwrap();
+
+    let mut task = database.tasks().find(task_id).unwrap();
+    assert_eq!((task.created_at, task.updated_at), (Some(nine), Some(nine)));
+
+    task.title = "Probar de nuevo".into();
+    database.tasks().update(&task, ten).unwrap();
+    let changed = database.tasks().find(task_id).unwrap();
+    assert_eq!(
+        (changed.created_at, changed.updated_at),
+        (Some(nine), Some(ten))
     );
 }

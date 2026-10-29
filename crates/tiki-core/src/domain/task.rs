@@ -19,8 +19,11 @@ pub struct Task {
     pub waiting_since: Option<NaiveDate>,
     /// Day the task was delivered; empty while it is open.
     pub completed_on: Option<NaiveDate>,
-    /// When Tiki should remind the user about this task; cleared once it has.
+    /// When the user asked Tiki to remind them (a reminder's moment, or an alarm on a task);
+    /// cleared once it rang, unless the reminder repeats.
     pub remind_at: Option<NaiveDateTime>,
+    /// When Tiki nudges the user to follow up a waiting item; empty in any other status.
+    pub follow_up_at: Option<NaiveDateTime>,
     /// Lowercase tags without "#" (see `Tags`).
     pub tags: Vec<String>,
     /// How often a reminder comes back after it rings.
@@ -28,6 +31,11 @@ pub struct Task {
     /// Who or what a waiting task waits for, as the user wrote it ("Lucía's answer").
     pub waiting_for: String,
     pub origin: TaskOrigin,
+    /// When the task was first saved and last changed, in local time from the workspace
+    /// clock; empty until it is saved. Rows saved before version 0.5 hold UTC instead
+    /// (the database's `CURRENT_TIMESTAMP` default), up to a few hours off.
+    pub created_at: Option<NaiveDateTime>,
+    pub updated_at: Option<NaiveDateTime>,
 }
 
 impl Task {
@@ -49,10 +57,13 @@ impl Task {
             waiting_since: None,
             completed_on: None,
             remind_at: None,
+            follow_up_at: None,
             tags: Vec::new(),
             repeat: Repeat::Never,
             waiting_for: String::new(),
             origin: TaskOrigin::Manual,
+            created_at: None,
+            updated_at: None,
         })
     }
 
@@ -86,22 +97,6 @@ impl Task {
         self
     }
 
-    /// Moves the task to a new status, keeping track of when it started waiting and when it
-    /// was delivered. Reopening a delivered task clears its delivery day.
-    pub fn move_to(&mut self, status: TaskStatus, today: NaiveDate) {
-        if status == TaskStatus::Waiting && self.status != TaskStatus::Waiting {
-            self.waiting_since = Some(today);
-        } else if status != TaskStatus::Waiting {
-            self.waiting_since = None;
-        }
-        if status == TaskStatus::Done && self.status != TaskStatus::Done {
-            self.completed_on = Some(today);
-        } else if status != TaskStatus::Done {
-            self.completed_on = None;
-        }
-        self.status = status;
-    }
-
     /// Days until the due date: negative when overdue, `None` without a due date.
     pub fn days_until_due(&self, today: NaiveDate) -> Option<i64> {
         self.due_date.map(|due| (due - today).num_days())
@@ -118,6 +113,11 @@ impl Task {
             && self
                 .days_until_due(today)
                 .is_some_and(|days| (0..=window_days).contains(&days))
+    }
+
+    /// Whether the item is open work: not delivered and not a standalone reminder.
+    pub fn counts_as_open_work(&self) -> bool {
+        self.kind == ItemKind::Task && self.status.is_open()
     }
 
     /// Days the task has been waiting on others, if it is waiting.
