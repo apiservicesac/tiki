@@ -454,6 +454,15 @@ describe("IslandController", () => {
     expect(notch()?.dataset.mood).toBe("worried");
   });
 
+  it("keeps the alert in the notch untouched while other things redraw the island", async () => {
+    backend.deliverAlert(EVENING_BRIEF);
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
+    const shown = root.querySelector(".notch-alert-countdown");
+    window.dispatchEvent(new Event("resize"));
+    await controller.refresh();
+    expect(root.querySelector(".notch-alert-countdown")).toBe(shown);
+  });
+
   it("opens the brief as a receipt on click and puts it away after reading", async () => {
     backend.deliverAlert(EVENING_BRIEF);
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
