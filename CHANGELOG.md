@@ -13,6 +13,7 @@ All notable changes to Tiki are documented here. The format follows
   it forever or empty the trash. Items left there are deleted after 30 days, and
   removing a project sends its items to the trash.
 - Delivered tasks have a Reopen button.
+- The notch alert has its buttons on the right: done, snooze 10 minutes or join.
 
 ### Changed
 - Tiki is bigger: type, the notch, the island and the windows grow together, so it reads
@@ -32,6 +33,8 @@ All notable changes to Tiki are documented here. The format follows
 - The deliver check only showed on hover; it now stays visible.
 - On the side edges, the project picker covered the Tasks view toggle.
 - Singular and plural in project counts and the brief totals.
+- The alert's ripples ran into the notch edge and the text; badges and the buttons beside
+  them had different heights.
 
 ## [0.5.0-rc.1] - 2026-10-29
 
