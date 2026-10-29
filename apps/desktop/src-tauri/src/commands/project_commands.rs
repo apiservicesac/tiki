@@ -29,7 +29,7 @@ pub fn change_project(
     )
 }
 
-/// Removes a project; their tasks stay, without project.
+/// Removes a project and sends its items to the trash, where they stay without project.
 #[tauri::command]
 pub fn remove_project(state: State<'_, AppState>, project_id: i64) -> CommandResult<()> {
     Ok(state.with_workspace(|workspace| workspace.remove_project(ProjectId(project_id)))?)

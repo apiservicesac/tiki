@@ -7,6 +7,7 @@ mod delivered_item;
 mod island_snapshot;
 mod snapshot_presenter;
 mod tiki_workspace;
+mod trashed_item;
 mod workspace_views;
 
 pub use assistant_context::{AssistantContext, AssistantProject, AssistantTask};
@@ -17,4 +18,5 @@ pub use island_snapshot::{
 };
 pub use snapshot_presenter::{SnapshotPresenter, TodaysMeetings};
 pub use tiki_workspace::TikiWorkspace;
+pub use trashed_item::TrashedItem;
 pub use workspace_views::WorkspaceViews;

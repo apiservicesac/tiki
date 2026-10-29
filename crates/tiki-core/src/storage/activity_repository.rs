@@ -49,11 +49,14 @@ impl<'connection> ActivityRepository<'connection> {
         rows.into_iter().map(Self::into_record).collect()
     }
 
-    /// The latest delivery of each delivered item, most recent first, at most `limit`.
+    /// The latest delivery of each delivered item outside the trash, most recent first, at
+    /// most `limit`.
     pub fn latest_deliveries(&self, limit: usize) -> TikiResult<Vec<DeliveryRecord>> {
         let mut statement = self.connection.prepare(
-            "SELECT item_id, MAX(at) AS delivered_at FROM item_events WHERE kind = ?1
-              GROUP BY item_id ORDER BY delivered_at DESC, MAX(id) DESC LIMIT ?2",
+            "SELECT e.item_id, MAX(e.at) AS delivered_at
+               FROM item_events e JOIN tasks t ON t.id = e.item_id
+              WHERE e.kind = ?1 AND t.trashed_at IS NULL
+              GROUP BY e.item_id ORDER BY delivered_at DESC, MAX(e.id) DESC LIMIT ?2",
         )?;
         let deliveries = statement
             .query_map(
@@ -67,8 +70,8 @@ impl<'connection> ActivityRepository<'connection> {
         Ok(deliveries)
     }
 
-    /// Every delivery from `from` to `to` (both days included), oldest first; only the
-    /// project's when `project_id` is given.
+    /// Every delivery from `from` to `to` (both days included) of items outside the trash,
+    /// oldest first; only the project's when `project_id` is given.
     pub fn deliveries_between(
         &self,
         from: NaiveDate,
@@ -77,7 +80,7 @@ impl<'connection> ActivityRepository<'connection> {
     ) -> TikiResult<Vec<DeliveryRecord>> {
         let mut statement = self.connection.prepare(
             "SELECT e.item_id, e.at FROM item_events e JOIN tasks t ON t.id = e.item_id
-              WHERE e.kind = ?1 AND date(e.at) BETWEEN ?2 AND ?3
+              WHERE e.kind = ?1 AND date(e.at) BETWEEN ?2 AND ?3 AND t.trashed_at IS NULL
                 AND (?4 IS NULL OR t.project_id = ?4)
               ORDER BY e.at, e.id",
         )?;
@@ -95,10 +98,11 @@ impl<'connection> ActivityRepository<'connection> {
         Ok(deliveries)
     }
 
-    /// How many different items were delivered on `day`.
+    /// How many different items outside the trash were delivered on `day`.
     pub fn count_delivered_on(&self, day: NaiveDate) -> TikiResult<usize> {
         let count: i64 = self.connection.query_row(
-            "SELECT COUNT(DISTINCT item_id) FROM item_events WHERE kind = ?1 AND date(at) = ?2",
+            "SELECT COUNT(DISTINCT e.item_id) FROM item_events e JOIN tasks t ON t.id = e.item_id
+              WHERE e.kind = ?1 AND date(e.at) = ?2 AND t.trashed_at IS NULL",
             params![ItemEvent::Delivered.key(), day],
             |row| row.get(0),
         )?;

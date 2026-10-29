@@ -39,6 +39,9 @@ pub enum TikiError {
     #[error("a reminder needs a time to ring")]
     ReminderNeedsTime,
 
+    #[error("the item is in the trash: restore it to change it")]
+    ItemInTrash,
+
     #[error("AI request failed: {0}")]
     Ai(String),
 
@@ -66,6 +69,7 @@ impl TikiError {
             TikiError::DuplicateProjectName(_) => "duplicate_project_name",
             TikiError::EmptyTaskTitle => "empty_task_title",
             TikiError::ReminderNeedsTime => "reminder_needs_time",
+            TikiError::ItemInTrash => "item_in_trash",
             TikiError::Ai(_) => "ai",
             TikiError::Calendar(_) => "calendar",
             TikiError::Plugin(_) => "plugin",

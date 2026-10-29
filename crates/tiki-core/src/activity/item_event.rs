@@ -29,6 +29,10 @@ pub enum ItemEvent {
     Delivered,
     /// It came back after being delivered.
     Reopened,
+    /// The user sent it to the trash: it shows nowhere else and its reminders stay silent.
+    Trashed,
+    /// The user took it out of the trash, as it was.
+    Restored,
 }
 
 impl ItemEvent {
@@ -55,6 +59,8 @@ impl ItemEvent {
             ItemEvent::Nudged => "nudged",
             ItemEvent::Delivered => "delivered",
             ItemEvent::Reopened => "reopened",
+            ItemEvent::Trashed => "trashed",
+            ItemEvent::Restored => "restored",
         }
     }
 }
