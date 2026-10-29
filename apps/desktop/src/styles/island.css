@@ -2,7 +2,28 @@
  * The island, styled like the dooai notch: it hangs from a screen edge with rounded outer
  * corners and two concave "ears" where it meets the edge. The window is transparent and
  * exactly as big as #island-root, so only the island is visible.
+ *
+ * Sections, in the order the island is built:
+ *    1. Window and root    the transparent page and the edge the island hangs from
+ *    2. Notch              shape, corners, ears, mood glow and the content cross-fade
+ *    3. Folded notch       hidden and compact: Tiki, the summary, count bubbles, unread dot
+ *    4. Alert              the grown notch, the aura, ripples and the countdown
+ *    5. Expanded island    header, tabs and the card
+ *    6. Lists and rows     groups, item rows, priority marks and time badges
+ *    7. Today              focus, summary card, latest alert and "Delivered today"
+ *    8. Tasks tab          toolbar, search, pending or delivered toggle, project groups
+ *    9. Agenda             reminders and meetings by day
+ *   10. Project picker     a button with a searchable list under it
+ *   11. Project panel
+ *   12. Quick capture      the single box, its fields, answers and proposed actions
+ *   13. Task editing
+ *   14. Settings
+ *   15. Receipt            the brief drawn as a receipt
+ *   16. Left and right edges, where the island is a column
+ *   17. Reduced motion
  */
+
+/* 1. Window and root ------------------------------------------------------------------ */
 html,
 body {
   height: 100%;
@@ -23,6 +44,7 @@ body[data-placement="left"] { justify-content: flex-start; align-items: center; 
 body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 
 #island-root {
+  position: relative;
   display: inline-flex;
   flex: none;
 }
@@ -33,6 +55,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 #island-root[data-placement="left"] { padding: var(--notch-ear) var(--notch-shadow-room) var(--notch-ear) 0; }
 #island-root[data-placement="right"] { padding: var(--notch-ear) 0 var(--notch-ear) var(--notch-shadow-room); }
 
+/* 2. Notch ---------------------------------------------------------------------------- */
 .island-notch {
   position: relative;
   flex: none;
@@ -59,10 +82,38 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 .island-notch[data-mode="alert"] { --radius: 22px; cursor: pointer; }
 .island-notch[data-mode="expanded"] { --radius: 30px; }
 
-/* Calm and asleep, Tiki stays quiet: barely a glow. A reminder makes it glow stronger. */
+[data-placement="top"] .island-notch { border-radius: 0 0 var(--radius) var(--radius); }
+[data-placement="bottom"] .island-notch { border-radius: var(--radius) var(--radius) 0 0; }
+[data-placement="left"] .island-notch { border-radius: 0 var(--radius) var(--radius) 0; }
+[data-placement="right"] .island-notch { border-radius: var(--radius) 0 0 var(--radius); }
+
+/* The notch grows from its screen edge, so it never leaves it while it bounces. */
+[data-placement="top"] .island-notch { transform-origin: top center; }
+[data-placement="bottom"] .island-notch { transform-origin: bottom center; }
+[data-placement="left"] .island-notch { transform-origin: center left; }
+[data-placement="right"] .island-notch { transform-origin: center right; }
+
+/* Calm and asleep, Tiki stays quiet: barely a glow. An alert glows stronger (section 4). */
 .island-notch[data-mood="calm"] { --mood-glow-mix: 22%; }
 .island-notch[data-mood="sleep"] { --notch-glow: 0 0 0 transparent; }
-.island-notch[data-mode="alert"] { --notch-glow: 0 8px 18px -6px color-mix(in srgb, var(--mood-color) 70%, transparent); }
+
+/* Ears: the corner touching both the edge and the notch is filled, the rest is a curve. */
+.island-ear {
+  position: absolute;
+  width: var(--notch-ear);
+  height: var(--notch-ear);
+  pointer-events: none;
+  --ear-curve: transparent calc(var(--notch-ear) - 0.5px), var(--island-notch) var(--notch-ear);
+}
+
+[data-placement="top"] .island-ear-start { left: calc(-1 * var(--notch-ear)); top: 0; background: radial-gradient(circle at 0 100%, var(--ear-curve)); }
+[data-placement="top"] .island-ear-end { right: calc(-1 * var(--notch-ear)); top: 0; background: radial-gradient(circle at 100% 100%, var(--ear-curve)); }
+[data-placement="bottom"] .island-ear-start { left: calc(-1 * var(--notch-ear)); bottom: 0; background: radial-gradient(circle at 0 0, var(--ear-curve)); }
+[data-placement="bottom"] .island-ear-end { right: calc(-1 * var(--notch-ear)); bottom: 0; background: radial-gradient(circle at 100% 0, var(--ear-curve)); }
+[data-placement="left"] .island-ear-start { top: calc(-1 * var(--notch-ear)); left: 0; background: radial-gradient(circle at 100% 0, var(--ear-curve)); }
+[data-placement="left"] .island-ear-end { bottom: calc(-1 * var(--notch-ear)); left: 0; background: radial-gradient(circle at 100% 100%, var(--ear-curve)); }
+[data-placement="right"] .island-ear-start { top: calc(-1 * var(--notch-ear)); right: 0; background: radial-gradient(circle at 0 0, var(--ear-curve)); }
+[data-placement="right"] .island-ear-end { bottom: calc(-1 * var(--notch-ear)); right: 0; background: radial-gradient(circle at 0 100%, var(--ear-curve)); }
 
 /*
  * Clips the content to the rounded notch while the ears stay outside it. The old and new
@@ -100,29 +151,10 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   animation: island-content-out var(--island-content-out-duration) var(--ease-in-out) forwards;
 }
 
-[data-placement="top"] .island-notch { border-radius: 0 0 var(--radius) var(--radius); }
-[data-placement="bottom"] .island-notch { border-radius: var(--radius) var(--radius) 0 0; }
-[data-placement="left"] .island-notch { border-radius: 0 var(--radius) var(--radius) 0; }
-[data-placement="right"] .island-notch { border-radius: var(--radius) 0 0 var(--radius); }
+@keyframes island-content-in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes island-content-out { to { opacity: 0; transform: scale(0.98); } }
 
-/* Ears: the corner touching both the edge and the notch is filled, the rest is a curve. */
-.island-ear {
-  position: absolute;
-  width: var(--notch-ear);
-  height: var(--notch-ear);
-  pointer-events: none;
-  --ear-curve: transparent calc(var(--notch-ear) - 0.5px), var(--island-notch) var(--notch-ear);
-}
-
-[data-placement="top"] .island-ear-start { left: calc(-1 * var(--notch-ear)); top: 0; background: radial-gradient(circle at 0 100%, var(--ear-curve)); }
-[data-placement="top"] .island-ear-end { right: calc(-1 * var(--notch-ear)); top: 0; background: radial-gradient(circle at 100% 100%, var(--ear-curve)); }
-[data-placement="bottom"] .island-ear-start { left: calc(-1 * var(--notch-ear)); bottom: 0; background: radial-gradient(circle at 0 0, var(--ear-curve)); }
-[data-placement="bottom"] .island-ear-end { right: calc(-1 * var(--notch-ear)); bottom: 0; background: radial-gradient(circle at 100% 0, var(--ear-curve)); }
-[data-placement="left"] .island-ear-start { top: calc(-1 * var(--notch-ear)); left: 0; background: radial-gradient(circle at 100% 0, var(--ear-curve)); }
-[data-placement="left"] .island-ear-end { bottom: calc(-1 * var(--notch-ear)); left: 0; background: radial-gradient(circle at 100% 100%, var(--ear-curve)); }
-[data-placement="right"] .island-ear-start { top: calc(-1 * var(--notch-ear)); right: 0; background: radial-gradient(circle at 0 0, var(--ear-curve)); }
-[data-placement="right"] .island-ear-end { bottom: calc(-1 * var(--notch-ear)); right: 0; background: radial-gradient(circle at 0 100%, var(--ear-curve)); }
-
+/* 3. Folded notch --------------------------------------------------------------------- */
 /* Hidden: a small notch always in sight; with pending work it also shows the day's summary. */
 .notch-hidden {
   display: grid;
@@ -176,205 +208,6 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   color: color-mix(in srgb, var(--mood-color) var(--mood-ink-mix), var(--island-text));
 }
 
-/* Expanded: header with tabs and actions, then a card. */
-.island-expanded {
-  width: var(--notch-expanded-width);
-  padding-bottom: 10px;
-}
-
-.island-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: var(--notch-head-height);
-  padding: 0 12px 0 14px;
-  color: var(--island-muted);
-}
-
-.island-head-spacer { flex: 1; }
-
-.island-head-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--island-text);
-  font-size: var(--text-lg);
-}
-
-.island-tabs {
-  display: flex;
-  gap: 2px;
-}
-
-.island-tab {
-  padding: 5px 12px;
-  border: 0;
-  border-radius: var(--radius-lg);
-  background: transparent;
-  color: var(--island-muted);
-  font: 600 var(--text-md) var(--font-body);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.island-tab:hover { color: var(--island-text); }
-.island-tab-on { background: var(--island-active); color: var(--island-text); }
-
-.island-card {
-  position: relative;
-  display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
-  margin: 0 10px;
-  overflow: hidden;
-  border: 1px solid var(--island-card-edge);
-  border-radius: var(--radius-xl);
-  background: var(--island-card);
-  --wash: color-mix(in srgb, var(--mood-color) 20%, transparent);
-}
-
-.island-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(120% 90% at 50% 130%, var(--wash), transparent 70%);
-  opacity: var(--island-wash-strength);
-}
-
-.island-card[data-mood="calm"],
-.island-card[data-mood="sleep"] { --wash: transparent; }
-
-.island-card-mascot {
-  display: flex;
-  justify-content: center;
-  padding-top: 18px;
-  line-height: 0;
-}
-
-.island-card-body {
-  position: relative;
-  min-width: 0;
-  padding: 14px 16px 14px 0;
-}
-
-.island-subtitle {
-  margin: 0 0 4px;
-  font-size: var(--text-sm);
-  color: var(--island-muted);
-}
-
-.island-list {
-  display: grid;
-  gap: 1px;
-  max-height: 340px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--island-soft) transparent;
-}
-
-.island-group {
-  padding: 10px 6px 2px;
-  font: 600 var(--text-label) var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--island-faint);
-}
-
-.island-row {
-  display: grid;
-  grid-template-columns: 4px minmax(0, 1fr) auto 28px;
-  gap: 10px;
-  align-items: center;
-  padding: 7px 6px;
-  border-radius: var(--radius-md);
-}
-
-.island-row:hover { background: var(--island-soft); }
-
-.island-row-bar {
-  width: 4px;
-  height: 30px;
-  border-radius: 2px;
-}
-
-.island-row-text { font-size: var(--text-lg); }
-
-.island-row-text small {
-  display: block;
-  margin-top: 1px;
-  font-size: var(--text-xs);
-  color: var(--island-muted);
-}
-
-.island-row-done { opacity: 0; }
-.island-row:hover .island-row-done,
-.island-row-done:focus-visible { opacity: 1; }
-.island-row-done:hover { color: var(--good); }
-
-.island-when {
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  font: 600 var(--text-2xs) var(--font-mono);
-  white-space: nowrap;
-}
-
-.island-when-critical { background: var(--urgency-critical-background); color: var(--urgency-critical-text); }
-.island-when-soon { background: var(--urgency-soon-background); color: var(--urgency-soon-text); }
-.island-when-waiting { background: var(--urgency-waiting-background); color: var(--urgency-waiting-text); }
-.island-when-normal { background: var(--urgency-normal-background); color: var(--urgency-normal-text); }
-
-.island-empty,
-.island-hint {
-  margin: 0;
-  padding: 10px 6px 4px;
-  font-size: var(--text-sm);
-  color: var(--island-muted);
-}
-
-/* Quick capture */
-.capture {
-  display: grid;
-  gap: 10px;
-}
-
-.capture-input {
-  padding: 11px 14px;
-  border: 1px solid var(--island-card-edge);
-  border-radius: var(--radius-lg);
-  background: var(--island-soft);
-  color: var(--island-text);
-  font: 14px var(--font-body);
-  outline: none;
-}
-
-.capture-input:focus { border-color: var(--island-muted); }
-
-/* Settings */
-.settings {
-  display: grid;
-  gap: 14px;
-}
-
-.settings-screen {
-  position: relative;
-  width: 30px;
-  height: 20px;
-  border: 1.5px solid currentColor;
-  border-radius: 4px;
-  opacity: 0.8;
-}
-
-.settings-screen-island {
-  position: absolute;
-  background: currentColor;
-  border-radius: 2px;
-}
-
-.settings-screen-top { top: 0; left: 9px; width: 12px; height: 4px; }
-.settings-screen-bottom { bottom: 0; left: 9px; width: 12px; height: 4px; }
-.settings-screen-left { left: 0; top: 5px; width: 4px; height: 10px; }
-.settings-screen-right { right: 0; top: 5px; width: 4px; height: 10px; }
-
 /* Count bubbles: used instead of the text summary on the left and right edges. */
 .notch-counts {
   display: none;
@@ -399,78 +232,28 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 [data-mood="worried"] .notch-count-due { background: var(--urgency-critical-background); color: var(--urgency-critical-text); }
 .notch-count-waiting { background: var(--urgency-waiting-background); color: var(--urgency-waiting-text); }
 
-/*
- * Left and right edges: the island is a column. The folded notch stacks Tiki and the count
- * bubbles (rotated text is hard to read at a glance), and the expanded island becomes a
- * narrow, tall panel.
- */
-[data-orientation="vertical"] {
-  --notch-expanded-width: 380px;
+/* An alert nobody has opened yet. */
+.notch-unread {
+  position: absolute;
+  top: 7px;
+  right: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--urgency-soon-text);
+  box-shadow: 0 0 0 3px var(--urgency-soon-background);
 }
 
-[data-orientation="vertical"] .notch-hidden {
-  width: var(--notch-hidden-thickness);
-  height: var(--notch-hidden-length);
+@media (prefers-reduced-motion: no-preference) {
+  .notch-unread { animation: alert-pulse 1.8s ease-in-out infinite; }
 }
 
-[data-orientation="vertical"] .notch-hidden-busy,
-[data-orientation="vertical"] .notch-compact {
-  flex-direction: column;
-  justify-content: center;
-  height: auto;
-  min-width: 0;
-  min-height: var(--notch-hidden-length);
-  padding: 12px 0;
-  gap: 10px;
-}
+@keyframes alert-pulse { 50% { opacity: 0.45; } }
 
-[data-orientation="vertical"] .notch-compact {
-  width: var(--notch-head-height);
-}
+/* 4. Alert ---------------------------------------------------------------------------- */
+/* The notch grown a little to announce something, with Tiki bouncing in. */
+.island-notch[data-mode="alert"] { --notch-glow: 0 8px 18px -6px color-mix(in srgb, var(--mood-color) 70%, transparent); }
 
-[data-orientation="vertical"] .notch-summary {
-  display: none;
-}
-
-[data-orientation="vertical"] .notch-counts {
-  display: flex;
-}
-
-/* The mood word does not fit the narrow column (Tiki's tag already says it): a status dot. */
-[data-orientation="vertical"] .notch-chip {
-  width: 8px;
-  height: 8px;
-  padding: 0;
-  font-size: 0;
-  background: currentColor;
-}
-
-[data-orientation="vertical"] .island-card {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-[data-orientation="vertical"] .island-card-mascot {
-  padding-top: 14px;
-}
-
-[data-orientation="vertical"] .island-card-body {
-  padding: 6px 14px 14px;
-}
-
-/* The narrow island has no room for the big mascot above Settings; the notch already shows it. */
-[data-orientation="vertical"] .island-card[data-panel="settings"] .island-card-mascot {
-  display: none;
-}
-
-[data-orientation="vertical"] .island-card[data-panel="settings"] .island-card-body {
-  padding-top: 14px;
-}
-
-[data-orientation="vertical"] .island-list {
-  max-height: 420px;
-}
-
-/* Alert: the notch grown a little to show a reminder, with Tiki bouncing in. */
 .notch-alert {
   position: relative;
   display: flex;
@@ -568,8 +351,6 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
  * the screen, so it is noticed from the corner of the eye. It sits behind the notch, so it
  * never tints it, and it never takes clicks.
  */
-#island-root { position: relative; }
-
 #island-root::before {
   content: "";
   position: absolute;
@@ -591,41 +372,307 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 
 #island-root:has(> .island-notch[data-mode="alert"])::before { opacity: 1; }
 
-/* The notch grows from its screen edge, so it never leaves it while it bounces. */
-[data-placement="top"] .island-notch { transform-origin: top center; }
-[data-placement="bottom"] .island-notch { transform-origin: bottom center; }
-[data-placement="left"] .island-notch { transform-origin: center left; }
-[data-placement="right"] .island-notch { transform-origin: center right; }
-
-[data-orientation="vertical"] .notch-alert {
-  flex-direction: column;
-  justify-content: center;
-  width: var(--notch-alert-vertical-width);
-  height: auto;
-  padding: 14px 12px;
-  text-align: center;
+@media (prefers-reduced-motion: no-preference) {
+  #island-root:has(> .island-notch[data-mode="alert"])::before { animation: alert-aura 2.4s ease-in-out infinite; }
+  .island-notch[data-mode="alert"] { animation: alert-arrive 0.7s var(--ease-out); }
+  .notch-alert-face::before { animation: alert-ripple 1.6s var(--ease-out) 3; }
+  .notch-alert-face::after { animation: alert-ripple 1.6s var(--ease-out) 0.5s 3; }
+  .notch-alert-countdown::after { animation: alert-countdown var(--alert-duration) linear forwards; }
 }
 
-[data-orientation="vertical"] .notch-alert-preview {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  white-space: normal;
+@keyframes alert-aura { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+@keyframes alert-arrive { 0% { transform: scale(0.96); } 55% { transform: scale(1.03); } 100% { transform: none; } }
+@keyframes alert-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
+@keyframes alert-countdown { to { transform: scaleX(0); } }
+
+/* 5. Expanded island ------------------------------------------------------------------ */
+/* Header with tabs and actions, then a card. */
+.island-expanded {
+  width: var(--notch-expanded-width);
+  padding-bottom: 10px;
 }
 
-/* A reminder nobody has opened yet. */
-.notch-unread {
+.island-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--notch-head-height);
+  padding: 0 12px 0 14px;
+  color: var(--island-muted);
+}
+
+.island-head-spacer { flex: 1; }
+
+.island-head-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--island-text);
+  font-size: var(--text-lg);
+}
+
+.island-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.island-tab {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--island-muted);
+  font: 600 var(--text-md) var(--font-body);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.island-tab:hover { color: var(--island-text); }
+.island-tab-on { background: var(--island-active); color: var(--island-text); }
+
+.island-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  margin: 0 10px;
+  overflow: hidden;
+  border: 1px solid var(--island-card-edge);
+  border-radius: var(--radius-xl);
+  background: var(--island-card);
+  --wash: color-mix(in srgb, var(--mood-color) 20%, transparent);
+}
+
+.island-card::before {
+  content: "";
   position: absolute;
-  top: 7px;
-  right: 9px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--urgency-soon-text);
-  box-shadow: 0 0 0 3px var(--urgency-soon-background);
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 130%, var(--wash), transparent 70%);
+  opacity: var(--island-wash-strength);
 }
 
-/* The latest reminder, above the Today list. */
+.island-card[data-mood="calm"],
+.island-card[data-mood="sleep"] { --wash: transparent; }
+
+.island-card-mascot {
+  display: flex;
+  justify-content: center;
+  padding-top: 18px;
+  line-height: 0;
+}
+
+.island-card-body {
+  position: relative;
+  min-width: 0;
+  padding: 14px 16px 14px 0;
+}
+
+/* Tasks tab, project panel and receipt use the whole card: no big mascot beside them. */
+.island-card[data-tab="all_tasks"][data-panel="tasks"],
+.island-card[data-panel="projects"],
+.island-card[data-panel="brief"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.island-card[data-tab="all_tasks"][data-panel="tasks"] .island-card-mascot,
+.island-card[data-panel="projects"] .island-card-mascot,
+.island-card[data-panel="brief"] .island-card-mascot {
+  display: none;
+}
+
+/* Cards without the big mascot keep the same margin on both sides. */
+.island-card[data-tab="all_tasks"][data-panel="tasks"] .island-card-body,
+.island-card[data-panel="projects"] .island-card-body,
+.island-card[data-panel="brief"] .island-card-body {
+  padding: 14px 16px;
+}
+
+/* 6. Lists and rows ------------------------------------------------------------------- */
+.island-list {
+  display: grid;
+  gap: 1px;
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--island-soft) transparent;
+}
+
+.island-group {
+  padding: 10px 6px 2px;
+  font: 600 var(--text-label) var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--island-faint);
+}
+
+.island-row {
+  display: grid;
+  grid-template-columns: 4px minmax(0, 1fr) auto 28px;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 6px;
+  border-radius: var(--radius-md);
+}
+
+.island-row:hover { background: var(--island-soft); }
+
+.island-row-bar {
+  width: 4px;
+  height: 30px;
+  border-radius: 2px;
+}
+
+/* The title opens the item; its context (project, #tags) goes under it. */
+.island-row-text { font-size: var(--text-lg); }
+
+button.island-row-text {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-lg);
+  text-align: left;
+  cursor: pointer;
+}
+
+.island-row-text small {
+  display: block;
+  margin-top: 1px;
+  font-size: var(--text-xs);
+  color: var(--island-muted);
+}
+
+/* Priority marks before a title: "!!" urgent, "!" important. */
+.island-priority {
+  margin-right: 6px;
+  font: 800 var(--text-sm) var(--font-mono);
+}
+
+.island-priority-urgent { color: var(--urgency-critical-text); }
+.island-priority-high { color: var(--urgency-soon-text); }
+
+/* The check that delivers an item shows on hover. */
+.island-row-done { opacity: 0; }
+.island-row:hover .island-row-done,
+.island-row-done:focus-visible { opacity: 1; }
+.island-row-done:hover { color: var(--good); }
+
+/* When the item is due, colored by its urgency. */
+.island-when {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font: 600 var(--text-2xs) var(--font-mono);
+  white-space: nowrap;
+}
+
+.island-when-critical { background: var(--urgency-critical-background); color: var(--urgency-critical-text); }
+.island-when-soon { background: var(--urgency-soon-background); color: var(--urgency-soon-text); }
+.island-when-waiting { background: var(--urgency-waiting-background); color: var(--urgency-waiting-text); }
+.island-when-normal { background: var(--urgency-normal-background); color: var(--urgency-normal-text); }
+/* Standalone reminders: a teal time label, apart from work urgency. */
+.island-when-reminder { background: var(--kind-instance-background); color: var(--kind-instance-text); }
+.island-when-done { background: var(--good-background); color: var(--good); }
+
+/* A delivered task: muted title and a check instead of the deliver button. */
+.island-row-delivered .island-row-text { color: var(--island-muted); }
+
+.island-row-check {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  color: var(--good);
+}
+
+.island-row-check svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+.island-empty,
+.island-hint {
+  margin: 0;
+  padding: 10px 6px 4px;
+  font-size: var(--text-sm);
+  color: var(--island-muted);
+}
+
+/* 7. Today ---------------------------------------------------------------------------- */
+.island-subtitle {
+  margin: 0 0 4px;
+  font-size: var(--text-sm);
+  color: var(--island-muted);
+}
+
+/* "Now: do X" on top of Today. */
+.island-focus {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  margin: 4px 0 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: var(--radius-md);
+  background: var(--island-active);
+  color: var(--island-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.island-focus:hover { background: var(--island-soft-hover); }
+
+.island-focus-label {
+  font: 600 var(--text-label) var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--urgency-soon-text);
+}
+
+.island-focus strong { font-size: var(--text-lg); }
+.island-focus small { font-size: var(--text-xs); color: var(--island-muted); }
+
+/* One summary card: the latest alert with its buttons, or the AI brief. */
+.island-summary,
+.island-notice-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--island-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.island-summary {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--island-soft);
+  font-size: var(--text-md);
+  line-height: 1.45;
+}
+
+.island-summary-preparing { color: var(--island-muted); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .island-summary-preparing { animation: capture-thinking 1.2s ease-in-out infinite alternate; }
+}
+
+/* The button that asks the AI to write the brief. */
+.island-summary-prepare {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border: 1px dashed var(--island-card-edge);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--island-muted);
+  font: 600 var(--text-sm) var(--font-body);
+  cursor: pointer;
+}
+
+.island-summary-prepare:hover { color: var(--island-text); background: var(--island-soft); }
+
+/* The latest alert, above the Today list, with its buttons (done, snooze, join). */
 .island-notice {
   margin: 4px 0 8px;
   padding: 9px 12px;
@@ -643,142 +690,29 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   white-space: pre-line;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  #island-root:has(> .island-notch[data-mode="alert"])::before { animation: alert-aura 2.4s ease-in-out infinite; }
-  .island-notch[data-mode="alert"] { animation: alert-arrive 0.7s var(--ease-out); }
-  .notch-alert-face::before { animation: alert-ripple 1.6s var(--ease-out) 3; }
-  .notch-alert-face::after { animation: alert-ripple 1.6s var(--ease-out) 0.5s 3; }
-  .notch-alert-countdown::after { animation: alert-countdown var(--alert-duration) linear forwards; }
-  .notch-unread { animation: alert-pulse 1.8s ease-in-out infinite; }
+.island-notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
 }
 
-@keyframes alert-pulse { 50% { opacity: 0.45; } }
-@keyframes alert-aura { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
-@keyframes alert-arrive { 0% { transform: scale(0.96); } 55% { transform: scale(1.03); } 100% { transform: none; } }
-@keyframes alert-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
-@keyframes alert-countdown { to { transform: scaleX(0); } }
-
-@media (prefers-reduced-motion: reduce) {
-  .island-notch { transition: none; }
-  .island-content-entering,
-  .island-content-leaving { animation: none; }
-}
-
-@keyframes island-content-in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: none; } }
-@keyframes island-content-out { to { opacity: 0; transform: scale(0.98); } }
-
-/* Task editing */
-button.island-row-text {
-  padding: 0;
-  border: none;
-  background: none;
-  color: inherit;
-  font: inherit;
-  font-size: var(--text-lg);
+/* "Delivered today" at the end of Today. */
+.island-delivered-link {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--good);
+  font: 600 var(--text-sm) var(--font-body);
   text-align: left;
   cursor: pointer;
 }
 
-.edit-form {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 10px;
-  max-height: 400px;
-  overflow-y: auto;
-}
+.island-delivered-link:hover { background: var(--island-soft); }
 
-.edit-field {
-  display: grid;
-  gap: 4px;
-  font-size: var(--text-xs);
-  color: var(--island-muted);
-}
-
-.edit-field-wide { grid-column: 1 / -1; }
-
-.edit-notes {
-  resize: none;
-  padding: 7px 12px;
-  border: 1px solid var(--island-card-edge);
-  border-radius: var(--radius-md);
-  background: var(--island-soft);
-  color: var(--island-text);
-  font: var(--text-md) var(--font-body);
-  outline: none;
-}
-
-.edit-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-[data-orientation="vertical"] .edit-form { grid-template-columns: minmax(0, 1fr); }
-
-/* Ask Tiki */
-@keyframes capture-thinking {
-  from { opacity: 0.45; }
-  to { opacity: 1; }
-}
-
-.ask-answer {
-  margin: 0;
-  min-height: 20px;
-  font-size: var(--text-lg);
-  line-height: 1.45;
-  color: var(--island-text);
-  white-space: pre-line;
-}
-
-/* Link from the island settings to the advanced settings window. */
-.settings-advanced {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--island-card-edge);
-  border-radius: var(--radius-lg);
-  background: var(--island-soft);
-  color: var(--island-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.settings-advanced:hover { background: var(--island-soft-hover); }
-
-.settings-advanced-text { display: grid; flex: 1; gap: 1px; }
-.settings-advanced-text strong { font-size: var(--text-lg); font-weight: 600; }
-.settings-advanced-text small { font-size: var(--text-xs); color: var(--island-muted); }
-
-.settings-advanced-icon svg,
-.settings-advanced-arrow svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.settings-advanced-arrow { color: var(--island-muted); }
-
-/* Tasks tab, project panel and receipt use the whole card: no big mascot beside them. */
-.island-card[data-tab="all_tasks"][data-panel="tasks"],
-.island-card[data-panel="projects"],
-.island-card[data-panel="brief"] {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.island-card[data-tab="all_tasks"][data-panel="tasks"] .island-card-mascot,
-.island-card[data-panel="projects"] .island-card-mascot,
-.island-card[data-panel="brief"] .island-card-mascot {
-  display: none;
-}
-
-/* Tasks tab */
+/* 8. Tasks tab ------------------------------------------------------------------------ */
 .tasks-tab { display: grid; gap: 10px; }
 
 .tasks-toolbar {
@@ -787,9 +721,6 @@ button.island-row-text {
   gap: 8px;
   align-items: center;
 }
-
-[data-orientation="vertical"] .tasks-toolbar { grid-template-columns: minmax(0, 1fr) auto; }
-[data-orientation="vertical"] .tasks-search-box { grid-column: 1 / -1; }
 
 .tasks-search-box {
   position: relative;
@@ -819,6 +750,7 @@ button.island-row-text {
 .tasks-search { width: 100%; padding-left: 32px; }
 .tasks-search::-webkit-search-cancel-button { filter: grayscale(1); opacity: 0.6; }
 
+/* A two-way toggle (pending or delivered; task or reminder in quick capture). */
 .tasks-toggle {
   display: inline-flex;
   padding: 3px;
@@ -839,7 +771,6 @@ button.island-row-text {
 .tasks-toggle-on { background: var(--island-active); color: var(--island-text); }
 
 .tasks-list { max-height: 330px; }
-[data-orientation="vertical"] .tasks-list { max-height: 440px; }
 
 .tasks-group {
   display: flex;
@@ -850,19 +781,27 @@ button.island-row-text {
 .tasks-group-dot { width: 7px; height: 7px; border-radius: 50%; }
 .tasks-group-count { margin-left: auto; font-weight: 500; }
 
-.island-when-done { background: var(--good-background); color: var(--good); }
-.island-row-delivered .island-row-text { color: var(--island-muted); }
+/* 9. Agenda --------------------------------------------------------------------------- */
+/* Reminders and meetings by day, with their time first and a bell or a calendar. */
+.agenda-row { grid-template-columns: 80px minmax(0, 1fr) auto 28px; }
+.agenda-meeting { grid-template-columns: 80px minmax(0, 1fr) auto auto; }
 
-.island-row-check {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  color: var(--good);
+.agenda-join {
+  padding: 3px 10px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--good);
+  color: var(--on-good);
+  font: 600 var(--text-2xs) var(--font-body);
+  cursor: pointer;
 }
 
-.island-row-check svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+.agenda-join:hover { filter: brightness(1.1); }
+.agenda-time { font: 600 var(--text-sm) var(--font-mono); color: var(--kind-instance-text); }
+.agenda-bell { display: flex; color: var(--island-faint); }
+.agenda-bell svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
 
-/* Project picker: a button with a searchable list under it. */
+/* 10. Project picker ------------------------------------------------------------------ */
 .picker { position: relative; }
 
 .picker-trigger {
@@ -882,6 +821,10 @@ button.island-row-text {
 .picker-trigger:hover { background: var(--island-soft-hover); }
 .picker-chevron { display: flex; color: var(--island-muted); }
 .picker-open .picker-chevron { transform: rotate(180deg); }
+
+/* The picker's arrow sits at the far right, whatever the label's length. */
+.picker-trigger .picker-label { flex: 1; text-align: left; }
+.picker-trigger .picker-chevron { margin-left: auto; }
 
 .picker-label {
   overflow: hidden;
@@ -922,7 +865,6 @@ button.island-row-text {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
 }
 
-.edit-field .picker-popover { left: 0; right: auto; }
 .picker-popover[hidden] { display: none; }
 
 .picker-list {
@@ -951,6 +893,9 @@ button.island-row-text {
 .picker-option-on { background: var(--island-active); }
 .picker-empty { margin: 6px 8px; font-size: var(--text-sm); color: var(--island-muted); }
 
+/* "Create project …" when the typed name is new. */
+.picker-create { color: var(--good); font-weight: 600; }
+
 .picker-footer {
   display: grid;
   border-top: 1px solid var(--island-card-edge);
@@ -971,9 +916,12 @@ button.island-row-text {
 }
 
 .picker-action:hover { background: var(--island-soft); color: var(--island-text); }
-.edit-field .picker-trigger { max-width: none; width: 100%; box-sizing: border-box; }
 
-/* Project panel */
+/* Inside a form, the picker fills its field and opens to the right. */
+.edit-field .picker-trigger { max-width: none; width: 100%; box-sizing: border-box; }
+.edit-field .picker-popover { left: 0; right: auto; }
+
+/* 11. Project panel ------------------------------------------------------------------- */
 .projects-panel { display: grid; gap: 10px; }
 .projects-new { margin-top: 0; }
 .projects-list { max-height: 330px; gap: 2px; }
@@ -1018,21 +966,186 @@ button.island-row-text {
   cursor: pointer;
 }
 
-/* "Delivered today" at the end of Today */
-.island-delivered-link {
-  margin-top: 6px;
-  padding: 6px 8px;
+/* 12. Quick capture ------------------------------------------------------------------- */
+/* The single box: the sentence, then the fields or the answer. */
+.capture {
+  display: grid;
+  gap: 10px;
+}
+
+.capture-input {
+  padding: 11px 14px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: var(--radius-lg);
+  background: var(--island-soft);
+  color: var(--island-text);
+  font: 14px var(--font-body);
+  outline: none;
+}
+
+.capture-input:focus { border-color: var(--island-muted); }
+
+/* Task or reminder, under the box. */
+.capture-kind { justify-self: start; }
+
+/* The item's fields: filled by the AI from the sentence, or picked by the user. */
+.capture-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.capture-fields .picker-trigger { max-width: none; width: 100%; box-sizing: border-box; }
+.capture-fields .picker-popover { left: 0; right: auto; }
+
+/* The answer under the text when it was a question. */
+.capture-answer { display: grid; gap: 8px; }
+.capture-answer[hidden],
+.capture-fields[hidden],
+.capture-kind[hidden] { display: none; }
+
+.ask-answer {
+  margin: 0;
+  min-height: 20px;
+  font-size: var(--text-lg);
+  line-height: 1.45;
+  color: var(--island-text);
+  white-space: pre-line;
+}
+
+/* Actions Tiki proposes with an answer: each one waits for a click. */
+.ask-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 12px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: var(--radius-md);
+  background: var(--island-soft);
+}
+
+.ask-action-summary { flex: 1; font-size: var(--text-md); }
+.ask-action-done { border-color: var(--good-edge); }
+.ask-action-done .ask-apply { background: transparent; color: var(--good); cursor: default; }
+.ask-action-failed .ask-apply { background: var(--urgency-critical-background); color: var(--urgency-critical-text); }
+.ask-apply-all { justify-self: end; }
+
+/* The status line under the box: a hint, "Reading…", or a link to set up the AI. */
+.capture-status-thinking { animation: capture-thinking 1.2s ease-in-out infinite alternate; }
+
+.capture-ai-link {
+  padding: 0;
   border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--good);
-  font: 600 var(--text-sm) var(--font-body);
+  background: none;
+  color: var(--island-text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@keyframes capture-thinking {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+
+/* 13. Task editing -------------------------------------------------------------------- */
+.edit-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.edit-field {
+  display: grid;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--island-muted);
+}
+
+.edit-field-wide { grid-column: 1 / -1; }
+
+.edit-notes {
+  resize: none;
+  padding: 7px 12px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: var(--radius-md);
+  background: var(--island-soft);
+  color: var(--island-text);
+  font: var(--text-md) var(--font-body);
+  outline: none;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* 14. Settings ------------------------------------------------------------------------ */
+.settings {
+  display: grid;
+  gap: 14px;
+}
+
+/* A tiny screen with the island on the chosen edge, on each placement option. */
+.settings-screen {
+  position: relative;
+  width: 30px;
+  height: 20px;
+  border: 1.5px solid currentColor;
+  border-radius: 4px;
+  opacity: 0.8;
+}
+
+.settings-screen-island {
+  position: absolute;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+.settings-screen-top { top: 0; left: 9px; width: 12px; height: 4px; }
+.settings-screen-bottom { bottom: 0; left: 9px; width: 12px; height: 4px; }
+.settings-screen-left { left: 0; top: 5px; width: 4px; height: 10px; }
+.settings-screen-right { right: 0; top: 5px; width: 4px; height: 10px; }
+
+/* Link from the island settings to the advanced settings window. */
+.settings-advanced {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: var(--radius-lg);
+  background: var(--island-soft);
+  color: var(--island-text);
+  font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.island-delivered-link:hover { background: var(--island-soft); }
+.settings-advanced:hover { background: var(--island-soft-hover); }
 
+.settings-advanced-text { display: grid; flex: 1; gap: 1px; }
+.settings-advanced-text strong { font-size: var(--text-lg); font-weight: 600; }
+.settings-advanced-text small { font-size: var(--text-xs); color: var(--island-muted); }
+
+.settings-advanced-icon svg,
+.settings-advanced-arrow svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.settings-advanced-arrow { color: var(--island-muted); }
+
+/* 15. Receipt ------------------------------------------------------------------------- */
 /* The brief as a receipt, as in the design: dashed blocks, a suggestion and the totals. */
 .receipt {
   max-height: 400px;
@@ -1101,173 +1214,106 @@ button.island-row-text {
   text-align: center;
 }
 
-/* Four tabs and four actions fit the narrow island with tighter spacing. */
+/* 16. Left and right edges ------------------------------------------------------------ */
+/*
+ * The island is a column. The folded notch stacks Tiki and the count bubbles (rotated text
+ * is hard to read at a glance), and the expanded island becomes a narrow, tall panel.
+ */
+[data-orientation="vertical"] {
+  --notch-expanded-width: 380px;
+}
+
+[data-orientation="vertical"] .notch-hidden {
+  width: var(--notch-hidden-thickness);
+  height: var(--notch-hidden-length);
+}
+
+[data-orientation="vertical"] .notch-hidden-busy,
+[data-orientation="vertical"] .notch-compact {
+  flex-direction: column;
+  justify-content: center;
+  height: auto;
+  min-width: 0;
+  min-height: var(--notch-hidden-length);
+  padding: 12px 0;
+  gap: 10px;
+}
+
+[data-orientation="vertical"] .notch-compact {
+  width: var(--notch-head-height);
+}
+
+[data-orientation="vertical"] .notch-summary {
+  display: none;
+}
+
+[data-orientation="vertical"] .notch-counts {
+  display: flex;
+}
+
+/* The mood word does not fit the narrow column (Tiki's face already says it): a status dot. */
+[data-orientation="vertical"] .notch-chip {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  font-size: 0;
+  background: currentColor;
+}
+
+[data-orientation="vertical"] .notch-alert {
+  flex-direction: column;
+  justify-content: center;
+  width: var(--notch-alert-vertical-width);
+  height: auto;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+[data-orientation="vertical"] .notch-alert-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+}
+
+/* The tabs and the three actions fit the narrow island with tighter spacing. */
 [data-orientation="vertical"] .island-head { gap: 2px; padding: 0 8px 0 10px; }
 [data-orientation="vertical"] .island-tab { padding: 5px 7px; }
 
-/* Quick capture fields: filled by the AI from the sentence, or picked by the user. */
-.capture-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 10px;
+[data-orientation="vertical"] .island-card {
+  grid-template-columns: minmax(0, 1fr);
 }
 
+[data-orientation="vertical"] .island-card-mascot {
+  padding-top: 14px;
+}
+
+[data-orientation="vertical"] .island-card-body {
+  padding: 6px 14px 14px;
+}
+
+/* The narrow island has no room for the big mascot above Settings; the notch already shows it. */
+[data-orientation="vertical"] .island-card[data-panel="settings"] .island-card-mascot {
+  display: none;
+}
+
+[data-orientation="vertical"] .island-card[data-panel="settings"] .island-card-body {
+  padding-top: 14px;
+}
+
+[data-orientation="vertical"] .island-list {
+  max-height: 420px;
+}
+
+[data-orientation="vertical"] .tasks-toolbar { grid-template-columns: minmax(0, 1fr) auto; }
+[data-orientation="vertical"] .tasks-search-box { grid-column: 1 / -1; }
+[data-orientation="vertical"] .tasks-list { max-height: 440px; }
 [data-orientation="vertical"] .capture-fields { grid-template-columns: minmax(0, 1fr); }
-.capture-fields .picker-trigger { max-width: none; width: 100%; box-sizing: border-box; }
-.capture-fields .picker-popover { left: 0; right: auto; }
-.capture-status-thinking { animation: capture-thinking 1.2s ease-in-out infinite alternate; }
+[data-orientation="vertical"] .edit-form { grid-template-columns: minmax(0, 1fr); }
 
-.capture-ai-link {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--island-text);
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
+/* 17. Reduced motion ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .island-notch { transition: none; }
+  .island-content-entering,
+  .island-content-leaving { animation: none; }
 }
-
-/* Cards without the big mascot keep the same margin on both sides. */
-.island-card[data-tab="all_tasks"][data-panel="tasks"] .island-card-body,
-.island-card[data-panel="projects"] .island-card-body,
-.island-card[data-panel="brief"] .island-card-body {
-  padding: 14px 16px;
-}
-
-/* The picker's arrow sits at the far right, whatever the label's length. */
-.picker-trigger .picker-label { flex: 1; text-align: left; }
-.picker-trigger .picker-chevron { margin-left: auto; }
-
-/* Standalone reminders: a teal time label, apart from work urgency. */
-.island-when-reminder { background: var(--kind-instance-background); color: var(--kind-instance-text); }
-
-/* Task or reminder, at the top of quick capture. */
-.capture-kind { justify-self: start; }
-
-/* Actions Tiki proposes in Ask Tiki: each one waits for a click. */
-.ask-action {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px 8px 12px;
-  border: 1px solid var(--island-card-edge);
-  border-radius: var(--radius-md);
-  background: var(--island-soft);
-}
-
-.ask-action-summary { flex: 1; font-size: var(--text-md); }
-.ask-action-done { border-color: var(--good-edge); }
-.ask-action-done .ask-apply { background: transparent; color: var(--good); cursor: default; }
-.ask-action-failed .ask-apply { background: var(--urgency-critical-background); color: var(--urgency-critical-text); }
-.ask-apply-all { justify-self: end; }
-
-/* Priority marks before a title: "!!" urgent, "!" important. */
-.island-priority {
-  margin-right: 6px;
-  font: 800 var(--text-sm) var(--font-mono);
-}
-
-.island-priority-urgent { color: var(--urgency-critical-text); }
-.island-priority-high { color: var(--urgency-soon-text); }
-
-/* "Now: do X" on top of Today. */
-.island-focus {
-  display: grid;
-  gap: 2px;
-  width: 100%;
-  margin: 4px 0 8px;
-  padding: 9px 12px;
-  border: 1px solid var(--island-card-edge);
-  border-radius: var(--radius-md);
-  background: var(--island-active);
-  color: var(--island-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.island-focus:hover { background: var(--island-soft-hover); }
-
-.island-focus-label {
-  font: 600 var(--text-label) var(--font-mono);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--urgency-soon-text);
-}
-
-.island-focus strong { font-size: var(--text-lg); }
-.island-focus small { font-size: var(--text-xs); color: var(--island-muted); }
-
-/* One summary card: the latest alert with its buttons, or the AI brief. */
-.island-summary,
-.island-notice-open {
-  display: block;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--island-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.island-summary {
-  margin: 0 0 8px;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  background: var(--island-soft);
-  font-size: var(--text-md);
-  line-height: 1.45;
-}
-
-.island-summary-preparing { color: var(--island-muted); }
-
-@media (prefers-reduced-motion: no-preference) {
-  .island-summary-preparing { animation: capture-thinking 1.2s ease-in-out infinite alternate; }
-}
-
-.island-notice-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.island-summary-prepare {
-  margin: 0 0 8px;
-  padding: 6px 10px;
-  border: 1px dashed var(--island-card-edge);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--island-muted);
-  font: 600 var(--text-sm) var(--font-body);
-  cursor: pointer;
-}
-
-.island-summary-prepare:hover { color: var(--island-text); background: var(--island-soft); }
-
-/* The single box: the answer under the text when it was a question. */
-.capture-answer { display: grid; gap: 8px; }
-.capture-answer[hidden],
-.capture-fields[hidden],
-.capture-kind[hidden] { display: none; }
-
-.picker-create { color: var(--good); font-weight: 600; }
-
-/* Agenda: reminders and meetings by day, with their time first and a bell or a calendar. */
-.agenda-row { grid-template-columns: 80px minmax(0, 1fr) auto 28px; }
-.agenda-meeting { grid-template-columns: 80px minmax(0, 1fr) auto auto; }
-.agenda-join {
-  padding: 3px 10px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: var(--good);
-  color: var(--on-good);
-  font: 600 var(--text-2xs) var(--font-body);
-  cursor: pointer;
-}
-.agenda-join:hover { filter: brightness(1.1); }
-.agenda-time { font: 600 var(--text-sm) var(--font-mono); color: var(--kind-instance-text); }
-.agenda-bell { display: flex; color: var(--island-faint); }
-.agenda-bell svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
