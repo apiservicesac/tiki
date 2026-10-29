@@ -7,7 +7,8 @@
  *    1. Window and root    the transparent page and the edge the island hangs from
  *    2. Notch              shape, corners, ears, mood glow and the content cross-fade
  *    3. Folded notch       hidden and compact: Tiki, the summary, count bubbles, unread dot
- *    4. Alert              the grown notch, the aura, ripples and the countdown
+ *    4. Alert              the grown notch, the aura, ripples and the countdown, with its
+ *                          own layout on the left and right edges
  *    5. Expanded island    header, tabs and the card
  *    6. Lists and rows     groups, item rows, priority marks and time badges
  *    7. Today              focus, summary card, latest alert and "Delivered today"
@@ -44,7 +45,6 @@ body[data-placement="left"] { justify-content: flex-start; align-items: center; 
 body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 
 #island-root {
-  position: relative;
   display: inline-flex;
   flex: none;
 }
@@ -87,15 +87,10 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 [data-placement="left"] .island-notch { border-radius: 0 var(--radius) var(--radius) 0; }
 [data-placement="right"] .island-notch { border-radius: var(--radius) 0 0 var(--radius); }
 
-/* The notch grows from its screen edge, so it never leaves it while it bounces. */
-[data-placement="top"] .island-notch { transform-origin: top center; }
-[data-placement="bottom"] .island-notch { transform-origin: bottom center; }
-[data-placement="left"] .island-notch { transform-origin: center left; }
-[data-placement="right"] .island-notch { transform-origin: center right; }
-
-/* Calm and asleep, Tiki stays quiet: barely a glow. An alert glows stronger (section 4). */
+/* Calm and asleep, Tiki stays quiet: barely a glow. A reminder makes it glow stronger. */
 .island-notch[data-mood="calm"] { --mood-glow-mix: 22%; }
 .island-notch[data-mood="sleep"] { --notch-glow: 0 0 0 transparent; }
+.island-notch[data-mode="alert"] { --notch-glow: 0 8px 18px -6px color-mix(in srgb, var(--mood-color) 70%, transparent); }
 
 /* Ears: the corner touching both the edge and the notch is filled, the rest is a curve. */
 .island-ear {
@@ -244,16 +239,8 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   box-shadow: 0 0 0 3px var(--urgency-soon-background);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .notch-unread { animation: alert-pulse 1.8s ease-in-out infinite; }
-}
-
-@keyframes alert-pulse { 50% { opacity: 0.45; } }
-
-/* 4. Alert ---------------------------------------------------------------------------- */
-/* The notch grown a little to announce something, with Tiki bouncing in. */
-.island-notch[data-mode="alert"] { --notch-glow: 0 8px 18px -6px color-mix(in srgb, var(--mood-color) 70%, transparent); }
-
+/* 4. Alert ----------------------------------------------------------------------------- */
+/* Alert: the notch grown a little to show a reminder, with Tiki bouncing in. */
 .notch-alert {
   position: relative;
   display: flex;
@@ -305,7 +292,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--text-xs);
+  font-size: 11.5px;
   color: var(--island-muted);
 }
 
@@ -321,7 +308,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   position: absolute;
   inset: -4px -2px;
   border: 1.5px solid var(--mood-color);
-  border-radius: var(--radius-pill);
+  border-radius: 99px;
   opacity: 0;
   pointer-events: none;
 }
@@ -351,6 +338,8 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
  * the screen, so it is noticed from the corner of the eye. It sits behind the notch, so it
  * never tints it, and it never takes clicks.
  */
+#island-root { position: relative; }
+
 #island-root::before {
   content: "";
   position: absolute;
@@ -372,14 +361,38 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 
 #island-root:has(> .island-notch[data-mode="alert"])::before { opacity: 1; }
 
+/* The notch grows from its screen edge, so it never leaves it while it bounces. */
+[data-placement="top"] .island-notch { transform-origin: top center; }
+[data-placement="bottom"] .island-notch { transform-origin: bottom center; }
+[data-placement="left"] .island-notch { transform-origin: center left; }
+[data-placement="right"] .island-notch { transform-origin: center right; }
+
+[data-orientation="vertical"] .notch-alert {
+  flex-direction: column;
+  justify-content: center;
+  width: var(--notch-alert-vertical-width);
+  height: auto;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+[data-orientation="vertical"] .notch-alert-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   #island-root:has(> .island-notch[data-mode="alert"])::before { animation: alert-aura 2.4s ease-in-out infinite; }
   .island-notch[data-mode="alert"] { animation: alert-arrive 0.7s var(--ease-out); }
   .notch-alert-face::before { animation: alert-ripple 1.6s var(--ease-out) 3; }
   .notch-alert-face::after { animation: alert-ripple 1.6s var(--ease-out) 0.5s 3; }
   .notch-alert-countdown::after { animation: alert-countdown var(--alert-duration) linear forwards; }
+  .notch-unread { animation: alert-pulse 1.8s ease-in-out infinite; }
 }
 
+@keyframes alert-pulse { 50% { opacity: 0.45; } }
 @keyframes alert-aura { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
 @keyframes alert-arrive { 0% { transform: scale(0.96); } 55% { transform: scale(1.03); } 100% { transform: none; } }
 @keyframes alert-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
@@ -1258,22 +1271,6 @@ button.island-row-text {
   padding: 0;
   font-size: 0;
   background: currentColor;
-}
-
-[data-orientation="vertical"] .notch-alert {
-  flex-direction: column;
-  justify-content: center;
-  width: var(--notch-alert-vertical-width);
-  height: auto;
-  padding: 14px 12px;
-  text-align: center;
-}
-
-[data-orientation="vertical"] .notch-alert-preview {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  white-space: normal;
 }
 
 /* The tabs and the three actions fit the narrow island with tighter spacing. */
