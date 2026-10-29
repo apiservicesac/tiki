@@ -1,8 +1,8 @@
 use std::thread;
 
 use tauri::{AppHandle, Manager};
-use tiki_core::TikiResult;
 use tiki_core::sessions::RetentionPolicy;
+use tiki_core::{TikiError, TikiResult};
 
 use crate::app_state::AppState;
 use crate::desktop_config::DesktopConfig;
@@ -39,7 +39,7 @@ impl SessionRetention {
         let files = app.state::<SessionFiles>();
         for session in expired {
             files.remove_media(&session)?;
-            let session_id = session.id.ok_or(tiki_core::TikiError::UnsavedSession)?;
+            let session_id = session.id.ok_or(TikiError::UnsavedSession)?;
             state.with_workspace(|workspace| {
                 workspace.sessions().media_removed(session_id).map(drop)
             })?;

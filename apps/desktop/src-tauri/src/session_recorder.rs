@@ -4,6 +4,7 @@ use std::thread;
 
 use tauri::{AppHandle, Manager};
 use tiki_core::sessions::{RecordingMode, Session, SessionId};
+use tiki_core::{TikiError, TikiResult};
 use tiki_recording::audio::CaptureDevices;
 use tiki_recording::media::{MediaSink, OggOpusWriter, TrackWriter};
 use tiki_recording::pipeline::{RecordingPipeline, RecordingTracks, SystemMonotonicClock};
@@ -53,7 +54,7 @@ impl SessionRecorder {
         }
         let state = app.state::<AppState>();
         let session = state.with_workspace(|workspace| workspace.sessions().start(mode))?;
-        let session_id = session.id.ok_or(tiki_core::TikiError::UnsavedSession)?;
+        let session_id = session.id.ok_or(TikiError::UnsavedSession)?;
         let video = video.filter(|_| mode == RecordingMode::AudioAndVideo);
         // The island stays out of the video; it is set before the capture starts.
         Self::protect_island(app, video.is_some());
@@ -113,7 +114,7 @@ impl SessionRecorder {
         &self,
         app: &AppHandle,
         command: RecorderCommand,
-        change: impl FnOnce(SessionId) -> tiki_core::TikiResult<()>,
+        change: impl FnOnce(SessionId) -> TikiResult<()>,
     ) -> Result<(), RecorderError> {
         let running = self.lock();
         let running = running.as_ref().ok_or(RecorderError::NotRecording)?;
