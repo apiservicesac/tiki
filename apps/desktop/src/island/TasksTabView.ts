@@ -5,12 +5,9 @@ import { ICONS } from "../dom/iconLibrary";
 import { TagText } from "../dom/TagText";
 import { TextMatcher } from "../dom/TextMatcher";
 import type { Translator } from "../i18n/Translator";
+import { TASKS_VIEWS, type TasksView } from "./islandState";
 import { ProjectPicker } from "./ProjectPicker";
 import type { TaskListHandlers, TaskListView } from "./TaskListView";
-
-/** Pending tasks, or the delivered history. Reminders live in the Agenda. */
-export const TASKS_VIEWS = Object.freeze(["pending", "delivered"] as const);
-export type TasksView = (typeof TASKS_VIEWS)[number];
 
 export interface TasksTabData {
   /** Every open item. */

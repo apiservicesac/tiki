@@ -13,7 +13,7 @@ import {
   TASK_STATUSES,
 } from "../src/backend/contracts";
 import { UI_CONFIG } from "../src/config/uiConfig";
-import { TASKS_VIEWS } from "../src/island/TasksTabView";
+import { TASKS_VIEWS } from "../src/island/islandState";
 
 const CATALOGS = { es: spanish.messages, en: english.messages } as Record<string, Record<string, string>>;
 const KEYS = new Set(Object.keys(english.messages));

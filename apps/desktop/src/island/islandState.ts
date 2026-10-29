@@ -7,7 +7,6 @@ import type {
   TaskDetails,
   TikiAlert,
 } from "../backend/contracts";
-import type { TasksView } from "./TasksTabView";
 
 /**
  * How much of the island is visible, like the notch of dooai. `alert` is the notch grown a
@@ -21,6 +20,10 @@ export type IslandMode = (typeof ISLAND_MODES)[number];
  * a task being edited, the project list or the brief drawn as a receipt.
  */
 export type IslandPanel = "tasks" | "capture" | "settings" | "edit" | "projects" | "brief";
+
+/** Pending tasks, or the delivered history, in the Tasks tab. Reminders live in the Agenda. */
+export const TASKS_VIEWS = Object.freeze(["pending", "delivered"] as const);
+export type TasksView = (typeof TASKS_VIEWS)[number];
 
 /** Tickets join as a tab when a ticket connector arrives. */
 export type IslandTab = "today" | "all_tasks" | "agenda";
