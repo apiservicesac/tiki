@@ -405,7 +405,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 /* Header with tabs and actions, then a card. */
 .island-expanded {
   width: var(--notch-expanded-width);
-  padding-bottom: 10px;
+  padding-bottom: var(--card-bottom-gap);
 }
 
 .island-head {
@@ -415,6 +415,12 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   height: var(--notch-head-height);
   padding: 0 12px 0 14px;
   color: var(--island-muted);
+}
+
+.island-head-face {
+  display: inline-flex;
+  margin-right: 4px;
+  line-height: 0;
 }
 
 .island-head-spacer { flex: 1; }
@@ -448,8 +454,6 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 
 .island-card {
   position: relative;
-  display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
   margin: 0 10px;
   overflow: hidden;
   border: 1px solid var(--island-card-edge);
@@ -470,47 +474,24 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 .island-card[data-mood="calm"],
 .island-card[data-mood="sleep"] { --wash: transparent; }
 
-.island-card-mascot {
-  display: flex;
-  justify-content: center;
-  padding-top: 18px;
-  line-height: 0;
-}
-
+/*
+ * The card never grows past the window (the window is the viewport): what does not fit
+ * scrolls inside it, so no panel is ever cut at the bottom.
+ */
 .island-card-body {
   position: relative;
   min-width: 0;
-  padding: 14px 16px 14px 0;
-}
-
-/* Tasks tab, project panel and receipt use the whole card: no big mascot beside them. */
-.island-card[data-tab="all_tasks"][data-panel="tabs"],
-.island-card[data-panel="projects"],
-.island-card[data-panel="brief"] {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.island-card[data-tab="all_tasks"][data-panel="tabs"] .island-card-mascot,
-.island-card[data-panel="projects"] .island-card-mascot,
-.island-card[data-panel="brief"] .island-card-mascot {
-  display: none;
-}
-
-/* Cards without the big mascot keep the same margin on both sides. */
-.island-card[data-tab="all_tasks"][data-panel="tabs"] .island-card-body,
-.island-card[data-panel="projects"] .island-card-body,
-.island-card[data-panel="brief"] .island-card-body {
+  max-height: var(--card-max-height);
+  overflow-y: auto;
   padding: 14px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--island-soft) transparent;
 }
 
 /* 6. Lists and rows ------------------------------------------------------------------- */
 .island-list {
   display: grid;
   gap: 1px;
-  max-height: 340px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--island-soft) transparent;
 }
 
 .island-group {
@@ -790,7 +771,6 @@ button.island-row-text {
 
 .tasks-toggle-on { background: var(--island-active); color: var(--island-text); }
 
-.tasks-list { max-height: 330px; }
 
 .tasks-group {
   display: flex;
@@ -944,7 +924,7 @@ button.island-row-text {
 /* 11. Project panel ------------------------------------------------------------------- */
 .projects-panel { display: grid; gap: 10px; }
 .projects-new { margin-top: 0; }
-.projects-list { max-height: 330px; gap: 2px; }
+.projects-list { gap: 2px; }
 
 .project-row {
   display: flex;
@@ -1077,8 +1057,6 @@ button.island-row-text {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px 10px;
-  max-height: 400px;
-  overflow-y: auto;
 }
 
 .edit-field {
@@ -1172,8 +1150,6 @@ button.island-row-text {
 /* 15. Receipt ------------------------------------------------------------------------- */
 /* The brief as a receipt, as in the design: dashed blocks, a suggestion and the totals. */
 .receipt {
-  max-height: 400px;
-  overflow-y: auto;
   padding: 16px 18px;
   border: 1px solid var(--receipt-line);
   border-radius: var(--radius-sm);
@@ -1245,6 +1221,7 @@ button.island-row-text {
  */
 [data-orientation="vertical"] {
   --notch-expanded-width: 380px;
+  --card-max-height: calc(100vh - var(--notch-head-height) - var(--card-bottom-gap) - 2 * var(--notch-ear) - 2px);
 }
 
 [data-orientation="vertical"] .notch-hidden {
@@ -1288,34 +1265,10 @@ button.island-row-text {
 [data-orientation="vertical"] .island-head { gap: 2px; padding: 0 8px 0 10px; }
 [data-orientation="vertical"] .island-tab { padding: 5px 7px; }
 
-[data-orientation="vertical"] .island-card {
-  grid-template-columns: minmax(0, 1fr);
-}
+[data-orientation="vertical"] .island-card-body { padding: 12px 14px; }
 
-[data-orientation="vertical"] .island-card-mascot {
-  padding-top: 14px;
-}
-
-[data-orientation="vertical"] .island-card-body {
-  padding: 6px 14px 14px;
-}
-
-/* The narrow island has no room for the big mascot above Settings; the notch already shows it. */
-[data-orientation="vertical"] .island-card[data-panel="settings"] .island-card-mascot {
-  display: none;
-}
-
-[data-orientation="vertical"] .island-card[data-panel="settings"] .island-card-body {
-  padding-top: 14px;
-}
-
-[data-orientation="vertical"] .island-list {
-  max-height: 420px;
-}
-
-[data-orientation="vertical"] .tasks-toolbar { grid-template-columns: minmax(0, 1fr) auto; }
-[data-orientation="vertical"] .tasks-search-box { grid-column: 1 / -1; }
-[data-orientation="vertical"] .tasks-list { max-height: 440px; }
+/* In the narrow column the search, the project and the view each take a whole row. */
+[data-orientation="vertical"] .tasks-toolbar { grid-template-columns: minmax(0, 1fr); }
 [data-orientation="vertical"] .capture-fields { grid-template-columns: minmax(0, 1fr); }
 [data-orientation="vertical"] .edit-form { grid-template-columns: minmax(0, 1fr); }
 

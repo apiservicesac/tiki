@@ -280,15 +280,20 @@ export class IslandView {
     return ElementFactory.create("div", {
       className: "island-expanded",
       children: [
-        this.header.render(state.panel, this.tabLabels, state.tab, handlers),
+        this.header.render(
+          ElementFactory.fromTrustedMarkup(
+            "island-head-face",
+            this.mascot.render(mood, state.snapshot.moodLabel, UI_CONFIG.faceWidth.header),
+          ),
+          state.panel,
+          this.tabLabels,
+          state.tab,
+          handlers,
+        ),
         ElementFactory.create("div", {
           className: "island-card",
           attributes: { "data-mood": mood, "data-panel": state.panel, "data-tab": state.tab },
           children: [
-            ElementFactory.fromTrustedMarkup(
-              "island-card-mascot",
-              this.mascot.render(mood, state.snapshot.moodLabel, UI_CONFIG.faceWidth.card),
-            ),
             ElementFactory.create("div", {
               className: "island-card-body",
               children: [this.cardBody(state, preferences, handlers)],

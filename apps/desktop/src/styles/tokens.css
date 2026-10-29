@@ -99,6 +99,10 @@
   --notch-expanded-width: 640px;
   --notch-ear: 14px;
   --notch-shadow-room: 18px;
+  /* The expanded card fills the window at most: the window minus the header, the gap under
+     the card and the room for the shadow (and, on the side edges, the two ears). */
+  --card-bottom-gap: 10px;
+  --card-max-height: calc(100vh - var(--notch-head-height) - var(--card-bottom-gap) - var(--notch-shadow-room) - 2px);
 }
 
 @media (prefers-color-scheme: light) {

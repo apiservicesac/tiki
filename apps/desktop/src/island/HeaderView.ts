@@ -18,7 +18,11 @@ export interface HeaderHandlers {
   onClose: () => void;
 }
 
-/** Top row of the expanded island: tabs on the left, actions on the right. */
+/**
+ * Top row of the expanded island: Tiki's face, then the tabs (or a back button and the
+ * panel's title), and on the right the actions that make sense there. On the tabs: new and
+ * settings; inside a panel only close, since the back button already leads out.
+ */
 export class HeaderView {
   private static readonly PANEL_TITLES: Readonly<Record<TitledPanel, string>> = Object.freeze({
     capture: "island.action.new",
@@ -30,22 +34,30 @@ export class HeaderView {
 
   constructor(private readonly translator: Translator) {}
 
-  render(panel: IslandPanel, tabs: readonly IslandTabLabel[], activeTab: IslandTab, handlers: HeaderHandlers): HTMLElement {
+  render(
+    face: HTMLElement,
+    panel: IslandPanel,
+    tabs: readonly IslandTabLabel[],
+    activeTab: IslandTab,
+    handlers: HeaderHandlers,
+  ): HTMLElement {
     const leading = panel === "tabs"
       ? this.tabs(tabs, activeTab, handlers.onSelectTab)
       : this.backButton(panel, handlers.onOpenPanel);
-
-    return ElementFactory.create("header", {
-      className: "island-head",
-      children: [
-        leading,
-        ElementFactory.create("span", { className: "island-head-spacer" }),
+    const close = ElementFactory.iconButton(ICONS.close, this.translator.text("island.action.close"), handlers.onClose);
+    const actions = panel === "tabs"
+      ? [
         ElementFactory.iconButton(ICONS.plus, this.translator.text("island.action.new"), () =>
           handlers.onOpenPanel("capture")),
         ElementFactory.iconButton(ICONS.settings, this.translator.text("island.action.settings"), () =>
           handlers.onOpenPanel("settings")),
-        ElementFactory.iconButton(ICONS.close, this.translator.text("island.action.close"), handlers.onClose),
-      ],
+        close,
+      ]
+      : [close];
+
+    return ElementFactory.create("header", {
+      className: "island-head",
+      children: [face, leading, ElementFactory.create("span", { className: "island-head-spacer" }), ...actions],
     });
   }
 
