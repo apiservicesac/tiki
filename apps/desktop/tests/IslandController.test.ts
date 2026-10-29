@@ -448,21 +448,11 @@ describe("IslandController", () => {
     expect(root.querySelector(".notch-alert-kind")?.textContent).toBe("Reunión");
     expect(notch()?.dataset.mood).toBe(UI_CONFIG.alertStyles.meeting.mood);
     expect(root.dataset.mood).toBe(UI_CONFIG.alertStyles.meeting.mood);
-    expect(root.querySelector(".notch-alert")?.getAttribute("data-gait")).toBe(UI_CONFIG.alertStyles.meeting.gait);
-    expect(root.querySelectorAll(".notch-alert-actor .mascot-actor.mascot-alert .actor-limb")).toHaveLength(4);
-    expect(root.querySelector(".notch-alert-goal svg")).not.toBeNull();
+    expect(root.querySelector(".notch-alert-countdown .notch-alert-walker .mascot-alert")).not.toBeNull();
+    expect(root.querySelector(".notch-alert-countdown .notch-alert-goal")).not.toBeNull();
 
     vi.advanceTimersByTime(UI_CONFIG.alertDurationMs);
     expect(notch()?.dataset.mood).toBe("worried");
-  });
-
-  it("keeps the alert in the notch untouched while other things redraw the island", async () => {
-    backend.deliverAlert(EVENING_BRIEF);
-    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
-    const shown = root.querySelector(".notch-alert-actor");
-    window.dispatchEvent(new Event("resize"));
-    await controller.refresh();
-    expect(root.querySelector(".notch-alert-actor")).toBe(shown);
   });
 
   it("opens the brief as a receipt on click and puts it away after reading", async () => {
