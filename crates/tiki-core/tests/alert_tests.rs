@@ -5,7 +5,7 @@ use tiki_core::domain::ItemKind;
 use chrono::{NaiveDateTime, NaiveTime};
 use support::{SampleWorkspace, TestDay, TimedWorkspace};
 use tiki_core::TikiSettings;
-use tiki_core::alerts::{AlertKind, BriefPlanner};
+use tiki_core::alerts::{AlertAction, AlertKind, BriefPlanner};
 use tiki_core::briefing::BriefMoment;
 use tiki_core::capture::ConfirmedCapture;
 use tiki_core::domain::Priority;
@@ -54,13 +54,18 @@ fn each_brief_arrives_once_a_day_with_counts_and_follow_ups() {
         .unwrap();
     assert_eq!(morning.kind, AlertKind::Morning);
     assert_eq!(morning.title, "Buenos días · tu día con Tiki");
+    assert_eq!(
+        morning.summary,
+        "Atrasado: 1 · Vence pronto: 2 · Esperando: 2"
+    );
+    assert_eq!(morning.actions, [AlertAction::Open]);
     assert!(
         morning
-            .body
+            .notification_body()
             .starts_with("Atrasado: 1 · Vence pronto: 2 · Esperando: 2")
     );
-    assert!(morning.body.contains("Empieza por: "));
-    assert!(morning.body.contains("Haz seguimiento: "));
+    assert!(morning.notification_body().contains("Empieza por: "));
+    assert!(morning.notification_body().contains("Haz seguimiento: "));
 
     assert!(
         workspace
@@ -76,7 +81,7 @@ fn each_brief_arrives_once_a_day_with_counts_and_follow_ups() {
         .unwrap()
         .unwrap();
     assert_eq!(evening.title, "Cierre del día");
-    assert!(evening.body.contains("Mañana vence: "));
+    assert!(evening.notification_body().contains("Mañana vence: "));
 }
 
 #[test]
@@ -223,7 +228,13 @@ fn a_task_reminder_rings_once_at_its_time() {
     assert_eq!(alerts.len(), 1);
     assert_eq!(alerts[0].kind, AlertKind::Task);
     assert_eq!(alerts[0].title, "Aviso de tarea");
-    assert!(alerts[0].body.starts_with("Llamar\nAltamira · "));
+    assert!(
+        alerts[0]
+            .notification_body()
+            .starts_with("Llamar\nAltamira · ")
+    );
+    assert_eq!(alerts[0].summary, "Llamar");
+    assert_eq!(alerts[0].actions, [AlertAction::Open, AlertAction::Snooze]);
     assert!(alerts[0].task_id.is_some());
 
     assert_eq!(
@@ -263,6 +274,12 @@ fn a_repeating_reminder_comes_back_and_a_one_time_reminder_is_done() {
         .unwrap();
     assert_eq!(alerts.len(), 2);
     assert!(alerts.iter().all(|alert| alert.kind == AlertKind::Reminder));
+    assert!(
+        alerts
+            .iter()
+            .all(|alert| alert.actions
+                == [AlertAction::Open, AlertAction::Done, AlertAction::Snooze])
+    );
     assert_eq!(alerts[0].title, "Recordatorio");
 
     let pill_details = workspace.task_details(pill).unwrap();
@@ -332,9 +349,10 @@ fn waiting_on_someone_schedules_a_follow_up_reminder() {
         .unwrap();
     assert_eq!(follow_up.kind, AlertKind::FollowUp);
     assert_eq!(follow_up.title, "Toca insistir");
+    assert_eq!(follow_up.actions, [AlertAction::Open]);
     assert!(
         follow_up
-            .body
+            .notification_body()
             .contains("Esperando: respuesta de Lucía · hace 3 días")
     );
 }
@@ -445,4 +463,28 @@ fn an_alarm_on_a_waiting_task_rings_as_a_task_reminder() {
         .find(|alert| alert.task_id == Some(contract))
         .unwrap();
     assert_eq!(alarm.kind, AlertKind::Task);
+}
+
+#[test]
+fn only_an_item_with_its_own_reminder_can_be_snoozed_and_only_a_call_joined() {
+    let snoozable: Vec<AlertKind> = [
+        AlertKind::Morning,
+        AlertKind::Evening,
+        AlertKind::Task,
+        AlertKind::Reminder,
+        AlertKind::FollowUp,
+        AlertKind::Meeting,
+    ]
+    .into_iter()
+    .filter(|kind| AlertAction::offered_for(*kind, false).contains(&AlertAction::Snooze))
+    .collect();
+    assert_eq!(snoozable, [AlertKind::Task, AlertKind::Reminder]);
+    assert_eq!(
+        AlertAction::offered_for(AlertKind::Meeting, true),
+        [AlertAction::Open, AlertAction::Join]
+    );
+    assert_eq!(
+        AlertAction::offered_for(AlertKind::Meeting, false),
+        [AlertAction::Open]
+    );
 }

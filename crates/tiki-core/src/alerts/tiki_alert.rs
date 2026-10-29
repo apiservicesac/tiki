@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+use super::AlertAction;
 use crate::briefing::BriefMoment;
 use crate::domain::TaskId;
 
@@ -11,7 +12,7 @@ pub enum AlertKind {
     Evening,
     /// The reminder the user set on one task.
     Task,
-    /// A standalone reminder: the user can mark it done or snooze it.
+    /// A standalone reminder.
     Reminder,
     /// A waiting item whose follow-up day came.
     FollowUp,
@@ -34,10 +35,27 @@ impl From<BriefMoment> for AlertKind {
 pub struct TikiAlert {
     pub kind: AlertKind,
     pub title: String,
-    /// Lines separated by line breaks.
-    pub body: String,
-    /// The task a task reminder is about.
+    /// What it is about, in one line: the brief's counts, or the item's or meeting's title.
+    pub summary: String,
+    /// The lines after the summary: what to start with and whom to follow up in a brief;
+    /// the project, who it waits for and when it is due for an item; a meeting's time and
+    /// place.
+    pub tips: Vec<String>,
+    /// What the user can do with it, in the order to offer them (see `AlertAction`).
+    pub actions: Vec<AlertAction>,
+    /// The item an item alert is about.
     pub task_id: Option<TaskId>,
     /// A link to open from the alert: the meeting's video call.
     pub link: Option<String>,
+}
+
+impl TikiAlert {
+    /// The text of a system notification: the summary, then each tip on its own line.
+    pub fn notification_body(&self) -> String {
+        std::iter::once(&self.summary)
+            .chain(&self.tips)
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
 }

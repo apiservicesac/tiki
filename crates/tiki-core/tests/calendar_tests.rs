@@ -75,7 +75,10 @@ fn a_connected_calendar_fills_the_agenda_and_signing_in_again_reuses_the_account
     workspace
         .store_meetings(work, &[meeting("b", "CAPEX Claro", at(23, 14, 30), 30)])
         .unwrap();
-    assert_eq!(agenda_meetings(&workspace.island_snapshot().unwrap()).len(), 1);
+    assert_eq!(
+        agenda_meetings(&workspace.island_snapshot().unwrap()).len(),
+        1
+    );
 
     workspace.disconnect_calendar(work).unwrap();
     assert_eq!(
@@ -109,7 +112,12 @@ fn a_meeting_about_to_start_is_announced_once_with_its_link() {
     assert_eq!(alerts.len(), 1);
     assert_eq!(alerts[0].kind, AlertKind::Meeting);
     assert_eq!(alerts[0].title, "Reunión en 10 min");
-    assert!(alerts[0].body.starts_with("Daily\n10:00–10:15 · Teams"));
+    assert!(
+        alerts[0]
+            .notification_body()
+            .starts_with("Daily\n10:00–10:15 · Teams")
+    );
+    assert_eq!(alerts[0].summary, "Daily");
     assert_eq!(
         alerts[0].link.as_deref(),
         Some("https://teams.microsoft.com/l/meetup")
@@ -172,7 +180,7 @@ fn now_counts_the_free_time_before_the_next_meeting_and_the_brief_names_meetings
         .unwrap();
     assert!(
         morning
-            .body
+            .notification_body()
             .ends_with("Reuniones hoy: 1 · la primera a las 10:00")
     );
 }
