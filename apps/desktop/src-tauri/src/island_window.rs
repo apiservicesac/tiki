@@ -14,14 +14,28 @@ impl IslandWindow {
             .map(|window| Self { window })
     }
 
-    /// Gives the window the size of its orientation and moves it to the chosen edge.
+    /// Gives the window the size of its orientation, never larger than the screen, and moves
+    /// it to the chosen edge. The island fits itself to the window it gets.
     pub fn prepare(&self, placement: IslandPlacement) -> tauri::Result<()> {
-        let (width, height) = match placement {
+        let size = match placement {
             IslandPlacement::Top | IslandPlacement::Bottom => DesktopConfig::HORIZONTAL_WINDOW_SIZE,
             IslandPlacement::Left | IslandPlacement::Right => DesktopConfig::VERTICAL_WINDOW_SIZE,
         };
+        let (width, height) = self.fit_to_screen(size)?;
         self.window.set_size(LogicalSize::new(width, height))?;
         self.place(placement)
+    }
+
+    /// The size cut down to the free area of the monitor, for small laptop screens.
+    fn fit_to_screen(&self, (width, height): (f64, f64)) -> tauri::Result<(f64, f64)> {
+        let Some(monitor) = self.window.current_monitor()? else {
+            return Ok((width, height));
+        };
+        let free_area = monitor
+            .work_area()
+            .size
+            .to_logical::<f64>(monitor.scale_factor());
+        Ok((width.min(free_area.width), height.min(free_area.height)))
     }
 
     /// Moves the window to the chosen edge of its monitor.

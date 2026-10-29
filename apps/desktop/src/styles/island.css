@@ -268,7 +268,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font: 700 10px/1.2 var(--font-mono);
+  font: 700 var(--text-label)/1.2 var(--font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--mood-color) var(--mood-ink-mix), var(--island-text));
@@ -287,7 +287,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13.5px;
+  font-size: var(--text-lg);
   font-weight: 700;
 }
 
@@ -979,7 +979,7 @@ button.island-row-text {
   border-radius: var(--radius-lg);
   background: var(--island-soft);
   color: var(--island-text);
-  font: 14px var(--font-body);
+  font: var(--text-xl) var(--font-body);
   outline: none;
 }
 
@@ -1164,7 +1164,7 @@ button.island-row-text {
   border-bottom: 1.5px dashed var(--receipt-line);
 }
 
-.receipt-head strong { font-size: 17px; font-weight: 800; }
+.receipt-head strong { font-size: var(--text-title); font-weight: 800; }
 .receipt-head span { font: var(--text-xs) var(--font-mono); color: var(--island-muted); }
 
 .receipt-block {
@@ -1220,7 +1220,7 @@ button.island-row-text {
  * is hard to read at a glance), and the expanded island becomes a narrow, tall panel.
  */
 [data-orientation="vertical"] {
-  --notch-expanded-width: 380px;
+  --notch-expanded-width: 460px;
   --card-max-height: calc(100vh - var(--notch-head-height) - var(--card-bottom-gap) - 2 * var(--notch-ear) - 2px);
 }
 

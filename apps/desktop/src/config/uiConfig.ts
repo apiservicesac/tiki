@@ -71,7 +71,7 @@ export const UI_CONFIG = Object.freeze({
     priority: Object.freeze<Partial<Record<Priority, string>>>({ urgent: "!!", high: "!" }),
   }),
   /** Width of Tiki's face in each place; its height is half of it. */
-  faceWidth: Object.freeze({ hidden: 40, compact: 44, alert: 56, header: 34, settingsTitle: 36 }),
+  faceWidth: Object.freeze({ hidden: 48, compact: 52, alert: 66, header: 46, settingsTitle: 40 }),
 });
 
 /** Names of the events the desktop shell sends to the interface (see `shell_events.rs`). */
