@@ -5,11 +5,11 @@ use tiki_core::domain::ItemKind;
 use chrono::{NaiveDateTime, NaiveTime};
 use support::{SampleWorkspace, TestDay};
 use tiki_core::TikiSettings;
+use tiki_core::alerts::{AlertKind, BriefPlanner};
 use tiki_core::briefing::BriefMoment;
 use tiki_core::capture::ConfirmedCapture;
 use tiki_core::domain::Priority;
 use tiki_core::preferences::UserPreferences;
-use tiki_core::reminders::{AlertKind, ReminderPlanner};
 use tiki_core::storage::Database;
 use tiki_core::workspace::{FixedClock, TikiWorkspace};
 
@@ -29,7 +29,7 @@ fn today_at(hour: u32, minute: u32) -> NaiveDateTime {
 #[test]
 fn the_morning_brief_waits_for_its_time() {
     let preferences = UserPreferences::defaults(&TikiSettings::default());
-    let planner = ReminderPlanner::new(&preferences);
+    let planner = BriefPlanner::new(&preferences);
 
     assert_eq!(planner.due_moment(today_at(8, 0), |_| None), None);
     assert_eq!(

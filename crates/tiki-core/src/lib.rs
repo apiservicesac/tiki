@@ -4,6 +4,7 @@
 //! types exported here, so the same rules run on every platform.
 
 pub mod ai;
+pub mod alerts;
 pub mod briefing;
 pub mod calendar;
 pub mod capture;
@@ -15,7 +16,6 @@ pub mod mood;
 pub mod plugins;
 pub mod preferences;
 pub mod projects;
-pub mod reminders;
 pub mod settings;
 pub mod storage;
 pub mod workspace;

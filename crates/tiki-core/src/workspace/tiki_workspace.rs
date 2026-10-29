@@ -3,6 +3,7 @@ use super::{
 };
 use chrono::NaiveDateTime;
 
+use crate::alerts::{BriefPlanner, NotificationComposer, TikiAlert};
 use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
 use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
 use crate::capture::{CaptureLesson, ConfirmedCapture};
@@ -15,7 +16,6 @@ use crate::i18n::{Locale, Translator};
 use crate::mood::{MoodResolver, MoodSignals};
 use crate::preferences::UserPreferences;
 use crate::projects::{ProjectBook, ProjectChange, ProjectSummary};
-use crate::reminders::{NotificationComposer, ReminderPlanner, TikiAlert};
 use crate::settings::TikiSettings;
 use crate::storage::Database;
 
@@ -129,7 +129,7 @@ impl TikiWorkspace {
             return Ok(None);
         }
         let log = self.database.reminder_log();
-        let moment = ReminderPlanner::new(&self.preferences)
+        let moment = BriefPlanner::new(&self.preferences)
             .due_moment(now, |moment| log.last_sent(moment).ok().flatten());
         let Some(moment) = moment else {
             return Ok(None);

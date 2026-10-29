@@ -3,7 +3,7 @@ use std::thread;
 use chrono::Local;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_notification::NotificationExt;
-use tiki_core::reminders::TikiAlert;
+use tiki_core::alerts::TikiAlert;
 
 use crate::app_state::AppState;
 use crate::desktop_config::DesktopConfig;

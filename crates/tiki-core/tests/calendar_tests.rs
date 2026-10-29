@@ -3,8 +3,8 @@ mod support;
 use chrono::{NaiveDateTime, NaiveTime};
 use support::{SampleWorkspace, TestDay};
 use tiki_core::TikiSettings;
+use tiki_core::alerts::AlertKind;
 use tiki_core::calendar::{CalendarProvider, Meeting};
-use tiki_core::reminders::AlertKind;
 use tiki_core::workspace::{FixedClock, TikiWorkspace};
 
 fn at(day: u32, hour: u32, minute: u32) -> NaiveDateTime {
