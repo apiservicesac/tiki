@@ -6,6 +6,7 @@ mod brief_moment;
 mod brief_narrator;
 mod daily_brief;
 mod daily_brief_builder;
+mod focus_picker;
 
 pub use brief_detail_formatter::BriefDetailFormatter;
 pub use brief_item::{BriefDetail, BriefItem};
@@ -13,3 +14,4 @@ pub use brief_moment::BriefMoment;
 pub use brief_narrator::BriefNarrator;
 pub use daily_brief::DailyBrief;
 pub use daily_brief_builder::DailyBriefBuilder;
+pub use focus_picker::{FocusPick, FocusPicker, FocusReason};

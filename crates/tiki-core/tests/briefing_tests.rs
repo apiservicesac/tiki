@@ -143,3 +143,37 @@ fn each_brief_line_keeps_the_id_of_its_project() {
     assert_eq!(brief.overdue[0].project_id, Some(workspace.andeanvet));
     assert_eq!(brief.your_turn[1].project_id, None);
 }
+
+#[test]
+fn what_now_starts_with_the_overdue_item_then_today_then_important_work() {
+    use tiki_core::briefing::{FocusPicker, FocusReason};
+    use tiki_core::domain::Priority;
+    let mut brief = sample_brief(&TikiSettings::default());
+
+    let pick = FocusPicker::pick(&brief).unwrap();
+    assert_eq!(pick.reason, FocusReason::Overdue);
+    assert_eq!(
+        pick.item.title,
+        "Acceso solo a análisis de facturas de Almendra"
+    );
+
+    brief.overdue.clear();
+    assert_eq!(
+        FocusPicker::pick(&brief).unwrap().reason,
+        FocusReason::DueSoon
+    );
+
+    brief.your_turn[1].priority = Priority::Urgent;
+    let important = FocusPicker::pick(&brief).unwrap();
+    assert_eq!(important.reason, FocusReason::Important);
+    assert_eq!(important.item.title, "Completar módulo de importaciones");
+
+    brief.due_soon.clear();
+    brief.your_turn.clear();
+    assert_eq!(
+        FocusPicker::pick(&brief).unwrap().reason,
+        FocusReason::FollowUp
+    );
+    brief.needs_follow_up.clear();
+    assert!(FocusPicker::pick(&brief).is_none());
+}
