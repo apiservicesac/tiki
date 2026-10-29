@@ -8,10 +8,10 @@ import type { IslandMode } from "./islandState";
  */
 export type ModeEvent = "pointerEnter" | "pointerLeave" | "alertArrived" | "arrived";
 
-/** Where an event takes the island, and after how long (0 moves it at once). */
+/** Where an event takes the island, and after how long; without a delay it moves at once. */
 export interface ModeTransition {
   to: IslandMode;
-  afterMs: number;
+  afterMs?: number;
   /** Folding waits while something holds the island open, such as typing. */
   holdable?: boolean;
 }
@@ -28,18 +28,18 @@ export const MODE_TRANSITIONS: Readonly<Record<IslandMode, Readonly<Partial<Reco
   Object.freeze({
     hidden: {
       pointerEnter: { to: "compact", afterMs: UI_CONFIG.peekDelayMs },
-      alertArrived: { to: "alert", afterMs: 0 },
+      alertArrived: { to: "alert" },
     },
     compact: {
       arrived: { to: "expanded", afterMs: UI_CONFIG.unfoldDelayMs },
       pointerLeave: { to: "hidden", afterMs: UI_CONFIG.foldDelayMs, holdable: true },
-      alertArrived: { to: "alert", afterMs: 0 },
+      alertArrived: { to: "alert" },
     },
     alert: {
       arrived: { to: "hidden", afterMs: UI_CONFIG.alertDurationMs },
       pointerEnter: { to: "expanded", afterMs: UI_CONFIG.peekDelayMs },
       pointerLeave: { to: "hidden", afterMs: UI_CONFIG.foldDelayMs, holdable: true },
-      alertArrived: { to: "alert", afterMs: 0 },
+      alertArrived: { to: "alert" },
     },
     expanded: {
       pointerLeave: { to: "hidden", afterMs: UI_CONFIG.foldDelayMs, holdable: true },
@@ -68,7 +68,7 @@ export class IslandModeMachine {
     if (!transition || (transition.holdable && this.isHeld())) {
       return;
     }
-    if (transition.afterMs === 0) {
+    if (transition.afterMs === undefined) {
       this.arrive(transition.to);
       return;
     }
