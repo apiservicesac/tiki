@@ -43,19 +43,15 @@ export class TaskListView {
     );
     deliverButton.classList.add("island-row-done");
 
-    const text = ElementFactory.create("button", {
+    const text = ElementFactory.textButton({
       className: "island-row-text",
-      attributes: { type: "button", title: this.translator.text("island.row.edit") },
+      attributes: { title: this.translator.text("island.row.edit") },
       children: [
         ...this.priorityMark(item.priority),
         document.createTextNode(item.title),
         ...TaskListView.context(item.projectName, item.tags),
       ],
-    });
-    text.addEventListener("click", (event) => {
-      event.stopPropagation();
-      handlers.onOpenTask(item.taskId);
-    });
+    }, () => handlers.onOpenTask(item.taskId));
 
     return ElementFactory.create("div", {
       className: "island-row",
@@ -76,16 +72,12 @@ export class TaskListView {
   deliveredRow(item: DeliveredItem, onOpen: (taskId: number) => void): HTMLElement {
     const colorBar = ElementFactory.create("span", { className: "island-row-bar" });
     colorBar.style.background = item.projectColor ?? "var(--island-faint)";
-    const text = ElementFactory.create("button", {
+    const text = ElementFactory.textButton({
       className: "island-row-text",
       text: item.title,
-      attributes: { type: "button", title: this.translator.text("island.row.edit") },
+      attributes: { title: this.translator.text("island.row.edit") },
       children: item.projectName ? [ElementFactory.create("small", { text: item.projectName })] : [],
-    });
-    text.addEventListener("click", (event) => {
-      event.stopPropagation();
-      onOpen(item.taskId);
-    });
+    }, () => onOpen(item.taskId));
     return ElementFactory.create("div", {
       className: "island-row island-row-delivered",
       attributes: { "data-task-id": String(item.taskId) },

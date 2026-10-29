@@ -40,15 +40,11 @@ export class AiSettingsView {
 
   private providerChoice(preferences: UserPreferences, handlers: AiSettingsHandlers): HTMLElement {
     const options = AI_PROVIDERS.map((provider) => {
-      const button = ElementFactory.create("button", {
+      const button = ElementFactory.textButton({
         className: "settings-option",
         text: this.translator.text(`provider.${provider}`),
-        attributes: { type: "button", role: "radio", "aria-checked": String(preferences.aiProvider === provider) },
-      });
-      button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        handlers.onChangePreferences({ ...preferences, aiProvider: provider, aiModel: null });
-      });
+        attributes: { role: "radio", "aria-checked": String(preferences.aiProvider === provider) },
+      }, () => handlers.onChangePreferences({ ...preferences, aiProvider: provider, aiModel: null }));
       return button;
     });
     return ElementFactory.create("div", { className: "settings-options", attributes: { role: "radiogroup" }, children: options });
@@ -68,15 +64,10 @@ export class AiSettingsView {
         save();
       }
     };
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: "settings-button",
       text: this.translator.text("settings.ai.save_key"),
-      attributes: { type: "button" },
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      save();
-    });
+    }, save);
     return ElementFactory.create("div", { className: "settings-row", children: [input, button] });
   }
 
@@ -99,15 +90,10 @@ export class AiSettingsView {
   }
 
   private connectedKey(provider: AiProviderName, handlers: AiSettingsHandlers): HTMLElement {
-    const remove = ElementFactory.create("button", {
+    const remove = ElementFactory.textButton({
       className: "settings-button settings-button-quiet",
       text: this.translator.text("settings.ai.remove_key"),
-      attributes: { type: "button" },
-    });
-    remove.addEventListener("click", (event) => {
-      event.stopPropagation();
-      handlers.onRemoveKey(provider);
-    });
+    }, () => handlers.onRemoveKey(provider));
     return ElementFactory.create("div", {
       className: "settings-row",
       children: [

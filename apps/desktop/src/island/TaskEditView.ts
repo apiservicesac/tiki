@@ -169,15 +169,10 @@ export class TaskEditView {
   }
 
   private actions(): HTMLElement {
-    const cancel = ElementFactory.create("button", {
+    const cancel = ElementFactory.textButton({
       className: "settings-button settings-button-quiet",
       text: this.translator.text("edit.cancel"),
-      attributes: { type: "button" },
-    });
-    cancel.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.handlers?.onCancel();
-    });
+    }, () => this.handlers?.onCancel());
     const save = ElementFactory.create("button", {
       className: "settings-button",
       text: this.translator.text("edit.save"),

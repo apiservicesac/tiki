@@ -87,31 +87,22 @@ export class AgendaView {
   }
 
   private joinButton(url: string, handlers: AgendaHandlers): HTMLElement {
-    const join = ElementFactory.create("button", {
+    const join = ElementFactory.textButton({
       className: "agenda-join",
       text: this.translator.text("meeting.join"),
-      attributes: { type: "button" },
-    });
-    join.addEventListener("click", (event) => {
-      event.stopPropagation();
-      handlers.onJoinMeeting(url);
-    });
+    }, () => handlers.onJoinMeeting(url));
     return join;
   }
 
   private row(item: SnapshotItem, handlers: TaskListHandlers): HTMLElement {
     const time = item.at === null ? "" : CoreDateTimeText.time(item.at);
     const repeat = item.repeat !== "never" ? this.translator.text(`repeat.${item.repeat}`) : null;
-    const title = ElementFactory.create("button", {
+    const title = ElementFactory.textButton({
       className: "island-row-text",
       text: item.title,
-      attributes: { type: "button", title: this.translator.text("island.row.edit") },
+      attributes: { title: this.translator.text("island.row.edit") },
       children: repeat ? [ElementFactory.create("small", { text: repeat })] : [],
-    });
-    title.addEventListener("click", (event) => {
-      event.stopPropagation();
-      handlers.onOpenTask(item.taskId);
-    });
+    }, () => handlers.onOpenTask(item.taskId));
     const done = ElementFactory.iconButton(ICONS.check, this.translator.text("island.row.done"), () => handlers.onDeliverTask(item.taskId));
     done.classList.add("island-row-done");
     return ElementFactory.create("div", {

@@ -15,35 +15,29 @@ export class ProposedActionsView {
   }
 
   private card(action: ProposedAction, apply: ApplyAction): HTMLElement {
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: "settings-button ask-apply",
       text: this.translator.text("ask.apply"),
-      attributes: { type: "button" },
-    });
-    const card = ElementFactory.create("div", {
-      className: "ask-action",
-      attributes: { "data-action": action.type },
-      children: [ElementFactory.create("span", { className: "ask-action-summary", text: action.summary }), button],
-    });
-    button.addEventListener("click", async (event) => {
-      event.stopPropagation();
+    }, async () => {
       button.disabled = true;
       const applied = await apply(action);
       button.textContent = this.translator.text(applied ? "ask.applied" : "ask.apply_failed");
       card.classList.add(applied ? "ask-action-done" : "ask-action-failed");
       button.disabled = applied;
     });
+    const card = ElementFactory.create("div", {
+      className: "ask-action",
+      attributes: { "data-action": action.type },
+      children: [ElementFactory.create("span", { className: "ask-action-summary", text: action.summary }), button],
+    });
     return card;
   }
 
   private applyAllButton(cards: HTMLElement[]): HTMLElement {
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: "settings-button settings-button-quiet ask-apply-all",
       text: this.translator.text("ask.apply_all"),
-      attributes: { type: "button" },
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
+    }, () => {
       button.disabled = true;
       cards.forEach((card) => card.querySelector<HTMLButtonElement>(".ask-apply:not(:disabled)")?.click());
     });

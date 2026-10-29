@@ -42,15 +42,11 @@ export class ReminderSettingsView {
   }
 
   private toggle(labelKey: string, enabled: boolean, onToggle: (enabled: boolean) => void): HTMLElement {
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: "settings-option",
       text: this.translator.text(labelKey),
-      attributes: { type: "button", role: "switch", "aria-checked": String(enabled), "data-setting": labelKey },
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      onToggle(!enabled);
-    });
+      attributes: { role: "switch", "aria-checked": String(enabled), "data-setting": labelKey },
+    }, () => onToggle(!enabled));
     return button;
   }
 

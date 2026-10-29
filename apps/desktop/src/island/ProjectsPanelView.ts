@@ -68,11 +68,6 @@ export class ProjectsPanelView {
         "aria-label": this.translator.text("projects.new_placeholder"),
       },
     });
-    const add = ElementFactory.create("button", {
-      className: "settings-button",
-      text: this.translator.text("projects.add"),
-      attributes: { type: "button", id: "add-project" },
-    });
     const create = () => {
       const name = this.newProject?.value.trim() ?? "";
       if (name !== "" && this.newProject) {
@@ -80,10 +75,11 @@ export class ProjectsPanelView {
         this.handlers?.onCreateProject(name);
       }
     };
-    add.addEventListener("click", (event) => {
-      event.stopPropagation();
-      create();
-    });
+    const add = ElementFactory.textButton({
+      className: "settings-button",
+      text: this.translator.text("projects.add"),
+      attributes: { id: "add-project" },
+    }, create);
     this.newProject.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         create();
@@ -117,17 +113,10 @@ export class ProjectsPanelView {
     const dot = ElementFactory.create("span", { className: "picker-dot" });
     dot.style.background = project.color;
     const confirming = this.confirmingRemoval === project.projectId;
-    const remove = ElementFactory.create("button", {
+    const remove = ElementFactory.textButton({
       className: confirming ? "project-remove project-remove-confirm" : "island-icon-button project-remove",
-      attributes: { type: "button", "aria-label": this.translator.text("projects.remove"), title: this.translator.text("projects.remove") },
-    });
-    if (confirming) {
-      remove.textContent = this.translator.text("projects.remove_confirm");
-    } else {
-      remove.innerHTML = ICONS.trash;
-    }
-    remove.addEventListener("click", (event) => {
-      event.stopPropagation();
+      attributes: { "aria-label": this.translator.text("projects.remove"), title: this.translator.text("projects.remove") },
+    }, () => {
       if (confirming) {
         this.confirmingRemoval = null;
         this.handlers?.onRemoveProject(project.projectId);
@@ -136,6 +125,11 @@ export class ProjectsPanelView {
         this.drawList();
       }
     });
+    if (confirming) {
+      remove.textContent = this.translator.text("projects.remove_confirm");
+    } else {
+      remove.innerHTML = ICONS.trash;
+    }
     const edit = ElementFactory.iconButton(ICONS.pencil, this.translator.text("projects.edit"), () => {
       this.editing = { projectId: project.projectId, name: project.name, color: project.color, notes: project.notes };
       this.confirmingRemoval = null;
@@ -208,43 +202,34 @@ export class ProjectsPanelView {
 
   private swatches(selected: string): HTMLElement[] {
     return this.colors.map((color) => {
-      const swatch = ElementFactory.create("button", {
+      const swatch = ElementFactory.textButton({
         className: color === selected ? "project-swatch project-swatch-on" : "project-swatch",
-        attributes: { type: "button", "aria-label": color, "data-color": color },
-      });
-      swatch.style.background = color;
-      swatch.addEventListener("click", (event) => {
-        event.stopPropagation();
+        attributes: { "aria-label": color, "data-color": color },
+      }, () => {
         if (this.editing) {
           this.editing.color = color;
           this.drawList();
         }
       });
+      swatch.style.background = color;
       return swatch;
     });
   }
 
   private saveButton(save: () => void): HTMLElement {
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: "settings-button",
       text: this.translator.text("edit.save"),
-      attributes: { type: "button", id: "save-project" },
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      save();
-    });
+      attributes: { id: "save-project" },
+    }, save);
     return button;
   }
 
   private cancelButton(): HTMLElement {
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: "settings-button settings-button-quiet",
       text: this.translator.text("edit.cancel"),
-      attributes: { type: "button" },
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
+    }, () => {
       this.editing = null;
       this.drawList();
     });

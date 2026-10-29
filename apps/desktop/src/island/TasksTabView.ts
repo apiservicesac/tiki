@@ -138,15 +138,11 @@ export class TasksTabView {
   private drawToggle(): void {
     const view = this.data?.view ?? "pending";
     const buttons = TASKS_VIEWS.map((option) => {
-      const button = ElementFactory.create("button", {
+      const button = ElementFactory.textButton({
         className: option === view ? "tasks-toggle-option tasks-toggle-on" : "tasks-toggle-option",
         text: this.translator.text(`tasks.view.${option}`),
-        attributes: { type: "button", role: "tab", "aria-selected": String(option === view), "data-view": option },
-      });
-      button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        this.handlers?.onSelectTasksView(option);
-      });
+        attributes: { role: "tab", "aria-selected": String(option === view), "data-view": option },
+      }, () => this.handlers?.onSelectTasksView(option));
       return button;
     });
     this.toggle?.replaceChildren(...buttons);

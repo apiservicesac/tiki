@@ -43,15 +43,11 @@ export class HeaderView {
 
   private tabs(activeTab: IslandTab, onSelect: (tab: IslandTab) => void): HTMLElement {
     const buttons = ISLAND_TABS.map(({ tab, labelKey }) => {
-      const button = ElementFactory.create("button", {
+      const button = ElementFactory.textButton({
         className: tab === activeTab ? "island-tab island-tab-on" : "island-tab",
         text: this.translator.text(labelKey),
-        attributes: { type: "button", role: "tab", "aria-selected": String(tab === activeTab), "data-tab": tab },
-      });
-      button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        onSelect(tab);
-      });
+        attributes: { role: "tab", "aria-selected": String(tab === activeTab), "data-tab": tab },
+      }, () => onSelect(tab));
       return button;
     });
     return ElementFactory.create("div", { className: "island-tabs", attributes: { role: "tablist" }, children: buttons });

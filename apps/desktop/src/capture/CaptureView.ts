@@ -232,13 +232,11 @@ export class CaptureView {
 
   private drawKind(): void {
     const buttons = ITEM_KINDS.map((kind) => {
-      const button = ElementFactory.create("button", {
+      const button = ElementFactory.textButton({
         className: kind === this.kind ? "tasks-toggle-option tasks-toggle-on" : "tasks-toggle-option",
         text: this.translator.text(`kind.${kind}`),
-        attributes: { type: "button", role: "radio", "aria-checked": String(kind === this.kind), "data-kind": kind },
-      });
-      button.addEventListener("click", (event) => {
-        event.stopPropagation();
+        attributes: { role: "radio", "aria-checked": String(kind === this.kind), "data-kind": kind },
+      }, () => {
         this.kind = kind;
         this.drawKind();
       });
@@ -273,15 +271,10 @@ export class CaptureView {
     this.status.className = "island-hint capture-status";
     const children: Node[] = [document.createTextNode(this.translator.text(key))];
     if (withAiLink && handlers) {
-      const link = ElementFactory.create("button", {
+      const link = ElementFactory.textButton({
         className: "capture-ai-link",
         text: this.translator.text("capture.set_up_ai"),
-        attributes: { type: "button" },
-      });
-      link.addEventListener("click", (event) => {
-        event.stopPropagation();
-        handlers.onOpenAiSettings();
-      });
+      }, handlers.onOpenAiSettings);
       children.push(document.createTextNode(UI_CONFIG.textMarks.separator), link);
     }
     this.status.replaceChildren(...children);
