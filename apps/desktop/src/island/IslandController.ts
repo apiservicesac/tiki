@@ -199,6 +199,7 @@ export class IslandController {
       onOpenPanel: (panel) => this.openPanel(panel),
       onClose: () => this.setMode("hidden"),
       onDeliverTask: (taskId) => void this.items.deliver(taskId),
+      onReopenTask: (taskId) => void this.items.reopen(taskId),
       onOpenTask: (taskId) => void this.items.open(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
       onOpenAdvancedSettings: () => this.openAdvancedSettings(),

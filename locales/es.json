@@ -66,6 +66,7 @@
     "island.action.close": "Cerrar",
     "island.action.back": "Volver",
     "island.row.done": "Marcar como entregado",
+    "island.row.reopen": "Reabrir",
     "island.compact.pending": "{count} pendientes",
     "settings.title": "Ajustes",
     "settings.placement": "Dónde aparece Tiki",

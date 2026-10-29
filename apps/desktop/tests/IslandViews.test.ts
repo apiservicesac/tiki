@@ -24,6 +24,7 @@ const REMINDER_ALERT: TikiAlert = {
 function recordingHandlers(): TodayHandlers & TasksTabHandlers & AgendaHandlers {
   return {
     onDeliverTask: vi.fn(),
+    onReopenTask: vi.fn(),
     onOpenTask: vi.fn(),
     onOpenAlert: vi.fn(),
     onDismissAlert: vi.fn(),
@@ -151,7 +152,9 @@ describe("TasksTabView", () => {
     click(pending, '[data-view="delivered"]');
     const delivered = view.render(data("delivered"), handlers);
     click(delivered, '.island-row[data-task-id="9"] .island-row-text');
+    click(delivered, '.island-row[data-task-id="9"] .island-row-reopen');
     expect(handlers.onOpenTask).toHaveBeenNthCalledWith(1, 2);
+    expect(handlers.onReopenTask).toHaveBeenCalledWith(9);
     expect(handlers.onDeliverTask).toHaveBeenCalledWith(2);
     expect(handlers.onSelectTasksView).toHaveBeenCalledWith("delivered");
     expect(handlers.onOpenTask).toHaveBeenNthCalledWith(2, 9);

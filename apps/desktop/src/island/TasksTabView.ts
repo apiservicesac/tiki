@@ -187,7 +187,7 @@ export class TasksTabView {
   private deliveredRows(delivered: DeliveredItem[], query: string, handlers: TaskListHandlers): HTMLElement[] {
     return delivered
       .filter((item) => this.keeps(item, query))
-      .map((item) => this.taskList.deliveredRow(item, handlers.onOpenTask));
+      .map((item) => this.taskList.deliveredRow(item, handlers));
   }
 
   /** Whether a task passes the project filter and the search (title, project or #tag). */

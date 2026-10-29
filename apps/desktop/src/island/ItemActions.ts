@@ -27,6 +27,11 @@ export class ItemActions {
     this.store.react("happy");
   }
 
+  async reopen(taskId: number): Promise<void> {
+    await this.backend.moveTask(taskId, "to_do");
+    await this.store.refresh();
+  }
+
   /** Puts off the reminder and puts the alert away. */
   async snooze(taskId: number, minutes: number): Promise<void> {
     await this.backend.snooze(taskId, minutes);

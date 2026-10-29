@@ -551,8 +551,8 @@ button.island-row-text {
 .island-priority-urgent { color: var(--urgency-critical-text); }
 .island-priority-high { color: var(--urgency-soon-text); }
 
-/* The check that delivers an item shows on hover. */
-.island-row-done { opacity: 0; }
+/* The check that delivers an item: always there, faint until the row is pointed at. */
+.island-row-done { opacity: 0.4; }
 .island-row:hover .island-row-done,
 .island-row-done:focus-visible { opacity: 1; }
 .island-row-done:hover { color: var(--good); }
@@ -573,17 +573,20 @@ button.island-row-text {
 .island-when-reminder { background: var(--kind-instance-background); color: var(--kind-instance-text); }
 .island-when-done { background: var(--good-background); color: var(--good); }
 
-/* A delivered task: muted title and a check instead of the deliver button. */
+/* A delivered task: muted title and a Reopen button instead of the deliver check. */
 .island-row-delivered .island-row-text { color: var(--island-muted); }
 
-.island-row-check {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  color: var(--good);
+.island-row-reopen {
+  padding: 4px 10px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--island-muted);
+  font: 600 var(--text-2xs) var(--font-body);
+  cursor: pointer;
 }
 
-.island-row-check svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+.island-row-reopen:hover { background: var(--island-soft); color: var(--island-text); }
 
 .island-empty,
 .island-hint {
