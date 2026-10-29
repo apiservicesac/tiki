@@ -60,6 +60,8 @@ pub struct IslandSnapshot {
     pub mood: Mood,
     /// Word on the mascot's ticket tag: "200 OK", "¡HOY!"…
     pub mood_label: String,
+    /// Another app holds the microphone: Tiki keeps quiet until the call ends.
+    pub in_call: bool,
     /// Tasks that need attention: overdue, due soon or waiting on others.
     pub attention_count: usize,
     /// Overdue or due soon.

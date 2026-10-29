@@ -88,6 +88,18 @@ fn a_brief_during_a_call_still_arrives_but_silently() {
 }
 
 #[test]
+fn the_island_knows_a_call_is_on_until_it_ends() {
+    let mut workspace = TimedWorkspace::sample_at(TestDay::working_hours());
+    assert!(!workspace.island_snapshot().unwrap().in_call);
+
+    workspace.set_in_call(true);
+    assert!(workspace.island_snapshot().unwrap().in_call);
+
+    workspace.set_in_call(false);
+    assert!(!workspace.island_snapshot().unwrap().in_call);
+}
+
+#[test]
 fn a_brief_after_the_call_sounds_again() {
     let mut workspace = TimedWorkspace::sample_at(TestDay::today().and_time(at(9, 0)));
     workspace.set_in_call(true);
