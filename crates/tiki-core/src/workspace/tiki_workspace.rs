@@ -194,10 +194,9 @@ impl TikiWorkspace {
     /// Every alert due now (the brief, item reminders and meetings), each with how it may
     /// reach the user (see `AlertDelivery`).
     pub fn take_due_alerts(&self) -> TikiResult<Vec<DueAlert>> {
-        let alerts = self.alerts();
-        let mut due: Vec<TikiAlert> = alerts.take_due_brief()?.into_iter().collect();
-        due.extend(alerts.take_due_item_alerts()?);
-        due.extend(alerts.take_due_meeting_alerts()?);
+        let mut due: Vec<TikiAlert> = self.take_due_notification()?.into_iter().collect();
+        due.extend(self.take_due_task_reminders()?);
+        due.extend(self.take_due_meeting_alerts()?);
         let delivery =
             AlertDelivery::decide(&self.preferences, self.clock.now().time(), self.in_call);
         Ok(due
