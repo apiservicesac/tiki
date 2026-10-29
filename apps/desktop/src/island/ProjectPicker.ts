@@ -4,7 +4,7 @@ import { TextMatcher } from "../dom/TextMatcher";
 
 /** One choice of the picker: a project, or a special entry such as "All" or "No project". */
 export interface ProjectPickerOption {
-  /** The project's name, or `null` for the special entry. */
+  /** What choosing it gives back: the project's name, or its id as text in the Tasks filter; `null` for the special entry. */
   value: string | null;
   label: string;
   color: string | null;

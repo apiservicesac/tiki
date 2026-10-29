@@ -62,7 +62,7 @@ export class AgendaView {
   /** Reminders with a time and every meeting, by time; all-day meetings lead their day. */
   private static entries(items: readonly SnapshotItem[], meetings: readonly MeetingItem[]): AgendaEntry[] {
     const reminders: AgendaEntry[] = items
-      .filter((item) => item.urgency === "reminder" && item.at !== null)
+      .filter((item) => item.kind === "reminder" && item.at !== null)
       .map((reminder) => ({ at: reminder.at ?? "", reminder }));
     const calendar: AgendaEntry[] = meetings.map((meeting) => ({ at: meeting.startsAt, meeting }));
     return [...reminders, ...calendar].sort((left, right) => left.at.localeCompare(right.at));

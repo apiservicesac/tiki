@@ -42,7 +42,10 @@ export type LocaleName = (typeof LOCALE_NAMES)[number];
 
 export interface SnapshotItem {
   taskId: number;
+  /** A task, or a standalone reminder: the Tasks tab lists only tasks. */
+  kind: ItemKind;
   title: string;
+  projectId: number | null;
   projectName: string | null;
   projectColor: string | null;
   detailLabel: string;
@@ -169,6 +172,7 @@ export interface ProjectChange {
 export interface DeliveredItem {
   taskId: number;
   title: string;
+  projectId: number | null;
   projectName: string | null;
   projectColor: string | null;
   /** "hoy", "ayer" or a short date. */

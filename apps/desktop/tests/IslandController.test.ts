@@ -190,7 +190,7 @@ describe("IslandController", () => {
       pickerSearch.value = "alta";
       pickerSearch.dispatchEvent(new Event("input"));
     }
-    root.querySelector<HTMLButtonElement>('.picker-option[data-value="Altamira"]')?.click();
+    root.querySelector<HTMLButtonElement>('.picker-option[data-value="1"]')?.click();
     expect(groups()).toEqual(["Altamira"]);
     expect(root.querySelectorAll(".tasks-tab .island-row")).toHaveLength(2);
   });
