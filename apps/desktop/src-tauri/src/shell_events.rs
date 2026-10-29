@@ -16,6 +16,11 @@ pub enum ShellEvent {
     CalendarSynced,
     /// A call started or ended: the island redraws the notch.
     InCallChanged,
+    /// A session started, paused, resumed or stopped recording, or its transcript or notes
+    /// moved on: the notch and the Sessions tab refresh.
+    RecordingChanged,
+    /// The recording shortcut: the island stops the session or asks what to record.
+    ToggleRecording,
 }
 
 impl ShellEvent {
@@ -28,6 +33,8 @@ impl ShellEvent {
             ShellEvent::PreferencesChanged => "tiki://preferences-changed",
             ShellEvent::CalendarSynced => "tiki://calendar-synced",
             ShellEvent::InCallChanged => "tiki://in-call-changed",
+            ShellEvent::RecordingChanged => "tiki://recording-changed",
+            ShellEvent::ToggleRecording => "tiki://toggle-recording",
         }
     }
 

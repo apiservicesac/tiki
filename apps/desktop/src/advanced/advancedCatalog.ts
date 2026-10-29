@@ -28,4 +28,5 @@ export const PLUGIN_CATALOG: readonly CatalogEntry[] = Object.freeze([
 export const SHORTCUTS = Object.freeze([
   { keys: ["Ctrl", "Alt", "Space"], labelKey: "advanced.shortcuts.capture" },
   { keys: ["Ctrl", "Alt", "N"], labelKey: "advanced.shortcuts.toggle" },
+  { keys: ["Ctrl", "Alt", "R"], labelKey: "advanced.shortcuts.recording" },
 ]);

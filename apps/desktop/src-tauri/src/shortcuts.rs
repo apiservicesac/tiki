@@ -15,6 +15,7 @@ impl GlobalShortcuts {
             .with_shortcuts([
                 DesktopConfig::SHORTCUT_QUICK_CAPTURE,
                 DesktopConfig::SHORTCUT_TOGGLE_ISLAND,
+                DesktopConfig::SHORTCUT_TOGGLE_RECORDING,
             ])?
             .with_handler(Self::handle)
             .build())
@@ -31,6 +32,8 @@ impl GlobalShortcuts {
             ShellEvent::OpenCapture.emit(app);
         } else if Self::matches(shortcut, DesktopConfig::SHORTCUT_TOGGLE_ISLAND) {
             ShellEvent::ToggleIsland.emit(app);
+        } else if Self::matches(shortcut, DesktopConfig::SHORTCUT_TOGGLE_RECORDING) {
+            ShellEvent::ToggleRecording.emit(app);
         }
     }
 

@@ -108,6 +108,20 @@ fn only_one_session_records_at_a_time() {
 }
 
 #[test]
+fn a_session_that_could_not_start_recording_is_forgotten() {
+    let workspace = workspace();
+    let sessions = workspace.sessions();
+    let session_id = sessions
+        .start(RecordingMode::AudioOnly)
+        .unwrap()
+        .id
+        .unwrap();
+    sessions.abandon(session_id).unwrap();
+    assert_eq!(sessions.list().unwrap().len(), 0);
+    assert!(sessions.start(RecordingMode::AudioOnly).is_ok());
+}
+
+#[test]
 fn the_recorded_time_leaves_pauses_out() {
     let workspace = workspace();
     let session_id = workspace

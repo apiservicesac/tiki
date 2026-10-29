@@ -44,7 +44,7 @@ describe("AdvancedSettingsApp", () => {
 
     root.querySelector<HTMLButtonElement>('[data-section="shortcuts"]')?.click();
     expect(app.currentSection).toBe("shortcuts");
-    expect(root.querySelectorAll(".shortcut-row")).toHaveLength(2);
+    expect(root.querySelectorAll(".shortcut-row")).toHaveLength(3);
   });
 
   it("falls back to General for an unknown section", async () => {

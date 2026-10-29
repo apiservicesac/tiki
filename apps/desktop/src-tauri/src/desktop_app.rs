@@ -15,6 +15,8 @@ use crate::click_through::ClickThrough;
 use crate::commands;
 use crate::diagnostics_log::DiagnosticsLog;
 use crate::island_window::IslandWindow;
+use crate::session_files::SessionFiles;
+use crate::session_recorder::SessionRecorder;
 use crate::shortcuts::GlobalShortcuts;
 use crate::tray::IslandTray;
 
@@ -74,6 +76,10 @@ impl TikiDesktopApp {
                 commands::calendar_commands::disconnect_calendar,
                 commands::calendar_commands::sync_calendars,
                 commands::calendar_commands::open_meeting_link,
+                commands::session_commands::start_recording,
+                commands::session_commands::pause_recording,
+                commands::session_commands::resume_recording,
+                commands::session_commands::stop_recording,
                 commands::ai_commands::ai_status,
                 commands::ai_commands::save_ai_key,
                 commands::ai_commands::remove_ai_key,
@@ -87,9 +93,12 @@ impl TikiDesktopApp {
     fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         DiagnosticsLog::start(&app.path().app_log_dir()?)?;
         tracing::info!(version = %app.package_info().version, "Tiki started");
-        let state = AppState::open(&app.path().app_data_dir()?)?;
+        let app_data_folder = app.path().app_data_dir()?;
+        let state = AppState::open(&app_data_folder)?;
         let preferences = state.with_workspace(|workspace| Ok(workspace.preferences().clone()))?;
         app.manage(state);
+        app.manage(SessionFiles::new(&app_data_folder));
+        app.manage(SessionRecorder::default());
         AiCredentials::use_system_store()?;
         app.manage(AiProxy::new());
 

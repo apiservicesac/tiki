@@ -248,6 +248,18 @@ impl<'context> SessionService<'context> {
         }
     }
 
+    /// Forgets a session whose recording could not start (no microphone, for example).
+    pub fn abandon(&self, session_id: SessionId) -> TikiResult<()> {
+        let session = self.database.sessions().find(session_id)?;
+        if session.status != SessionStatus::Recording || session.media_file.is_some() {
+            return Err(TikiError::SessionTransition {
+                from: session.status.key(),
+                to: SessionStatus::Recording.key(),
+            });
+        }
+        self.database.sessions().delete(session_id)
+    }
+
     /// Forgets a session; the caller removes its folder. Tasks made from it stay.
     pub fn delete(&self, session_id: SessionId) -> TikiResult<Session> {
         let session = self.database.sessions().find(session_id)?;

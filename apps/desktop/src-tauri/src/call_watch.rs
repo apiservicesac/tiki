@@ -9,7 +9,8 @@ use crate::registry_consent_store::RegistryConsentStore;
 use crate::shell_events::ShellEvent;
 
 /// Watches for calls: when another app takes or releases the microphone, it tells the core,
-/// which keeps alerts quiet meanwhile, and the island, which shows it in the notch.
+/// which keeps alerts quiet meanwhile and may offer to record, and the island, which shows
+/// it in the notch.
 pub struct CallWatch;
 
 impl CallWatch {
@@ -37,10 +38,15 @@ impl CallWatch {
         tracing::info!(in_call, "call started or ended");
         let reported = app.state::<AppState>().with_workspace(|workspace| {
             workspace.set_in_call(in_call);
-            Ok(())
+            workspace.take_recording_suggestion()
         });
         match reported {
-            Ok(()) => ShellEvent::InCallChanged.emit(app),
+            Ok(offer) => {
+                ShellEvent::InCallChanged.emit(app);
+                if let Some(offer) = offer {
+                    ShellEvent::AlertReady.emit_with(app, &offer);
+                }
+            }
             Err(error) => tracing::warn!(%error, "could not tell the core about the call"),
         }
     }

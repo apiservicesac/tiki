@@ -14,8 +14,11 @@ mod desktop_app;
 mod desktop_config;
 mod diagnostics_log;
 mod island_window;
+mod recorder_error;
 #[cfg(windows)]
 mod registry_consent_store;
+mod session_files;
+mod session_recorder;
 mod settings_window;
 mod shell_events;
 mod shortcuts;

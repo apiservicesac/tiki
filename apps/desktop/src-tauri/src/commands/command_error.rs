@@ -1,6 +1,8 @@
 use serde::Serialize;
 use tiki_core::TikiError;
 
+use crate::recorder_error::RecorderError;
+
 /// Error sent back to the interface: a stable key (see `TikiError::key`) and a readable
 /// message for the logs.
 #[derive(Debug, Serialize)]
@@ -15,6 +17,15 @@ impl From<TikiError> for CommandError {
         Self {
             key: error.key(),
             message: error.to_string(),
+        }
+    }
+}
+
+impl From<RecorderError> for CommandError {
+    fn from(error: RecorderError) -> Self {
+        match error {
+            RecorderError::Core(error) => error.into(),
+            other => Self::new(&other),
         }
     }
 }

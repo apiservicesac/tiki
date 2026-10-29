@@ -183,10 +183,12 @@
     "advanced.plugin.postgresql": "The client database, read-only queries.",
     "advanced.shortcuts.capture": "Quick new task",
     "advanced.shortcuts.toggle": "Show or hide the island",
+    "advanced.shortcuts.recording": "Record a session or stop recording",
     "advanced.key.ctrl": "Ctrl",
     "advanced.key.alt": "Alt",
     "advanced.key.space": "Space",
     "advanced.key.n": "N",
+    "advanced.key.r": "R",
     "advanced.window.minimize": "Minimize",
     "advanced.window.maximize": "Maximize",
 

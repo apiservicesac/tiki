@@ -35,8 +35,12 @@ impl DesktopConfig {
     pub const CALENDAR_SYNC_INTERVAL: Duration = Duration::from_secs(5 * 60);
     /// SQLite file inside the app data folder.
     pub const DATABASE_FILE_NAME: &'static str = "tiki.db";
+    /// Folder inside the app data folder with one folder per recorded session.
+    pub const SESSIONS_FOLDER: &'static str = "sessions";
     pub const TRAY_ID: &'static str = "tiki-tray";
 
     pub const SHORTCUT_QUICK_CAPTURE: &'static str = "ctrl+alt+space";
     pub const SHORTCUT_TOGGLE_ISLAND: &'static str = "ctrl+alt+n";
+    /// Stops the session being recorded, or asks what to record.
+    pub const SHORTCUT_TOGGLE_RECORDING: &'static str = "ctrl+alt+r";
 }

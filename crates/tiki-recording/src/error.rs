@@ -15,6 +15,9 @@ pub enum RecordingError {
     #[error("could not encode the media: {0}")]
     Encoder(String),
 
+    #[error("recording needs Windows")]
+    UnsupportedPlatform,
+
     #[error("could not capture {source_name}: {reason}")]
     Capture {
         source_name: &'static str,
