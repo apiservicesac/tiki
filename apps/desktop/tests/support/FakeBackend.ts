@@ -246,18 +246,18 @@ export class FakeBackend implements TikiBackend {
     return () => this.listeners.delete(eventName);
   }
 
-  private alertHandler: ((brief: TikiAlert) => void) | null = null;
+  private alertHandler: ((alert: TikiAlert) => void) | null = null;
 
-  async onAlert(handler: (brief: TikiAlert) => void): Promise<() => void> {
+  async onAlert(handler: (alert: TikiAlert) => void): Promise<() => void> {
     this.alertHandler = handler;
     return () => {
       this.alertHandler = null;
     };
   }
 
-  /** Simulates the shell delivering a brief. */
-  deliverAlert(brief: TikiAlert): void {
-    this.alertHandler?.(brief);
+  /** Simulates the shell delivering an alert. */
+  deliverAlert(alert: TikiAlert): void {
+    this.alertHandler?.(alert);
   }
 
   /** Simulates the desktop shell emitting an event. */

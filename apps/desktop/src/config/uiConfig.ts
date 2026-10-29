@@ -79,7 +79,7 @@ export const SHELL_EVENTS = Object.freeze({
   openCapture: "tiki://open-capture",
   openSettings: "tiki://open-settings",
   toggleIsland: "tiki://toggle-island",
-  briefReady: "tiki://brief-ready",
+  alertReady: "tiki://alert-ready",
   preferencesChanged: "tiki://preferences-changed",
   calendarSynced: "tiki://calendar-synced",
 });

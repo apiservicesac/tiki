@@ -160,8 +160,8 @@ export class TauriBackend implements TikiBackend {
     await invoke("set_island_hit_area", { area });
   }
 
-  onAlert(handler: (brief: TikiAlert) => void): Promise<() => void> {
-    return listen<TikiAlert>(SHELL_EVENTS.briefReady, (event) => handler(event.payload));
+  onAlert(handler: (alert: TikiAlert) => void): Promise<() => void> {
+    return listen<TikiAlert>(SHELL_EVENTS.alertReady, (event) => handler(event.payload));
   }
 
   listen(eventName: string, handler: () => void): Promise<() => void> {

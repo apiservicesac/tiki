@@ -43,7 +43,7 @@ impl BriefReminders {
                     if also_in_windows && let Err(error) = Self::show(app, &alert) {
                         tracing::warn!(%error, "could not show the Windows notification");
                     }
-                    ShellEvent::BriefReady.emit_with(app, &alert);
+                    ShellEvent::AlertReady.emit_with(app, &alert);
                 }
             }
             Err(error) => tracing::warn!(%error, "could not prepare the alerts"),

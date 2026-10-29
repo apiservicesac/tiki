@@ -307,7 +307,7 @@ export interface TikiBackend {
   /** Tells the shell which part of the window is the island; the rest lets clicks through. */
   setHitArea(area: HitArea): Promise<void>;
   /** Calls `handler` with each alert the shell delivers; returns a function that stops listening. */
-  onAlert(handler: (brief: TikiAlert) => void): Promise<() => void>;
+  onAlert(handler: (alert: TikiAlert) => void): Promise<() => void>;
   /** Calls `handler` whenever the shell emits `eventName`; returns a function that stops listening. */
   listen(eventName: string, handler: () => void): Promise<() => void>;
 }
