@@ -206,7 +206,8 @@ impl TikiWorkspace {
         CalendarBook::new(&self.database, &self.settings)
     }
 
-    /// Task reminders whose time has come; each one is cleared so it rings once. Nothing is
+    /// Task reminders whose time has come; each one is cleared so it rings once, all in one
+    /// transaction so an alert is never shown without its reminder being moved on. Nothing is
     /// due while notifications are off or focus mode is on: they ring when it ends.
     pub fn take_due_task_reminders(&self, now: NaiveDateTime) -> TikiResult<Vec<TikiAlert>> {
         if !self.preferences.allows_notifications() {
@@ -215,13 +216,15 @@ impl TikiWorkspace {
         let projects = self.project_directory()?;
         let composer = NotificationComposer::new(&self.translator);
         let today = now.date();
-        let mut alerts = Vec::new();
-        for mut task in self.database.tasks().list_reminders_due(now)? {
-            alerts.push(composer.compose_task(&task, projects.name_of(task.project_id), today));
-            task.ring(now);
-            self.database.tasks().update(&task)?;
-        }
-        Ok(alerts)
+        self.database.transaction(|repositories| {
+            let mut alerts = Vec::new();
+            for mut task in repositories.tasks().list_reminders_due(now)? {
+                alerts.push(composer.compose_task(&task, projects.name_of(task.project_id), today));
+                task.ring(now);
+                repositories.tasks().update(&task)?;
+            }
+            Ok(alerts)
+        })
     }
 
     /// Saves an item exactly as the user confirmed it. A project named for the first time is
