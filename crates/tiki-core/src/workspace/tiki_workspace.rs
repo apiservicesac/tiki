@@ -126,9 +126,29 @@ impl TikiWorkspace {
         self.items().move_to(task_id, status)
     }
 
-    /// Puts off a reminder for `minutes`; a reminder that already rang comes back to life.
-    pub fn snooze(&self, task_id: TaskId, minutes: i64) -> TikiResult<()> {
-        self.items().snooze(
+    /// Delivers an item: what the user says with "done" or "entregado".
+    pub fn deliver(&self, task_id: TaskId) -> TikiResult<()> {
+        self.items().move_to(task_id, TaskStatus::Done)
+    }
+
+    /// Brings a delivered item back to "to do"; its delivery stays in the history.
+    pub fn reopen(&self, task_id: TaskId) -> TikiResult<()> {
+        self.items().reopen(task_id)
+    }
+
+    /// Puts the item on hold until `who` answers; a follow-up nudge is scheduled.
+    pub fn wait_for(&self, task_id: TaskId, who: &str) -> TikiResult<()> {
+        self.items().wait_for(task_id, who)
+    }
+
+    /// Puts off an item's reminder until `until`; a reminder that already rang comes back.
+    pub fn snooze(&self, task_id: TaskId, until: NaiveDateTime) -> TikiResult<()> {
+        self.items().snooze(task_id, until)
+    }
+
+    /// Puts off an item's reminder for `minutes` from now, as the alert's buttons do.
+    pub fn snooze_for(&self, task_id: TaskId, minutes: i64) -> TikiResult<()> {
+        self.snooze(
             task_id,
             self.clock.now() + chrono::Duration::minutes(minutes),
         )

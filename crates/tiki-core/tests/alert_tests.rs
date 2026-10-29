@@ -289,7 +289,7 @@ fn snoozing_a_reminder_that_rang_brings_it_back() {
         TaskStatus::Done
     );
 
-    workspace.snooze(call, 10).unwrap();
+    workspace.snooze_for(call, 10).unwrap();
     let details = workspace.task_details(call).unwrap();
     assert_eq!(details.status, TaskStatus::ToDo);
     assert_eq!(details.remind_at, Some(today_at(17, 11)));

@@ -154,3 +154,53 @@ fn normalizing_trims_the_text_and_clears_what_does_not_apply() {
     assert_eq!(task.waiting_for, "");
     assert_eq!(task.repeat, Repeat::Never);
 }
+
+#[test]
+fn intents_deliver_reopen_wait_and_snooze_an_item() {
+    let workspace = sample_workspace();
+    let report = workspace
+        .save_confirmed(ConfirmedCapture {
+            repeat: Repeat::Never,
+            ..capture("Informe", ItemKind::Task, None)
+        })
+        .unwrap();
+
+    workspace.wait_for(report, " Lucía ").unwrap();
+    let waiting = workspace.task_details(report).unwrap();
+    assert_eq!(waiting.status, TaskStatus::Waiting);
+    assert_eq!(waiting.waiting_for, "Lucía");
+    assert!(waiting.follow_up_at.is_some());
+
+    workspace.deliver(report).unwrap();
+    assert_eq!(
+        workspace.task_details(report).unwrap().status,
+        TaskStatus::Done
+    );
+    workspace.reopen(report).unwrap();
+    assert_eq!(
+        workspace.task_details(report).unwrap().status,
+        TaskStatus::ToDo
+    );
+
+    workspace.snooze(report, five_pm()).unwrap();
+    assert_eq!(
+        workspace.task_details(report).unwrap().remind_at,
+        Some(five_pm())
+    );
+}
+
+#[test]
+fn reopening_an_open_item_leaves_it_as_it_is() {
+    let workspace = sample_workspace();
+    let report = workspace
+        .save_confirmed(capture("Informe", ItemKind::Task, None))
+        .unwrap();
+    workspace.move_task(report, TaskStatus::InProgress).unwrap();
+
+    workspace.reopen(report).unwrap();
+
+    assert_eq!(
+        workspace.task_details(report).unwrap().status,
+        TaskStatus::InProgress
+    );
+}

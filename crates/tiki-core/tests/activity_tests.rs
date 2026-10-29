@@ -92,7 +92,7 @@ fn snoozing_a_reminder_that_rang_keeps_its_delivery_in_the_history() {
         })
         .unwrap();
     workspace.take_due_task_reminders().unwrap();
-    workspace.snooze(call, 10).unwrap();
+    workspace.snooze_for(call, 10).unwrap();
 
     let events: Vec<ItemEvent> = workspace
         .activity_of(call)
