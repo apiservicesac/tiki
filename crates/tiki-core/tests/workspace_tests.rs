@@ -47,6 +47,7 @@ fn the_snapshot_is_translated_and_ready_to_draw() {
     // Today only shows what presses today; every open item is in `open_items`.
     assert_eq!(keys, ["overdue", "due_soon", "follow_up"]);
     assert_eq!(snapshot.open_items.len(), 7);
+    assert_eq!(snapshot.open_count, 7);
     let focus = snapshot.focus.as_ref().unwrap();
     assert_eq!(focus.reason, "Está atrasada");
     assert_eq!(focus.item.title, snapshot.sections[0].items[0].title);
@@ -90,6 +91,8 @@ fn snapshot_items_say_what_they_are_and_which_project_they_belong_to() {
     let tracking = item("Tracking de formularios comerciales");
     assert_eq!(tracking.kind, ItemKind::Task);
     assert_eq!(tracking.project_id, Some(altamira));
+    // The reminder is not open work.
+    assert_eq!(snapshot.open_count, snapshot.open_items.len() - 1);
 }
 
 #[test]

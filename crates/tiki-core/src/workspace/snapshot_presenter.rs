@@ -6,7 +6,7 @@ use crate::briefing::{
     FocusReason,
 };
 use crate::calendar::MeetingItem;
-use crate::domain::ProjectDirectory;
+use crate::domain::{ItemKind, ProjectDirectory};
 use crate::i18n::{DateFormatter, Translator};
 use crate::mood::Mood;
 
@@ -67,6 +67,10 @@ impl<'context> SnapshotPresenter<'context> {
             attention_count: brief.pressing_count() + brief.waiting.len(),
             due_count: brief.pressing_count(),
             waiting_count: brief.waiting.len(),
+            open_count: open_items
+                .iter()
+                .filter(|item| item.kind == ItemKind::Task)
+                .count(),
             delivered_today,
             closed_summary: self.translator.format(
                 "island.closed.summary",

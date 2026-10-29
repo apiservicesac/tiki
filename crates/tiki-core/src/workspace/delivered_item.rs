@@ -13,6 +13,8 @@ pub struct DeliveredItem {
     pub project_id: Option<ProjectId>,
     pub project_name: Option<String>,
     pub project_color: Option<String>,
+    /// Lowercase tags without "#" (see `Tags`).
+    pub tags: Vec<String>,
     /// "hoy", "ayer" or a short date.
     pub delivered_label: String,
 }
@@ -35,6 +37,7 @@ impl DeliveredItem {
             project_id: task.project_id,
             project_name: project.map(|project| project.name.clone()),
             project_color: project.map(|project| project.color.clone()),
+            tags: task.tags.clone(),
             delivered_label: Self::label(delivered_on, translator, today),
         })
     }

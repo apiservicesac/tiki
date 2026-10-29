@@ -69,6 +69,8 @@ pub struct IslandSnapshot {
     pub due_count: usize,
     /// Waiting on others.
     pub waiting_count: usize,
+    /// Open work: every open task, without standalone reminders.
+    pub open_count: usize,
     /// Delivered today.
     pub delivered_today: usize,
     /// Text of the closed island: "3 hoy · 2 esperando".
