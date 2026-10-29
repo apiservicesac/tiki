@@ -1,11 +1,11 @@
 {
-  "version": "0.5.0-rc.1",
-  "notes": "A new face for Tiki and alerts that stand out, each kind with its own color. Quiet at night and during calls, an activity history of every item, tasks with an alarm in the Agenda, and clear messages when an item cannot be saved.",
-  "pub_date": "2026-10-29T22:36:14.593Z",
+  "version": "0.5.1-rc.1",
+  "notes": "A trash for items you don't want, with restore and automatic cleanup after 30 days. Tiki is bigger and easier to read, every panel fits the window, settings explain each option, and alerts have Done and Snooze buttons right in the notch.",
+  "pub_date": "2026-10-29T23:40:51.173Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbWlRSmhnUnMyOUdUdGZLR3NCZXBKSE5xdFhIYzBncFRrVzRhT3pMNEVhRjdvRHVVbHpndkxiRWVndHdOSkFNaW1DeS84cDl1SFp0WFFObkFkZUwvandvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMzEzMzM1CWZpbGU6VGlraV8wLjUuMC1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjUuMC1yYy4xCjJTYlRUbW5pQkRaNXJHWjRjWHpSbVZjQ2pCK21YM2R2V1pVMytTYkpBc0FHVmFuL1lyTEI0NHdsQkJLZ0VDSmdieU1yaTRGVHJneTZHUStDOW1uN0RBPT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.5.0-rc.1/Tiki_0.5.0-rc.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXU3RnJYSWc0czNiYnNLd1ZneHpvaTdVZzNMZlRGbnY3enRFWkhwSE5TanRmd09HMHNjdkFMeFN1NXB5VlRITjYzaG9jTXV2em8zSzhyaFNSai9PSWdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMzE3MjEwCWZpbGU6VGlraV8wLjUuMS1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjUuMS1yYy4xCmR6RGZweVp6ZXNqMG1YWkFwMUVudWt0OVN2QkRyZmRkd09ScEN4RmVUR2tXZXNwVG5HaTJRRmo2VTNqcVZRa0dmSzFpcHgzZ2VOWmZYRXVBTlBQakFnPT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.5.1-rc.1/Tiki_0.5.1-rc.1_x64-setup.exe"
     }
   }
 }
