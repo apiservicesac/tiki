@@ -129,8 +129,12 @@ impl TikiWorkspace {
             return Ok(None);
         }
         let log = self.database.brief_log();
-        let moment = BriefPlanner::new(&self.preferences)
-            .due_moment(now, |moment| log.last_sent(moment).ok().flatten());
+        let morning_sent = log.last_sent(BriefMoment::Morning)?;
+        let evening_sent = log.last_sent(BriefMoment::Evening)?;
+        let moment = BriefPlanner::new(&self.preferences).due_moment(now, |moment| match moment {
+            BriefMoment::Morning => morning_sent,
+            BriefMoment::Evening => evening_sent,
+        });
         let Some(moment) = moment else {
             return Ok(None);
         };
