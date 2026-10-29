@@ -4,11 +4,11 @@ use super::{
 use chrono::NaiveDateTime;
 
 use crate::activity::ItemEventRecord;
-use crate::alerts::{BriefPlanner, NotificationComposer, TikiAlert};
-use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
+use crate::alerts::{AlertScheduler, TikiAlert};
+use crate::briefing::{DailyBrief, DailyBriefBuilder};
 use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
 use crate::capture::{CaptureLesson, ConfirmedCapture};
-use crate::domain::{FollowUpPolicy, Project, ProjectDirectory, ProjectId, TaskId, TaskStatus};
+use crate::domain::{Project, ProjectDirectory, ProjectId, TaskId, TaskStatus};
 use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
@@ -67,7 +67,7 @@ impl TikiWorkspace {
             self.translator = Translator::new(preferences.locale)?;
         }
         self.database.preferences().save(&preferences)?;
-        self.reschedule_moved_briefs(&preferences)?;
+        self.alerts().reschedule_moved_briefs(&preferences)?;
         self.preferences = preferences;
         Ok(())
     }
@@ -127,55 +127,14 @@ impl TikiWorkspace {
         ))
     }
 
-    /// The brief notification due now, if any; it is marked as sent so it arrives once
-    /// a day. Nothing is due while notifications are off or focus mode is on.
+    /// The brief due now, if any; it arrives once a day (see `AlertScheduler`).
     pub fn take_due_notification(&self) -> TikiResult<Option<TikiAlert>> {
-        if !self.preferences.allows_notifications() {
-            return Ok(None);
-        }
-        let now = self.clock.now();
-        let log = self.database.brief_log();
-        let morning_sent = log.last_sent(BriefMoment::Morning)?;
-        let evening_sent = log.last_sent(BriefMoment::Evening)?;
-        let moment = BriefPlanner::new(&self.preferences).due_moment(now, |moment| match moment {
-            BriefMoment::Morning => morning_sent,
-            BriefMoment::Evening => evening_sent,
-        });
-        let Some(moment) = moment else {
-            return Ok(None);
-        };
-        log.mark_sent(moment, now.date())?;
-        if moment == BriefMoment::Evening {
-            // A late start skips the morning brief instead of sending both at once.
-            log.mark_sent(BriefMoment::Morning, now.date())?;
-        }
-        let brief = self.brief(&self.project_book().directory()?)?;
-        let composer = NotificationComposer::new(&self.translator);
-        let mut alert = composer.compose(&brief, moment);
-        if moment == BriefMoment::Morning {
-            let meetings = self.calendar_book().agenda(now.date())?;
-            let today = CalendarBook::meetings_on(&meetings, now.date());
-            if let Some(line) = composer.meetings_line(&today) {
-                alert.body = format!("{}\n{line}", alert.body);
-            }
-        }
-        Ok(Some(alert))
+        self.alerts().take_due_brief()
     }
 
     /// "Meeting in 15 min" alerts for meetings about to start; each is announced once.
-    /// Nothing is announced while notifications are off or focus mode is on.
     pub fn take_due_meeting_alerts(&self) -> TikiResult<Vec<TikiAlert>> {
-        if !self.preferences.allows_notifications() {
-            return Ok(Vec::new());
-        }
-        let now = self.clock.now();
-        let composer = NotificationComposer::new(&self.translator);
-        Ok(self
-            .calendar_book()
-            .take_starting_soon(now)?
-            .iter()
-            .map(|meeting| composer.compose_meeting(meeting, now))
-            .collect())
+        self.alerts().take_due_meeting_alerts()
     }
 
     pub fn calendar_accounts(&self) -> TikiResult<Vec<CalendarAccount>> {
@@ -215,38 +174,19 @@ impl TikiWorkspace {
         CalendarBook::new(&self.database, &self.settings)
     }
 
-    /// Reminders and follow-up nudges whose time has come; each moves on so it rings once, all
-    /// in one transaction so an alert is never shown without its item being moved on. Nothing is
-    /// due while notifications are off or focus mode is on: they ring when it ends.
+    /// Reminders and follow-up nudges whose time has come; each rings once.
     pub fn take_due_task_reminders(&self) -> TikiResult<Vec<TikiAlert>> {
-        if !self.preferences.allows_notifications() {
-            return Ok(Vec::new());
-        }
-        let now = self.clock.now();
-        let projects = self.project_book().directory()?;
-        let composer = NotificationComposer::new(&self.translator);
-        let today = now.date();
-        let policy = self.follow_up_policy();
-        self.database.transaction(|repositories| {
-            let mut alerts = Vec::new();
-            for mut task in repositories.tasks().list_due_alerts(now)? {
-                let project_name = projects.name_of(task.project_id);
-                let mut events = Vec::new();
-                if task.remind_at.is_some_and(|at| at <= now) {
-                    alerts.push(composer.compose_reminder(&task, project_name, today));
-                    events.extend(task.ring(now));
-                }
-                if task.follow_up_at.is_some_and(|at| at <= now) {
-                    alerts.push(composer.compose_follow_up(&task, project_name, today));
-                    events.push(task.ring_follow_up(now, &policy));
-                }
-                repositories.tasks().update(&task, now)?;
-                if let Some(task_id) = task.id {
-                    repositories.activity().record(task_id, now, &events)?;
-                }
-            }
-            Ok(alerts)
-        })
+        self.alerts().take_due_item_alerts()
+    }
+
+    fn alerts(&self) -> AlertScheduler<'_> {
+        AlertScheduler::new(
+            &self.database,
+            &self.settings,
+            &self.preferences,
+            &self.translator,
+            self.clock.as_ref(),
+        )
     }
 
     /// Saves an item exactly as the user confirmed it. A project named for the first time is
@@ -327,10 +267,6 @@ impl TikiWorkspace {
         ItemService::new(&self.database, &self.settings, self.clock.as_ref())
     }
 
-    fn follow_up_policy(&self) -> FollowUpPolicy {
-        FollowUpPolicy::new(&self.settings)
-    }
-
     /// Saves a project with the next color of the palette.
     pub fn add_project(&self, name: &str) -> TikiResult<ProjectId> {
         self.project_book().create(name)
@@ -359,28 +295,6 @@ impl TikiWorkspace {
 
     fn project_book(&self) -> ProjectBook<'_> {
         ProjectBook::new(&self.database, &self.settings)
-    }
-
-    fn reschedule_moved_briefs(&self, preferences: &UserPreferences) -> TikiResult<()> {
-        let now = self.clock.now().time();
-        let moves = [
-            (
-                BriefMoment::Morning,
-                self.preferences.morning_brief_time,
-                preferences.morning_brief_time,
-            ),
-            (
-                BriefMoment::Evening,
-                self.preferences.evening_brief_time,
-                preferences.evening_brief_time,
-            ),
-        ];
-        for (moment, old_time, new_time) in moves {
-            if new_time != old_time && new_time > now {
-                self.database.brief_log().clear(moment)?;
-            }
-        }
-        Ok(())
     }
 
     fn brief(&self, projects: &ProjectDirectory) -> TikiResult<DailyBrief> {
