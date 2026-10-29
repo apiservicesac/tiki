@@ -73,6 +73,8 @@ export interface IslandSnapshot {
   dueCount: number;
   /** Waiting on others. */
   waitingCount: number;
+  /** Open work: every open task, without standalone reminders. */
+  openCount: number;
   /** Delivered today. */
   deliveredToday: number;
   closedSummary: string;
@@ -175,6 +177,8 @@ export interface DeliveredItem {
   projectId: number | null;
   projectName: string | null;
   projectColor: string | null;
+  /** Lowercase, without "#". */
+  tags: string[];
   /** "hoy", "ayer" or a short date. */
   deliveredLabel: string;
 }

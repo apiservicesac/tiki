@@ -186,7 +186,7 @@ export class TasksTabView {
 
   private deliveredRows(delivered: DeliveredItem[], query: string, handlers: TaskListHandlers): HTMLElement[] {
     return delivered
-      .filter((item) => this.keeps({ ...item, tags: [] }, query))
+      .filter((item) => this.keeps(item, query))
       .map((item) => this.taskList.deliveredRow(item, handlers.onOpenTask));
   }
 

@@ -12,7 +12,6 @@ export class ReceiptView {
   constructor(private readonly translator: Translator) {}
 
   render(snapshot: IslandSnapshot, alert: TikiAlert | null, dayBrief: string | null): HTMLElement {
-    const openCount = snapshot.openItems.filter((item) => item.kind === "task").length;
     const blocks = snapshot.sections.length > 0
       ? snapshot.sections.map((section) =>
         ElementFactory.create("section", {
@@ -62,7 +61,7 @@ export class ReceiptView {
         ElementFactory.create("p", {
           className: "receipt-foot",
           text: this.translator.format("receipt.totals", {
-            open: openCount,
+            open: snapshot.openCount,
             waiting: snapshot.waitingCount,
             delivered: snapshot.deliveredToday,
           }),

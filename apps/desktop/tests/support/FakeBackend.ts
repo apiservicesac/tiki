@@ -36,8 +36,8 @@ export class FakeBackend implements TikiBackend {
     { projectId: 3, name: "Vapestation", color: "#C2410C", openCount: 1, pressingCount: 0, notes: "" },
   ];
   delivered: DeliveredItem[] = [
-    { taskId: 9, title: "Reporte de ventas de septiembre", projectId: 1, projectName: "Altamira", projectColor: "#2F6BD8", deliveredLabel: "hoy" },
-    { taskId: 8, title: "Ajuste del acta CAPEX", projectId: null, projectName: null, projectColor: null, deliveredLabel: "ayer" },
+    { taskId: 9, title: "Reporte de ventas de septiembre", projectId: 1, projectName: "Altamira", projectColor: "#2F6BD8", tags: ["ventas"], deliveredLabel: "hoy" },
+    { taskId: 8, title: "Ajuste del acta CAPEX", projectId: null, projectName: null, projectColor: null, tags: [], deliveredLabel: "ayer" },
   ];
   savedPreferences: UserPreferences = {
     locale: "spanish",
@@ -283,6 +283,7 @@ export class FakeBackend implements TikiBackend {
       attentionCount: 5,
       dueCount: 3,
       waitingCount: 2,
+      openCount: 6,
       deliveredToday: 1,
       closedSummary: "3 hoy · 2 esperando",
       todaySubtitle: "miércoles 21 de octubre · 3 vencen pronto",
