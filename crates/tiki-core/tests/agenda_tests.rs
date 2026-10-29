@@ -37,8 +37,11 @@ fn meeting(id: &str, title: &str, starts_at: NaiveDateTime, all_day: bool) -> Me
     }
 }
 
-/// Each day's title, with its lines as "kind time title".
-fn lines(days: &[AgendaDay]) -> Vec<(String, Vec<String>)> {
+/// One Agenda line as the test reads it: what it is, its time and its title.
+type Line = (&'static str, String, String);
+
+/// Each day's title with its lines.
+fn lines(days: &[AgendaDay]) -> Vec<(String, Vec<Line>)> {
     days.iter()
         .map(|day| {
             let entries = day
@@ -48,12 +51,12 @@ fn lines(days: &[AgendaDay]) -> Vec<(String, Vec<String>)> {
                     AgendaEntry::Meeting {
                         time_label,
                         meeting,
-                    } => format!("meeting {time_label} {}", meeting.title),
+                    } => ("meeting", time_label.clone(), meeting.title.clone()),
                     AgendaEntry::Reminder { time_label, item } => {
-                        format!("reminder {time_label} {}", item.title)
+                        ("reminder", time_label.clone(), item.title.clone())
                     }
                     AgendaEntry::Task { time_label, item } => {
-                        format!("task {time_label} {}", item.title)
+                        ("task", time_label.clone(), item.title.clone())
                     }
                 })
                 .collect();
@@ -85,20 +88,24 @@ fn the_agenda_lists_meetings_reminders_and_task_alarms_by_day_and_time() {
         .unwrap();
 
     let agenda = workspace.island_snapshot().unwrap().agenda;
+    let line = |kind, time: &str, title: &str| (kind, time.to_owned(), title.to_owned());
     assert_eq!(
         lines(&agenda),
         [
-            ("Hoy".to_owned(), vec!["task 15:00 Revisar acta".to_owned()]),
+            (
+                "Hoy".to_owned(),
+                vec![line("task", "15:00", "Revisar acta")]
+            ),
             (
                 "Mañana".to_owned(),
                 vec![
-                    "meeting 09:00–09:30 Daily".to_owned(),
-                    "reminder 11:00 Tomar agua".to_owned(),
+                    line("meeting", "09:00–09:30", "Daily"),
+                    line("reminder", "11:00", "Tomar agua"),
                 ]
             ),
             (
                 "viernes 23 de octubre".to_owned(),
-                vec!["meeting Todo el día Feriado".to_owned()]
+                vec![line("meeting", "Todo el día", "Feriado")]
             ),
         ]
     );
