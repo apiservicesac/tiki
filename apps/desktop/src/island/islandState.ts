@@ -28,13 +28,6 @@ export type TasksView = (typeof TASKS_VIEWS)[number];
 /** Tickets join as a tab when a ticket connector arrives. */
 export type IslandTab = "today" | "all_tasks" | "agenda";
 
-/** Tabs in display order, each with its translation key. */
-export const ISLAND_TABS: ReadonlyArray<{ tab: IslandTab; labelKey: string }> = Object.freeze([
-  { tab: "today", labelKey: "island.tab.today" },
-  { tab: "all_tasks", labelKey: "island.tab.all_tasks" },
-  { tab: "agenda", labelKey: "island.tab.agenda" },
-]);
-
 /** Everything the island view needs to draw one frame. */
 export interface IslandState {
   mode: IslandMode;

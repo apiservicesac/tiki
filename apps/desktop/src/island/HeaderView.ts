@@ -1,7 +1,16 @@
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
-import { ISLAND_TABS, type IslandPanel, type IslandTab } from "./islandState";
+import type { IslandPanel, IslandTab } from "./islandState";
+
+/** A tab as the header shows it. */
+export interface IslandTabLabel {
+  tab: IslandTab;
+  labelKey: string;
+}
+
+/** The panels reached with a back button, each titled in the header. */
+type TitledPanel = Exclude<IslandPanel, "tabs">;
 
 export interface HeaderHandlers {
   onSelectTab: (tab: IslandTab) => void;
@@ -11,8 +20,7 @@ export interface HeaderHandlers {
 
 /** Top row of the expanded island: tabs on the left, actions on the right. */
 export class HeaderView {
-  private static readonly PANEL_TITLES: Readonly<Record<IslandPanel, string>> = Object.freeze({
-    tabs: "island.tab.today",
+  private static readonly PANEL_TITLES: Readonly<Record<TitledPanel, string>> = Object.freeze({
     capture: "island.action.new",
     settings: "settings.title",
     edit: "edit.title",
@@ -22,9 +30,9 @@ export class HeaderView {
 
   constructor(private readonly translator: Translator) {}
 
-  render(panel: IslandPanel, activeTab: IslandTab, handlers: HeaderHandlers): HTMLElement {
+  render(panel: IslandPanel, tabs: readonly IslandTabLabel[], activeTab: IslandTab, handlers: HeaderHandlers): HTMLElement {
     const leading = panel === "tabs"
-      ? this.tabs(activeTab, handlers.onSelectTab)
+      ? this.tabs(tabs, activeTab, handlers.onSelectTab)
       : this.backButton(panel, handlers.onOpenPanel);
 
     return ElementFactory.create("header", {
@@ -41,19 +49,16 @@ export class HeaderView {
     });
   }
 
-  private tabs(activeTab: IslandTab, onSelect: (tab: IslandTab) => void): HTMLElement {
-    const buttons = ISLAND_TABS.map(({ tab, labelKey }) => {
-      const button = ElementFactory.textButton({
-        className: tab === activeTab ? "island-tab island-tab-on" : "island-tab",
-        text: this.translator.text(labelKey),
-        attributes: { role: "tab", "aria-selected": String(tab === activeTab), "data-tab": tab },
-      }, () => onSelect(tab));
-      return button;
-    });
+  private tabs(tabs: readonly IslandTabLabel[], activeTab: IslandTab, onSelect: (tab: IslandTab) => void): HTMLElement {
+    const buttons = tabs.map(({ tab, labelKey }) => ElementFactory.textButton({
+      className: tab === activeTab ? "island-tab island-tab-on" : "island-tab",
+      text: this.translator.text(labelKey),
+      attributes: { role: "tab", "aria-selected": String(tab === activeTab), "data-tab": tab },
+    }, () => onSelect(tab)));
     return ElementFactory.create("div", { className: "island-tabs", attributes: { role: "tablist" }, children: buttons });
   }
 
-  private backButton(panel: IslandPanel, onOpenPanel: (panel: IslandPanel) => void): HTMLElement {
+  private backButton(panel: TitledPanel, onOpenPanel: (panel: IslandPanel) => void): HTMLElement {
     const titleKey = HeaderView.PANEL_TITLES[panel];
     return ElementFactory.create("div", {
       className: "island-head-title",
