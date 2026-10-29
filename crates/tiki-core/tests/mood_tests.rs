@@ -12,6 +12,7 @@ fn resolve(brief: &DailyBrief, minutes_to_next_meeting: Option<i64>, focus_mode:
         brief,
         minutes_to_next_meeting,
         focus_mode,
+        quiet_hours: false,
     })
 }
 
@@ -46,4 +47,16 @@ fn a_close_meeting_beats_overdue_work() {
 #[test]
 fn focus_mode_always_sleeps() {
     assert_eq!(resolve(&sample_brief(), Some(5), true), Mood::Sleep);
+}
+
+#[test]
+fn the_night_puts_tiki_to_sleep_even_with_overdue_work_and_a_meeting() {
+    let settings = TikiSettings::default();
+    let mood = MoodResolver::new(&settings).resolve(&MoodSignals {
+        brief: &sample_brief(),
+        minutes_to_next_meeting: Some(5),
+        focus_mode: false,
+        quiet_hours: true,
+    });
+    assert_eq!(mood, Mood::Sleep);
 }

@@ -80,4 +80,5 @@ export const SHELL_EVENTS = Object.freeze({
   briefReady: "tiki://brief-ready",
   preferencesChanged: "tiki://preferences-changed",
   calendarSynced: "tiki://calendar-synced",
+  inCallChanged: "tiki://in-call-changed",
 });

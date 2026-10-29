@@ -13,6 +13,8 @@ pub enum ShellEvent {
     PreferencesChanged,
     /// The calendars were copied again: the Agenda refreshes.
     CalendarSynced,
+    /// A call started or ended: the island redraws the notch.
+    InCallChanged,
 }
 
 impl ShellEvent {
@@ -24,6 +26,7 @@ impl ShellEvent {
             ShellEvent::BriefReady => "tiki://brief-ready",
             ShellEvent::PreferencesChanged => "tiki://preferences-changed",
             ShellEvent::CalendarSynced => "tiki://calendar-synced",
+            ShellEvent::InCallChanged => "tiki://in-call-changed",
         }
     }
 

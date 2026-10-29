@@ -3,9 +3,11 @@
 mod island_geometry;
 mod island_hit_area;
 mod island_placement;
+mod quiet_hours;
 mod user_preferences;
 
 pub use island_geometry::{IslandGeometry, ScreenRect};
 pub use island_hit_area::IslandHitArea;
 pub use island_placement::IslandPlacement;
+pub use quiet_hours::QuietHours;
 pub use user_preferences::UserPreferences;

@@ -9,6 +9,8 @@ use crate::app_state::AppState;
 use crate::app_updates::AppUpdates;
 use crate::brief_reminders::BriefReminders;
 use crate::calendar::CalendarSync;
+#[cfg(windows)]
+use crate::call_watch::CallWatch;
 use crate::click_through::ClickThrough;
 use crate::commands;
 use crate::diagnostics_log::DiagnosticsLog;
@@ -102,6 +104,8 @@ impl TikiDesktopApp {
         ClickThrough::start(app.handle().clone(), click_through);
         BriefReminders::start(app.handle().clone());
         CalendarSync::start(app.handle().clone());
+        #[cfg(windows)]
+        CallWatch::start(app.handle().clone());
         AppUpdates::watch(app.handle().clone(), Translator::new(preferences.locale)?);
         Ok(())
     }

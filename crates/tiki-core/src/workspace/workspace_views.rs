@@ -21,6 +21,7 @@ pub struct WorkspaceViews<'context> {
     preferences: &'context UserPreferences,
     translator: &'context Translator,
     clock: &'context dyn Clock,
+    in_call: bool,
 }
 
 impl<'context> WorkspaceViews<'context> {
@@ -30,6 +31,7 @@ impl<'context> WorkspaceViews<'context> {
         preferences: &'context UserPreferences,
         translator: &'context Translator,
         clock: &'context dyn Clock,
+        in_call: bool,
     ) -> Self {
         Self {
             database,
@@ -37,6 +39,7 @@ impl<'context> WorkspaceViews<'context> {
             preferences,
             translator,
             clock,
+            in_call,
         }
     }
 
@@ -56,11 +59,13 @@ impl<'context> WorkspaceViews<'context> {
             minutes_to_next_meeting: next_meeting
                 .map(|meeting| (meeting.starts_at - now).num_minutes()),
             focus_mode: self.preferences.focus_mode,
+            quiet_hours: self.preferences.quiet_hours.covers(now.time()),
         });
         let delivered_today = self.database.activity().count_delivered_on(now.date())?;
         Ok(SnapshotPresenter::new(self.translator, &projects).present(
             &brief,
             mood,
+            self.in_call,
             delivered_today,
             &TodaysMeetings {
                 now,

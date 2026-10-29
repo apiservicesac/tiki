@@ -4670,6 +4670,7 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "windows-native-keyring-store",
+ "winreg",
 ]
 
 [[package]]

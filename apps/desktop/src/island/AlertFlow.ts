@@ -1,5 +1,5 @@
 import type { AssistantActions } from "../assistant/AssistantActions";
-import type { TikiAlert } from "../backend/contracts";
+import type { DueAlert } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
 import { AlertSound } from "./AlertSound";
 import type { IslandModeMachine } from "./IslandModeMachine";
@@ -18,16 +18,16 @@ export class AlertFlow {
   ) {}
 
   /**
-   * The notch grows with Tiki, the title and a preview, and chimes, then folds leaving a dot
-   * until the island is opened. If the island is already open, the alert just appears above
-   * the Today list.
+   * The notch grows with Tiki, the title and a preview, and chimes if the core lets it, then
+   * folds leaving a dot until the island is opened. If the island is already open, the alert
+   * just appears above the Today list.
    */
-  async announce(alert: TikiAlert): Promise<void> {
+  async announce(alert: DueAlert): Promise<void> {
     await this.store.refresh();
     void this.assistantActions.prepareDayBrief();
     const alreadyOpen = this.store.state().mode === "expanded";
     this.store.update({ alert, unreadAlert: !alreadyOpen });
-    if (this.store.preferences().alertSound) {
+    if (alert.delivery.sound) {
       this.sound.play();
     }
     if (alreadyOpen) {

@@ -1,6 +1,7 @@
 use chrono::NaiveTime;
 
 use crate::i18n::Locale;
+use crate::preferences::QuietHours;
 
 /// The single place where Tiki's tunable values live.
 ///
@@ -14,6 +15,8 @@ pub struct TikiSettings {
     pub morning_brief_time: NaiveTime,
     /// When the end-of-day close is prepared.
     pub evening_brief_time: NaiveTime,
+    /// The night a new user starts with: Tiki sleeps and alerts make no sound.
+    pub quiet_hours: QuietHours,
     /// A task due within this many days counts as "due soon" (0 = today, 1 = today and tomorrow).
     pub due_soon_window_days: i64,
     /// A follow-up reminder rings at this time of the day it is due.
@@ -42,6 +45,11 @@ impl Default for TikiSettings {
             locale: Locale::Spanish,
             morning_brief_time: NaiveTime::from_hms_opt(8, 30, 0).expect("valid time"),
             evening_brief_time: NaiveTime::from_hms_opt(18, 0, 0).expect("valid time"),
+            quiet_hours: QuietHours {
+                enabled: true,
+                from: NaiveTime::from_hms_opt(22, 0, 0).expect("valid time"),
+                until: NaiveTime::from_hms_opt(7, 0, 0).expect("valid time"),
+            },
             due_soon_window_days: 2,
             follow_up_time: NaiveTime::from_hms_opt(9, 0, 0).expect("valid time"),
             follow_up_after_days: 3,

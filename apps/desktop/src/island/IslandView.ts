@@ -129,6 +129,12 @@ export class IslandView {
     this.root.ownerDocument.documentElement.lang = this.translator.localeCode;
     this.notch.dataset.mode = state.mode;
     this.notch.dataset.mood = mood;
+    // During a call the notch glows faintly: Tiki is there, keeping quiet.
+    if (state.snapshot.inCall) {
+      this.notch.dataset.activity = "in-call";
+    } else {
+      delete this.notch.dataset.activity;
+    }
     // The root carries the mood too: the alert aura behind the notch takes its color.
     this.root.dataset.mood = mood;
 

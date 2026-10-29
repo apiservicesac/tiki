@@ -14,9 +14,10 @@ impl<'settings> MoodResolver<'settings> {
         Self { settings }
     }
 
-    /// The most urgent signal wins, in this order: focus, meeting, overdue, due soon, follow-up.
+    /// The most urgent signal wins, in this order: focus or the night, meeting, overdue, due
+    /// soon, follow-up. At night Tiki sleeps whatever the day holds: it waits for the morning.
     pub fn resolve(&self, signals: &MoodSignals<'_>) -> Mood {
-        if signals.focus_mode {
+        if signals.focus_mode || signals.quiet_hours {
             Mood::Sleep
         } else if self.meeting_is_close(signals.minutes_to_next_meeting) {
             Mood::Alert

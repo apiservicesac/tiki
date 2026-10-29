@@ -6,4 +6,6 @@ pub struct MoodSignals<'brief> {
     /// Minutes until the next meeting starts, if there is one today.
     pub minutes_to_next_meeting: Option<i64>,
     pub focus_mode: bool,
+    /// The night's quiet hours are on now.
+    pub quiet_hours: bool,
 }

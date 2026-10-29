@@ -35,6 +35,7 @@ impl<'context> SnapshotPresenter<'context> {
         &self,
         brief: &DailyBrief,
         mood: Mood,
+        in_call: bool,
         delivered_today: usize,
         meetings: &TodaysMeetings,
     ) -> IslandSnapshot {
@@ -64,6 +65,7 @@ impl<'context> SnapshotPresenter<'context> {
         IslandSnapshot {
             mood,
             mood_label: self.translator.text(&format!("mood.label.{}", mood.key())),
+            in_call,
             attention_count: brief.pressing_count() + brief.waiting.len(),
             due_count: brief.pressing_count(),
             waiting_count: brief.waiting.len(),
