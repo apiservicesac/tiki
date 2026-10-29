@@ -199,6 +199,14 @@ export interface HitArea {
   height: number;
 }
 
+/** The night: Tiki sleeps and alerts make no sound (see `QuietHours` in the core). */
+export interface QuietHours {
+  enabled: boolean;
+  /** "22:00" or "22:00:00"; the range may cross midnight. */
+  from: string;
+  until: string;
+}
+
 export interface UserPreferences {
   locale: LocaleName;
   islandPlacement: IslandPlacement;
@@ -216,6 +224,7 @@ export interface UserPreferences {
   windowsNotifications: boolean;
   /** Silences notifications and lets Tiki sleep. */
   focusMode: boolean;
+  quietHours: QuietHours;
 }
 
 export const AI_PROVIDERS = Object.freeze(["anthropic", "openai"] as const);

@@ -37,4 +37,26 @@ describe("Tiki keeping quiet", () => {
     backend.deliverAlert(MEETING_ALERT);
     await vi.waitFor(() => expect(chime).toHaveBeenCalledOnce());
   });
+
+  it("sets the quiet hours of the night in the reminder settings", async () => {
+    controller.openPanel("settings");
+    const from = root.querySelector<HTMLInputElement>("#setting-quietHoursFrom");
+    expect(from?.value).toBe("22:00");
+    expect(root.querySelector<HTMLInputElement>("#setting-quietHoursUntil")?.value).toBe("07:00");
+    if (from) {
+      from.value = "23:30";
+      from.dispatchEvent(new Event("change"));
+    }
+    await vi.waitFor(() => expect(backend.savedPreferences.quietHours.from).toBe("23:30"));
+    expect(backend.savedPreferences.quietHours.until).toBe("07:00:00");
+  });
+
+  it("hides the night's times while the quiet hours are off", async () => {
+    controller.openPanel("settings");
+    root.querySelector<HTMLButtonElement>('[data-setting="settings.quiet_hours"]')?.click();
+
+    await vi.waitFor(() => expect(backend.savedPreferences.quietHours.enabled).toBe(false));
+    expect(root.querySelector('[data-setting="settings.quiet_hours"]')?.getAttribute("aria-checked")).toBe("false");
+    expect(root.querySelector("#setting-quietHoursFrom")).toBeNull();
+  });
 });
