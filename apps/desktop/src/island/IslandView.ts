@@ -216,7 +216,7 @@ export class IslandView {
           children: [
             ElementFactory.fromTrustedMarkup(
               "island-card-mascot",
-              this.mascot.render(mood, state.snapshot.moodLabel, UI_CONFIG.mascotSize.card),
+              this.mascot.render(mood, state.snapshot.moodLabel, UI_CONFIG.faceWidth.card),
             ),
             ElementFactory.create("div", {
               className: "island-card-body",

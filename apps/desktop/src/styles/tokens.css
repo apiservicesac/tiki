@@ -24,6 +24,26 @@
   --kind-instance-text: #7fd9d2;
   --island-wash-strength: 1;
 
+  /*
+   * Mood colors: Tiki's eyes, the notch glow, the mood chip and the card wash all take the
+   * color of the current mood from here. Calm is Tiki's own warm amber.
+   */
+  --mood-calm: #f6c768;
+  --mood-hurry: #fb923c;
+  --mood-worried: #f4505e;
+  --mood-alert: #2dd4bf;
+  --mood-impatient: #b67cf7;
+  --mood-curious: #60a5fa;
+  --mood-happy: #34d399;
+  --mood-sleep: #8b95a7;
+  /* How much mood color goes into the notch glow, and into chip text over the theme text. */
+  --mood-glow-mix: 55%;
+  --mood-ink-mix: 100%;
+
+  /* Tiki's visor stays dark in both themes, so the face looks the same everywhere. */
+  --face-visor: #050506;
+  --face-visor-edge: rgba(255, 255, 255, 0.08);
+
   --urgency-critical-background: rgba(244, 80, 94, 0.18);
   --urgency-critical-text: #ff8d97;
   --urgency-soon-background: rgba(245, 165, 36, 0.2);
@@ -76,6 +96,10 @@
     --kind-instance-background: rgba(23, 131, 125, 0.13);
     --kind-instance-text: #17837d;
     --island-wash-strength: 0.5;
+    --mood-glow-mix: 45%;
+    --mood-ink-mix: 62%;
+    --face-visor: #14171c;
+    --face-visor-edge: rgba(255, 255, 255, 0.04);
     --urgency-critical-text: #b02a37;
     --urgency-soon-text: #a8650a;
     --urgency-waiting-text: #7c3aed;

@@ -1,64 +1,62 @@
 import type { MoodName } from "../backend/contracts";
-import { MascotDecorationRenderer } from "./MascotDecorationRenderer";
-import { MascotFaceRenderer } from "./MascotFaceRenderer";
-import { MASCOT_APPEARANCES, MASCOT_PALETTE, MASCOT_SHAPES, type MascotAppearance } from "./mascotAppearance";
+import { MarkupEscaper } from "../dom/MarkupEscaper";
+import { FACE_APPEARANCES, FACE_GEOMETRY, type EyeShape } from "./mascotAppearance";
 
-/** Draws Tiki as an SVG string for a mood, with the translated word on its ticket tag. */
+/**
+ * Draws Tiki's face as an SVG string: a visor with two eyes whose shape tells the mood.
+ * The eyes use `currentColor`, so the stylesheet gives them the mood color (`--mood-<name>`)
+ * and every mood color lives in one place.
+ */
 export class MascotRenderer {
-  private readonly face = new MascotFaceRenderer();
-  private readonly decorations = new MascotDecorationRenderer();
-
-  render(mood: MoodName, tagLabel: string, size: number): string {
-    const appearance = MASCOT_APPEARANCES[mood];
-    const tintId = `tiki-tint-${mood}`;
-    return `<svg class="mascot mascot-${mood}" width="${size}" height="${size}" viewBox="${MASCOT_SHAPES.viewBox}" aria-hidden="true">`
-      + this.gradients(appearance, tintId)
-      + `<ellipse cx="80" cy="152" rx="42" ry="5" fill="${MASCOT_PALETTE.shadow}" opacity=".18"/>`
-      + `<g class="${appearance.animation ? `mascot-${appearance.animation}` : ""}">`
-      + this.decorations.ticketTag(tagLabel)
-      + this.arms(mood)
-      + this.body(tintId)
-      + this.face.render(appearance)
-      + this.decorations.badge(appearance)
-      + this.decorations.decoration(appearance)
+  /** `width` is the face's width in pixels; its height is half of it. */
+  render(mood: MoodName, label: string, width: number): string {
+    const appearance = FACE_APPEARANCES[mood];
+    const height = Math.round(width / FACE_GEOMETRY.aspectRatio);
+    const [leftX, rightX] = FACE_GEOMETRY.eyeCenters as readonly [number, number];
+    const title = label ? `<title>${MarkupEscaper.escape(label)}</title>` : "";
+    const ariaAttributes = label ? `role="img" aria-label="${MarkupEscaper.escape(label)}"` : `aria-hidden="true"`;
+    return `<svg class="mascot mascot-${mood}" data-motion="${appearance.motion}" width="${width}" height="${height}" `
+      + `viewBox="${FACE_GEOMETRY.viewBox}" ${ariaAttributes}>${title}`
+      + this.visor()
+      + `<g class="mascot-eyes">`
+      + `<g class="mascot-eye">${this.eye(leftX, appearance.leftEye, appearance.eyeTilt)}</g>`
+      + `<g class="mascot-eye">${this.eye(rightX, appearance.rightEye, -appearance.eyeTilt)}</g>`
       + `</g></svg>`;
   }
 
-  private gradients(appearance: MascotAppearance, tintId: string): string {
-    const tintOpacity = appearance.tint * 0.92;
-    return `<defs>`
-      + `<linearGradient id="tiki-body" x1="0" y1="0" x2="0" y2="1">`
-      + `<stop offset="0" stop-color="${MASCOT_PALETTE.bodyTop}"/><stop offset="1" stop-color="${MASCOT_PALETTE.bodyBottom}"/>`
-      + `</linearGradient>`
-      + `<linearGradient id="${tintId}" x1="0" y1="1" x2="0" y2="0">`
-      + `<stop offset="0" stop-color="${appearance.color}" stop-opacity="${tintOpacity}"/>`
-      + `<stop offset="1" stop-color="${appearance.color}" stop-opacity="0"/>`
-      + `</linearGradient></defs>`;
+  private visor(): string {
+    const radius = FACE_GEOMETRY.visorRadius;
+    return `<rect class="mascot-visor" x="1" y="1" width="62" height="30" rx="${radius}"/>`;
   }
 
-  private body(tintId: string): string {
-    const shape = MASCOT_SHAPES.body;
-    return `<ellipse cx="60" cy="142" rx="13" ry="6" fill="${MASCOT_PALETTE.outline}"/>`
-      + `<ellipse cx="100" cy="142" rx="13" ry="6" fill="${MASCOT_PALETTE.outline}"/>`
-      + `<path d="${shape}" fill="url(#tiki-body)"/>`
-      + `<path d="${shape}" fill="url(#${tintId})"/>`
-      + `<path d="${shape}" fill="none" stroke="${MASCOT_PALETTE.outline}" stroke-width="2.2"/>`
-      + `<path d="M128 74C138 92 138 116 122 132C130 114 130 94 120 78Z" fill="${MASCOT_PALETTE.shade}" opacity=".45"/>`
-      + `<ellipse cx="56" cy="62" rx="20" ry="8" fill="${MASCOT_PALETTE.white}" opacity=".65" transform="rotate(-24 56 62)"/>`;
-  }
-
-  private arms(mood: MoodName): string {
-    if (mood === "happy") {
-      return this.arm(22, 78, -38) + this.arm(138, 78, 38);
+  private eye(centerX: number, shape: EyeShape, tilt: number): string {
+    const y = FACE_GEOMETRY.eyeLine;
+    const rotation = tilt === 0 ? "" : ` transform="rotate(${tilt} ${centerX} ${y})"`;
+    switch (shape) {
+      case "happy":
+        return this.stroke(`M${centerX - 4} ${y + 2}Q${centerX} ${y - 5} ${centerX + 4} ${y + 2}`);
+      case "closed":
+        return this.stroke(`M${centerX - 4} ${y + 1}Q${centerX} ${y + 3} ${centerX + 4} ${y + 1}`);
+      case "lidded":
+        return this.pill(centerX, y + 2.5, 7, 5, rotation);
+      case "small":
+        return this.pill(centerX, y, 5.5, 9, rotation);
+      case "wide":
+        return this.pill(centerX, y, 7, 11, rotation);
+      case "big":
+        return this.pill(centerX, y, 8, 13, rotation);
+      case "open":
+        return this.pill(centerX, y, 6, 11, rotation);
     }
-    if (mood === "calm") {
-      return this.arm(24, 112, 28) + `<g class="mascot-wave">${this.arm(140, 86, 40)}</g>`;
-    }
-    return this.arm(24, 112, 28) + this.arm(136, 112, -28);
   }
 
-  private arm(centerX: number, centerY: number, rotation: number): string {
-    return `<ellipse cx="${centerX}" cy="${centerY}" rx="9" ry="14" fill="${MASCOT_PALETTE.arm}" `
-      + `stroke="${MASCOT_PALETTE.outline}" stroke-width="2" transform="rotate(${rotation} ${centerX} ${centerY})"/>`;
+  /** A rounded eye centered on (`centerX`, `centerY`). */
+  private pill(centerX: number, centerY: number, width: number, height: number, rotation: string): string {
+    return `<rect x="${centerX - width / 2}" y="${centerY - height / 2}" width="${width}" height="${height}" `
+      + `rx="${Math.min(width, height) / 2}" fill="currentColor"${rotation}/>`;
+  }
+
+  private stroke(path: string): string {
+    return `<path d="${path}" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
   }
 }

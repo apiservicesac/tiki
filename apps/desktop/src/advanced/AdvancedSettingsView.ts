@@ -1,4 +1,5 @@
 import type { UserPreferences } from "../backend/contracts";
+import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
@@ -133,7 +134,7 @@ export class AdvancedSettingsView {
       className: "advanced-titlebar",
       attributes: { "data-tauri-drag-region": "" },
       children: [
-        ElementFactory.fromTrustedMarkup("advanced-mascot", mascot.render("calm", "", 26)),
+        ElementFactory.fromTrustedMarkup("advanced-mascot", mascot.render("calm", "", UI_CONFIG.faceWidth.settingsTitle)),
         this.titleText,
         ElementFactory.create("span", { className: "advanced-titlebar-spacer", attributes: { "data-tauri-drag-region": "" } }),
         ElementFactory.create("div", { className: "advanced-window-buttons", children: controls }),

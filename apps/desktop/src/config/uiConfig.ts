@@ -31,7 +31,8 @@ export const UI_CONFIG = Object.freeze({
     /** The previous content fades out this fast while the new one starts to appear. */
     contentOutMs: 180,
   }),
-  mascotSize: Object.freeze({ hidden: 24, compact: 30, alert: 40, card: 72 }),
+  /** Width of Tiki's face in each place; its height is half of it. */
+  faceWidth: Object.freeze({ hidden: 40, compact: 44, alert: 56, card: 76, settingsTitle: 36 }),
 });
 
 /** Names of the events the desktop shell sends to the interface (see `shell_events.rs`). */

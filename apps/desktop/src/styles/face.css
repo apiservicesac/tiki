@@ -1,0 +1,61 @@
+/*
+ * Tiki's face: a dark visor with two eyes in the mood color. Any element with `data-mood`
+ * (the notch, the card) sets `--mood-color` for everything inside it; the face also carries
+ * its own mood class, so it keeps its color when drawn alone (the settings window).
+ */
+[data-mood="calm"], .mascot-calm { --mood-color: var(--mood-calm); }
+[data-mood="hurry"], .mascot-hurry { --mood-color: var(--mood-hurry); }
+[data-mood="worried"], .mascot-worried { --mood-color: var(--mood-worried); }
+[data-mood="alert"], .mascot-alert { --mood-color: var(--mood-alert); }
+[data-mood="impatient"], .mascot-impatient { --mood-color: var(--mood-impatient); }
+[data-mood="curious"], .mascot-curious { --mood-color: var(--mood-curious); }
+[data-mood="happy"], .mascot-happy { --mood-color: var(--mood-happy); }
+[data-mood="sleep"], .mascot-sleep { --mood-color: var(--mood-sleep); }
+
+.mascot {
+  display: block;
+  overflow: visible;
+  color: var(--mood-color, var(--mood-calm));
+}
+
+.mascot-visor {
+  fill: var(--face-visor);
+  stroke: var(--face-visor-edge);
+  stroke-width: 1;
+}
+
+/* The eyes glow softly, so Tiki reads as present even at a glance. */
+.mascot-eyes { filter: drop-shadow(0 0 2.5px color-mix(in srgb, currentColor 70%, transparent)); }
+.mascot-sleep .mascot-eyes { filter: none; opacity: 0.7; }
+
+.mascot-eyes,
+.mascot-eye {
+  transform-box: view-box;
+  transform-origin: 32px 16px;
+}
+
+.mascot-eye:first-child { transform-origin: 24px 16px; }
+.mascot-eye:last-child { transform-origin: 40px 16px; }
+
+/* Slow, small motions: alive without asking for attention. */
+@media (prefers-reduced-motion: no-preference) {
+  .mascot .mascot-eye { animation: face-blink 6s infinite; }
+  .mascot[data-motion="glance"] .mascot-eyes { animation: face-glance 9s ease-in-out infinite; }
+  .mascot[data-motion="scan"] .mascot-eyes { animation: face-scan 2.4s ease-in-out infinite; }
+  .mascot[data-motion="pulse"] .mascot-eyes { animation: face-pulse 1.6s ease-in-out infinite; }
+  .mascot[data-motion="tap"] .mascot-eyes { animation: face-tap 3s ease-in-out infinite; }
+  .mascot[data-motion="tilt"] .mascot-eyes { animation: face-tilt 4s ease-in-out infinite; }
+  .mascot[data-motion="bounce"] .mascot-eyes { animation: face-bounce 1.4s var(--ease-out) 2; }
+  .mascot[data-motion="breathe"] .mascot-eyes { animation: face-breathe 5s ease-in-out infinite; }
+  .mascot[data-motion="bounce"] .mascot-eye,
+  .mascot[data-motion="breathe"] .mascot-eye { animation: none; }
+}
+
+@keyframes face-blink { 0%, 95%, 100% { transform: scaleY(1); } 97.5% { transform: scaleY(0.1); } }
+@keyframes face-glance { 0%, 40%, 100% { transform: none; } 48%, 60% { transform: translateX(2.5px); } 68%, 80% { transform: translateX(-2.5px); } }
+@keyframes face-scan { 0%, 100% { transform: translateX(-2.5px); } 50% { transform: translateX(2.5px); } }
+@keyframes face-pulse { 50% { transform: scale(1.08); } }
+@keyframes face-tap { 0%, 70%, 100% { transform: none; } 78% { transform: translateY(-1.5px); } 86% { transform: none; } 92% { transform: translateY(-1.5px); } }
+@keyframes face-tilt { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-7deg); } }
+@keyframes face-bounce { 30% { transform: translateY(-3px); } 60% { transform: translateY(0.5px); } }
+@keyframes face-breathe { 50% { opacity: 0.45; } }
