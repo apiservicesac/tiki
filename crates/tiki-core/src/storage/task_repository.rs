@@ -22,10 +22,10 @@ impl<'connection> TaskRepository<'connection> {
             "INSERT INTO tasks (title, notes, project_id, status, priority, due_date, waiting_since,
                                 completed_on, remind_at,
                                 origin_plugin, origin_connection, origin_record, origin_url,
-                                kind, tags, repeat, waiting_for, follow_up_at,
+                                kind, tags, repeat, waiting_for, follow_up_at, trashed_at,
                                 created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?19)",
+                     ?18, ?19, ?20, ?20)",
             params![
                 task.title,
                 task.notes,
@@ -45,6 +45,7 @@ impl<'connection> TaskRepository<'connection> {
                 task.repeat.key(),
                 task.waiting_for,
                 task.follow_up_at,
+                task.trashed_at,
                 now,
             ],
         )?;
@@ -59,7 +60,7 @@ impl<'connection> TaskRepository<'connection> {
                 SET title = ?2, notes = ?3, project_id = ?4, status = ?5, priority = ?6,
                     due_date = ?7, waiting_since = ?8, completed_on = ?9, remind_at = ?10,
                     kind = ?11, tags = ?12, repeat = ?13, waiting_for = ?14, follow_up_at = ?15,
-                    updated_at = ?16
+                    trashed_at = ?16, updated_at = ?17
               WHERE id = ?1",
             params![
                 task_id.0,
@@ -77,6 +78,7 @@ impl<'connection> TaskRepository<'connection> {
                 task.repeat.key(),
                 task.waiting_for,
                 task.follow_up_at,
+                task.trashed_at,
                 now,
             ],
         )?;

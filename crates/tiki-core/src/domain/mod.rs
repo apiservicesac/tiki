@@ -13,6 +13,7 @@ mod task_invariants;
 mod task_lifecycle;
 mod task_origin;
 mod task_status;
+mod task_trash;
 
 pub use follow_up_policy::FollowUpPolicy;
 pub use identifiers::{ProjectId, TaskId};

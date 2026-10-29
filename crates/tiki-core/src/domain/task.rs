@@ -36,6 +36,9 @@ pub struct Task {
     /// (the database's `CURRENT_TIMESTAMP` default), up to a few hours off.
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
+    /// When the user sent the item to the trash, in local time; empty for every item outside
+    /// it (see `task_trash`).
+    pub trashed_at: Option<NaiveDateTime>,
 }
 
 impl Task {
@@ -64,6 +67,7 @@ impl Task {
             origin: TaskOrigin::Manual,
             created_at: None,
             updated_at: None,
+            trashed_at: None,
         })
     }
 
