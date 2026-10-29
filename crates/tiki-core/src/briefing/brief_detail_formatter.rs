@@ -50,7 +50,7 @@ impl<'translator> BriefDetailFormatter<'translator> {
 
     /// "17:00" today, "vie 23 · 09:00" another day.
     fn moment_label(&self, at: chrono::NaiveDateTime, today: NaiveDate) -> String {
-        let time = at.format("%H:%M").to_string();
+        let time = DateFormatter::time(at.time());
         if at.date() == today {
             time
         } else {

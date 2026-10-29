@@ -1,4 +1,4 @@
-use chrono::{Datelike, NaiveDate};
+use chrono::{Datelike, NaiveDate, NaiveTime};
 
 use super::Translator;
 
@@ -8,6 +8,9 @@ pub struct DateFormatter<'translator> {
 }
 
 impl<'translator> DateFormatter<'translator> {
+    /// How a time of day is written, the same in every language: "09:30", "17:00".
+    const TIME_OF_DAY: &'static str = "%H:%M";
+
     pub fn new(translator: &'translator Translator) -> Self {
         Self { translator }
     }
@@ -38,6 +41,11 @@ impl<'translator> DateFormatter<'translator> {
                 ("day", &date.day().to_string()),
             ],
         )
+    }
+
+    /// "09:30" / "17:00".
+    pub fn time(time: NaiveTime) -> String {
+        time.format(Self::TIME_OF_DAY).to_string()
     }
 
     fn weekday_index(date: NaiveDate) -> usize {

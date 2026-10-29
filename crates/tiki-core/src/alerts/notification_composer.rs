@@ -4,7 +4,7 @@ use super::{AlertKind, TikiAlert};
 use crate::briefing::{BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, DailyBrief};
 use crate::calendar::MeetingItem;
 use crate::domain::{ItemKind, Task};
-use crate::i18n::Translator;
+use crate::i18n::{DateFormatter, Translator};
 
 /// Writes the short notification for a brief: counts first, then what to start with and
 /// who to follow up.
@@ -88,10 +88,12 @@ impl<'translator> NotificationComposer<'translator> {
     /// "Meeting in 12 min": its title, its time and where.
     pub fn compose_meeting(&self, meeting: &MeetingItem, now: chrono::NaiveDateTime) -> TikiAlert {
         let minutes = (meeting.starts_at - now).num_minutes().max(0);
-        let mut details = vec![format!(
-            "{}–{}",
-            meeting.starts_at.format("%H:%M"),
-            meeting.ends_at.format("%H:%M")
+        let mut details = vec![self.translator.format(
+            "meeting.time_range",
+            &[
+                ("start", &DateFormatter::time(meeting.starts_at.time())),
+                ("end", &DateFormatter::time(meeting.ends_at.time())),
+            ],
         )];
         if !meeting.location.is_empty() {
             details.push(meeting.location.clone());
@@ -114,7 +116,7 @@ impl<'translator> NotificationComposer<'translator> {
             "notify.meetings_today",
             &[
                 ("count", &meetings_today.len().to_string()),
-                ("time", &first.starts_at.format("%H:%M").to_string()),
+                ("time", &DateFormatter::time(first.starts_at.time())),
             ],
         ))
     }
