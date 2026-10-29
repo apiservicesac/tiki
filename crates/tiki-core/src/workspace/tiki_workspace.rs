@@ -4,9 +4,7 @@ use super::{
 use chrono::NaiveDateTime;
 
 use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
-use crate::calendar::{
-    AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting, MeetingItem,
-};
+use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
 use crate::capture::{CaptureLesson, ConfirmedCapture};
 use crate::domain::{
     FollowUpPolicy, Project, ProjectDirectory, ProjectId, Tags, Task, TaskId, TaskStatus,
@@ -90,7 +88,7 @@ impl TikiWorkspace {
         let now = self.clock.now();
         let projects = self.project_directory()?;
         let brief = self.brief(&projects)?;
-        let meetings = self.calendar_book().agenda(now)?;
+        let meetings = self.calendar_book().agenda(now.date())?;
         let next_meeting = CalendarBook::next_today(&meetings, now);
         let mood = MoodResolver::new(&self.settings).resolve(&MoodSignals {
             brief: &brief,
@@ -145,11 +143,8 @@ impl TikiWorkspace {
         let composer = NotificationComposer::new(&self.translator);
         let mut alert = composer.compose(&brief, moment);
         if moment == BriefMoment::Morning {
-            let meetings = self.calendar_book().agenda(now)?;
-            let today: Vec<&MeetingItem> = meetings
-                .iter()
-                .filter(|meeting| meeting.starts_at.date() == now.date())
-                .collect();
+            let meetings = self.calendar_book().agenda(now.date())?;
+            let today = CalendarBook::meetings_on(&meetings, now.date());
             if let Some(line) = composer.meetings_line(&today) {
                 alert.body = format!("{}\n{line}", alert.body);
             }
@@ -196,17 +191,13 @@ impl TikiWorkspace {
 
     /// The window of days the calendar copy covers, from the start of today.
     pub fn calendar_window(&self) -> (NaiveDateTime, NaiveDateTime) {
-        let from = self.clock.today().and_time(chrono::NaiveTime::MIN);
-        let to = from
-            .checked_add_days(chrono::Days::new(self.settings.agenda_days))
-            .unwrap_or(from);
-        (from, to)
+        self.calendar_book().window(self.clock.today())
     }
 
     /// Replaces what Tiki knows of an account's meetings in the calendar window.
     pub fn store_meetings(&self, account_id: AccountId, meetings: &[Meeting]) -> TikiResult<()> {
-        let (from, to) = self.calendar_window();
-        self.calendar_book().store(account_id, from, to, meetings)
+        self.calendar_book()
+            .store(account_id, self.clock.today(), meetings)
     }
 
     fn calendar_book(&self) -> CalendarBook<'_> {

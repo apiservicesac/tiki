@@ -1,4 +1,4 @@
-use chrono::{Days, NaiveDateTime, NaiveTime};
+use chrono::{Days, NaiveDate, NaiveDateTime, NaiveTime};
 
 use super::{AccountId, CalendarAccount, CalendarProvider, Meeting, MeetingItem};
 use crate::error::TikiResult;
@@ -34,26 +34,41 @@ impl<'context> CalendarBook<'context> {
         self.database.calendar().find_account(account_id)
     }
 
-    /// Replaces what Tiki knows of the account's meetings between `from` and `to`.
+    /// The days the Agenda and the local copy of meetings cover: from the start of `today`,
+    /// for the next `agenda_days`.
+    pub fn window(&self, today: NaiveDate) -> (NaiveDateTime, NaiveDateTime) {
+        let from = today.and_time(NaiveTime::MIN);
+        let to = from
+            .checked_add_days(Days::new(self.settings.agenda_days))
+            .unwrap_or(from);
+        (from, to)
+    }
+
+    /// Replaces what Tiki knows of the account's meetings in the window that starts `today`.
     pub fn store(
         &self,
         account_id: AccountId,
-        from: NaiveDateTime,
-        to: NaiveDateTime,
+        today: NaiveDate,
         meetings: &[Meeting],
     ) -> TikiResult<()> {
+        let (from, to) = self.window(today);
         self.database
             .calendar()
             .replace_meetings(account_id, from, to, meetings)
     }
 
-    /// The meetings of the Agenda: from the start of today, for the next days.
-    pub fn agenda(&self, now: NaiveDateTime) -> TikiResult<Vec<MeetingItem>> {
-        let from = now.date().and_time(NaiveTime::MIN);
-        let to = from
-            .checked_add_days(Days::new(self.settings.agenda_days))
-            .unwrap_or(from);
+    /// The meetings of the Agenda: the window that starts `today`.
+    pub fn agenda(&self, today: NaiveDate) -> TikiResult<Vec<MeetingItem>> {
+        let (from, to) = self.window(today);
         self.database.calendar().meetings_between(from, to)
+    }
+
+    /// The meetings that start on `day`.
+    pub fn meetings_on(meetings: &[MeetingItem], day: NaiveDate) -> Vec<&MeetingItem> {
+        meetings
+            .iter()
+            .filter(|meeting| meeting.starts_at.date() == day)
+            .collect()
     }
 
     /// Timed meetings starting soon that were not announced yet; announced from now on.

@@ -176,3 +176,28 @@ fn past_meetings_are_not_kept() {
         .collect();
     assert_eq!(titles, ["Hoy"]);
 }
+
+#[test]
+fn the_calendar_window_starts_today_and_covers_the_agenda_days() {
+    let workspace = workspace_at(at(21, 15, 30));
+    assert_eq!(workspace.calendar_window(), (at(21, 0, 0), at(29, 0, 0)));
+}
+
+#[test]
+fn the_meetings_of_a_day_are_picked_from_the_agenda() {
+    use tiki_core::calendar::{CalendarBook, MeetingItem};
+    let item = |starts_at| MeetingItem {
+        title: "Daily".into(),
+        starts_at,
+        ends_at: starts_at + chrono::Duration::minutes(15),
+        all_day: false,
+        location: String::new(),
+        join_url: None,
+        account_email: "yo@example.com".into(),
+    };
+    let agenda = [item(at(21, 10, 0)), item(at(22, 10, 0))];
+
+    let today = CalendarBook::meetings_on(&agenda, TestDay::today());
+    assert_eq!(today.len(), 1);
+    assert_eq!(today[0].starts_at, at(21, 10, 0));
+}
