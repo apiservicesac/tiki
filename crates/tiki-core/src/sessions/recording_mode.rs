@@ -31,3 +31,14 @@ impl RecordingMode {
             })
     }
 }
+
+/// How a video session is encoded, chosen when it starts; the recorder maps it to a preset.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum VideoQuality {
+    /// Light files for meetings and screen shares.
+    #[default]
+    Normal,
+    /// Smoother and sharper, for demos with motion.
+    High,
+}

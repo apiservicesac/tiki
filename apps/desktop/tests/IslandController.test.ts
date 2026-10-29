@@ -575,9 +575,25 @@ describe("IslandController", () => {
     expect(controller.currentState.panel).toBe("tabs");
   });
 
+  it("records a screen or a window in the quality chosen, and a video does not pause", async () => {
+    controller.openPanel("record");
+    root.querySelector<HTMLButtonElement>('.record-option[data-mode="audio_and_video"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector(".record-target")).not.toBeNull());
+    const targets = [...root.querySelectorAll(".record-target")].map((target) => target.textContent);
+    expect(targets).toEqual(["Pantalla 1", "Reunión de Teams"]);
+    expect(backend.recordingRequests).toEqual([]);
+
+    root.querySelector<HTMLButtonElement>('[data-quality="high"]')?.click();
+    root.querySelector<HTMLButtonElement>('.record-target[data-kind="window"]')?.click();
+    await vi.waitFor(() => expect(backend.recordingRequests).toEqual(["start:audio_and_video"]));
+    expect(backend.lastVideoChoice).toEqual({ kind: "window", id: 1_311_754, quality: "high" });
+    await vi.waitFor(() => expect(root.querySelector(".island-head .recording-indicator")).not.toBeNull());
+    expect(root.querySelector('[aria-label="Pausar la grabación"]')).toBeNull();
+  });
+
   it("keeps the red dot and the timer in the folded notch while recording", async () => {
     vi.useFakeTimers();
-    await backend.startRecording("audio_only");
+    await backend.startRecording("audio_only", null);
     await controller.refresh();
     expect(notch()?.dataset.mode).toBe("recording");
     expect(root.querySelector(".notch-recording .recording-timer")?.textContent).toBe("00:00");
@@ -590,7 +606,7 @@ describe("IslandController", () => {
   });
 
   it("pauses, resumes and stops from the header", async () => {
-    await backend.startRecording("audio_only");
+    await backend.startRecording("audio_only", null);
     await controller.refresh();
     controller.setMode("expanded");
     root.querySelector<HTMLButtonElement>('[aria-label="Pausar la grabación"]')?.click();
@@ -605,7 +621,7 @@ describe("IslandController", () => {
   it("stops with the shortcut while recording, and otherwise asks what to record", async () => {
     backend.emit(SHELL_EVENTS.toggleRecording);
     await vi.waitFor(() => expect(controller.currentState.panel).toBe("record"));
-    await backend.startRecording("audio_only");
+    await backend.startRecording("audio_only", null);
     await controller.refresh();
     backend.emit(SHELL_EVENTS.toggleRecording);
     await vi.waitFor(() => expect(backend.recordingRequests).toEqual(["start:audio_only", "stop"]));

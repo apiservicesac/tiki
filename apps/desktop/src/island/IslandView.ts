@@ -187,6 +187,7 @@ export class IslandView {
       if (state.panel !== "session") {
         this.sessionDetail.reset();
       }
+      this.recordingPrompt.reset();
     }
     if (this.translator.localeCode !== this.shownLocale) {
       this.tasksTab.reset();
@@ -353,7 +354,7 @@ export class IslandView {
       case "brief":
         return this.receipt.render(state.snapshot, state.alert, state.dayBrief);
       case "record":
-        return this.recordingPrompt.render(handlers);
+        return this.recordingPrompt.render(state.videoTargets, handlers);
       case "session":
         return state.openSession
           ? this.sessionDetail.render(state.openSession, { aiReady: this.assistantReady, writingNotes: state.writingNotes }, handlers)

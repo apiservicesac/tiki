@@ -51,6 +51,9 @@ pub enum TikiError {
     #[error("a session is already being recorded")]
     AlreadyRecording,
 
+    #[error("only an audio-only session can pause")]
+    PauseNeedsAudioOnly,
+
     #[error("AI request failed: {0}")]
     Ai(String),
 
@@ -81,6 +84,7 @@ impl TikiError {
             TikiError::UnsavedSession => "unsaved_session",
             TikiError::SessionTransition { .. } => "session_transition",
             TikiError::AlreadyRecording => "already_recording",
+            TikiError::PauseNeedsAudioOnly => "pause_needs_audio_only",
             TikiError::Ai(_) => "ai",
             TikiError::Calendar(_) => "calendar",
             TikiError::Plugin(_) => "plugin",

@@ -1,4 +1,5 @@
 import type {
+  CaptureTarget,
   ModelDownload,
   SessionDetails,
   SessionSearchHit,
@@ -86,6 +87,8 @@ export interface IslandState {
   modelDownload: ModelDownload | null;
   /** The session whose notes the AI is writing. */
   writingNotes: number | null;
+  /** Choosing what a video session records: the screens and windows offered. */
+  videoTargets: CaptureTarget[] | null;
 }
 
 /** How the island starts, before it knows where it sits and what the day holds. */
@@ -110,4 +113,5 @@ export const ISLAND_STATE_DEFAULTS: Readonly<Omit<IslandState, "placement" | "sn
   openSession: null,
   modelDownload: null,
   writingNotes: null,
+  videoTargets: null,
 });

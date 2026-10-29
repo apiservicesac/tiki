@@ -1,4 +1,4 @@
-import type { RecordingMode, TikiBackend } from "../backend/contracts";
+import type { CaptureTarget, TikiBackend, VideoQuality } from "../backend/contracts";
 import type { IslandModeMachine } from "./IslandModeMachine";
 import { RESTING_MODES } from "./islandState";
 import type { IslandStore } from "./IslandStore";
@@ -23,13 +23,30 @@ export class RecordingFlow {
     if (this.store.state().snapshot.recording) {
       await this.stop();
     } else {
-      this.store.update({ mode: "expanded", panel: "record" });
+      this.store.update({ mode: "expanded", panel: "record", videoTargets: null });
     }
   }
 
-  async start(mode: RecordingMode): Promise<void> {
-    if (await this.run(() => this.backend.startRecording(mode))) {
+  /** Records audio only, right away. */
+  async startAudio(): Promise<void> {
+    if (await this.run(() => this.backend.startRecording("audio_only", null))) {
       this.store.update({ panel: "tabs" });
+    }
+  }
+
+  /** A video session first asks which screen or window to record. */
+  async chooseVideo(): Promise<void> {
+    try {
+      this.store.update({ videoTargets: await this.backend.captureTargets() });
+    } catch {
+      this.store.react("worried");
+    }
+  }
+
+  async startVideo(target: CaptureTarget, quality: VideoQuality): Promise<void> {
+    const video = { kind: target.kind, id: target.id, quality };
+    if (await this.run(() => this.backend.startRecording("audio_and_video", video))) {
+      this.store.update({ panel: "tabs", videoTargets: null });
     }
   }
 

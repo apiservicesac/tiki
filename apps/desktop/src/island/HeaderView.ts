@@ -73,12 +73,15 @@ export class HeaderView {
     if (!recording) {
       return [ElementFactory.iconButton(ICONS.record, this.translator.text("recording.start"), () => handlers.onOpenPanel("record"))];
     }
-    const pauseOrResume = recording.paused
-      ? ElementFactory.iconButton(ICONS.play, this.translator.text("recording.resume"), handlers.onResumeRecording)
-      : ElementFactory.iconButton(ICONS.pause, this.translator.text("recording.pause"), handlers.onPauseRecording);
+    // A video keeps its frames' own clock, so only an audio-only session pauses.
+    const pauseOrResume = recording.mode !== "audio_only"
+      ? []
+      : [recording.paused
+        ? ElementFactory.iconButton(ICONS.play, this.translator.text("recording.resume"), handlers.onResumeRecording)
+        : ElementFactory.iconButton(ICONS.pause, this.translator.text("recording.pause"), handlers.onPauseRecording)];
     return [
       this.recordingIndicator.render(recording),
-      pauseOrResume,
+      ...pauseOrResume,
       ElementFactory.iconButton(ICONS.stop, this.translator.text("recording.stop"), handlers.onStopRecording),
     ];
   }

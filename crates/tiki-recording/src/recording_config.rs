@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use crate::transcription::TranscriptionModel;
+use crate::video::VideoPreset;
 
 /// Fixed values of recording and transcription, kept in one place.
 pub struct RecordingConfig;
@@ -40,6 +41,21 @@ impl RecordingConfig {
     pub const SYSTEM_TRACK_FILE: &'static str = "system.wav";
     pub const AUDIO_FILE: &'static str = "session.ogg";
     pub const VIDEO_FILE: &'static str = "session.mp4";
+
+    /// Video sessions, encoded as H.264 in MP4 by Windows: normal (about 0.7 GB per hour)
+    /// and high, smoother and sharper.
+    pub const NORMAL_VIDEO: VideoPreset = VideoPreset {
+        frame_rate: 15,
+        bitrate: 1_500_000,
+    };
+    pub const HIGH_VIDEO: VideoPreset = VideoPreset {
+        frame_rate: 30,
+        bitrate: 4_000_000,
+    };
+    /// The mix in a video session's MP4: AAC at this bit rate, 16-bit mono at the mix rate.
+    pub const VIDEO_AUDIO_BITRATE: u32 = 96_000;
+    pub const VIDEO_AUDIO_BITS: u32 = 16;
+    pub const VIDEO_AUDIO_CHANNELS: u32 = 1;
 
     /// Whisper models, downloaded once from whisper.cpp's repository and checked against
     /// their SHA-256: fast, the balanced default, and precise.

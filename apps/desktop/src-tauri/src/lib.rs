@@ -26,5 +26,6 @@ mod shell_events;
 mod shortcuts;
 mod transcription_runner;
 mod tray;
+mod video_choice;
 
 pub use desktop_app::TikiDesktopApp;

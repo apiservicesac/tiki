@@ -21,7 +21,7 @@ mod transcript_query;
 pub use active_recording::ActiveRecording;
 pub use identifiers::{ActionItemId, SessionId};
 pub use meeting_link::MeetingLink;
-pub use recording_mode::RecordingMode;
+pub use recording_mode::{RecordingMode, VideoQuality};
 pub use recording_suggestion_policy::{PresenceSignals, RecordingCue, RecordingSuggestionPolicy};
 pub use retention_policy::RetentionPolicy;
 pub use session::Session;

@@ -54,9 +54,9 @@ impl TranscriptionRunner {
     }
 
     fn run(app: &AppHandle, models_folder: &Path, woken: &Receiver<()>) {
-        let requeued = app.state::<AppState>().with_workspace(|workspace| {
-            workspace.sessions().requeue_interrupted_transcriptions()
-        });
+        let requeued = app
+            .state::<AppState>()
+            .with_workspace(|workspace| workspace.sessions().requeue_interrupted_transcriptions());
         if let Err(error) = requeued {
             tracing::warn!(%error, "could not requeue the transcriptions cut short");
         }

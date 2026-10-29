@@ -61,6 +61,13 @@ impl IslandWindow {
         self.window.set_ignore_cursor_events(enabled)
     }
 
+    /// Keeps the island out of screen captures, such as a video session recording the screen.
+    pub fn set_content_protected(&self, protected: bool) {
+        if let Err(error) = self.window.set_content_protected(protected) {
+            tracing::warn!(%error, "could not keep the island out of screen captures");
+        }
+    }
+
     /// Shows the window and gives it the keyboard focus.
     pub fn bring_forward(&self) {
         if let Err(error) = self.window.show().and_then(|()| self.window.set_focus()) {

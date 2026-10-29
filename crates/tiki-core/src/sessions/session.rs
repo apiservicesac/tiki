@@ -2,7 +2,7 @@ use chrono::{Duration, NaiveDateTime};
 use serde::Serialize;
 
 use super::{MeetingLink, RecordingMode, SessionClock, SessionId, SessionStatus};
-use crate::error::TikiResult;
+use crate::error::{TikiError, TikiResult};
 
 /// A recorded work session: a call or a meeting the user chose to keep.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -66,7 +66,11 @@ impl Session {
         self.clock.recorded(self.ended_at.unwrap_or(now))
     }
 
+    /// Only audio-only sessions pause: a video keeps its frames' own clock.
     pub fn pause(&mut self, now: NaiveDateTime) -> TikiResult<()> {
+        if self.mode != RecordingMode::AudioOnly {
+            return Err(TikiError::PauseNeedsAudioOnly);
+        }
         self.status = self.status.checked_move(SessionStatus::Paused)?;
         self.clock.pause(now);
         Ok(())

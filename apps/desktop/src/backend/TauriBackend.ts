@@ -7,6 +7,7 @@ import type {
   AiProviderStatus,
   AvailableUpdate,
   CalendarAccount,
+  CaptureTarget,
   CalendarProvider,
   CalendarStatus,
   CaptureLesson,
@@ -27,6 +28,7 @@ import type {
   TaskStatus,
   TikiBackend,
   UserPreferences,
+  VideoChoice,
 } from "./contracts";
 
 /** Talks to the Rust core through Tauri commands (see `src-tauri/src/commands`). */
@@ -135,8 +137,12 @@ export class TauriBackend implements TikiBackend {
     await this.call("sync_calendars");
   }
 
-  async startRecording(mode: RecordingMode): Promise<void> {
-    await this.call("start_recording", { mode });
+  async startRecording(mode: RecordingMode, video: VideoChoice | null): Promise<void> {
+    await this.call("start_recording", { mode, video });
+  }
+
+  captureTargets(): Promise<CaptureTarget[]> {
+    return this.call<CaptureTarget[]>("capture_targets");
   }
 
   async pauseRecording(): Promise<void> {

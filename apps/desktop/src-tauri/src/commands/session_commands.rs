@@ -5,6 +5,7 @@ use tiki_core::sessions::{
     ActionItemId, ProposedSessionTask, RecordingMode, SessionDetails, SessionId, SessionNotes,
     SessionSearchHit, SessionSummary,
 };
+use tiki_recording::video::CaptureTarget;
 
 use super::command_error::{CommandError, CommandResult};
 use crate::app_state::AppState;
@@ -12,6 +13,7 @@ use crate::session_files::SessionFiles;
 use crate::session_recorder::SessionRecorder;
 use crate::shell_events::ShellEvent;
 use crate::transcription_runner::TranscriptionRunner;
+use crate::video_choice::{CaptureTargetView, VideoChoice};
 
 /// A session as its detail shows it, with the file the player opens.
 #[derive(Serialize)]
@@ -31,14 +33,26 @@ pub struct SessionStorage {
     media_days: u64,
 }
 
-/// Starts recording a session in the mode the user clicked.
+/// Starts recording a session in the mode the user clicked; a video session records the
+/// screen or window they picked.
 #[tauri::command]
 pub fn start_recording(
     app: AppHandle,
     recorder: State<'_, SessionRecorder>,
     mode: RecordingMode,
+    video: Option<VideoChoice>,
 ) -> CommandResult<()> {
-    Ok(recorder.start(&app, mode)?)
+    Ok(recorder.start(&app, mode, video)?)
+}
+
+/// The screens and windows a video session can record.
+#[tauri::command]
+pub fn capture_targets() -> CommandResult<Vec<CaptureTargetView>> {
+    Ok(CaptureTarget::list()
+        .map_err(|error| CommandError::new(&error))?
+        .into_iter()
+        .map(CaptureTargetView::from)
+        .collect())
 }
 
 #[tauri::command]
@@ -151,7 +165,10 @@ pub fn save_session_notes(
 
 /// Turns a task the AI proposed into a task of the user, pointing back to its session.
 #[tauri::command]
-pub fn apply_session_task(state: State<'_, AppState>, action_item_id: i64) -> CommandResult<TaskId> {
+pub fn apply_session_task(
+    state: State<'_, AppState>,
+    action_item_id: i64,
+) -> CommandResult<TaskId> {
     Ok(state.with_workspace(|workspace| {
         workspace
             .sessions()

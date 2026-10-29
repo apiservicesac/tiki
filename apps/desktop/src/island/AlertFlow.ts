@@ -47,7 +47,7 @@ export class AlertFlow {
     if (alert && alert.taskId !== null) {
       await this.items.open(alert.taskId);
     } else if (alert?.kind === "recording") {
-      this.store.update({ mode: "expanded", panel: "record" });
+      this.store.update({ mode: "expanded", panel: "record", videoTargets: null });
     } else if (alert?.kind === "meeting") {
       this.store.update({ mode: "expanded", panel: "tabs", tab: "agenda" });
     } else {

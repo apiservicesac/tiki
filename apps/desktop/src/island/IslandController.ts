@@ -138,7 +138,7 @@ export class IslandController {
   }
 
   openPanel(panel: IslandPanel): void {
-    this.update({ mode: "expanded", panel });
+    this.update({ mode: "expanded", panel, videoTargets: null });
   }
 
   selectTab(tab: IslandTab): void {
@@ -224,7 +224,9 @@ export class IslandController {
       onSelectTab: (tab) => this.selectTab(tab),
       onOpenPanel: (panel) => this.openPanel(panel),
       onClose: () => this.setMode("resting"),
-      onStartRecording: (mode) => void this.recording.start(mode),
+      onStartAudioRecording: () => void this.recording.startAudio(),
+      onChooseVideo: () => void this.recording.chooseVideo(),
+      onStartVideoRecording: (target, quality) => void this.recording.startVideo(target, quality),
       onPauseRecording: () => void this.recording.pause(),
       onResumeRecording: () => void this.recording.resume(),
       onStopRecording: () => void this.recording.stop(),

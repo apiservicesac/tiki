@@ -80,6 +80,26 @@ export interface SnapshotSection {
 export const RECORDING_MODES = Object.freeze(["audio_only", "audio_and_video"] as const);
 export type RecordingMode = (typeof RECORDING_MODES)[number];
 
+/** How a video session is encoded: normal (light) or high (smoother and sharper). */
+export const VIDEO_QUALITIES = Object.freeze(["normal", "high"] as const);
+export type VideoQuality = (typeof VIDEO_QUALITIES)[number];
+
+/** A screen or a window a video session can record (see `CaptureTargetView` in the shell). */
+export interface CaptureTarget {
+  kind: "screen" | "window";
+  /** A screen's number, from 1, or a window's handle. */
+  id: number;
+  /** A window's title; screens are named by their number. */
+  name: string;
+}
+
+/** What a video session records and how. */
+export interface VideoChoice {
+  kind: CaptureTarget["kind"];
+  id: number;
+  quality: VideoQuality;
+}
+
 /** The session being recorded (see `ActiveRecording` in the core). */
 export interface ActiveRecording {
   sessionId: number;
@@ -440,8 +460,10 @@ export interface TikiBackend {
   connectCalendar(provider: CalendarProvider): Promise<CalendarAccount>;
   disconnectCalendar(accountId: number): Promise<void>;
   syncCalendars(): Promise<void>;
-  /** Starts recording a session; the core refuses a second one. */
-  startRecording(mode: RecordingMode): Promise<void>;
+  /** Starts recording a session; a video session records the screen or window chosen. The core refuses a second one. */
+  startRecording(mode: RecordingMode, video: VideoChoice | null): Promise<void>;
+  /** The screens and windows a video session can record. */
+  captureTargets(): Promise<CaptureTarget[]>;
   pauseRecording(): Promise<void>;
   resumeRecording(): Promise<void>;
   /** Stops recording; the session waits for its transcript. */

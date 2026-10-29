@@ -14,8 +14,8 @@ pub enum RecorderError {
     #[error("no session is being recorded")]
     NotRecording,
 
-    #[error("video recording is not available yet")]
-    VideoUnavailable,
+    #[error("a video session needs a screen or a window to record")]
+    NoVideoTarget,
 
     #[error("could not start the recorder thread: {0}")]
     Thread(#[from] std::io::Error),

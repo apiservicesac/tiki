@@ -156,6 +156,21 @@ fn the_recorded_time_leaves_pauses_out() {
 }
 
 #[test]
+fn a_video_session_does_not_pause() {
+    let workspace = workspace();
+    let session_id = workspace
+        .sessions()
+        .start(RecordingMode::AudioAndVideo)
+        .unwrap()
+        .id
+        .unwrap();
+    assert!(matches!(
+        workspace.sessions().pause(session_id),
+        Err(TikiError::PauseNeedsAudioOnly)
+    ));
+}
+
+#[test]
 fn a_session_moves_only_along_its_life_cycle() {
     let workspace = workspace();
     let session_id = transcribed(&workspace, Vec::new());

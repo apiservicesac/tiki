@@ -19,8 +19,8 @@ use crate::island_window::IslandWindow;
 use crate::session_files::SessionFiles;
 use crate::session_recorder::SessionRecorder;
 use crate::session_retention::SessionRetention;
-use crate::transcription_runner::TranscriptionRunner;
 use crate::shortcuts::GlobalShortcuts;
+use crate::transcription_runner::TranscriptionRunner;
 use crate::tray::IslandTray;
 
 /// Builds and runs the desktop application.
@@ -80,6 +80,7 @@ impl TikiDesktopApp {
                 commands::calendar_commands::sync_calendars,
                 commands::calendar_commands::open_meeting_link,
                 commands::session_commands::start_recording,
+                commands::session_commands::capture_targets,
                 commands::session_commands::pause_recording,
                 commands::session_commands::resume_recording,
                 commands::session_commands::stop_recording,

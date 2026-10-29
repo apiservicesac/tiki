@@ -4,6 +4,7 @@ import type {
   AlertDelivery,
   AvailableUpdate,
   CalendarAccount,
+  CaptureTarget,
   CalendarProvider,
   CalendarStatus,
   CaptureLesson,
@@ -26,6 +27,7 @@ import type {
   TaskStatus,
   TikiBackend,
   UserPreferences,
+  VideoChoice,
 } from "../../src/backend/contracts";
 import { AI_PROVIDERS } from "../../src/backend/contracts";
 import { BackendError } from "../../src/backend/BackendError";
@@ -234,9 +236,21 @@ export class FakeBackend implements TikiBackend {
   /** What the island asked the recorder, in order: `start:audio_only`, `pause`, `stop`… */
   readonly recordingRequests: string[] = [];
 
-  async startRecording(mode: RecordingMode): Promise<void> {
+  /** The screen or window the last video session records. */
+  lastVideoChoice: VideoChoice | null = null;
+  readonly screensAndWindows: CaptureTarget[] = [
+    { kind: "screen", id: 1, name: "" },
+    { kind: "window", id: 1_311_754, name: "Reunión de Teams" },
+  ];
+
+  async startRecording(mode: RecordingMode, video: VideoChoice | null): Promise<void> {
     this.recordingRequests.push(`start:${mode}`);
+    this.lastVideoChoice = video;
     this.snapshot.recording = { sessionId: 1, mode, paused: false, recordedMs: 0 };
+  }
+
+  async captureTargets(): Promise<CaptureTarget[]> {
+    return this.screensAndWindows;
   }
 
   async pauseRecording(): Promise<void> {

@@ -40,7 +40,9 @@ impl SessionRetention {
         for session in expired {
             files.remove_media(&session)?;
             let session_id = session.id.ok_or(tiki_core::TikiError::UnsavedSession)?;
-            state.with_workspace(|workspace| workspace.sessions().media_removed(session_id).map(drop))?;
+            state.with_workspace(|workspace| {
+                workspace.sessions().media_removed(session_id).map(drop)
+            })?;
             tracing::info!(?session_id, "old session media removed");
         }
         ShellEvent::RecordingChanged.emit(app);

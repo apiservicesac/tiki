@@ -5,15 +5,18 @@ use std::thread;
 use tauri::{AppHandle, Manager};
 use tiki_core::sessions::{RecordingMode, Session, SessionId};
 use tiki_recording::audio::CaptureDevices;
-use tiki_recording::media::{OggOpusWriter, TrackWriter};
+use tiki_recording::media::{MediaSink, OggOpusWriter, TrackWriter};
 use tiki_recording::pipeline::{RecordingPipeline, RecordingTracks, SystemMonotonicClock};
+use tiki_recording::video::{VideoPreset, VideoSink};
 use tiki_recording::{RecordingConfig, RecordingResult};
 
 use crate::app_state::AppState;
+use crate::island_window::IslandWindow;
 use crate::recorder_error::RecorderError;
 use crate::session_files::SessionFiles;
 use crate::shell_events::ShellEvent;
 use crate::transcription_runner::TranscriptionRunner;
+use crate::video_choice::VideoChoice;
 
 /// What the recorder thread is asked to do.
 enum RecorderCommand {
@@ -29,25 +32,35 @@ struct RunningRecorder {
 }
 
 /// Records the session the user started: the core keeps the session and its rules, a
-/// thread pumps the microphone and the system audio into the session's folder. Stopping
-/// hands the finished media to the core, which queues the transcription.
+/// thread pumps the microphone and the system audio into the session's folder (with the
+/// screen or window in a video session, while the island hides from the capture).
+/// Stopping hands the finished media to the core, which queues the transcription.
 #[derive(Default)]
 pub struct SessionRecorder {
     running: Mutex<Option<RunningRecorder>>,
 }
 
 impl SessionRecorder {
-    pub fn start(&self, app: &AppHandle, mode: RecordingMode) -> Result<(), RecorderError> {
+    pub fn start(
+        &self,
+        app: &AppHandle,
+        mode: RecordingMode,
+        video: Option<VideoChoice>,
+    ) -> Result<(), RecorderError> {
         let mut running = self.lock();
-        if mode == RecordingMode::AudioAndVideo {
-            return Err(RecorderError::VideoUnavailable);
+        if mode == RecordingMode::AudioAndVideo && video.is_none() {
+            return Err(RecorderError::NoVideoTarget);
         }
         let state = app.state::<AppState>();
         let session = state.with_workspace(|workspace| workspace.sessions().start(mode))?;
         let session_id = session.id.ok_or(tiki_core::TikiError::UnsavedSession)?;
-        let pipeline = match Self::open_pipeline(&app.state::<SessionFiles>(), &session) {
+        let video = video.filter(|_| mode == RecordingMode::AudioAndVideo);
+        // The island stays out of the video; it is set before the capture starts.
+        Self::protect_island(app, video.is_some());
+        let pipeline = match Self::open_pipeline(&app.state::<SessionFiles>(), &session, video) {
             Ok(pipeline) => pipeline,
             Err(error) => {
+                Self::protect_island(app, false);
                 if let Err(abandon_error) =
                     state.with_workspace(|workspace| workspace.sessions().abandon(session_id))
                 {
@@ -60,7 +73,7 @@ impl SessionRecorder {
         let recorder_app = app.clone();
         thread::Builder::new()
             .name("session recorder".to_owned())
-            .spawn(move || Self::record(&recorder_app, session_id, pipeline, &received))?;
+            .spawn(move || Self::record(&recorder_app, session_id, mode, pipeline, &received))?;
         *running = Some(RunningRecorder {
             session_id,
             commands,
@@ -113,14 +126,30 @@ impl SessionRecorder {
         Ok(())
     }
 
-    fn open_pipeline(files: &SessionFiles, session: &Session) -> RecordingResult<RecordingPipeline> {
+    fn open_pipeline(
+        files: &SessionFiles,
+        session: &Session,
+        video: Option<VideoChoice>,
+    ) -> RecordingResult<RecordingPipeline> {
         let folder = files.prepare(session)?;
+        let media: Box<dyn MediaSink> = match video {
+            Some(choice) => VideoSink::start(
+                &choice.target(),
+                VideoPreset::for_quality(choice.quality),
+                &folder.join(RecordingConfig::VIDEO_FILE),
+            )?,
+            None => Box::new(OggOpusWriter::create(
+                &folder.join(RecordingConfig::AUDIO_FILE),
+            )?),
+        };
         let tracks = RecordingTracks {
             microphone: CaptureDevices::microphone()?,
             system: CaptureDevices::system_audio()?,
-            microphone_track: TrackWriter::create(&folder.join(RecordingConfig::MICROPHONE_TRACK_FILE))?,
+            microphone_track: TrackWriter::create(
+                &folder.join(RecordingConfig::MICROPHONE_TRACK_FILE),
+            )?,
             system_track: TrackWriter::create(&folder.join(RecordingConfig::SYSTEM_TRACK_FILE))?,
-            media: Box::new(OggOpusWriter::create(&folder.join(RecordingConfig::AUDIO_FILE))?),
+            media,
         };
         Ok(RecordingPipeline::new(
             tracks,
@@ -133,6 +162,7 @@ impl SessionRecorder {
     fn record(
         app: &AppHandle,
         session_id: SessionId,
+        mode: RecordingMode,
         mut pipeline: RecordingPipeline,
         commands: &Receiver<RecorderCommand>,
     ) {
@@ -143,10 +173,15 @@ impl SessionRecorder {
             tracing::warn!(%error, "could not finish the session's media");
             0
         });
+        Self::protect_island(app, false);
+        let media_file = match mode {
+            RecordingMode::AudioOnly => RecordingConfig::AUDIO_FILE,
+            RecordingMode::AudioAndVideo => RecordingConfig::VIDEO_FILE,
+        };
         let stopped = app.state::<AppState>().with_workspace(|workspace| {
             workspace
                 .sessions()
-                .stop(session_id, RecordingConfig::AUDIO_FILE.to_owned(), media_bytes)
+                .stop(session_id, media_file.to_owned(), media_bytes)
                 .map(drop)
         });
         match stopped {
@@ -169,6 +204,12 @@ impl SessionRecorder {
                 Ok(RecorderCommand::Stop) | Err(RecvTimeoutError::Disconnected) => return Ok(()),
                 Err(RecvTimeoutError::Timeout) => pipeline.pump()?,
             }
+        }
+    }
+
+    fn protect_island(app: &AppHandle, protected: bool) {
+        if let Some(island) = IslandWindow::find(app) {
+            island.set_content_protected(protected);
         }
     }
 
