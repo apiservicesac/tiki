@@ -43,7 +43,7 @@ export class SettingsView {
               () => onChange({ ...preferences, locale }),
             )),
         ),
-        this.reminderSettings.render(preferences, handlers),
+        ...this.reminderSettings.render(preferences, handlers),
         this.advancedLink(handlers.onOpenAdvancedSettings),
       ],
     });

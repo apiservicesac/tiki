@@ -445,12 +445,22 @@ describe("IslandController", () => {
   it("keeps only the island's own settings and links to the advanced ones", () => {
     controller.openPanel("settings");
     const groups = [...root.querySelectorAll(".settings-group h3")].map((title) => title.textContent);
-    expect(groups).toEqual(["Posición de la isla", "Idioma", "Recordatorios"]);
+    expect(groups).toEqual(["Dónde aparece Tiki", "Idioma", "Avisos", "Silencio", "Resúmenes"]);
     expect(root.querySelector(".settings-ai")).toBeNull();
 
     root.querySelector<HTMLButtonElement>("#open-advanced-settings")?.click();
     expect(backend.openedSettings).toEqual([undefined]);
     expect(notch()?.dataset.mode).toBe("hidden");
+  });
+
+  it("explains every alert option and dims the ones that depend on alerts while they are off", async () => {
+    controller.openPanel("settings");
+    const rows = [...root.querySelectorAll(".setting-row")];
+    expect(rows.every((row) => row.querySelector(".setting-row-text small")?.textContent)).toBe(true);
+
+    await controller.changePreferences({ ...backend.savedPreferences, notificationsEnabled: false });
+    const sound = root.querySelector('[data-setting="settings.alert_sound"]')?.closest(".setting-row");
+    expect(sound?.classList.contains("setting-row-inactive")).toBe(true);
   });
 
   it("reloads preferences changed in the advanced settings window", async () => {
