@@ -229,7 +229,7 @@ export interface UserPreferences {
   aiProvider: AiProviderName;
   /** `null` uses the provider's default model. */
   aiModel: string | null;
-  /** "08:30" or "08:30:00". */
+  /** A time of day, "08:30:00" both ways (see `CoreDateTimeText`). */
   morningBriefTime: string;
   eveningBriefTime: string;
   /** Master switch for reminders. */

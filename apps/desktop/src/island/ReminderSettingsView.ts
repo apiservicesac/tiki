@@ -65,7 +65,7 @@ export class ReminderSettingsView {
     input.addEventListener("click", () => input.showPicker?.());
     input.addEventListener("change", () => {
       if (input.value !== "") {
-        onChange({ ...preferences, [field]: input.value });
+        onChange({ ...preferences, [field]: CoreDateTimeText.fromClock(input.value) });
       }
     });
     return ElementFactory.create("label", {

@@ -6,7 +6,8 @@ use crate::ai::AiProvider;
 use crate::i18n::Locale;
 use crate::settings::TikiSettings;
 
-/// Everything the user can change in Settings.
+/// Everything the user can change in Settings. Times of day travel to and from the
+/// interface as "08:30:00", like the time of a moment; storage writes them as `TIME_FORMAT`.
 // Each flag is an independent switch in Settings, not a hidden state machine.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

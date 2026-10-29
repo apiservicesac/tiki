@@ -401,7 +401,7 @@ describe("IslandController", () => {
       morning.value = "07:45";
       morning.dispatchEvent(new Event("change"));
     }
-    await vi.waitFor(() => expect(backend.savedPreferences.morningBriefTime).toBe("07:45"));
+    await vi.waitFor(() => expect(backend.savedPreferences.morningBriefTime).toBe("07:45:00"));
   });
 
   it("shows Settings without the big mascot on the narrow left and right island", async () => {

@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { CoreDateTimeText } from "../src/backend/CoreDateTimeText";
 
 describe("CoreDateTimeText", () => {
-  it("reads a time of day for a time picker", () => {
+  it("converts a time of day to and from a time picker", () => {
     expect(CoreDateTimeText.clock("08:30:00")).toBe("08:30");
+    expect(CoreDateTimeText.fromClock("08:30")).toBe("08:30:00");
   });
 
   it("converts a moment to and from a date-and-time picker", () => {

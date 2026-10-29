@@ -133,10 +133,11 @@ fn brief_times_survive_a_restart() {
 }
 
 #[test]
-fn preferences_accept_times_as_the_time_picker_writes_them() {
+fn preferences_carry_times_of_day_with_seconds() {
     let mut json =
         serde_json::to_value(UserPreferences::defaults(&TikiSettings::default())).unwrap();
-    json["morningBriefTime"] = "07:15".into();
+    assert_eq!(json["morningBriefTime"], "08:30:00");
+    json["morningBriefTime"] = "07:15:00".into();
 
     let preferences: UserPreferences = serde_json::from_value(json).unwrap();
     assert_eq!(
