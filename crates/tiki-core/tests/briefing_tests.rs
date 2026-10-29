@@ -87,3 +87,44 @@ fn the_english_narration_uses_english_dates_and_lists() {
     assert!(narration.starts_with("Good morning. Today is Wednesday, October 21."));
     assert!(narration.contains(" and "));
 }
+
+#[test]
+fn the_brief_knows_what_is_due_tomorrow() {
+    let brief = sample_brief(&TikiSettings::default());
+    let tomorrow: Vec<String> = brief
+        .due_tomorrow()
+        .into_iter()
+        .map(|item| item.title)
+        .collect();
+    assert_eq!(tomorrow, ["Tracking de formularios comerciales"]);
+}
+
+#[test]
+fn the_brief_lists_the_reminders_of_one_day() {
+    use tiki_core::briefing::BriefItem;
+    use tiki_core::domain::{Priority, Repeat, TaskId};
+    let reminder = |task_id, at| BriefItem {
+        task_id: TaskId(task_id),
+        title: format!("Aviso {task_id}"),
+        project_name: None,
+        tags: Vec::new(),
+        priority: Priority::Normal,
+        detail: BriefDetail::RemindAt {
+            at,
+            repeat: Repeat::Never,
+        },
+    };
+    let mut brief = DailyBrief::empty(TestDay::today());
+    brief.reminders = vec![
+        reminder(1, TestDay::today().and_hms_opt(17, 0, 0).unwrap()),
+        reminder(2, TestDay::october(22).and_hms_opt(9, 0, 0).unwrap()),
+    ];
+
+    let today = brief.reminders_on(TestDay::today());
+    assert_eq!(today.len(), 1);
+    assert_eq!(today[0].task_id, TaskId(1));
+    assert_eq!(
+        brief.reminders_on(TestDay::october(22))[0].task_id,
+        TaskId(2)
+    );
+}

@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use serde::Serialize;
 
-use super::BriefItem;
+use super::{BriefDetail, BriefItem};
 
 /// The user's day, grouped by what needs attention.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -33,6 +33,24 @@ impl DailyBrief {
 
     pub fn is_all_clear(&self) -> bool {
         self.overdue.is_empty() && self.due_soon.is_empty()
+    }
+
+    /// Standalone reminders that ring on `day`, earliest first.
+    pub fn reminders_on(&self, day: NaiveDate) -> Vec<BriefItem> {
+        self.reminders
+            .iter()
+            .filter(|item| item.rings_at().is_some_and(|at| at.date() == day))
+            .cloned()
+            .collect()
+    }
+
+    /// Work due the day after the brief's date.
+    pub fn due_tomorrow(&self) -> Vec<BriefItem> {
+        self.due_soon
+            .iter()
+            .filter(|item| item.detail == BriefDetail::DueIn { days: 1 })
+            .cloned()
+            .collect()
     }
 
     /// Items with date pressure: overdue first, then due soon.

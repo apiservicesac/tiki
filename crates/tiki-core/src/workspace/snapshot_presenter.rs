@@ -5,7 +5,7 @@ use crate::briefing::{
     BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, BriefNarrator, DailyBrief,
 };
 use crate::calendar::MeetingItem;
-use crate::domain::{Priority, ProjectDirectory, Repeat};
+use crate::domain::{Priority, ProjectDirectory};
 use crate::i18n::{DateFormatter, Translator};
 use crate::mood::Mood;
 
@@ -37,12 +37,7 @@ impl<'context> SnapshotPresenter<'context> {
         delivered_today: usize,
         meetings: &TodaysMeetings,
     ) -> IslandSnapshot {
-        let todays_reminders: Vec<BriefItem> = brief
-            .reminders
-            .iter()
-            .filter(|item| matches!(item.detail, BriefDetail::RemindAt { at, .. } if at.date() == brief.date))
-            .cloned()
-            .collect();
+        let todays_reminders = brief.reminders_on(brief.date);
         let sections = [
             ("overdue", &brief.overdue, Urgency::Critical),
             ("due_soon", &brief.due_soon, Urgency::Soon),
@@ -123,14 +118,8 @@ impl<'context> SnapshotPresenter<'context> {
             detail_label: BriefDetailFormatter::new(self.translator).label(item.detail, brief.date),
             priority: item.priority,
             tags: item.tags.clone(),
-            at: match item.detail {
-                BriefDetail::RemindAt { at, .. } => Some(at),
-                _ => None,
-            },
-            repeat: match item.detail {
-                BriefDetail::RemindAt { repeat, .. } => repeat,
-                _ => Repeat::Never,
-            },
+            at: item.rings_at(),
+            repeat: item.repeat(),
             urgency,
         }
     }

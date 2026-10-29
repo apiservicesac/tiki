@@ -29,3 +29,21 @@ pub struct BriefItem {
     pub priority: Priority,
     pub detail: BriefDetail,
 }
+
+impl BriefItem {
+    /// When a standalone reminder rings; `None` for any other line.
+    pub fn rings_at(&self) -> Option<NaiveDateTime> {
+        match self.detail {
+            BriefDetail::RemindAt { at, .. } => Some(at),
+            _ => None,
+        }
+    }
+
+    /// How often a standalone reminder comes back; `Never` for any other line.
+    pub fn repeat(&self) -> Repeat {
+        match self.detail {
+            BriefDetail::RemindAt { repeat, .. } => repeat,
+            _ => Repeat::Never,
+        }
+    }
+}

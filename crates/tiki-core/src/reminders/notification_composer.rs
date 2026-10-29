@@ -141,14 +141,8 @@ impl<'translator> NotificationComposer<'translator> {
     }
 
     fn evening_lines(&self, brief: &DailyBrief) -> Vec<String> {
-        let tomorrow: Vec<BriefItem> = brief
-            .due_soon
-            .iter()
-            .filter(|item| item.detail == BriefDetail::DueIn { days: 1 })
-            .cloned()
-            .collect();
         let mut lines = vec![self.counts(brief)];
-        lines.extend(self.list_line("notify.tomorrow", &tomorrow));
+        lines.extend(self.list_line("notify.tomorrow", &brief.due_tomorrow()));
         lines.extend(self.list_line("notify.follow_up", &brief.needs_follow_up));
         lines
     }

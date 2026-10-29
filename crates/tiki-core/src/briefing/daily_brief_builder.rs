@@ -36,10 +36,7 @@ impl<'settings> DailyBriefBuilder<'settings> {
         ] {
             section.sort_by_key(|item| std::cmp::Reverse(item.priority));
         }
-        brief.reminders.sort_by_key(|item| match item.detail {
-            BriefDetail::RemindAt { at, .. } => Some(at),
-            _ => None,
-        });
+        brief.reminders.sort_by_key(BriefItem::rings_at);
         brief
     }
 
