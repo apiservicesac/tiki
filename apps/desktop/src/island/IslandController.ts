@@ -1,23 +1,20 @@
 import { ActionApplier } from "../assistant/ActionApplier";
 import { AssistantActions } from "../assistant/AssistantActions";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
-import {
-  LOCALE_CODES,
-  type TikiAlert,
-  type IslandSnapshot,
-  type MoodName,
-  type TaskEdit,
-  type TikiBackend,
-  type UserPreferences,
-} from "../backend/contracts";
+import type { IslandSnapshot, MoodName, TikiBackend, UserPreferences } from "../backend/contracts";
+import { CaptureFlow } from "../capture/CaptureFlow";
 import type { CaptureView } from "../capture/CaptureView";
-import type { Translator } from "../i18n/Translator";
 import { SHELL_EVENTS, UI_CONFIG } from "../config/uiConfig";
-import type { IslandMode, IslandPanel, IslandState, IslandTab } from "./islandState";
-import type { IslandView, IslandViewHandlers } from "./IslandView";
-import { AlertSound } from "./AlertSound";
+import type { Translator } from "../i18n/Translator";
+import { AlertFlow } from "./AlertFlow";
+import { DelayedAction } from "./DelayedAction";
 import type { HitAreaReporter } from "./HitAreaReporter";
+import { IslandModeMachine } from "./IslandModeMachine";
+import { ISLAND_STATE_DEFAULTS, type IslandMode, type IslandPanel, type IslandState, type IslandTab } from "./islandState";
 import type { IslandStore } from "./IslandStore";
+import type { IslandView, IslandViewHandlers } from "./IslandView";
+import { ItemActions } from "./ItemActions";
+import { PreferencesFlow } from "./PreferencesFlow";
 
 /** The views the controller drives directly, besides the island itself. */
 export interface IslandViews {
@@ -25,16 +22,22 @@ export interface IslandViews {
   capture: CaptureView;
 }
 
-/** Owns the island state, reacts to the user and the shell, and asks the view to redraw. */
+/**
+ * Owns the island state and wires the shell, the user and the views together: the mode
+ * machine decides when the island grows and folds, the capture flow and the item actions
+ * do what the user asks, and every change redraws the island.
+ */
 export class IslandController {
   private state: IslandState;
-  private preferences: UserPreferences;
-  private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
-  private readonly assistantActions: AssistantActions;
-  private readonly sound = new AlertSound();
+  private readonly reaction = new DelayedAction();
   private readonly view: IslandView;
-  private readonly captureView: CaptureView;
+  private readonly modes: IslandModeMachine;
+  private readonly preferences: PreferencesFlow;
+  private readonly assistantActions: AssistantActions;
+  private readonly captureFlow: CaptureFlow;
+  private readonly items: ItemActions;
+  private readonly alerts: AlertFlow;
   private readonly stopListening: Array<() => void> = [];
   /** The window changes size when the island moves to another orientation. */
   private readonly redrawOnResize = () => this.render();
@@ -45,31 +48,22 @@ export class IslandController {
     private readonly hitAreaReporter: HitAreaReporter,
     initialSnapshot: IslandSnapshot,
     initialPreferences: UserPreferences,
-    private readonly translator: Translator,
-    private readonly assistant: TikiAssistant,
+    translator: Translator,
+    assistant: TikiAssistant,
   ) {
     this.view = views.island;
-    this.captureView = views.capture;
-    this.preferences = initialPreferences;
-    this.state = {
-      mode: "hidden",
-      panel: "tasks",
-      tab: "today",
-      placement: initialPreferences.islandPlacement,
-      snapshot: initialSnapshot,
-      projects: [],
-      projectColors: [],
-      delivered: [],
-      tasksView: "pending",
-      creatingProject: false,
-      reactionMood: null,
-      editing: null,
-      dayBrief: null,
-      preparingBrief: false,
-      alert: null,
-      unreadAlert: false,
-    };
-    this.assistantActions = new AssistantActions(this.store(), assistant, new ActionApplier(backend));
+    this.state = { ...ISLAND_STATE_DEFAULTS, placement: initialPreferences.islandPlacement, snapshot: initialSnapshot };
+    // Leaving the island folds it, unless the user is in a panel or typing.
+    this.modes = new IslandModeMachine(() => this.state.mode, (mode) => this.showMode(mode), {
+      panel: () => this.state.panel !== "tabs",
+      typing: () => this.view.isTyping(),
+    });
+    const store = this.store();
+    this.preferences = new PreferencesFlow(initialPreferences, backend, translator, views.capture, assistant, store);
+    this.assistantActions = new AssistantActions(store, assistant, new ActionApplier(backend));
+    this.captureFlow = new CaptureFlow(views.capture, backend, assistant, this.assistantActions, store);
+    this.items = new ItemActions(backend, store);
+    this.alerts = new AlertFlow(store, this.modes, this.items, this.assistantActions);
   }
 
   get currentState(): Readonly<IslandState> {
@@ -82,22 +76,22 @@ export class IslandController {
     this.stopListening.push(
       await this.backend.listen(SHELL_EVENTS.openCapture, () => this.openPanel("capture")),
       await this.backend.listen(SHELL_EVENTS.openSettings, () => this.openPanel("settings")),
-      await this.backend.listen(SHELL_EVENTS.toggleIsland, () => this.toggle()),
-      await this.backend.onAlert((alert) => void this.announceAlert(alert)),
-      await this.backend.listen(SHELL_EVENTS.preferencesChanged, () => void this.reloadPreferences()),
+      await this.backend.listen(SHELL_EVENTS.toggleIsland, () => this.setMode(this.state.mode === "expanded" ? "hidden" : "expanded")),
+      await this.backend.onAlert((alert) => void this.alerts.announce(alert)),
+      await this.backend.listen(SHELL_EVENTS.preferencesChanged, () => void this.preferences.reload()),
       await this.backend.listen(SHELL_EVENTS.calendarSynced, () => void this.refresh()),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
     window.addEventListener("resize", this.redrawOnResize);
-    await this.loadAssistantStatus();
+    await this.preferences.loadAssistantStatus();
     this.update({ projectColors: await this.backend.projectColors() });
     await this.refresh();
   }
 
   /** Stops timers and shell listeners. */
   stop(): void {
-    this.timers.forEach((timer) => clearTimeout(timer));
-    this.timers.clear();
+    this.modes.cancel();
+    this.reaction.cancel();
     this.hitAreaReporter.stop();
     this.view.stop();
     if (this.refreshTimer) {
@@ -117,15 +111,8 @@ export class IslandController {
     this.update({ snapshot, projects, delivered });
   }
 
-  toggle(): void {
-    this.setMode(this.state.mode === "expanded" ? "hidden" : "expanded");
-  }
-
   setMode(mode: IslandMode): void {
-    this.cancel("alert");
-    this.cancel("fold");
-    this.cancel("unfold");
-    this.update({ mode, panel: mode === "expanded" ? this.state.panel : "tasks" });
+    this.modes.moveTo(mode);
   }
 
   openPanel(panel: IslandPanel): void {
@@ -133,233 +120,49 @@ export class IslandController {
   }
 
   selectTab(tab: IslandTab): void {
-    this.update({ tab, panel: "tasks", mode: "expanded" });
+    this.update({ tab, panel: "tabs", mode: "expanded" });
   }
 
-  /**
-   * Enter in the single box. With an AI key, Tiki reads the text: an item fills its fields
-   * for the user to review (the next Enter saves), a question gets an answer and maybe
-   * actions to apply. Without a key, the text is the title and Enter saves.
-   */
-  async submitCapture(): Promise<void> {
-    if (this.captureView.needsReading) {
-      const text = this.captureView.text;
-      this.captureView.showThinking();
-      try {
-        const reply = await this.assistant.command(text, this.preferences);
-        if (reply.kind === "capture") {
-          this.captureView.fill(reply.item);
-        } else {
-          this.captureView.showAnswer(reply.text, reply.actions, (action) => this.assistantActions.apply(action));
-        }
-      } catch {
-        this.captureView.showAiFailed();
-      }
-      return;
-    }
-    const capture = this.captureView.values();
-    if (capture.title === "") {
-      return;
-    }
-    await this.backend.saveConfirmedCapture(capture);
-    const reading = this.captureView.aiReading;
-    if (reading) {
-      // What the user changed before saving teaches the AI their way of saying things.
-      void this.assistant.learn(reading.sentence, reading.understood, capture).catch(() => undefined);
-    }
-    this.captureView.reset();
-    await this.refresh();
-    this.openPanel("tasks");
-    this.react("happy");
+  submitCapture(): Promise<void> {
+    return this.captureFlow.submit();
   }
 
-  /** Opens a task in the edit panel. */
-  async openTask(taskId: number): Promise<void> {
-    const task = await this.backend.taskDetails(taskId);
-    this.update({ mode: "expanded", panel: "edit", editing: task });
-  }
-
-  async saveTask(taskId: number, edit: TaskEdit): Promise<void> {
-    await this.backend.editTask(taskId, edit);
-    await this.refresh();
-    this.update({ panel: "tasks", editing: null });
-    this.react(edit.status === "done" ? "happy" : "curious");
-  }
-
-  async deliverTask(taskId: number): Promise<void> {
-    await this.backend.moveTask(taskId, "done");
-    await this.refresh();
-    this.react("happy");
-  }
-
-  /**
-   * Opens what an alert is about: the task of a task reminder, or the brief drawn as a
-   * receipt for the morning brief and the end-of-day close.
-   */
-  async openAlert(): Promise<void> {
-    const alert = this.state.alert;
-    this.cancel("alert");
-    if (alert && alert.taskId !== null) {
-      await this.openTask(alert.taskId);
-      return;
-    }
-    if (alert?.kind === "meeting") {
-      this.update({ mode: "expanded", panel: "tasks", tab: "agenda" });
-      return;
-    }
-    this.update({ mode: "expanded", panel: alert ? "brief" : "tasks" });
-  }
-
-  /** Opens the video call and puts the meeting alert away. */
-  private async joinMeeting(url: string): Promise<void> {
-    this.update({ alert: null, unreadAlert: false });
-    await this.backend.openMeetingLink(url);
-  }
-
-  /** Puts off the reminder and puts the alert away. */
-  private async snooze(taskId: number, minutes: number): Promise<void> {
-    await this.backend.snooze(taskId, minutes);
-    this.update({ alert: null, unreadAlert: false });
-    await this.refresh();
-  }
-
-  /** Creates, changes or removes a project, then shows the result; a taken name is ignored. */
-  private async projectAction(action: () => Promise<unknown>): Promise<void> {
-    try {
-      await action();
-    } catch {
-      this.react("worried");
-    }
-    await this.refresh();
+  /** Saves the preferences and applies them in place, without closing the island. */
+  changePreferences(preferences: UserPreferences): Promise<void> {
+    return this.preferences.change(preferences);
   }
 
   /** Folds the island back to its notch, so it never covers the advanced settings window. */
-  openAdvancedSettings(section?: string): void {
+  private openAdvancedSettings(section?: string): void {
     this.setMode("hidden");
     void this.backend.openAdvancedSettings(section);
   }
 
-  /** Saves the preferences and applies them in place, without closing the island. */
-  async changePreferences(preferences: UserPreferences): Promise<void> {
-    await this.backend.updatePreferences(preferences);
-    await this.applyPreferences(preferences);
+  /** A mode chosen by the machine or the user; leaving the expanded island goes back to the tabs. */
+  private showMode(mode: IslandMode): void {
+    this.update({ mode, panel: mode === "expanded" ? this.state.panel : "tabs" });
   }
 
-  /** Preferences or AI keys changed, maybe in the advanced settings window. */
-  async reloadPreferences(): Promise<void> {
-    await this.applyPreferences(await this.backend.preferences());
-    await this.loadAssistantStatus();
-  }
-
-  private async applyPreferences(preferences: UserPreferences): Promise<void> {
-    const localeChanged = preferences.locale !== this.preferences.locale;
-    this.preferences = preferences;
-    if (localeChanged) {
-      this.translator.use(LOCALE_CODES[preferences.locale]);
-      this.captureView.reset();
-    }
-    this.update({ placement: preferences.islandPlacement, dayBrief: localeChanged ? null : this.state.dayBrief });
-    await this.refresh();
-  }
-
-  /** Which providers have a key, so Ask Tiki and AI capture know whether they can work. */
-  private async loadAssistantStatus(): Promise<void> {
-    await this.assistant.loadStatus();
-    this.render();
-  }
-
-  /**
-   * A reminder arrived: the notch grows a little with Tiki, the title and a preview, and
-   * chimes. It folds back after a moment, leaving a dot until the island is opened. If the
-   * user already has the island open, the reminder just appears above the Today list.
-   */
-  async announceAlert(alert: TikiAlert): Promise<void> {
-    await this.refresh();
-    void this.assistantActions.prepareDayBrief();
-    const alreadyOpen = this.state.mode === "expanded";
-    this.update({ alert, unreadAlert: !alreadyOpen });
-    if (this.preferences.alertSound) {
-      this.sound.play();
-    }
-    if (alreadyOpen) {
-      this.react(UI_CONFIG.alertStyles[alert.kind].mood);
-      return;
-    }
-    ["peek", "unfold", "fold"].forEach((timer) => this.cancel(timer));
-    this.update({ mode: "alert" });
-    this.schedule("alert", UI_CONFIG.alertDurationMs, () => {
-      if (this.state.mode === "alert") {
-        this.update({ mode: "hidden" });
-      }
-    });
-  }
-
-  /**
-   * Resting the pointer on the notch opens it in two steps, like dooai: first the compact
-   * island with the day's summary, then the whole island. No click needed.
-   */
-  private peek(): void {
-    this.cancel("fold");
-    if (this.state.mode === "alert") {
-      // The reminder is already showing: resting on it opens the whole island.
-      this.cancel("alert");
-      this.schedule("unfold", UI_CONFIG.peekDelayMs, () => this.update({ mode: "expanded" }));
-      return;
-    }
-    if (this.state.mode !== "hidden") {
-      return;
-    }
-    this.schedule("peek", UI_CONFIG.peekDelayMs, () => {
-      this.update({ mode: "compact" });
-      this.schedule("unfold", UI_CONFIG.unfoldDelayMs, () => this.update({ mode: "expanded" }));
-    });
-  }
-
-  /** Leaving the island folds it back, unless the user is typing or changing settings. */
-  private fold(): void {
-    this.cancel("peek");
-    this.cancel("unfold");
-    if (this.state.mode === "hidden" || this.state.panel !== "tasks" || this.view.isTyping()) {
-      return;
-    }
-    this.schedule("fold", UI_CONFIG.foldDelayMs, () => this.update({ mode: "hidden", panel: "tasks" }));
-  }
-
-  /** Shows a reaction mood for a moment, then goes back to the resting mood. */
   private react(mood: MoodName): void {
     this.update({ reactionMood: mood });
-    this.schedule("reaction", UI_CONFIG.reactionMoodDurationMs, () => this.update({ reactionMood: null }));
+    this.reaction.schedule(UI_CONFIG.reactionMoodDurationMs, () => this.update({ reactionMood: null }));
   }
 
-  private schedule(name: string, delayMs: number, action: () => void): void {
-    this.cancel(name);
-    this.timers.set(name, setTimeout(() => {
-      this.timers.delete(name);
-      action();
-    }, delayMs));
-  }
-
-  private cancel(name: string): void {
-    const timer = this.timers.get(name);
-    if (timer) {
-      clearTimeout(timer);
-      this.timers.delete(name);
-    }
-  }
-
-  /** What the action helpers may read and change. */
+  /** What the flows and actions may read and change. */
   private store(): IslandStore {
     return {
       state: () => this.state,
-      preferences: () => this.preferences,
+      preferences: () => this.preferences.current,
       update: (changes) => this.update(changes),
       refresh: () => this.refresh(),
+      redraw: () => this.render(),
+      react: (mood) => this.react(mood),
     };
   }
 
   private update(changes: Partial<IslandState>): void {
     const next = { ...this.state, ...changes };
-    // Opening the island reads the reminder; folding it afterwards puts the reminder away.
+    // Opening the island reads the alert; folding it afterwards puts the alert away.
     if (next.mode === "expanded") {
       next.unreadAlert = false;
     } else if (next.mode === "hidden" && this.state.mode === "expanded") {
@@ -370,41 +173,41 @@ export class IslandController {
   }
 
   private render(): void {
-    this.view.render(this.state, this.preferences, this.handlers(), this.assistantActions.ready);
+    this.view.render(this.state, this.preferences.current, this.handlers(), this.assistantActions.ready);
     this.hitAreaReporter.report(this.view.hitArea());
   }
 
   private handlers(): IslandViewHandlers {
     return {
       onContentResize: () => this.hitAreaReporter.report(this.view.hitArea()),
-      onExpand: () => (this.state.mode === "alert" ? void this.openAlert() : this.setMode("expanded")),
-      onOpenAlert: () => void this.openAlert(),
-      onDismissAlert: () => this.update({ alert: null, unreadAlert: false }),
-      onSnooze: (taskId, minutes) => void this.snooze(taskId, minutes),
-      onJoinMeeting: (url) => void this.joinMeeting(url),
+      onExpand: () => (this.state.mode === "alert" ? void this.alerts.open() : this.setMode("expanded")),
+      onOpenAlert: () => void this.alerts.open(),
+      onDismissAlert: () => this.alerts.dismiss(),
+      onSnooze: (taskId, minutes) => void this.items.snooze(taskId, minutes),
+      onJoinMeeting: (url) => void this.items.joinMeeting(url),
       onPrepareBrief: () => void this.assistantActions.prepareDayBrief(),
-      onShowDelivered: () => this.update({ panel: "tasks", tab: "all_tasks", tasksView: "delivered" }),
+      onShowDelivered: () => this.update({ panel: "tabs", tab: "all_tasks", tasksView: "delivered" }),
       onSelectTasksView: (tasksView) => this.update({ tasksView }),
       onManageProjects: (creatingProject) => this.update({ mode: "expanded", panel: "projects", creatingProject }),
-      onCreateProject: (name) => void this.projectAction(() => this.backend.createProject(name)),
-      onChangeProject: (projectId, change) => void this.projectAction(() => this.backend.changeProject(projectId, change)),
-      onRemoveProject: (projectId) => void this.projectAction(() => this.backend.removeProject(projectId)),
-      onPointerEnter: () => this.peek(),
-      onPointerLeave: () => this.fold(),
+      onCreateProject: (name) => void this.items.createProject(name),
+      onChangeProject: (projectId, change) => void this.items.changeProject(projectId, change),
+      onRemoveProject: (projectId) => void this.items.removeProject(projectId),
+      onPointerEnter: () => this.modes.send("pointerEnter"),
+      onPointerLeave: () => this.modes.send("pointerLeave"),
       onSelectTab: (tab) => this.selectTab(tab),
       onOpenPanel: (panel) => this.openPanel(panel),
       onClose: () => this.setMode("hidden"),
-      onDeliverTask: (taskId) => void this.deliverTask(taskId),
-      onOpenTask: (taskId) => void this.openTask(taskId),
+      onDeliverTask: (taskId) => void this.items.deliver(taskId),
+      onOpenTask: (taskId) => void this.items.open(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
       onOpenAdvancedSettings: () => this.openAdvancedSettings(),
       edit: {
-        onSave: (taskId, edit) => void this.saveTask(taskId, edit),
-        onCancel: () => this.update({ panel: "tasks", editing: null }),
+        onSave: (taskId, edit) => void this.items.save(taskId, edit),
+        onCancel: () => this.update({ panel: "tabs", editing: null }),
       },
       capture: {
         onSubmit: () => void this.submitCapture(),
-        onCancel: () => this.openPanel("tasks"),
+        onCancel: () => this.openPanel("tabs"),
         onOpenAiSettings: () => this.openAdvancedSettings("ai"),
       },
     };

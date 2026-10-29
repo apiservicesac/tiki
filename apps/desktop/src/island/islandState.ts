@@ -7,7 +7,6 @@ import type {
   TaskDetails,
   TikiAlert,
 } from "../backend/contracts";
-import type { TasksView } from "./TasksTabView";
 
 /**
  * How much of the island is visible, like the notch of dooai. `alert` is the notch grown a
@@ -20,17 +19,14 @@ export type IslandMode = (typeof ISLAND_MODES)[number];
  * What the expanded island shows in its card: the tabs, or a panel such as quick capture,
  * a task being edited, the project list or the brief drawn as a receipt.
  */
-export type IslandPanel = "tasks" | "capture" | "settings" | "edit" | "projects" | "brief";
+export type IslandPanel = "tabs" | "capture" | "settings" | "edit" | "projects" | "brief";
+
+/** Pending tasks, or the delivered history, in the Tasks tab. Reminders live in the Agenda. */
+export const TASKS_VIEWS = Object.freeze(["pending", "delivered"] as const);
+export type TasksView = (typeof TASKS_VIEWS)[number];
 
 /** Tickets join as a tab when a ticket connector arrives. */
 export type IslandTab = "today" | "all_tasks" | "agenda";
-
-/** Tabs in display order, each with its translation key. */
-export const ISLAND_TABS: ReadonlyArray<{ tab: IslandTab; labelKey: string }> = Object.freeze([
-  { tab: "today", labelKey: "island.tab.today" },
-  { tab: "all_tasks", labelKey: "island.tab.all_tasks" },
-  { tab: "agenda", labelKey: "island.tab.agenda" },
-]);
 
 /** Everything the island view needs to draw one frame. */
 export interface IslandState {
@@ -62,3 +58,21 @@ export interface IslandState {
   /** The task open in the edit panel. */
   editing: TaskDetails | null;
 }
+
+/** How the island starts, before it knows where it sits and what the day holds. */
+export const ISLAND_STATE_DEFAULTS: Readonly<Omit<IslandState, "placement" | "snapshot">> = Object.freeze({
+  mode: "hidden",
+  panel: "tabs",
+  tab: "today",
+  projects: [],
+  projectColors: [],
+  delivered: [],
+  tasksView: "pending",
+  creatingProject: false,
+  reactionMood: null,
+  alert: null,
+  unreadAlert: false,
+  dayBrief: null,
+  preparingBrief: false,
+  editing: null,
+});

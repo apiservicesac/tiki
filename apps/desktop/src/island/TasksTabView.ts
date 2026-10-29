@@ -1,14 +1,13 @@
-import type { ProjectSummary, DeliveredItem, SnapshotItem, Urgency } from "../backend/contracts";
+import type { ProjectSummary, DeliveredItem, SnapshotItem } from "../backend/contracts";
+import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
+import { TagText } from "../dom/TagText";
 import { TextMatcher } from "../dom/TextMatcher";
 import type { Translator } from "../i18n/Translator";
+import { TASKS_VIEWS, type TasksView } from "./islandState";
 import { ProjectPicker } from "./ProjectPicker";
 import type { TaskListHandlers, TaskListView } from "./TaskListView";
-
-/** Pending tasks, or the delivered history. Reminders live in the Agenda. */
-export const TASKS_VIEWS = Object.freeze(["pending", "delivered"] as const);
-export type TasksView = (typeof TASKS_VIEWS)[number];
 
 export interface TasksTabData {
   /** Every open item. */
@@ -38,14 +37,6 @@ interface ProjectGroup {
  * island's refreshes; only the list is redrawn.
  */
 export class TasksTabView {
-  private static readonly URGENCY_RANK: Readonly<Record<Urgency, number>> = Object.freeze({
-    critical: 0,
-    soon: 1,
-    waiting: 2,
-    normal: 3,
-    reminder: 4,
-  });
-
   private element: HTMLElement | null = null;
   private search: HTMLInputElement | null = null;
   private toggle: HTMLElement | null = null;
@@ -145,15 +136,11 @@ export class TasksTabView {
   private drawToggle(): void {
     const view = this.data?.view ?? "pending";
     const buttons = TASKS_VIEWS.map((option) => {
-      const button = ElementFactory.create("button", {
+      const button = ElementFactory.textButton({
         className: option === view ? "tasks-toggle-option tasks-toggle-on" : "tasks-toggle-option",
         text: this.translator.text(`tasks.view.${option}`),
-        attributes: { type: "button", role: "tab", "aria-selected": String(option === view), "data-view": option },
-      });
-      button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        this.handlers?.onSelectTasksView(option);
-      });
+        attributes: { role: "tab", "aria-selected": String(option === view), "data-view": option },
+      }, () => this.handlers?.onSelectTasksView(option));
       return button;
     });
     this.toggle?.replaceChildren(...buttons);
@@ -205,7 +192,7 @@ export class TasksTabView {
     }
     return TextMatcher.matches(title, query)
       || (projectName !== null && TextMatcher.matches(projectName, query))
-      || tags.some((tag) => TextMatcher.matches(`#${tag}`, query));
+      || tags.some((tag) => TextMatcher.matches(TagText.mark(tag), query));
   }
 
   /** One group per project: the most pressing first, then the busiest, tasks without project last. */
@@ -215,7 +202,7 @@ export class TasksTabView {
       const key = item.projectName ?? "";
       const group = groups.get(key) ?? { name: item.projectName, color: item.projectColor, items: [], rank: Number.MAX_SAFE_INTEGER };
       group.items.push(item);
-      group.rank = Math.min(group.rank, TasksTabView.URGENCY_RANK[item.urgency]);
+      group.rank = Math.min(group.rank, UI_CONFIG.urgencyOrder.indexOf(item.urgency));
       groups.set(key, group);
     });
     return [...groups.values()].sort((first, second) => {
@@ -230,7 +217,9 @@ export class TasksTabView {
 
   private groupHeader(group: ProjectGroup): HTMLElement {
     const dot = ElementFactory.create("i", { className: "tasks-group-dot" });
-    dot.style.background = group.color ?? "var(--island-faint)";
+    if (group.color !== null) {
+      dot.style.background = group.color;
+    }
     return ElementFactory.create("div", {
       className: "island-group tasks-group",
       children: [

@@ -57,20 +57,15 @@ export class TodayView {
     if (!focus) {
       return [];
     }
-    const card = ElementFactory.create("button", {
+    return [ElementFactory.textButton({
       className: "island-focus",
-      attributes: { type: "button", id: "today-focus", "data-task-id": String(focus.item.taskId) },
+      attributes: { id: "today-focus", "data-task-id": String(focus.item.taskId) },
       children: [
-        ElementFactory.create("span", { className: "island-focus-label", text: `${this.translator.text("focus.title")} · ${focus.reason}` }),
+        ElementFactory.create("span", { className: "island-focus-label", text: this.translator.format("focus.label", { reason: focus.reason }) }),
         ElementFactory.create("strong", { text: focus.item.title }),
         ...(focus.item.projectName ? [ElementFactory.create("small", { text: focus.item.projectName })] : []),
       ],
-    });
-    card.addEventListener("click", (event) => {
-      event.stopPropagation();
-      handlers.onOpenTask(focus.item.taskId);
-    });
-    return [card];
+    }, () => handlers.onOpenTask(focus.item.taskId))];
   }
 
   /** One card: the latest alert, else the AI brief, else (with AI) a button to write it. */
@@ -79,30 +74,20 @@ export class TodayView {
       return [this.alertCard(data.alert, handlers)];
     }
     if (data.dayBrief || data.preparingBrief) {
-      const card = ElementFactory.create("button", {
+      return [ElementFactory.textButton({
         className: data.preparingBrief ? "island-summary island-summary-preparing" : "island-summary",
         text: data.preparingBrief ? this.translator.text("summary.preparing") : data.dayBrief ?? "",
-        attributes: { type: "button", id: "today-summary" },
-      });
-      card.addEventListener("click", (event) => {
-        event.stopPropagation();
-        handlers.onOpenAlert();
-      });
-      return [card];
+        attributes: { id: "today-summary" },
+      }, handlers.onOpenAlert)];
     }
     if (!data.aiReady) {
       return [];
     }
-    const prepare = ElementFactory.create("button", {
+    return [ElementFactory.textButton({
       className: "island-summary-prepare",
       text: this.translator.text("summary.prepare"),
-      attributes: { type: "button", id: "prepare-brief" },
-    });
-    prepare.addEventListener("click", (event) => {
-      event.stopPropagation();
-      handlers.onPrepareBrief();
-    });
-    return [prepare];
+      attributes: { id: "prepare-brief" },
+    }, handlers.onPrepareBrief)];
   }
 
   /**
@@ -110,18 +95,14 @@ export class TodayView {
    * task reminder opens what it is about.
    */
   private alertCard(alert: TikiAlert, handlers: TodayHandlers): HTMLElement {
-    const open = ElementFactory.create("button", {
+    const open = ElementFactory.textButton({
       className: "island-notice-open",
-      attributes: { type: "button", title: this.translator.text("island.alert.open") },
+      attributes: { title: this.translator.text("island.alert.open") },
       children: [
         ElementFactory.create("strong", { text: alert.title }),
         ElementFactory.create("p", { text: alert.body }),
       ],
-    });
-    open.addEventListener("click", (event) => {
-      event.stopPropagation();
-      handlers.onOpenAlert();
-    });
+    }, handlers.onOpenAlert);
     const buttons = this.alertButtons(alert, handlers);
     return ElementFactory.create("div", {
       className: "island-notice",
@@ -133,28 +114,24 @@ export class TodayView {
     const { taskId, link } = alert;
     if (alert.kind === "reminder" && taskId !== null) {
       return [
-        this.button("alert.done", "alert-done", handlers.onDismissAlert),
+        this.alertOption("alert.done", "alert-done", handlers.onDismissAlert),
         ...UI_CONFIG.snoozeMinutes.map(({ minutes, labelKey }) =>
-          this.button(labelKey, `alert-snooze-${minutes}`, () => handlers.onSnooze(taskId, minutes))),
+          this.alertOption(labelKey, `alert-snooze-${minutes}`, () => handlers.onSnooze(taskId, minutes))),
       ];
     }
     if (alert.kind === "meeting" && link !== null) {
-      return [this.button("meeting.join", "alert-join", () => handlers.onJoinMeeting(link))];
+      return [this.alertOption("meeting.join", "alert-join", () => handlers.onJoinMeeting(link))];
     }
     return [];
   }
 
-  private button(labelKey: string, id: string, onPress: () => void): HTMLElement {
-    const button = ElementFactory.create("button", {
+  /** One of the alert's buttons: done, a snooze or join. */
+  private alertOption(labelKey: string, id: string, onPress: () => void): HTMLElement {
+    return ElementFactory.textButton({
       className: "settings-option",
       text: this.translator.text(labelKey),
-      attributes: { type: "button", id },
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      onPress();
-    });
-    return button;
+      attributes: { id },
+    }, onPress);
   }
 
   /** "Delivered today (3)", leading to the history; nothing on a day with no deliveries. */
@@ -162,15 +139,10 @@ export class TodayView {
     if (snapshot.deliveredToday === 0) {
       return [];
     }
-    const link = ElementFactory.create("button", {
+    return [ElementFactory.textButton({
       className: "island-delivered-link",
       text: this.translator.format("island.delivered_today", { count: snapshot.deliveredToday }),
-      attributes: { type: "button", id: "delivered-today" },
-    });
-    link.addEventListener("click", (event) => {
-      event.stopPropagation();
-      handlers.onShowDelivered();
-    });
-    return [link];
+      attributes: { id: "delivered-today" },
+    }, handlers.onShowDelivered)];
   }
 }

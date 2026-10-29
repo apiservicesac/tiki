@@ -1,7 +1,9 @@
-import { ITEM_KINDS, PRIORITIES, REPEATS, TASK_STATUSES, type ProjectSummary, type TaskDetails, type TaskEdit } from "../backend/contracts";
+import type { ProjectSummary, TaskDetails, TaskEdit } from "../backend/contracts";
+import { CoreDateTimeText } from "../backend/CoreDateTimeText";
 import { ElementFactory } from "../dom/ElementFactory";
 import { TagText } from "../dom/TagText";
 import type { Translator } from "../i18n/Translator";
+import { ItemFieldsBuilder, type ProjectChoice } from "./ItemFieldsBuilder";
 import { ProjectPicker } from "./ProjectPicker";
 
 export interface TaskEditHandlers {
@@ -12,7 +14,7 @@ export interface TaskEditHandlers {
 interface TaskEditFields {
   title: HTMLInputElement;
   /** The chosen project's name, or `null` for no project; a new name is created on save. */
-  project: { value: string | null };
+  project: ProjectChoice;
   dueDate: HTMLInputElement;
   remindAt: HTMLInputElement;
   repeat: HTMLSelectElement;
@@ -33,8 +35,11 @@ interface TaskEditFields {
 export class TaskEditView {
   private shown: { taskId: number; element: HTMLElement } | null = null;
   private handlers: TaskEditHandlers | null = null;
+  private readonly fieldsBuilder: ItemFieldsBuilder;
 
-  constructor(private readonly translator: Translator) {}
+  constructor(private readonly translator: Translator) {
+    this.fieldsBuilder = new ItemFieldsBuilder(translator);
+  }
 
   render(task: TaskDetails, projects: readonly ProjectSummary[], handlers: TaskEditHandlers): HTMLElement {
     this.handlers = handlers;
@@ -50,55 +55,29 @@ export class TaskEditView {
   }
 
   private build(task: TaskDetails, projects: readonly ProjectSummary[]): HTMLElement {
-    const project = { value: task.projectName };
+    const project: ProjectChoice = { value: task.projectName };
     const picker = new ProjectPicker();
-    const drawPicker = () => picker.update({
-      id: "edit-project",
-      options: [
-        { value: null, label: this.translator.text("edit.no_project"), color: null },
-        ...projects.map((summary) => ({ value: summary.name, label: summary.name, color: summary.color })),
-      ],
-      selected: project.value,
-      searchPlaceholder: this.translator.text("tasks.search_project"),
-      emptyText: this.translator.text("tasks.no_project_match"),
-      createLabel: (name) => this.translator.format("projects.create", { name }),
-      onSelect: (value) => {
-        project.value = value;
-        drawPicker();
-      },
-    });
-    drawPicker();
+    this.fieldsBuilder.drawProjectPicker(picker, "edit-project", projects, project);
     const fields: TaskEditFields = {
-      title: this.input("text", "edit-title", task.title),
+      title: this.fieldsBuilder.input("text", "edit-title", { value: task.title }),
       project,
-      dueDate: this.input("date", "edit-due", task.dueDate ?? ""),
-      // The picker shows minutes; the core sends seconds too.
-      remindAt: this.input("datetime-local", "edit-remind", task.remindAt?.slice(0, 16) ?? ""),
-      repeat: this.select("edit-repeat", REPEATS.map((repeat): [string, string] => [repeat, this.translator.text(`repeat.${repeat}`)]), task.repeat),
-      priority: this.select(
-        "edit-priority",
-        PRIORITIES.map((priority): [string, string] => [priority, this.translator.text(`priority.${priority}`)]),
-        task.priority,
-      ),
-      status: this.select(
-        "edit-status",
-        TASK_STATUSES.map((status): [string, string] => [status, this.translator.text(`status.${status}`)]),
-        task.status,
-      ),
-      waitingFor: this.input("text", "edit-waiting", task.waitingFor),
-      kind: this.select(
-        "edit-kind",
-        ITEM_KINDS.map((kind): [string, string] => [kind, this.translator.text(`kind.${kind}`)]),
-        task.kind,
-      ),
-      tags: this.input("text", "edit-tags", TagText.format(task.tags)),
+      dueDate: this.fieldsBuilder.input("date", "edit-due", { value: task.dueDate ?? "" }),
+      remindAt: this.fieldsBuilder.remindAt("edit-remind", task.remindAt),
+      repeat: this.fieldsBuilder.repeat("edit-repeat", task.repeat),
+      priority: this.fieldsBuilder.priority("edit-priority", task.priority),
+      status: this.fieldsBuilder.status("edit-status", task.status),
+      waitingFor: this.fieldsBuilder.input("text", "edit-waiting", {
+        value: task.waitingFor,
+        placeholder: this.translator.text("edit.waiting_placeholder"),
+      }),
+      kind: this.fieldsBuilder.kind("edit-kind", task.kind),
+      tags: this.fieldsBuilder.input("text", "edit-tags", { value: TagText.format(task.tags) }),
       notes: ElementFactory.create("textarea", {
         className: "edit-notes",
         attributes: { id: "edit-notes", rows: "2", placeholder: this.translator.text("edit.notes_placeholder") },
       }),
     };
     fields.notes.value = task.notes;
-    fields.waitingFor.placeholder = this.translator.text("edit.waiting_placeholder");
 
     const form = ElementFactory.create("form", { className: "edit-form" });
     const layout = () => form.replaceChildren(...this.layout(fields, picker.element));
@@ -121,28 +100,28 @@ export class TaskEditView {
   /** The fields of the item's kind; "waits for" only while the task is waiting. */
   private layout(fields: TaskEditFields, projectPicker: HTMLElement): HTMLElement[] {
     const header = [
-      this.field("edit.field.title", fields.title, "edit-field-wide"),
-      this.field("edit.field.kind", fields.kind),
+      this.fieldsBuilder.field("edit.field.title", fields.title, { wide: true }),
+      this.fieldsBuilder.field("edit.field.kind", fields.kind),
     ];
     if (fields.kind.value === "reminder") {
       return [
         ...header,
-        this.field("capture.field.moment", fields.remindAt),
-        this.field("capture.field.repeat", fields.repeat),
-        this.field("edit.field.notes", fields.notes, "edit-field-wide"),
+        this.fieldsBuilder.field("capture.field.moment", fields.remindAt),
+        this.fieldsBuilder.field("capture.field.repeat", fields.repeat),
+        this.fieldsBuilder.field("edit.field.notes", fields.notes, { wide: true }),
         this.actions(),
       ];
     }
     return [
       ...header,
-      this.field("capture.field.project", projectPicker, "", "div"),
-      this.field("capture.field.status", fields.status),
-      ...(fields.status.value === "waiting" ? [this.field("edit.field.waiting", fields.waitingFor)] : []),
-      this.field("capture.field.due", fields.dueDate),
-      this.field("capture.field.priority", fields.priority),
-      this.field("edit.field.remind", fields.remindAt),
-      this.field("edit.field.tags", fields.tags),
-      this.field("edit.field.notes", fields.notes, "edit-field-wide"),
+      this.fieldsBuilder.field("capture.field.project", projectPicker, { block: true }),
+      this.fieldsBuilder.field("capture.field.status", fields.status),
+      ...(fields.status.value === "waiting" ? [this.fieldsBuilder.field("edit.field.waiting", fields.waitingFor)] : []),
+      this.fieldsBuilder.field("capture.field.due", fields.dueDate),
+      this.fieldsBuilder.field("capture.field.priority", fields.priority),
+      this.fieldsBuilder.field("edit.field.remind", fields.remindAt),
+      this.fieldsBuilder.field("edit.field.tags", fields.tags),
+      this.fieldsBuilder.field("edit.field.notes", fields.notes, { wide: true }),
       this.actions(),
     ];
   }
@@ -158,7 +137,7 @@ export class TaskEditView {
       notes: fields.notes.value.trim(),
       projectName: reminder ? null : fields.project.value,
       dueDate: reminder ? null : fields.dueDate.value || null,
-      remindAt: fields.remindAt.value ? `${fields.remindAt.value}:00` : null,
+      remindAt: CoreDateTimeText.fromPicker(fields.remindAt.value),
       priority: reminder ? "normal" : (fields.priority.value as TaskEdit["priority"]),
       status: reminder ? "to_do" : (fields.status.value as TaskEdit["status"]),
       kind: fields.kind.value as TaskEdit["kind"],
@@ -169,15 +148,10 @@ export class TaskEditView {
   }
 
   private actions(): HTMLElement {
-    const cancel = ElementFactory.create("button", {
+    const cancel = ElementFactory.textButton({
       className: "settings-button settings-button-quiet",
       text: this.translator.text("edit.cancel"),
-      attributes: { type: "button" },
-    });
-    cancel.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.handlers?.onCancel();
-    });
+    }, () => this.handlers?.onCancel());
     const save = ElementFactory.create("button", {
       className: "settings-button",
       text: this.translator.text("edit.save"),
@@ -185,35 +159,5 @@ export class TaskEditView {
     });
     save.addEventListener("click", (event) => event.stopPropagation());
     return ElementFactory.create("div", { className: "edit-actions edit-field-wide", children: [cancel, save] });
-  }
-
-  /**
-   * A label and its control. The project picker goes in a plain block instead of a label:
-   * a label would forward clicks inside the open list back to the picker's button.
-   */
-  private field(labelKey: string, control: HTMLElement, extraClass = "", tag: "label" | "div" = "label"): HTMLElement {
-    return ElementFactory.create(tag, {
-      className: `edit-field ${extraClass}`.trim(),
-      children: [ElementFactory.create("span", { text: this.translator.text(labelKey) }), control],
-    });
-  }
-
-  private input(type: string, id: string, value: string): HTMLInputElement {
-    const input = ElementFactory.create("input", {
-      className: "settings-input",
-      attributes: { type, id, autocomplete: "off" },
-    });
-    input.value = value;
-    return input;
-  }
-
-  private select(id: string, options: Array<[string, string]>, selected: string): HTMLSelectElement {
-    const select = ElementFactory.create("select", {
-      className: "settings-select",
-      attributes: { id },
-      children: options.map(([value, label]) => ElementFactory.create("option", { text: label, attributes: { value } })),
-    });
-    select.value = selected;
-    return select;
   }
 }

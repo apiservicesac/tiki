@@ -1,9 +1,12 @@
 import type { InterpretedCapture, ProposedAction } from "../ai";
-import { ProposedActionsView, type ApplyAction } from "../assistant/ProposedActionsView";
-import { ITEM_KINDS, PRIORITIES, REPEATS, type ItemKind, type Priority, type ProjectSummary, type Repeat } from "../backend/contracts";
+import { ProposedActionsView, type ApplyAction } from "./ProposedActionsView";
+import { ITEM_KINDS, type ItemKind, type Priority, type ProjectSummary, type Repeat } from "../backend/contracts";
+import { CoreDateTimeText } from "../backend/CoreDateTimeText";
+import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import { TagText } from "../dom/TagText";
 import type { Translator } from "../i18n/Translator";
+import { ItemFieldsBuilder, type ProjectChoice } from "../island/ItemFieldsBuilder";
 import { ProjectPicker } from "../island/ProjectPicker";
 
 export interface CaptureViewHandlers {
@@ -40,7 +43,8 @@ export class CaptureView {
   private waitingFor: HTMLInputElement | null = null;
   private readonly picker = new ProjectPicker();
   private readonly actionsView: ProposedActionsView;
-  private project: string | null = null;
+  private readonly fieldsBuilder: ItemFieldsBuilder;
+  private readonly project: ProjectChoice = { value: null };
   private projects: readonly ProjectSummary[] = [];
   private kind: ItemKind = "task";
   private mode: BoxMode = "idle";
@@ -50,6 +54,7 @@ export class CaptureView {
 
   constructor(private readonly translator: Translator) {
     this.actionsView = new ProposedActionsView(translator);
+    this.fieldsBuilder = new ItemFieldsBuilder(translator);
   }
 
   /** The box, created on first use and reused until `reset`. */
@@ -68,7 +73,7 @@ export class CaptureView {
   /** Forgets the box, so it opens empty next time. */
   reset(): void {
     this.element = null;
-    this.project = null;
+    this.project.value = null;
     this.kind = "task";
     this.mode = "idle";
     this.reading = null;
@@ -93,10 +98,10 @@ export class CaptureView {
     const reminder = this.kind === "reminder";
     return {
       title: this.text,
-      projectName: reminder ? null : this.project,
+      projectName: reminder ? null : this.project.value,
       dueDate: reminder ? null : this.dueDate?.value || null,
       priority: reminder ? "normal" : ((this.priority?.value as Priority | undefined) ?? "normal"),
-      remindAt: this.remindAt?.value ? `${this.remindAt.value}:00` : null,
+      remindAt: CoreDateTimeText.fromPicker(this.remindAt?.value ?? ""),
       kind: this.kind,
       tags: reminder ? [] : TagText.parse(this.tags?.value ?? ""),
       repeat: reminder ? ((this.repeat?.value as Repeat | undefined) ?? "never") : "never",
@@ -117,9 +122,9 @@ export class CaptureView {
       this.sentence.value = item.title;
     }
     this.kind = item.kind;
-    this.project = item.projectName;
+    this.project.value = item.projectName;
     this.setValue(this.dueDate, item.dueDate ?? "");
-    this.setValue(this.remindAt, item.remindAt?.slice(0, 16) ?? "");
+    this.setValue(this.remindAt, CoreDateTimeText.toPicker(item.remindAt));
     this.setValue(this.priority, item.priority);
     this.setValue(this.repeat, item.repeat);
     this.setValue(this.tags, TagText.format(item.tags));
@@ -184,13 +189,12 @@ export class CaptureView {
   }
 
   private buildFields(): void {
-    this.dueDate = this.input("date", "capture-due");
-    this.remindAt = this.input("datetime-local", "capture-remind");
-    this.priority = this.select("capture-priority", PRIORITIES.map((priority) => [priority, this.translator.text(`priority.${priority}`)]));
-    this.priority.value = "normal";
-    this.repeat = this.select("capture-repeat", REPEATS.map((repeat) => [repeat, this.translator.text(`repeat.${repeat}`)]));
-    this.tags = this.input("text", "capture-tags", this.translator.text("edit.tags_placeholder"));
-    this.waitingFor = this.input("text", "capture-waiting", this.translator.text("edit.waiting_placeholder"));
+    this.dueDate = this.fieldsBuilder.input("date", "capture-due");
+    this.remindAt = this.fieldsBuilder.remindAt("capture-remind", null);
+    this.priority = this.fieldsBuilder.priority("capture-priority", "normal");
+    this.repeat = this.fieldsBuilder.repeat("capture-repeat", "never");
+    this.tags = this.fieldsBuilder.input("text", "capture-tags", { placeholder: this.translator.text("edit.tags_placeholder") });
+    this.waitingFor = this.fieldsBuilder.input("text", "capture-waiting", { placeholder: this.translator.text("edit.waiting_placeholder") });
   }
 
   /** The fields of the current kind: a reminder only has its moment and its repeat. */
@@ -200,16 +204,16 @@ export class CaptureView {
     }
     const children = this.kind === "reminder"
       ? [
-        this.labelled("capture.field.moment", this.remindAt),
-        this.labelled("capture.field.repeat", this.repeat),
+        this.fieldsBuilder.field("capture.field.moment", this.remindAt),
+        this.fieldsBuilder.field("capture.field.repeat", this.repeat),
       ]
       : [
-        this.labelled("capture.field.project", this.picker.element, "div"),
-        this.labelled("capture.field.due", this.dueDate),
-        this.labelled("capture.field.remind", this.remindAt),
-        this.labelled("capture.field.priority", this.priority),
-        this.labelled("edit.field.waiting", this.waitingFor),
-        this.labelled("edit.field.tags", this.tags),
+        this.fieldsBuilder.field("capture.field.project", this.picker.element, { block: true }),
+        this.fieldsBuilder.field("capture.field.due", this.dueDate),
+        this.fieldsBuilder.field("capture.field.remind", this.remindAt),
+        this.fieldsBuilder.field("capture.field.priority", this.priority),
+        this.fieldsBuilder.field("edit.field.waiting", this.waitingFor),
+        this.fieldsBuilder.field("edit.field.tags", this.tags),
       ];
     this.fields.replaceChildren(...children);
   }
@@ -230,13 +234,11 @@ export class CaptureView {
 
   private drawKind(): void {
     const buttons = ITEM_KINDS.map((kind) => {
-      const button = ElementFactory.create("button", {
+      const button = ElementFactory.textButton({
         className: kind === this.kind ? "tasks-toggle-option tasks-toggle-on" : "tasks-toggle-option",
         text: this.translator.text(`kind.${kind}`),
-        attributes: { type: "button", role: "radio", "aria-checked": String(kind === this.kind), "data-kind": kind },
-      });
-      button.addEventListener("click", (event) => {
-        event.stopPropagation();
+        attributes: { role: "radio", "aria-checked": String(kind === this.kind), "data-kind": kind },
+      }, () => {
         this.kind = kind;
         this.drawKind();
       });
@@ -247,21 +249,7 @@ export class CaptureView {
   }
 
   private drawPicker(): void {
-    this.picker.update({
-      id: "capture-project",
-      options: [
-        { value: null, label: this.translator.text("edit.no_project"), color: null },
-        ...this.projects.map((project) => ({ value: project.name, label: project.name, color: project.color })),
-      ],
-      selected: this.project,
-      searchPlaceholder: this.translator.text("tasks.search_project"),
-      emptyText: this.translator.text("tasks.no_project_match"),
-      createLabel: (name) => this.translator.format("projects.create", { name }),
-      onSelect: (value) => {
-        this.project = value;
-        this.drawPicker();
-      },
-    });
+    this.fieldsBuilder.drawProjectPicker(this.picker, "capture-project", this.projects, this.project);
   }
 
   private setStatus(key: string, withAiLink: boolean, handlers?: CaptureViewHandlers): void {
@@ -271,16 +259,11 @@ export class CaptureView {
     this.status.className = "island-hint capture-status";
     const children: Node[] = [document.createTextNode(this.translator.text(key))];
     if (withAiLink && handlers) {
-      const link = ElementFactory.create("button", {
+      const link = ElementFactory.textButton({
         className: "capture-ai-link",
         text: this.translator.text("capture.set_up_ai"),
-        attributes: { type: "button" },
-      });
-      link.addEventListener("click", (event) => {
-        event.stopPropagation();
-        handlers.onOpenAiSettings();
-      });
-      children.push(document.createTextNode(" · "), link);
+      }, handlers.onOpenAiSettings);
+      children.push(document.createTextNode(UI_CONFIG.textMarks.separator), link);
     }
     this.status.replaceChildren(...children);
   }
@@ -289,27 +272,5 @@ export class CaptureView {
     if (control) {
       control.value = value;
     }
-  }
-
-  private input(type: string, id: string, placeholder = ""): HTMLInputElement {
-    return ElementFactory.create("input", {
-      className: "settings-input",
-      attributes: { type, id, autocomplete: "off", ...(placeholder ? { placeholder } : {}) },
-    });
-  }
-
-  private select(id: string, options: Array<[string, string]>): HTMLSelectElement {
-    return ElementFactory.create("select", {
-      className: "settings-select",
-      attributes: { id },
-      children: options.map(([value, label]) => ElementFactory.create("option", { text: label, attributes: { value } })),
-    });
-  }
-
-  private labelled(labelKey: string, control: HTMLElement, tag: "label" | "div" = "label"): HTMLElement {
-    return ElementFactory.create(tag, {
-      className: "edit-field",
-      children: [ElementFactory.create("span", { text: this.translator.text(labelKey) }), control],
-    });
   }
 }

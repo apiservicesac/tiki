@@ -213,6 +213,7 @@
     "projects.no_open": "No open tasks",
     "receipt.title": "Day summary",
     "receipt.suggestion": "Suggestion",
+    "punctuation.label": "{label}: ",
     "receipt.totals": "{open} pending · {waiting} waiting · {delivered} delivered today",
     "receipt.all_clear": "Nothing pending. A clear day!",
     "edit.field.remind": "Remind me",
@@ -248,7 +249,7 @@
     "focus.important": "It is important",
     "focus.due_soon": "Due soon",
     "focus.follow_up": "Time to follow up",
-    "focus.title": "Now",
+    "focus.label": "Now · {reason}",
 
     "capture.field.moment": "When",
     "capture.field.repeat": "Repeats",
@@ -303,6 +304,7 @@
     "calendar.provider.microsoft": "Microsoft 365 / Outlook",
     "calendar.provider.google": "Google Calendar",
     "meeting.join": "Join",
+    "meeting.time_range": "{start}–{end}",
     "meeting.all_day": "All day",
     "meeting.untitled": "(No title)"
   },

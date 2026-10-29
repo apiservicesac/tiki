@@ -52,9 +52,7 @@ export class ProjectPicker {
   };
 
   constructor() {
-    this.trigger = ElementFactory.create("button", { className: "picker-trigger", attributes: { type: "button" } });
-    this.trigger.addEventListener("click", (event) => {
-      event.stopPropagation();
+    this.trigger = ElementFactory.textButton({ className: "picker-trigger" }, () => {
       if (this.isOpen()) {
         this.close();
       } else {
@@ -138,15 +136,11 @@ export class ProjectPicker {
     if (taken) {
       return null;
     }
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: "picker-option picker-create",
       text: config.createLabel(name),
-      attributes: { type: "button", "data-create": name },
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.choose(name);
-    });
+      attributes: { "data-create": name },
+    }, () => this.choose(name));
     return button;
   }
 
@@ -179,22 +173,19 @@ export class ProjectPicker {
   }
 
   private optionButton(option: ProjectPickerOption, selected: boolean): HTMLElement {
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: selected ? "picker-option picker-option-on" : "picker-option",
-      attributes: { type: "button", role: "option", "aria-selected": String(selected), "data-value": option.value ?? "" },
+      attributes: { role: "option", "aria-selected": String(selected), "data-value": option.value ?? "" },
       children: this.optionContent(option),
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.choose(option.value);
-    });
+    }, () => this.choose(option.value));
     return button;
   }
 
   private optionContent(option: ProjectPickerOption): HTMLElement[] {
     const dot = ElementFactory.create("span", { className: "picker-dot" });
-    dot.style.background = option.color ?? "transparent";
-    if (!option.color) {
+    if (option.color) {
+      dot.style.background = option.color;
+    } else {
       dot.classList.add("picker-dot-empty");
     }
     return [
@@ -207,13 +198,10 @@ export class ProjectPicker {
   }
 
   private actionButton(action: ProjectPickerAction): HTMLElement {
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: "picker-action",
       text: action.label,
-      attributes: { type: "button" },
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
+    }, () => {
       this.close();
       action.onPress();
     });

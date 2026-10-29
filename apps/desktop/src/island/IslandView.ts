@@ -4,8 +4,8 @@ import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
-import { HeaderView, type HeaderHandlers } from "./HeaderView";
-import type { IslandMode, IslandState } from "./islandState";
+import { HeaderView, type HeaderHandlers, type IslandTabLabel } from "./HeaderView";
+import type { IslandMode, IslandState, IslandTab } from "./islandState";
 import { NotchView } from "./NotchView";
 import { SettingsView, type SettingsHandlers } from "./SettingsView";
 import { TaskEditView, type TaskEditHandlers } from "./TaskEditView";
@@ -30,6 +30,12 @@ export interface IslandViewHandlers
   edit: TaskEditHandlers;
 }
 
+/** One tab of the expanded island: its label and what it draws. */
+interface IslandTabEntry {
+  labelKey: string;
+  render: (state: IslandState, handlers: IslandViewHandlers) => HTMLElement;
+}
+
 /**
  * Draws the island for a given state. The notch element lives for the whole session and
  * only its content changes, so its size and corners animate between states like dooai.
@@ -46,6 +52,9 @@ export class IslandView {
   private readonly agenda: AgendaView;
   private readonly projectsPanel: ProjectsPanelView;
   private readonly receipt: ReceiptView;
+  /** The tabs in display order; a new tab (Tickets) is one more entry. */
+  private readonly tabs: Readonly<Record<IslandTab, IslandTabEntry>>;
+  private readonly tabLabels: readonly IslandTabLabel[];
   /** The views kept between frames are rebuilt when the language changes. */
   private shownLocale = "";
   private readonly notch: HTMLElement;
@@ -75,6 +84,31 @@ export class IslandView {
     this.agenda = new AgendaView(translator);
     this.projectsPanel = new ProjectsPanelView(translator);
     this.receipt = new ReceiptView(translator);
+    this.tabs = Object.freeze({
+      today: {
+        labelKey: "island.tab.today",
+        render: (state, handlers) => this.today.render({
+          snapshot: state.snapshot,
+          alert: state.alert,
+          dayBrief: state.dayBrief,
+          preparingBrief: state.preparingBrief,
+          aiReady: this.assistantReady,
+        }, handlers),
+      },
+      all_tasks: {
+        labelKey: "island.tab.all_tasks",
+        render: (state, handlers) => this.tasksTab.render(
+          { items: state.snapshot.openItems, delivered: state.delivered, projects: state.projects, view: state.tasksView },
+          handlers,
+        ),
+      },
+      agenda: {
+        labelKey: "island.tab.agenda",
+        render: (state, handlers) => this.agenda.render(state.snapshot.openItems, state.snapshot.meetings, new Date(), handlers),
+      },
+    });
+    // Object keys keep their order; they are exactly the tabs, as the record's type requires.
+    this.tabLabels = (Object.keys(this.tabs) as IslandTab[]).map((tab) => ({ tab, labelKey: this.tabs[tab].labelKey }));
     this.clip = ElementFactory.create("div", { className: "island-clip" });
     this.notch = this.createNotch();
     this.contentTransition = new ContentTransition(this.clip, (size) => this.followContent(size));
@@ -240,7 +274,7 @@ export class IslandView {
     return ElementFactory.create("div", {
       className: "island-expanded",
       children: [
-        this.header.render(state.panel, state.tab, handlers),
+        this.header.render(state.panel, this.tabLabels, state.tab, handlers),
         ElementFactory.create("div", {
           className: "island-card",
           attributes: { "data-mood": mood, "data-panel": state.panel, "data-tab": state.tab },
@@ -273,31 +307,12 @@ export class IslandView {
         return this.projectsPanel.render(state.projects, state.projectColors, state.creatingProject, handlers);
       case "brief":
         return this.receipt.render(state.snapshot, state.alert, state.dayBrief);
-      case "tasks":
+      case "tabs":
         return this.tabContent(state, handlers);
     }
   }
 
   private tabContent(state: IslandState, handlers: IslandViewHandlers): HTMLElement {
-    switch (state.tab) {
-      case "today":
-        return this.today.render(
-          {
-            snapshot: state.snapshot,
-            alert: state.alert,
-            dayBrief: state.dayBrief,
-            preparingBrief: state.preparingBrief,
-            aiReady: this.assistantReady,
-          },
-          handlers,
-        );
-      case "all_tasks":
-        return this.tasksTab.render(
-          { items: state.snapshot.openItems, delivered: state.delivered, projects: state.projects, view: state.tasksView },
-          handlers,
-        );
-      case "agenda":
-        return this.agenda.render(state.snapshot.openItems, state.snapshot.meetings, new Date(), handlers);
-    }
+    return this.tabs[state.tab].render(state, handlers);
   }
 }

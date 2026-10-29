@@ -1,4 +1,4 @@
-import type { MoodName, TikiAlert } from "../backend/contracts";
+import type { MoodName, Priority, TikiAlert, Urgency } from "../backend/contracts";
 
 /** Every tunable value of the interface lives here, nowhere else. */
 export const UI_CONFIG = Object.freeze({
@@ -27,8 +27,22 @@ export const UI_CONFIG = Object.freeze({
     morning: Object.freeze({ mood: "calm", labelKey: "alert.kind.morning" }),
     evening: Object.freeze({ mood: "curious", labelKey: "alert.kind.evening" }),
   } satisfies Record<TikiAlert["kind"], { mood: MoodName; labelKey: string }>),
-  /** The island's chime: two notes, each this long, at a gentle volume (0 to 1). */
-  alertChime: Object.freeze({ notesHz: Object.freeze([880, 1318.5]), noteSeconds: 0.16, volume: 0.12 }),
+  /**
+   * The island's chime: two notes, each this long, at a gentle volume (0 to 1). Each note
+   * rises quickly, then fades to near silence over a few note lengths, so it sounds like a
+   * chime and not a beep.
+   */
+  alertChime: Object.freeze({
+    notesHz: Object.freeze([880, 1318.5]),
+    noteSeconds: 0.16,
+    volume: 0.12,
+    attackSeconds: 0.02,
+    /** Exponential fades cannot reach zero: they end at this volume. */
+    fadeFloor: 0.0001,
+    /** The fade lasts this many note lengths, and the note stops a little after it. */
+    fadeNotes: 2.2,
+    stopNotes: 2.4,
+  }),
   /** The snooze buttons of a reminder: minutes, and the translation key of the label. */
   snoozeMinutes: Object.freeze([
     Object.freeze({ minutes: 10, labelKey: "alert.snooze_10" }),
@@ -44,6 +58,15 @@ export const UI_CONFIG = Object.freeze({
     closeMs: 360,
     /** The previous content fades out this fast while the new one starts to appear. */
     contentOutMs: 180,
+  }),
+  /** In the Tasks tab, project groups with more pressing work come first, in this order. */
+  urgencyOrder: Object.freeze<Urgency[]>(["critical", "soon", "waiting", "normal", "reminder"]),
+  /** Marks set between or before pieces of text; the same in every language. */
+  textMarks: Object.freeze({
+    /** Between the parts of one line: "Altamira · #billing". */
+    separator: " · ",
+    /** Before a title, by priority: "!!" urgent, "!" important; other priorities have none. */
+    priority: Object.freeze<Partial<Record<Priority, string>>>({ urgent: "!!", high: "!" }),
   }),
   /** Width of Tiki's face in each place; its height is half of it. */
   faceWidth: Object.freeze({ hidden: 40, compact: 44, alert: 56, card: 76, settingsTitle: 36 }),

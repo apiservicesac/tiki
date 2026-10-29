@@ -51,22 +51,14 @@ export class UpdateSettingsView {
 
   private action(state: UpdateState, handlers: UpdateSettingsHandlers): HTMLElement {
     const canInstall = state.status === "available" && state.availableVersion !== null;
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: canInstall ? "settings-button" : "settings-button settings-button-quiet",
       text: canInstall
         ? this.translator.format("settings.updates.install", { version: state.availableVersion ?? "" })
         : this.translator.text("settings.updates.check"),
-      attributes: { type: "button", id: "update-action" },
-    });
+      attributes: { id: "update-action" },
+    }, canInstall ? handlers.onInstallUpdate : handlers.onCheckUpdate);
     button.disabled = state.status === "checking" || state.status === "installing";
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      if (canInstall) {
-        handlers.onInstallUpdate();
-      } else {
-        handlers.onCheckUpdate();
-      }
-    });
     return button;
   }
 }

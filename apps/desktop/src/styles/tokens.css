@@ -14,8 +14,8 @@
   --island-active: rgba(255, 255, 255, 0.12);
   --island-primary: #f5f6f8;
   --island-on-primary: #0b0c0e;
-  --island-good: #7ee0b9;
   --switch-on: #17a398;
+  --switch-knob: #ffffff;
   --receipt-paper: #1d1a14;
   --receipt-line: #3a3324;
   --kind-ticket-background: rgba(106, 155, 240, 0.16);
@@ -23,6 +23,12 @@
   --kind-instance-background: rgba(59, 179, 171, 0.18);
   --kind-instance-text: #7fd9d2;
   --island-wash-strength: 1;
+
+  /* "Good": delivered work, applied actions, joining a call. */
+  --good: #7ee0b9;
+  --good-background: rgba(52, 211, 153, 0.14);
+  --good-edge: rgba(52, 211, 153, 0.35);
+  --on-good: #ffffff;
 
   /*
    * Mood colors: Tiki's eyes, the notch glow, the mood chip and the card wash all take the
@@ -56,6 +62,26 @@
   --font-body: "Onest", "Segoe UI Variable", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
 
+  /* Type scale: titles and body, controls, hints, context lines, badges. */
+  --text-lg: 13px;
+  --text-md: 12.5px;
+  --text-sm: 12px;
+  --text-xs: 11.5px;
+  --text-2xs: 11px;
+  /* Uppercase mono labels: list groups, settings groups, the receipt. */
+  --text-label: 10.5px;
+
+  /*
+   * Corner radii: choices inside a toggle or a list, small buttons, rows and inputs, larger
+   * controls and popovers, the card, and pills.
+   */
+  --radius-xs: 9px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -87,7 +113,6 @@
     --island-active: rgba(15, 20, 30, 0.09);
     --island-primary: #14171c;
     --island-on-primary: #ffffff;
-    --island-good: #0f7a52;
     --switch-on: #17837d;
     --receipt-paper: #fffbf2;
     --receipt-line: #e8dcc2;
@@ -96,12 +121,18 @@
     --kind-instance-background: rgba(23, 131, 125, 0.13);
     --kind-instance-text: #17837d;
     --island-wash-strength: 0.5;
+    --good: #0f7a52;
+    --good-background: rgba(15, 122, 82, 0.1);
+    --good-edge: rgba(15, 122, 82, 0.3);
     --mood-glow-mix: 45%;
     --mood-ink-mix: 62%;
     --face-visor: #14171c;
     --face-visor-edge: rgba(255, 255, 255, 0.04);
+    --urgency-critical-background: rgba(176, 42, 55, 0.1);
     --urgency-critical-text: #b02a37;
+    --urgency-soon-background: rgba(196, 120, 12, 0.14);
     --urgency-soon-text: #a8650a;
+    --urgency-waiting-background: rgba(124, 58, 237, 0.1);
     --urgency-waiting-text: #7c3aed;
     --urgency-normal-background: rgba(15, 20, 30, 0.06);
     --urgency-normal-text: #566071;

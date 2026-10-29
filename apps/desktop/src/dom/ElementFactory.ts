@@ -33,17 +33,29 @@ export class ElementFactory {
     return container;
   }
 
-  /** A round icon button that calls `onPress` without bubbling to the island. */
-  static iconButton(iconMarkup: string, label: string, onPress: () => void): HTMLButtonElement {
+  /**
+   * A button showing its text (or richer content as children) that calls `onPress` without
+   * bubbling to the island, where a click would open or fold it.
+   */
+  static textButton(options: ElementOptions, onPress: () => void): HTMLButtonElement {
     const button = ElementFactory.create("button", {
-      className: "island-icon-button",
-      attributes: { type: "button", "aria-label": label, title: label },
+      ...options,
+      attributes: { type: "button", ...options.attributes },
     });
-    button.innerHTML = iconMarkup;
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       onPress();
     });
+    return button;
+  }
+
+  /** A round icon button that calls `onPress` without bubbling to the island. */
+  static iconButton(iconMarkup: string, label: string, onPress: () => void): HTMLButtonElement {
+    const button = ElementFactory.textButton(
+      { className: "island-icon-button", attributes: { "aria-label": label, title: label } },
+      onPress,
+    );
+    button.innerHTML = iconMarkup;
     return button;
   }
 }

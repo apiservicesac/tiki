@@ -1,6 +1,8 @@
 import type { IslandSnapshot, TikiAlert } from "../backend/contracts";
+import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
+import { ItemContext } from "./ItemContext";
 
 /**
  * The brief drawn as the receipt of the design: a header, one block per section with its
@@ -27,7 +29,7 @@ export class ReceiptView {
               ElementFactory.create("div", {
                 className: "receipt-line",
                 children: [
-                  ElementFactory.create("span", { text: item.projectName ? `${item.title} · ${item.projectName}` : item.title }),
+                  ElementFactory.create("span", { text: [item.title, ItemContext.describe(item.projectName, [])].filter((part) => part !== null).join(UI_CONFIG.textMarks.separator) }),
                   ElementFactory.create("em", { className: `receipt-when-${item.urgency}`, text: item.detailLabel }),
                 ],
               })),
@@ -52,7 +54,7 @@ export class ReceiptView {
           ? [ElementFactory.create("p", {
             className: "receipt-tip",
             children: [
-              ElementFactory.create("b", { text: `${this.translator.text("receipt.suggestion")}: ` }),
+              ElementFactory.create("b", { text: this.translator.format("punctuation.label", { label: this.translator.text("receipt.suggestion") }) }),
               document.createTextNode(suggestion),
             ],
           })]

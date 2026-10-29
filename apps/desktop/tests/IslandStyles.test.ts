@@ -8,6 +8,8 @@ import { FACE_APPEARANCES } from "../src/mascot/mascotAppearance";
 const islandStyles = readFileSync(resolve("src/styles/island.css"), "utf8");
 const tokenStyles = readFileSync(resolve("src/styles/tokens.css"), "utf8");
 const faceStyles = readFileSync(resolve("src/styles/face.css"), "utf8");
+const controlStyles = readFileSync(resolve("src/styles/controls.css"), "utf8");
+const lightTokens = tokenStyles.slice(tokenStyles.indexOf("@media (prefers-color-scheme: light)"));
 const MOODS = Object.keys(FACE_APPEARANCES);
 
 describe("island styles", () => {
@@ -23,5 +25,23 @@ describe("island styles", () => {
 
   it("never write a mood color by hand in the island", () => {
     expect(islandStyles).not.toMatch(/data-mood="\w+"\][^{]*\{[^}]*rgba\(/);
+  });
+
+  it.each(["--good", "--good-background", "--good-edge", ...["critical", "soon", "waiting", "normal"].map((urgency) => `--urgency-${urgency}-background`)])(
+    "redefine %s for the light theme",
+    (token) => {
+      expect(lightTokens).toMatch(new RegExp(`${token}:`));
+    },
+  );
+
+  it("take colors, radii and type sizes from the tokens, not from raw values", () => {
+    // The alert notch (section 4) is being redesigned on its own and keeps its measures for now.
+    const alertSection = islandStyles.slice(islandStyles.indexOf("/* 4. Alert"), islandStyles.indexOf("/* 5. Expanded"));
+    for (const styles of [islandStyles.replace(alertSection, ""), controlStyles]) {
+      expect(styles).not.toMatch(/rgba\(52, 211, 153/);
+      expect(styles).not.toMatch(/#fff\b|#ffffff/i);
+      expect(styles).not.toMatch(/border-radius:\s*(12|14|20|99|999)px/);
+      expect(styles).not.toMatch(/font(-size)?:[^;]*\b(13|12\.5|12|11\.5|11)px/);
+    }
   });
 });

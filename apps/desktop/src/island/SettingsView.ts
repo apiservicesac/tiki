@@ -50,9 +50,9 @@ export class SettingsView {
   }
 
   private advancedLink(onOpen: () => void): HTMLElement {
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: "settings-advanced",
-      attributes: { type: "button", id: "open-advanced-settings" },
+      attributes: { id: "open-advanced-settings" },
       children: [
         ElementFactory.fromTrustedMarkup("settings-advanced-icon", ICONS.sliders),
         ElementFactory.create("span", {
@@ -64,11 +64,7 @@ export class SettingsView {
         }),
         ElementFactory.fromTrustedMarkup("settings-advanced-arrow", ICONS.external),
       ],
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      onOpen();
-    });
+    }, onOpen);
     return button;
   }
 
@@ -83,18 +79,14 @@ export class SettingsView {
   }
 
   private option(labelKey: string, selected: boolean, onSelect: () => void, preview?: HTMLElement): HTMLElement {
-    const button = ElementFactory.create("button", {
+    const button = ElementFactory.textButton({
       className: "settings-option",
-      attributes: { type: "button", role: "radio", "aria-checked": String(selected) },
+      attributes: { role: "radio", "aria-checked": String(selected) },
       children: [
         ...(preview ? [preview] : []),
         ElementFactory.create("span", { text: this.translator.text(labelKey) }),
       ],
-    });
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      onSelect();
-    });
+    }, onSelect);
     return button;
   }
 

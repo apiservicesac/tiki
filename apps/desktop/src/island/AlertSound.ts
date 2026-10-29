@@ -13,23 +13,23 @@ export class AlertSound {
       return;
     }
     void context.resume();
-    const { notesHz, noteSeconds, volume } = UI_CONFIG.alertChime;
-    notesHz.forEach((frequency, index) => this.note(context, frequency, index * noteSeconds, noteSeconds, volume));
+    UI_CONFIG.alertChime.notesHz.forEach((frequency, index) =>
+      this.note(context, frequency, index * UI_CONFIG.alertChime.noteSeconds));
   }
 
-  private note(context: AudioContext, frequency: number, delay: number, seconds: number, volume: number): void {
+  private note(context: AudioContext, frequency: number, delay: number): void {
+    const { noteSeconds, volume, attackSeconds, fadeFloor, fadeNotes, stopNotes } = UI_CONFIG.alertChime;
     const start = context.currentTime + delay;
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     oscillator.type = "sine";
     oscillator.frequency.value = frequency;
-    // A quick attack and a soft fade, so it sounds like a chime and not a beep.
     gain.gain.setValueAtTime(0, start);
-    gain.gain.linearRampToValueAtTime(volume, start + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + seconds * 2.2);
+    gain.gain.linearRampToValueAtTime(volume, start + attackSeconds);
+    gain.gain.exponentialRampToValueAtTime(fadeFloor, start + noteSeconds * fadeNotes);
     oscillator.connect(gain).connect(context.destination);
     oscillator.start(start);
-    oscillator.stop(start + seconds * 2.4);
+    oscillator.stop(start + noteSeconds * stopNotes);
   }
 
   private audioContext(): AudioContext | null {
