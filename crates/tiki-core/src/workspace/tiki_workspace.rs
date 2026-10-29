@@ -1,6 +1,6 @@
 use chrono::{NaiveDate, NaiveDateTime};
 
-use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, WorkspaceViews};
+use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, TrashedItem, WorkspaceViews};
 use crate::activity::ItemEventRecord;
 use crate::alerts::{AlertDelivery, AlertScheduler, DueAlert, TikiAlert};
 use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
@@ -115,6 +115,11 @@ impl TikiWorkspace {
     /// Delivered items, most recent delivery first, for the history.
     pub fn delivered_tasks(&self) -> TikiResult<Vec<DeliveredItem>> {
         self.views().delivered_tasks()
+    }
+
+    /// Items in the trash, most recently trashed first, with when each is deleted forever.
+    pub fn trashed_items(&self) -> TikiResult<Vec<TrashedItem>> {
+        self.views().trashed_items()
     }
 
     /// Everything that happened to an item, oldest first.

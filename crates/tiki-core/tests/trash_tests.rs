@@ -9,7 +9,7 @@ use tiki_core::domain::{ItemKind, Priority, Repeat, Task, TaskId, TaskStatus};
 use tiki_core::items::ItemService;
 use tiki_core::mood::Mood;
 use tiki_core::storage::Database;
-use tiki_core::workspace::{FixedClock, IslandSnapshot, TikiWorkspace};
+use tiki_core::workspace::{FixedClock, IslandSnapshot, TikiWorkspace, TrashedItem};
 use tiki_core::{TikiError, TikiSettings};
 
 #[test]
@@ -296,4 +296,51 @@ fn the_trash_deletes_forever_only_what_stayed_past_its_retention() {
     ));
     assert!(workspace.task_details(newer).is_ok());
     assert_eq!(workspace.island_snapshot().unwrap().open_count, 5);
+}
+
+#[test]
+fn the_trash_lists_its_items_newest_first_with_when_they_go() {
+    let first_of_october = TestDay::october(1).and_hms_opt(10, 0, 0).unwrap();
+    let workspace = TimedWorkspace::sample_at(first_of_october);
+    let older = id_of(&workspace, "Mejora en el módulo de Ventas");
+    let newer = id_of(&workspace, "Completar módulo de importaciones");
+    workspace.trash_item(older).unwrap();
+    workspace
+        .at(TestDay::october(3).and_hms_opt(10, 0, 0).unwrap())
+        .trash_item(newer)
+        .unwrap();
+
+    let trash = workspace
+        .at(TestDay::october(4).and_hms_opt(10, 0, 0).unwrap())
+        .trashed_items()
+        .unwrap();
+
+    assert_eq!(
+        trash,
+        [
+            TrashedItem {
+                task_id: newer,
+                kind: ItemKind::Task,
+                title: "Completar módulo de importaciones".into(),
+                project_name: None,
+                project_color: None,
+                trashed_label: "ayer".into(),
+                deletes_in_label: "se borra en 29 días".into(),
+            },
+            TrashedItem {
+                task_id: older,
+                kind: ItemKind::Task,
+                title: "Mejora en el módulo de Ventas".into(),
+                project_name: Some("Altamira".into()),
+                project_color: Some("#2F6BD8".into()),
+                trashed_label: "hace 3 días".into(),
+                deletes_in_label: "se borra en 27 días".into(),
+            },
+        ]
+    );
+    let last_day = workspace
+        .at(TestDay::october(30).and_hms_opt(10, 0, 0).unwrap())
+        .trashed_items()
+        .unwrap();
+    assert_eq!(last_day[1].deletes_in_label, "se borra mañana");
 }

@@ -193,6 +193,13 @@
     "history.today": "hoy",
     "history.yesterday": "ayer",
 
+    "trash.trashed_today": "hoy",
+    "trash.trashed_yesterday": "ayer",
+    "trash.trashed_days_ago": "hace {days} días",
+    "trash.deletes_today": "se borra hoy",
+    "trash.deletes_tomorrow": "se borra mañana",
+    "trash.deletes_in_days": "se borra en {days} días",
+
     "notify.task.title": "Aviso de tarea",
 
     "island.tab.all_tasks": "Tareas",

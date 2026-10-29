@@ -193,6 +193,13 @@
     "history.today": "today",
     "history.yesterday": "yesterday",
 
+    "trash.trashed_today": "today",
+    "trash.trashed_yesterday": "yesterday",
+    "trash.trashed_days_ago": "{days} days ago",
+    "trash.deletes_today": "deleted today",
+    "trash.deletes_tomorrow": "deleted tomorrow",
+    "trash.deletes_in_days": "deleted in {days} days",
+
     "notify.task.title": "Task reminder",
 
     "island.tab.all_tasks": "Tasks",
