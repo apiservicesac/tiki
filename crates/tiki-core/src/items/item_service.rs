@@ -87,8 +87,9 @@ impl<'context> ItemService<'context> {
     /// Puts the item on hold until `who` answers (free text, as the user says it).
     pub fn wait_for(&self, task_id: TaskId, who: &str) -> TikiResult<()> {
         self.change(task_id, |task, now| {
-            let changed_who = task.waiting_for != who.trim();
-            who.trim().clone_into(&mut task.waiting_for);
+            let who = who.trim();
+            let changed_who = task.waiting_for != who;
+            who.clone_into(&mut task.waiting_for);
             let moved = task.move_to(TaskStatus::Waiting, now.date());
             let edited = (moved.is_none() && changed_who).then(|| ItemEvent::Edited {
                 fields: vec![ItemField::WaitingFor],

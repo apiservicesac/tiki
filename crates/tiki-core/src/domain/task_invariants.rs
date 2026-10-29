@@ -1,4 +1,4 @@
-use super::{ItemKind, Tags, Task, TaskStatus};
+use super::{ItemKind, Repeat, Tags, Task, TaskStatus};
 use crate::error::{TikiError, TikiResult};
 
 /// The rules every saved item follows, whatever path changed it (capture, edit, a move).
@@ -20,7 +20,7 @@ impl Task {
             return Err(TikiError::ReminderNeedsTime);
         }
         if self.kind != ItemKind::Reminder || self.remind_at.is_none() {
-            self.repeat = super::Repeat::Never;
+            self.repeat = Repeat::Never;
         }
         if self.status == TaskStatus::Waiting {
             self.waiting_for = self.waiting_for.trim().to_owned();
