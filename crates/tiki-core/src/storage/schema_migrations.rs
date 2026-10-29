@@ -17,8 +17,86 @@ impl SchemaMigrations {
             M::up(Self::TIMELESS_REMINDERS_BECOME_TASKS),
             M::up(Self::FOLLOW_UPS_APART_FROM_REMINDERS),
             M::up(Self::ITEM_EVENTS),
+            M::up(Self::SESSIONS),
         ])
     }
+
+    /// Recorded sessions: the session, its transcript (searchable with FTS5, accents
+    /// ignored), the AI notes and the tasks they propose, and the transcription queue. A
+    /// task created from a session points back to it.
+    const SESSIONS: &'static str = "
+        CREATE TABLE sessions (
+            id                INTEGER PRIMARY KEY,
+            title             TEXT NOT NULL,
+            mode              TEXT NOT NULL,
+            status            TEXT NOT NULL,
+            started_at        TEXT NOT NULL,
+            paused_ms         INTEGER NOT NULL DEFAULT 0,
+            paused_since      TEXT,
+            ended_at          TEXT,
+            media_file        TEXT,
+            media_bytes       INTEGER NOT NULL DEFAULT 0,
+            media_deleted_at  TEXT,
+            meeting_title     TEXT,
+            meeting_starts_at TEXT,
+            language          TEXT,
+            failure           TEXT
+        );
+
+        CREATE INDEX sessions_by_start ON sessions(started_at);
+
+        CREATE TABLE transcript_segments (
+            id         INTEGER PRIMARY KEY,
+            session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            speaker    TEXT NOT NULL,
+            start_ms   INTEGER NOT NULL,
+            end_ms     INTEGER NOT NULL,
+            text       TEXT NOT NULL
+        );
+
+        CREATE INDEX transcript_segments_by_session ON transcript_segments(session_id, start_ms);
+
+        CREATE VIRTUAL TABLE transcript_search USING fts5(
+            text, content = 'transcript_segments', content_rowid = 'id',
+            tokenize = 'unicode61 remove_diacritics 2'
+        );
+
+        CREATE TRIGGER transcript_segments_indexed AFTER INSERT ON transcript_segments BEGIN
+            INSERT INTO transcript_search (rowid, text) VALUES (new.id, new.text);
+        END;
+
+        CREATE TRIGGER transcript_segments_unindexed AFTER DELETE ON transcript_segments BEGIN
+            INSERT INTO transcript_search (transcript_search, rowid, text)
+            VALUES ('delete', old.id, old.text);
+        END;
+
+        CREATE TABLE session_notes (
+            session_id INTEGER PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,
+            summary    TEXT NOT NULL,
+            key_points TEXT NOT NULL DEFAULT '[]',
+            decisions  TEXT NOT NULL DEFAULT '[]',
+            written_at TEXT NOT NULL
+        );
+
+        CREATE TABLE session_action_items (
+            id         INTEGER PRIMARY KEY,
+            session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            title      TEXT NOT NULL,
+            due_date   TEXT,
+            task_id    INTEGER REFERENCES tasks(id) ON DELETE SET NULL
+        );
+
+        CREATE INDEX session_action_items_by_session ON session_action_items(session_id);
+
+        CREATE TABLE transcription_jobs (
+            session_id INTEGER PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,
+            queued_at  TEXT NOT NULL,
+            attempts   INTEGER NOT NULL DEFAULT 0
+        );
+
+        ALTER TABLE tasks ADD COLUMN origin_session_id INTEGER
+            REFERENCES sessions(id) ON DELETE SET NULL;
+    ";
 
     const INITIAL_SCHEMA: &'static str = "
         CREATE TABLE clients (

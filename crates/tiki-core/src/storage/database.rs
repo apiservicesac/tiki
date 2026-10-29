@@ -5,7 +5,7 @@ use rusqlite::Connection;
 use super::schema_migrations::SchemaMigrations;
 use super::{
     ActivityRepository, BriefLogRepository, CalendarRepository, CaptureLessonRepository,
-    PreferencesRepository, ProjectRepository, Repositories, TaskRepository,
+    PreferencesRepository, ProjectRepository, Repositories, SessionRepository, TaskRepository,
 };
 use crate::error::TikiResult;
 
@@ -51,6 +51,10 @@ impl Database {
 
     pub fn capture_lessons(&self) -> CaptureLessonRepository<'_> {
         self.repositories().capture_lessons()
+    }
+
+    pub fn sessions(&self) -> SessionRepository<'_> {
+        self.repositories().sessions()
     }
 
     /// Runs `work` in one transaction: every change it makes is saved together, or, when it

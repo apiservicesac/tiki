@@ -9,6 +9,7 @@ mod preferences_repository;
 mod project_repository;
 mod repositories;
 mod schema_migrations;
+mod session_repository;
 mod task_repository;
 mod task_row_mapper;
 
@@ -20,4 +21,5 @@ pub use database::Database;
 pub use preferences_repository::PreferencesRepository;
 pub use project_repository::ProjectRepository;
 pub use repositories::Repositories;
+pub use session_repository::SessionRepository;
 pub use task_repository::TaskRepository;

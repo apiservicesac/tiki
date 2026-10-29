@@ -3,6 +3,7 @@ mod support;
 use support::{SampleWorkspace, TestDay};
 use tiki_core::TikiError;
 use tiki_core::domain::{ExternalReference, Task, TaskId, TaskOrigin, TaskStatus};
+use tiki_core::sessions::{RecordingMode, Session};
 use tiki_core::storage::Database;
 
 #[test]
@@ -33,6 +34,23 @@ fn tasks_survive_a_round_trip() {
     assert_eq!(stored.project_id, original.project_id);
     assert_eq!(stored.due_date, original.due_date);
     assert_eq!(stored.origin, original.origin);
+}
+
+#[test]
+fn a_task_made_from_a_session_points_back_to_it() {
+    let database = Database::open_in_memory().unwrap();
+    let session = Session::start("Revisión", RecordingMode::AudioOnly, None, TestDay::start());
+    let session_id = database.sessions().insert(&session).unwrap();
+    let task = Task::new("Enviar el acta")
+        .unwrap()
+        .with_origin(TaskOrigin::Session { session_id });
+
+    let task_id = database.tasks().insert(&task, TestDay::start()).unwrap();
+
+    assert_eq!(
+        database.tasks().find(task_id).unwrap().origin,
+        TaskOrigin::Session { session_id }
+    );
 }
 
 #[test]

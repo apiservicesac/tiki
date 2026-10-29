@@ -39,6 +39,18 @@ pub enum TikiError {
     #[error("a reminder needs a time to ring")]
     ReminderNeedsTime,
 
+    #[error("the session has not been saved yet")]
+    UnsavedSession,
+
+    #[error("a session cannot go from {from} to {to}")]
+    SessionTransition {
+        from: &'static str,
+        to: &'static str,
+    },
+
+    #[error("a session is already being recorded")]
+    AlreadyRecording,
+
     #[error("AI request failed: {0}")]
     Ai(String),
 
@@ -66,6 +78,9 @@ impl TikiError {
             TikiError::DuplicateProjectName(_) => "duplicate_project_name",
             TikiError::EmptyTaskTitle => "empty_task_title",
             TikiError::ReminderNeedsTime => "reminder_needs_time",
+            TikiError::UnsavedSession => "unsaved_session",
+            TikiError::SessionTransition { .. } => "session_transition",
+            TikiError::AlreadyRecording => "already_recording",
             TikiError::Ai(_) => "ai",
             TikiError::Calendar(_) => "calendar",
             TikiError::Plugin(_) => "plugin",

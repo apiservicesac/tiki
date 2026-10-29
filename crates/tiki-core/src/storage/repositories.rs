@@ -2,7 +2,7 @@ use rusqlite::Connection;
 
 use super::{
     ActivityRepository, BriefLogRepository, CalendarRepository, CaptureLessonRepository,
-    PreferencesRepository, ProjectRepository, TaskRepository,
+    PreferencesRepository, ProjectRepository, SessionRepository, TaskRepository,
 };
 
 /// Every repository over one connection: an open transaction (see `Database::transaction`).
@@ -41,5 +41,9 @@ impl<'connection> Repositories<'connection> {
 
     pub fn capture_lessons(&self) -> CaptureLessonRepository<'connection> {
         CaptureLessonRepository::new(self.connection)
+    }
+
+    pub fn sessions(&self) -> SessionRepository<'connection> {
+        SessionRepository::new(self.connection)
     }
 }
