@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { BackendError } from "../src/backend/BackendError";
 import { SHELL_EVENTS, UI_CONFIG } from "../src/config/uiConfig";
 import type { IslandController } from "../src/island/IslandController";
 import { TikiApp } from "../src/TikiApp";
@@ -288,6 +289,35 @@ describe("IslandController", () => {
     }
     await controller.submitCapture();
     expect(backend.confirmedCaptures[0]).toMatchObject({ kind: "reminder", remindAt: "2026-10-22T08:00:00", repeat: "daily", tags: [] });
+  });
+
+  it("says what to fix when the core refuses a capture, keeping what the user wrote", async () => {
+    backend.saveFailure = new BackendError("reminder_needs_time", "a reminder needs a time to ring");
+    controller.openPanel("capture");
+    typeCapture(root, "Llamar a mamá");
+    root.querySelector<HTMLButtonElement>('[data-kind="reminder"]')?.click();
+    await controller.submitCapture();
+
+    expect(root.querySelector(".capture-status-error")?.textContent).toBe("Un recordatorio necesita fecha y hora para sonar.");
+    expect(root.querySelector<HTMLInputElement>("#capture-input")?.value).toBe("Llamar a mamá");
+    expect(controller.currentState.panel).toBe("capture");
+  });
+
+  it("says what went wrong when the core refuses an edit, keeping the form filled", async () => {
+    backend.saveFailure = new BackendError("database", "database error: disk full");
+    controller.setMode("expanded");
+    root.querySelector<HTMLButtonElement>('[data-task-id="1"] .island-row-text')?.click();
+    await vi.waitFor(() => expect(root.querySelector("#edit-title")).not.toBeNull());
+    const title = root.querySelector<HTMLInputElement>("#edit-title");
+    if (title) {
+      title.value = "Tracking de formularios";
+    }
+    root.querySelector<HTMLFormElement>(".edit-form")?.requestSubmit();
+
+    await vi.waitFor(() => expect(root.querySelector<HTMLElement>(".edit-problem")?.hidden).toBe(false));
+    expect(root.querySelector(".edit-problem")?.textContent).toBe("No se pudo guardar. Inténtalo de nuevo.");
+    expect(root.querySelector<HTMLInputElement>("#edit-title")?.value).toBe("Tracking de formularios");
+    expect(controller.currentState.panel).toBe("edit");
   });
 
   it("creates a new project from the picker by typing its name", async () => {

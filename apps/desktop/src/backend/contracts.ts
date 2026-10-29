@@ -255,7 +255,16 @@ export const LOCALE_CODES: Readonly<Record<LocaleName, LocaleCode>> = Object.fre
   english: "en",
 });
 
-/** Everything the interface can ask of the core and the desktop shell. */
+/** What a refused command sends back (see `CommandError` in the shell): a stable key and a readable message. */
+export interface CommandFailure {
+  key: string;
+  message: string;
+}
+
+/** Failures the user can fix in the capture or edit form; each has its own message (`error.<key>`). */
+export const USER_ERROR_KEYS = Object.freeze(["reminder_needs_time", "empty_task_title"] as const);
+
+/** Everything the interface can ask of the core and the desktop shell; a refused command rejects with a `BackendError`. */
 export interface TikiBackend {
   islandSnapshot(): Promise<IslandSnapshot>;
   moveTask(taskId: number, status: TaskStatus): Promise<void>;

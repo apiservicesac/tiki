@@ -104,6 +104,9 @@
     "edit.no_project": "No project",
     "edit.save": "Save",
     "edit.cancel": "Cancel",
+    "error.reminder_needs_time": "A reminder needs a date and time to ring.",
+    "error.empty_task_title": "Write a title to save it.",
+    "error.save_failed": "Could not save. Try again.",
     "island.row.edit": "Edit task",
 
     "notify.morning.title": "Good morning · your day with Tiki",

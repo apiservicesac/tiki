@@ -202,7 +202,7 @@ export class IslandController {
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
       onOpenAdvancedSettings: () => this.openAdvancedSettings(),
       edit: {
-        onSave: (taskId, edit) => void this.items.save(taskId, edit),
+        onSave: (taskId, edit) => this.items.save(taskId, edit),
         onCancel: () => this.update({ panel: "tabs", editing: null }),
       },
       capture: {

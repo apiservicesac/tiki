@@ -1,3 +1,4 @@
+import { BackendError } from "../backend/BackendError";
 import type { ProjectSummary, TaskDetails, TaskEdit } from "../backend/contracts";
 import { CoreDateTimeText } from "../backend/CoreDateTimeText";
 import { ElementFactory } from "../dom/ElementFactory";
@@ -7,7 +8,8 @@ import { ItemFieldsBuilder, type ProjectChoice } from "./ItemFieldsBuilder";
 import { ProjectPicker } from "./ProjectPicker";
 
 export interface TaskEditHandlers {
-  onSave: (taskId: number, edit: TaskEdit) => void;
+  /** Rejects when the core refuses the change; the form then says what to fix. */
+  onSave: (taskId: number, edit: TaskEdit) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -78,15 +80,17 @@ export class TaskEditView {
       }),
     };
     fields.notes.value = task.notes;
+    const problem = ElementFactory.create("p", { className: "island-hint edit-problem edit-field-wide", attributes: { role: "alert" } });
+    problem.hidden = true;
 
     const form = ElementFactory.create("form", { className: "edit-form" });
-    const layout = () => form.replaceChildren(...this.layout(fields, picker.element));
+    const layout = () => form.replaceChildren(...this.layout(fields, picker.element), problem, this.actions());
     fields.kind.addEventListener("change", layout);
     fields.status.addEventListener("change", layout);
     layout();
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      this.save(task.taskId, fields);
+      this.save(task.taskId, fields, problem);
     });
     form.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && !picker.isOpen()) {
@@ -97,7 +101,7 @@ export class TaskEditView {
     return form;
   }
 
-  /** The fields of the item's kind; "waits for" only while the task is waiting. */
+  /** The fields of the item's kind; "waits for" only while the task is waiting. The problem line and the buttons follow. */
   private layout(fields: TaskEditFields, projectPicker: HTMLElement): HTMLElement[] {
     const header = [
       this.fieldsBuilder.field("edit.field.title", fields.title, { wide: true }),
@@ -109,7 +113,6 @@ export class TaskEditView {
         this.fieldsBuilder.field("capture.field.moment", fields.remindAt),
         this.fieldsBuilder.field("capture.field.repeat", fields.repeat),
         this.fieldsBuilder.field("edit.field.notes", fields.notes, { wide: true }),
-        this.actions(),
       ];
     }
     return [
@@ -122,16 +125,17 @@ export class TaskEditView {
       this.fieldsBuilder.field("edit.field.remind", fields.remindAt),
       this.fieldsBuilder.field("edit.field.tags", fields.tags),
       this.fieldsBuilder.field("edit.field.notes", fields.notes, { wide: true }),
-      this.actions(),
     ];
   }
 
-  private save(taskId: number, fields: TaskEditFields): void {
+  /** Sends the changes; if the core refuses them, the form stays filled and says what to fix. */
+  private save(taskId: number, fields: TaskEditFields, problem: HTMLElement): void {
     if (fields.title.value.trim() === "") {
       fields.title.focus();
       return;
     }
     const reminder = fields.kind.value === "reminder";
+    problem.hidden = true;
     this.handlers?.onSave(taskId, {
       title: fields.title.value.trim(),
       notes: fields.notes.value.trim(),
@@ -144,6 +148,9 @@ export class TaskEditView {
       tags: reminder ? [] : TagText.parse(fields.tags.value),
       repeat: reminder ? (fields.repeat.value as TaskEdit["repeat"]) : "never",
       waitingFor: !reminder && fields.status.value === "waiting" ? fields.waitingFor.value.trim() : "",
+    }).catch((error: unknown) => {
+      problem.textContent = this.translator.text(BackendError.messageKeyOf(error));
+      problem.hidden = false;
     });
   }
 

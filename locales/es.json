@@ -104,6 +104,9 @@
     "edit.no_project": "Sin proyecto",
     "edit.save": "Guardar",
     "edit.cancel": "Cancelar",
+    "error.reminder_needs_time": "Un recordatorio necesita fecha y hora para sonar.",
+    "error.empty_task_title": "Escribe un título para guardarlo.",
+    "error.save_failed": "No se pudo guardar. Inténtalo de nuevo.",
     "island.row.edit": "Editar tarea",
 
     "notify.morning.title": "Buenos días · tu día con Tiki",

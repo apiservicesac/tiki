@@ -19,6 +19,7 @@ import type {
   UserPreferences,
 } from "../../src/backend/contracts";
 import { AI_PROVIDERS } from "../../src/backend/contracts";
+import { BackendError } from "../../src/backend/BackendError";
 import { FakeShell } from "./FakeShell";
 
 /**
@@ -60,6 +61,8 @@ export class FakeBackend implements TikiBackend {
   aiShell = new FakeShell(() => ({}));
   calendar: CalendarStatus = { accounts: [], available: ["microsoft", "google"] };
   readonly openedLinks: string[] = [];
+  /** When set, saving a capture or an edit is refused with it, as the core would. */
+  saveFailure: BackendError | null = null;
   private readonly listeners = new Map<string, () => void>();
 
   constructor(private readonly snapshot: IslandSnapshot = FakeBackend.sampleSnapshot()) {}
@@ -87,6 +90,9 @@ export class FakeBackend implements TikiBackend {
   }
 
   async saveConfirmedCapture(capture: InterpretedCapture): Promise<void> {
+    if (this.saveFailure) {
+      throw this.saveFailure;
+    }
     this.confirmedCaptures.push(capture);
   }
 
@@ -174,6 +180,9 @@ export class FakeBackend implements TikiBackend {
   }
 
   async editTask(taskId: number, edit: TaskEdit): Promise<void> {
+    if (this.saveFailure) {
+      throw this.saveFailure;
+    }
     this.editedTasks.push({ taskId, edit });
   }
 
