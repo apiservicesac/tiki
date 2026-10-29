@@ -48,6 +48,14 @@ impl<'translator> DateFormatter<'translator> {
         time.format(Self::TIME_OF_DAY).to_string()
     }
 
+    /// "10:00–10:30".
+    pub fn time_range(&self, start: NaiveTime, end: NaiveTime) -> String {
+        self.translator.format(
+            "date.time_range",
+            &[("start", &Self::time(start)), ("end", &Self::time(end))],
+        )
+    }
+
     fn weekday_index(date: NaiveDate) -> usize {
         date.weekday().num_days_from_monday() as usize
     }

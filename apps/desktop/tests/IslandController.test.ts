@@ -211,7 +211,7 @@ describe("IslandController", () => {
   it("puts calendar meetings in the Agenda, by time, with a Join button", async () => {
     controller.selectTab("agenda");
     const rows = [...root.querySelectorAll<HTMLElement>(".agenda-row")];
-    expect(rows.map((row) => row.querySelector(".agenda-time")?.textContent)).toEqual(["09:00–09:30", "11:00"]);
+    expect(rows.map((row) => row.querySelector(".agenda-time")?.textContent)).toEqual(["09:00–09:30", "11:00", "16:00"]);
     expect(rows[0]?.querySelector(".island-row-text")?.textContent).toBe("Daily de AltamiraTeams");
 
     rows[0]?.querySelector<HTMLButtonElement>(".agenda-join")?.click();

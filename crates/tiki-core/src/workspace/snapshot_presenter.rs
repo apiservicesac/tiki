@@ -1,6 +1,7 @@
 use chrono::NaiveDateTime;
 
 use super::{FocusSuggestion, IslandSnapshot, SnapshotItem, SnapshotSection, Urgency};
+use crate::agenda::AgendaBuilder;
 use crate::briefing::{
     BriefDetailFormatter, BriefItem, BriefMoment, BriefNarrator, DailyBrief, FocusPicker,
     FocusReason,
@@ -90,9 +91,13 @@ impl<'context> SnapshotPresenter<'context> {
                 ],
             ),
             sections,
+            agenda: AgendaBuilder::new(self.translator).build(
+                &open_items,
+                &meetings.agenda,
+                brief.date,
+            ),
             open_items,
             focus: self.focus(brief, meetings),
-            meetings: meetings.agenda.clone(),
             narration: BriefNarrator::new(self.translator).narrate(brief, BriefMoment::Morning),
         }
     }

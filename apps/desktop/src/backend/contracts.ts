@@ -52,7 +52,10 @@ export interface SnapshotItem {
   priority: Priority;
   /** Lowercase, without "#". */
   tags: string[];
-  /** For reminders: when it rings (`2026-10-23T11:00:00`) and how often it comes back. */
+  /**
+   * When it rings (`2026-10-23T11:00:00`): a reminder's moment, or the alarm on a task; and how
+   * often a reminder comes back.
+   */
   at: string | null;
   repeat: Repeat;
   urgency: Urgency;
@@ -85,8 +88,8 @@ export interface IslandSnapshot {
   openItems: SnapshotItem[];
   /** What to do now, and why; `null` when nothing presses. */
   focus: { item: SnapshotItem; reason: string } | null;
-  /** Meetings from today on, from the connected calendars. */
-  meetings: MeetingItem[];
+  /** Meetings from today on and the items that ring at a time, by day (see `AgendaBuilder`). */
+  agenda: AgendaDay[];
   narration: string;
 }
 
@@ -123,6 +126,20 @@ export interface TikiAlert {
   taskId: number | null;
   /** A link to open from the alert: the meeting's video call. */
   link: string | null;
+}
+
+/** One line of the Agenda, with the time it shows: "10:00", "10:00–10:30" or "Todo el día". */
+export type AgendaEntry =
+  | { kind: "meeting"; timeLabel: string; meeting: MeetingItem }
+  | { kind: "reminder"; timeLabel: string; item: SnapshotItem }
+  | { kind: "task"; timeLabel: string; item: SnapshotItem };
+
+/** The Agenda's lines of one day, earliest first, under its title: "Hoy", "Mañana" or the long date. */
+export interface AgendaDay {
+  /** ISO date, for example `2026-10-23`. */
+  day: string;
+  label: string;
+  entries: AgendaEntry[];
 }
 
 /** A meeting copied from a connected calendar (see `MeetingItem` in the core). */

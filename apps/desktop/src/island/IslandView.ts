@@ -104,7 +104,7 @@ export class IslandView {
       },
       agenda: {
         labelKey: "island.tab.agenda",
-        render: (state, handlers) => this.agenda.render(state.snapshot.openItems, state.snapshot.meetings, new Date(), handlers),
+        render: (state, handlers) => this.agenda.render(state.snapshot.agenda, handlers),
       },
     });
     // Object keys keep their order; they are exactly the tabs, as the record's type requires.

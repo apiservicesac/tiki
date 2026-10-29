@@ -9,7 +9,6 @@ import { FakeBackend } from "./support/FakeBackend";
 
 const SNAPSHOT = FakeBackend.sampleSnapshot();
 const DELIVERED = new FakeBackend().delivered;
-const TODAY = new Date(2026, 9, 23, 8, 0);
 
 const REMINDER_ALERT: TikiAlert = {
   kind: "reminder",
@@ -141,14 +140,14 @@ describe("TasksTabView", () => {
 describe("AgendaView", () => {
   const view = new AgendaView(new Translator("es"));
 
-  it("draws reminders and meetings by day and time", () => {
-    const element = view.render(SNAPSHOT.openItems, SNAPSHOT.meetings, TODAY, recordingHandlers());
+  it("draws meetings, reminders and task alarms by day and time", () => {
+    const element = view.render(SNAPSHOT.agenda, recordingHandlers());
     expect(element.outerHTML).toMatchSnapshot();
   });
 
   it("opens and delivers a reminder and joins a meeting without letting the click reach the island", () => {
     const handlers = recordingHandlers();
-    const element = view.render(SNAPSHOT.openItems, SNAPSHOT.meetings, TODAY, handlers);
+    const element = view.render(SNAPSHOT.agenda, handlers);
     const island = mount(element);
     click(element, '.agenda-row[data-task-id="8"] .island-row-text');
     click(element, '.agenda-row[data-task-id="8"] .island-row-done');

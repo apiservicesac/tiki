@@ -272,7 +272,7 @@ export class FakeBackend implements TikiBackend {
     const vapestation = { projectId: 3, projectName: "Vapestation", projectColor: "#C2410C" };
     const access = { taskId: 3, kind: "task" as const, title: "Acceso solo a análisis de facturas de Almendra", ...andeanvet, detailLabel: "1 día de atraso", urgency: "critical" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
     const tracking = { taskId: 1, kind: "task" as const, title: "Tracking de formularios comerciales", ...altamira, detailLabel: "mañana", urgency: "soon" as const, priority: "high" as const, tags: [], at: null, repeat: "never" as const };
-    const sales = { taskId: 2, kind: "task" as const, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon" as const, priority: "normal" as const, tags: ["ventas"], at: null, repeat: "never" as const };
+    const sales = { taskId: 2, kind: "task" as const, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon" as const, priority: "normal" as const, tags: ["ventas"], at: "2026-10-24T16:00:00", repeat: "never" as const };
     const vacation = { taskId: 4, kind: "task" as const, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En curso", urgency: "normal" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
     const github = { taskId: 5, kind: "task" as const, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "3 días", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
     const water = { taskId: 8, kind: "reminder" as const, title: "Tomar agua", projectId: null, projectName: null, projectColor: null, detailLabel: "Vie 23 · 11:00 · Cada día", urgency: "reminder" as const, priority: "normal" as const, tags: [], at: "2026-10-23T11:00:00", repeat: "daily" as const };
@@ -295,16 +295,28 @@ export class FakeBackend implements TikiBackend {
       ],
       openItems: [access, tracking, sales, vacation, github, zones, water],
       focus: { item: access, reason: "Está atrasada" },
-      meetings: [
+      agenda: [
         {
-          title: "Daily de Altamira",
-          startsAt: "2026-10-23T09:00:00",
-          endsAt: "2026-10-23T09:30:00",
-          allDay: false,
-          location: "Teams",
-          joinUrl: "https://teams.microsoft.com/l/meetup-join/daily",
-          accountEmail: "ana@microsoft.test",
+          day: "2026-10-23",
+          label: "Hoy",
+          entries: [
+            {
+              kind: "meeting",
+              timeLabel: "09:00–09:30",
+              meeting: {
+                title: "Daily de Altamira",
+                startsAt: "2026-10-23T09:00:00",
+                endsAt: "2026-10-23T09:30:00",
+                allDay: false,
+                location: "Teams",
+                joinUrl: "https://teams.microsoft.com/l/meetup-join/daily",
+                accountEmail: "ana@microsoft.test",
+              },
+            },
+            { kind: "reminder", timeLabel: "11:00", item: water },
+          ],
         },
+        { day: "2026-10-24", label: "Mañana", entries: [{ kind: "task", timeLabel: "16:00", item: sales }] },
       ],
     };
   }

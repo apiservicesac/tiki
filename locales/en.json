@@ -289,6 +289,7 @@
 
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}",
+    "date.time_range": "{start}–{end}",
 
     "calendar.connected": "Connected calendars",
     "calendar.none": "None yet.",
@@ -304,7 +305,6 @@
     "calendar.provider.microsoft": "Microsoft 365 / Outlook",
     "calendar.provider.google": "Google Calendar",
     "meeting.join": "Join",
-    "meeting.time_range": "{start}–{end}",
     "meeting.all_day": "All day",
     "meeting.untitled": "(No title)"
   },

@@ -2,8 +2,10 @@ mod support;
 
 use chrono::{NaiveDateTime, NaiveTime};
 use support::{TestDay, TimedWorkspace};
+use tiki_core::agenda::AgendaEntry;
 use tiki_core::alerts::AlertKind;
-use tiki_core::calendar::{CalendarProvider, Meeting};
+use tiki_core::calendar::{CalendarProvider, Meeting, MeetingItem};
+use tiki_core::workspace::IslandSnapshot;
 
 fn at(day: u32, hour: u32, minute: u32) -> NaiveDateTime {
     TestDay::october(day).and_time(NaiveTime::from_hms_opt(hour, minute, 0).unwrap())
@@ -23,6 +25,19 @@ fn meeting(id: &str, title: &str, starts_at: NaiveDateTime, minutes: i64) -> Mee
         location: "Teams".into(),
         join_url: Some("https://teams.microsoft.com/l/meetup".into()),
     }
+}
+
+/// The meetings of the Agenda, in its order.
+fn agenda_meetings(snapshot: &IslandSnapshot) -> Vec<&MeetingItem> {
+    snapshot
+        .agenda
+        .iter()
+        .flat_map(|day| &day.entries)
+        .filter_map(|entry| match entry {
+            AgendaEntry::Meeting { meeting, .. } => Some(meeting),
+            _ => None,
+        })
+        .collect()
 }
 
 #[test]
@@ -48,22 +63,25 @@ fn a_connected_calendar_fills_the_agenda_and_signing_in_again_reuses_the_account
         .unwrap();
 
     let snapshot = workspace.island_snapshot().unwrap();
-    let titles: Vec<&str> = snapshot
-        .meetings
+    let meetings = agenda_meetings(&snapshot);
+    let titles: Vec<&str> = meetings
         .iter()
         .map(|meeting| meeting.title.as_str())
         .collect();
     assert_eq!(titles, ["Daily", "CAPEX Claro"]);
-    assert_eq!(snapshot.meetings[0].account_email, "yo@empresa.com");
+    assert_eq!(meetings[0].account_email, "yo@empresa.com");
 
     // A meeting removed from the calendar disappears from Tiki at the next sync.
     workspace
         .store_meetings(work, &[meeting("b", "CAPEX Claro", at(23, 14, 30), 30)])
         .unwrap();
-    assert_eq!(workspace.island_snapshot().unwrap().meetings.len(), 1);
+    assert_eq!(agenda_meetings(&workspace.island_snapshot().unwrap()).len(), 1);
 
     workspace.disconnect_calendar(work).unwrap();
-    assert_eq!(workspace.island_snapshot().unwrap().meetings.len(), 0);
+    assert_eq!(
+        agenda_meetings(&workspace.island_snapshot().unwrap()).len(),
+        0
+    );
     assert_eq!(workspace.calendar_accounts().unwrap().len(), 0);
 }
 
@@ -176,8 +194,7 @@ fn past_meetings_are_not_kept() {
         .unwrap();
 
     let snapshot = workspace.island_snapshot().unwrap();
-    let titles: Vec<&str> = snapshot
-        .meetings
+    let titles: Vec<&str> = agenda_meetings(&snapshot)
         .iter()
         .map(|meeting| meeting.title.as_str())
         .collect();
