@@ -26,7 +26,7 @@ pub struct TikiWorkspace {
     clock: Box<dyn Clock>,
     /// Another app holds the microphone, as the shell reports it.
     in_call: bool,
-    /// The day the expired trash was last deleted; empty until the first time this run.
+    /// The day the expired trash was last purged; empty until the first purge since start.
     trash_purged_on: Option<NaiveDate>,
 }
 
