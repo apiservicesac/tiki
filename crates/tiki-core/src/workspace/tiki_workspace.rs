@@ -92,7 +92,7 @@ impl TikiWorkspace {
     /// What the island shows right now.
     pub fn island_snapshot(&self) -> TikiResult<IslandSnapshot> {
         let now = self.clock.now();
-        let projects = self.project_directory()?;
+        let projects = self.project_book().directory()?;
         let brief = self.brief(&projects)?;
         let meetings = self.calendar_book().agenda(now.date())?;
         let next_meeting = CalendarBook::next_today(&meetings, now);
@@ -123,7 +123,7 @@ impl TikiWorkspace {
         let tasks = self.database.tasks().list_open()?;
         Ok(AssistantContext::build(
             &tasks,
-            &self.project_directory()?,
+            &self.project_book().directory()?,
             self.clock.now(),
         ))
     }
@@ -150,7 +150,7 @@ impl TikiWorkspace {
             // A late start skips the morning brief instead of sending both at once.
             log.mark_sent(BriefMoment::Morning, now.date())?;
         }
-        let brief = self.brief(&self.project_directory()?)?;
+        let brief = self.brief(&self.project_book().directory()?)?;
         let composer = NotificationComposer::new(&self.translator);
         let mut alert = composer.compose(&brief, moment);
         if moment == BriefMoment::Morning {
@@ -224,7 +224,7 @@ impl TikiWorkspace {
             return Ok(Vec::new());
         }
         let now = self.clock.now();
-        let projects = self.project_directory()?;
+        let projects = self.project_book().directory()?;
         let composer = NotificationComposer::new(&self.translator);
         let today = now.date();
         let policy = self.follow_up_policy();
@@ -253,7 +253,9 @@ impl TikiWorkspace {
     /// Saves an item exactly as the user confirmed it. A project named for the first time is
     /// created on the spot: Tiki never asks the user to keep a list of projects.
     pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
-        let project_id = self.project_named(capture.project_name.as_deref())?;
+        let project_id = self
+            .project_book()
+            .find_or_create(capture.project_name.as_deref())?;
         let mut task = capture.into_task(project_id, self.clock.today())?;
         self.follow_up_policy()
             .schedule_first_nudge(&mut task, false);
@@ -280,14 +282,16 @@ impl TikiWorkspace {
     /// A saved task as the edit form shows it.
     pub fn task_details(&self, task_id: TaskId) -> TikiResult<TaskDetails> {
         let task = self.database.tasks().find(task_id)?;
-        TaskDetails::from_task(&task, &self.project_directory()?)
+        TaskDetails::from_task(&task, &self.project_book().directory()?)
     }
 
     /// Saves the user's changes to an item; a new project name creates the project.
     pub fn edit_task(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
         let before = task.clone();
-        let project_id = self.project_named(edit.project_name.as_deref())?;
+        let project_id = self
+            .project_book()
+            .find_or_create(edit.project_name.as_deref())?;
         let moved = edit.apply_to(&mut task, project_id, self.clock.today());
         self.follow_up_policy()
             .schedule_first_nudge(&mut task, before.status == TaskStatus::Waiting);
@@ -323,7 +327,7 @@ impl TikiWorkspace {
             .database
             .activity()
             .latest_deliveries(self.settings.delivered_history_limit)?;
-        let projects = self.project_directory()?;
+        let projects = self.project_book().directory()?;
         let today = self.clock.today();
         let mut delivered = Vec::new();
         for delivery in deliveries {
@@ -397,17 +401,6 @@ impl TikiWorkspace {
         ProjectBook::new(&self.database, &self.settings)
     }
 
-    /// The project with this name, created when it does not exist yet; `None` for no name.
-    fn project_named(&self, name: Option<&str>) -> TikiResult<Option<ProjectId>> {
-        let Some(name) = name.map(str::trim).filter(|name| !name.is_empty()) else {
-            return Ok(None);
-        };
-        match self.database.projects().find_by_name(name)? {
-            Some(project) => Ok(project.id),
-            None => self.project_book().create(name).map(Some),
-        }
-    }
-
     fn reschedule_moved_briefs(&self, preferences: &UserPreferences) -> TikiResult<()> {
         let now = self.clock.now().time();
         let moves = [
@@ -433,9 +426,5 @@ impl TikiWorkspace {
     fn brief(&self, projects: &ProjectDirectory) -> TikiResult<DailyBrief> {
         let tasks = self.database.tasks().list_open()?;
         Ok(DailyBriefBuilder::new(&self.settings).build(&tasks, projects, self.clock.today()))
-    }
-
-    fn project_directory(&self) -> TikiResult<ProjectDirectory> {
-        Ok(ProjectDirectory::new(self.database.projects().list()?))
     }
 }
