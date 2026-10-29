@@ -9,7 +9,7 @@ pub struct ProjectSummary {
     pub project_id: ProjectId,
     pub name: String,
     pub color: String,
-    /// Tasks not delivered yet.
+    /// Tasks not delivered yet; standalone reminders are not work and do not count.
     pub open_count: usize,
     /// Open tasks that are overdue or due soon.
     pub pressing_count: usize,

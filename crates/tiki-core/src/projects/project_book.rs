@@ -17,7 +17,8 @@ impl<'context> ProjectBook<'context> {
         Self { database, settings }
     }
 
-    /// Every project, busiest first: pressing work, then open work, then by name.
+    /// Every project, busiest first: pressing work, then open work, then by name. Standalone
+    /// reminders are not work, as in the brief.
     pub fn summaries(
         &self,
         open_tasks: &[Task],
@@ -30,9 +31,9 @@ impl<'context> ProjectBook<'context> {
             .into_iter()
             .filter_map(|project| {
                 let project_id = project.id?;
-                let tasks = open_tasks
-                    .iter()
-                    .filter(|task| task.project_id == Some(project_id) && task.status.is_open());
+                let tasks = open_tasks.iter().filter(|task| {
+                    task.project_id == Some(project_id) && task.counts_as_open_work()
+                });
                 let (open_count, pressing_count) = tasks.fold((0, 0), |(open, pressing), task| {
                     let is_pressing = task.is_overdue(today)
                         || task.is_due_within(today, self.settings.due_soon_window_days);

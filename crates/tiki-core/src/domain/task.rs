@@ -104,6 +104,11 @@ impl Task {
                 .is_some_and(|days| (0..=window_days).contains(&days))
     }
 
+    /// Whether the item is open work: not delivered and not a standalone reminder.
+    pub fn counts_as_open_work(&self) -> bool {
+        self.kind == ItemKind::Task && self.status.is_open()
+    }
+
     /// Days the task has been waiting on others, if it is waiting.
     pub fn days_waiting(&self, today: NaiveDate) -> Option<i64> {
         match self.status {
