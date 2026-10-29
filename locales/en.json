@@ -15,8 +15,8 @@
     "island.tab.today": "Today",
     "island.tab.tickets": "Tickets",
     "island.tab.agenda": "Agenda",
-    "island.closed.summary": "{due} today · {waiting} waiting",
-    "island.today.subtitle": "{date} · {count} due soon",
+    "island.closed.summary": "{due} to handle · {waiting} waiting",
+    "island.today.subtitle": "{date} · {count} to handle",
     "island.tickets.empty": "No ticket sources are active. Add one in Settings › Plugins.",
     "island.agenda.empty": "No calendars connected yet.",
     "island.today.empty": "Nothing pending for today.",
@@ -30,9 +30,9 @@
     "brief.detail.due_today": "today",
     "brief.detail.due_tomorrow": "tomorrow",
     "brief.detail.overdue_days": "{days} days late",
-    "brief.detail.waiting_days": "{days} days",
+    "brief.detail.waiting_days": "waiting {days} days",
     "brief.detail.overdue_one_day": "1 day late",
-    "brief.detail.waiting_one_day": "1 day",
+    "brief.detail.waiting_one_day": "waiting 1 day",
 
     "narration.greeting.morning": "Good morning.",
     "narration.greeting.evening": "Good evening, here is your end of day.",
@@ -217,6 +217,7 @@
     "projects.remove": "Remove project",
     "projects.remove_confirm": "Remove? Their tasks stay",
     "projects.open": "{count} open",
+    "projects.open_one": "1 open",
     "projects.no_open": "No open tasks",
     "receipt.title": "Day summary",
     "receipt.suggestion": "Suggestion",
@@ -291,6 +292,7 @@
     "notify.meeting.title": "Meeting in {minutes} min",
     "notify.meetings_today": "Meetings today: {count} · the first at {time}",
     "focus.free_time": "{minutes} min free before “{meeting}”",
+    "focus.reason_with_free_time": "{reason} · {free}",
 
     "calendar.signed_in_page": "Done: your calendar is connected. You can go back to Tiki.",
 

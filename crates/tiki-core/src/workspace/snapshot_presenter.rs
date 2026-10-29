@@ -7,7 +7,7 @@ use crate::briefing::{
     FocusReason,
 };
 use crate::calendar::MeetingItem;
-use crate::domain::{ItemKind, ProjectDirectory};
+use crate::domain::{ItemKind, ProjectDirectory, TaskId};
 use crate::i18n::{DateFormatter, Translator};
 use crate::mood::Mood;
 
@@ -41,6 +41,9 @@ impl<'context> SnapshotPresenter<'context> {
         meetings: &TodaysMeetings,
     ) -> IslandSnapshot {
         let todays_reminders = brief.reminders_on(brief.date);
+        let focus = self.focus(brief, meetings);
+        // The item shown as "Now" is not listed again in the sections below it.
+        let focus_id = focus.as_ref().map(|suggestion| suggestion.item.task_id);
         let sections = [
             ("overdue", &brief.overdue, Urgency::Critical),
             ("due_soon", &brief.due_soon, Urgency::Soon),
@@ -49,7 +52,8 @@ impl<'context> SnapshotPresenter<'context> {
         ]
         .into_iter()
         .filter(|(_, items, _)| !items.is_empty())
-        .map(|(key, items, urgency)| self.section(key, items, urgency, brief))
+        .map(|(key, items, urgency)| self.section(key, items, urgency, brief, focus_id))
+        .filter(|section| !section.items.is_empty())
         .collect();
         let open_items: Vec<SnapshotItem> = [
             (&brief.overdue, Urgency::Critical),
@@ -99,7 +103,7 @@ impl<'context> SnapshotPresenter<'context> {
                 brief.date,
             ),
             open_items,
-            focus: self.focus(brief, meetings),
+            focus,
             narration: BriefNarrator::new(self.translator).narrate(brief, BriefMoment::Morning),
         }
     }
@@ -110,12 +114,14 @@ impl<'context> SnapshotPresenter<'context> {
         items: &[BriefItem],
         urgency: Urgency,
         brief: &DailyBrief,
+        left_out: Option<TaskId>,
     ) -> SnapshotSection {
         SnapshotSection {
             key: key.to_owned(),
             title: self.translator.text(&format!("brief.section.{key}")),
             items: items
                 .iter()
+                .filter(|item| Some(item.task_id) != left_out)
                 .map(|item| self.item(item, urgency, brief))
                 .collect(),
         }
@@ -147,7 +153,10 @@ impl<'context> SnapshotPresenter<'context> {
                 "focus.free_time",
                 &[("minutes", &minutes.to_string()), ("meeting", &next.title)],
             );
-            focus.reason = format!("{} · {free}", focus.reason);
+            focus.reason = self.translator.format(
+                "focus.reason_with_free_time",
+                &[("reason", &focus.reason), ("free", &free)],
+            );
         }
         Some(focus)
     }

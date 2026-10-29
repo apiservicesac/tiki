@@ -15,8 +15,8 @@
     "island.tab.today": "Hoy",
     "island.tab.tickets": "Tickets",
     "island.tab.agenda": "Agenda",
-    "island.closed.summary": "{due} hoy · {waiting} esperando",
-    "island.today.subtitle": "{date} · {count} vencen pronto",
+    "island.closed.summary": "{due} por atender · {waiting} esperando",
+    "island.today.subtitle": "{date} · {count} por atender",
     "island.tickets.empty": "No hay fuentes de tickets activas. Agrega una en Ajustes › Plugins.",
     "island.agenda.empty": "No hay calendarios conectados todavía.",
     "island.today.empty": "Nada pendiente para hoy.",
@@ -30,9 +30,9 @@
     "brief.detail.due_today": "hoy",
     "brief.detail.due_tomorrow": "mañana",
     "brief.detail.overdue_days": "{days} días de atraso",
-    "brief.detail.waiting_days": "{days} días",
+    "brief.detail.waiting_days": "esperando {days} días",
     "brief.detail.overdue_one_day": "1 día de atraso",
-    "brief.detail.waiting_one_day": "1 día",
+    "brief.detail.waiting_one_day": "esperando 1 día",
 
     "narration.greeting.morning": "Buenos días.",
     "narration.greeting.evening": "Buenas tardes, este es el cierre del día.",
@@ -217,6 +217,7 @@
     "projects.remove": "Eliminar proyecto",
     "projects.remove_confirm": "¿Eliminar? Sus tareas se quedan",
     "projects.open": "{count} abiertas",
+    "projects.open_one": "1 abierta",
     "projects.no_open": "Sin tareas abiertas",
     "receipt.title": "Resumen del día",
     "receipt.suggestion": "Sugerencia",
@@ -291,6 +292,7 @@
     "notify.meeting.title": "Reunión en {minutes} min",
     "notify.meetings_today": "Reuniones hoy: {count} · la primera a las {time}",
     "focus.free_time": "{minutes} min libres antes de «{meeting}»",
+    "focus.reason_with_free_time": "{reason} · {free}",
 
     "calendar.signed_in_page": "Listo: tu calendario quedó conectado. Ya puedes volver a Tiki.",
 
