@@ -2,6 +2,7 @@ import type { ProjectSummary, DeliveredItem, SnapshotItem } from "../backend/con
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
+import { TagText } from "../dom/TagText";
 import { TextMatcher } from "../dom/TextMatcher";
 import type { Translator } from "../i18n/Translator";
 import { ProjectPicker } from "./ProjectPicker";
@@ -194,7 +195,7 @@ export class TasksTabView {
     }
     return TextMatcher.matches(title, query)
       || (projectName !== null && TextMatcher.matches(projectName, query))
-      || tags.some((tag) => TextMatcher.matches(`#${tag}`, query));
+      || tags.some((tag) => TextMatcher.matches(TagText.mark(tag), query));
   }
 
   /** One group per project: the most pressing first, then the busiest, tasks without project last. */

@@ -1,8 +1,9 @@
 import type { DeliveredItem, Priority, SnapshotItem, SnapshotSection } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
-import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
+import { ItemContext } from "./ItemContext";
+import { ItemRow } from "./ItemRow";
 
 export interface TaskListHandlers {
   onDeliverTask: (taskId: number) => void;
@@ -12,7 +13,11 @@ export interface TaskListHandlers {
 /** Draws grouped task lines, each with its project color and a button to deliver it;
  * clicking a line opens it for editing. */
 export class TaskListView {
-  constructor(private readonly translator: Translator) {}
+  private readonly itemRow: ItemRow;
+
+  constructor(private readonly translator: Translator) {
+    this.itemRow = new ItemRow(translator);
+  }
 
   render(sections: SnapshotSection[], emptyMessage: string, handlers: TaskListHandlers): HTMLElement {
     if (sections.length === 0) {
@@ -33,78 +38,41 @@ export class TaskListView {
 
   /** One open task: project color, title (opens it), when it is due, and a deliver button. */
   row(item: SnapshotItem, handlers: TaskListHandlers): HTMLElement {
-    const colorBar = ElementFactory.create("span", { className: "island-row-bar" });
-    colorBar.style.background = item.projectColor ?? "var(--island-faint)";
-
-    const deliverButton = ElementFactory.iconButton(
-      ICONS.check,
-      this.translator.text("island.row.done"),
-      () => handlers.onDeliverTask(item.taskId),
-    );
-    deliverButton.classList.add("island-row-done");
-
-    const text = ElementFactory.textButton({
-      className: "island-row-text",
-      attributes: { title: this.translator.text("island.row.edit") },
-      children: [
-        ...this.priorityMark(item.priority),
-        document.createTextNode(item.title),
-        ...TaskListView.context(item.projectName, item.tags),
-      ],
-    }, () => handlers.onOpenTask(item.taskId));
-
-    return ElementFactory.create("div", {
-      className: "island-row",
+    return this.itemRow.render({
       attributes: { "data-task-id": String(item.taskId) },
-      children: [
-        colorBar,
-        text,
-        ElementFactory.create("span", {
-          className: `island-when island-when-${item.urgency}`,
-          text: item.detailLabel,
-        }),
-        deliverButton,
-      ],
+      lead: this.itemRow.colorBar(item.projectColor),
+      mark: this.priorityMark(item.priority),
+      title: item.title,
+      context: ItemContext.describe(item.projectName, item.tags),
+      onOpen: () => handlers.onOpenTask(item.taskId),
+      badge: this.itemRow.when(item.urgency, item.detailLabel),
+      trailing: this.itemRow.deliverButton(() => handlers.onDeliverTask(item.taskId)),
     });
   }
 
   /** One delivered task: project color, title (opens it, to reopen it) and when it was delivered. */
   deliveredRow(item: DeliveredItem, onOpen: (taskId: number) => void): HTMLElement {
-    const colorBar = ElementFactory.create("span", { className: "island-row-bar" });
-    colorBar.style.background = item.projectColor ?? "var(--island-faint)";
-    const text = ElementFactory.textButton({
-      className: "island-row-text",
-      text: item.title,
-      attributes: { title: this.translator.text("island.row.edit") },
-      children: item.projectName ? [ElementFactory.create("small", { text: item.projectName })] : [],
-    }, () => onOpen(item.taskId));
-    return ElementFactory.create("div", {
-      className: "island-row island-row-delivered",
+    return this.itemRow.render({
+      variant: "island-row-delivered",
       attributes: { "data-task-id": String(item.taskId) },
-      children: [
-        colorBar,
-        text,
-        ElementFactory.create("span", { className: "island-when island-when-done", text: item.deliveredLabel }),
-        ElementFactory.fromTrustedMarkup("island-row-check", ICONS.check),
-      ],
+      lead: this.itemRow.colorBar(item.projectColor),
+      title: item.title,
+      context: ItemContext.describe(item.projectName, []),
+      onOpen: () => onOpen(item.taskId),
+      badge: this.itemRow.when("done", item.deliveredLabel),
+      trailing: this.itemRow.deliveredMark(),
     });
   }
 
-  /** "Altamira · #billing" under the title; nothing when the item has neither. */
-  private static context(projectName: string | null, tags: readonly string[]): HTMLElement[] {
-    const parts = [...(projectName ? [projectName] : []), ...tags.map((tag) => `#${tag}`)];
-    return parts.length > 0 ? [ElementFactory.create("small", { text: parts.join(UI_CONFIG.textMarks.separator) })] : [];
-  }
-
   /** "!!" for urgent and "!" for important work, before the title. */
-  private priorityMark(priority: Priority): HTMLElement[] {
+  private priorityMark(priority: Priority): HTMLElement | null {
     const mark = UI_CONFIG.textMarks.priority[priority];
     return mark
-      ? [ElementFactory.create("span", {
+      ? ElementFactory.create("span", {
         className: `island-priority island-priority-${priority}`,
         text: mark,
         attributes: { title: this.translator.text(`priority.${priority}`) },
-      })]
-      : [];
+      })
+      : null;
   }
 }
