@@ -9,7 +9,9 @@ mod loopback_receiver;
 mod microsoft_calendar;
 mod oauth_client;
 mod pkce;
+mod provider_answer;
 mod sign_in;
+mod sign_in_page;
 mod token_store;
 
 pub use calendar_sync::CalendarSync;

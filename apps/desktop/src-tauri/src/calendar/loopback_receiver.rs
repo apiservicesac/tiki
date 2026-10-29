@@ -4,6 +4,8 @@ use std::time::{Duration, Instant};
 
 use url::Url;
 
+use super::sign_in_page::SignInPages;
+
 /// Receives the provider's answer in the browser on `http://127.0.0.1:<port>`, the way
 /// desktop apps finish signing in. It only listens on this computer and only for one answer.
 pub struct LoopbackReceiver {
@@ -29,13 +31,13 @@ impl LoopbackReceiver {
         &self,
         state: &str,
         timeout: Duration,
-        page: &str,
+        pages: &SignInPages,
     ) -> Result<String, String> {
         let deadline = Instant::now() + timeout;
         while Instant::now() < deadline {
             match self.listener.accept() {
                 Ok((stream, _)) => {
-                    if let Some(answer) = Self::read_answer(stream, state, page) {
+                    if let Some(answer) = Self::read_answer(stream, state, pages) {
                         return answer;
                     }
                 }
@@ -53,7 +55,7 @@ impl LoopbackReceiver {
     fn read_answer(
         mut stream: TcpStream,
         state: &str,
-        page: &str,
+        pages: &SignInPages,
     ) -> Option<Result<String, String>> {
         stream.set_nonblocking(false).ok()?;
         let mut request_line = String::new();
@@ -71,9 +73,7 @@ impl LoopbackReceiver {
             (Some(_), None, _) => Err("the sign-in answer did not match".to_owned()),
             (None, None, _) => return None,
         };
-        let body = format!(
-            "<!doctype html><meta charset=utf-8><title>Tiki</title><body style=\"font:16px system-ui;padding:40px\">{page}</body>"
-        );
+        let body = pages.for_answer(answer.is_ok());
         let response = format!(
             "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
             body.len()

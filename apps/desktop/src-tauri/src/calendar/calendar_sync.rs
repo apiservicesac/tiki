@@ -9,6 +9,7 @@ use super::google_calendar::GoogleCalendar;
 use super::microsoft_calendar::MicrosoftCalendar;
 use super::oauth_client::OAuthClient;
 use super::sign_in::SignIn;
+use super::sign_in_page::SignInPages;
 use super::token_store::TokenStore;
 use crate::app_state::AppState;
 use crate::desktop_config::DesktopConfig;
@@ -46,11 +47,13 @@ impl CalendarSync {
             TikiError::Calendar("this build cannot connect that calendar".to_owned())
         })?;
         let state = app.state::<AppState>();
-        let done_page = state.with_workspace(|workspace| {
-            Ok(Translator::new(workspace.preferences().locale)?.text("calendar.signed_in_page"))
+        let pages = state.with_workspace(|workspace| {
+            Ok(SignInPages::new(&Translator::new(
+                workspace.preferences().locale,
+            )?))
         })?;
         let signed_in = SignIn::new(self.http.clone())
-            .sign_in(app, client, done_page)
+            .sign_in(app, client, pages)
             .await?;
         let account_id = state
             .with_workspace(|workspace| workspace.connect_calendar(provider, &signed_in.email))?;
