@@ -43,7 +43,7 @@ impl<'context> WorkspaceViews<'context> {
     /// What the island shows right now.
     pub fn island_snapshot(&self) -> TikiResult<IslandSnapshot> {
         let now = self.clock.now();
-        let projects = self.projects().directory()?;
+        let projects = ProjectBook::new(self.database, self.settings).directory()?;
         let brief = DailyBriefBuilder::new(self.settings).build(
             &self.database.tasks().list_open()?,
             &projects,
@@ -76,7 +76,7 @@ impl<'context> WorkspaceViews<'context> {
             .database
             .activity()
             .latest_deliveries(self.settings.delivered_history_limit)?;
-        let projects = self.projects().directory()?;
+        let projects = ProjectBook::new(self.database, self.settings).directory()?;
         let today = self.clock.today();
         let mut delivered = Vec::new();
         for delivery in deliveries {
@@ -95,19 +95,18 @@ impl<'context> WorkspaceViews<'context> {
     /// A saved item as the edit form shows it.
     pub fn task_details(&self, task_id: TaskId) -> TikiResult<TaskDetails> {
         let task = self.database.tasks().find(task_id)?;
-        TaskDetails::from_task(&task, &self.projects().directory()?)
+        TaskDetails::from_task(
+            &task,
+            &ProjectBook::new(self.database, self.settings).directory()?,
+        )
     }
 
     /// Open items in the shape the assistant needs to summarize the day or answer questions.
     pub fn assistant_context(&self) -> TikiResult<AssistantContext> {
         Ok(AssistantContext::build(
             &self.database.tasks().list_open()?,
-            &self.projects().directory()?,
+            &ProjectBook::new(self.database, self.settings).directory()?,
             self.clock.now(),
         ))
-    }
-
-    fn projects(&self) -> ProjectBook<'context> {
-        ProjectBook::new(self.database, self.settings)
     }
 }

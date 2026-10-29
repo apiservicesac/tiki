@@ -35,12 +35,10 @@ impl<'context> ItemService<'context> {
     /// Saves an item exactly as the user confirmed it; a project named for the first time is
     /// created on the spot.
     pub fn capture(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
-        let project_id = self
-            .projects()
+        let project_id = ProjectBook::new(self.database, self.settings)
             .find_or_create(capture.project_name.as_deref())?;
         let mut task = capture.into_task(project_id, self.clock.today())?;
-        self.follow_up_policy()
-            .schedule_first_nudge(&mut task, false);
+        FollowUpPolicy::new(self.settings).schedule_first_nudge(&mut task, false);
         task.normalize()?;
         let created = match task.origin {
             TaskOrigin::Manual => ItemEvent::Created,
@@ -56,8 +54,7 @@ impl<'context> ItemService<'context> {
 
     /// Saves the user's changes to an item; a new project name creates the project.
     pub fn edit(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
-        let project_id = self
-            .projects()
+        let project_id = ProjectBook::new(self.database, self.settings)
             .find_or_create(edit.project_name.as_deref())?;
         self.change(task_id, |task, now| {
             let before = task.clone();
@@ -118,21 +115,12 @@ impl<'context> ItemService<'context> {
         let was_waiting = task.status == TaskStatus::Waiting;
         let now = self.clock.now();
         let events = apply(&mut task, now)?;
-        self.follow_up_policy()
-            .schedule_first_nudge(&mut task, was_waiting);
+        FollowUpPolicy::new(self.settings).schedule_first_nudge(&mut task, was_waiting);
         task.normalize()?;
         let task_id = task.id.ok_or(TikiError::UnsavedTask)?;
         self.database.transaction(|repositories| {
             repositories.tasks().update(&task, now)?;
             repositories.activity().record(task_id, now, &events)
         })
-    }
-
-    fn follow_up_policy(&self) -> FollowUpPolicy {
-        FollowUpPolicy::new(self.settings)
-    }
-
-    fn projects(&self) -> ProjectBook<'context> {
-        ProjectBook::new(self.database, self.settings)
     }
 }

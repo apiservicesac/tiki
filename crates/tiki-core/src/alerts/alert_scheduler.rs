@@ -2,7 +2,7 @@ use super::{BriefPlanner, NotificationComposer, TikiAlert};
 use crate::briefing::{BriefMoment, DailyBriefBuilder};
 use crate::calendar::CalendarBook;
 use crate::domain::FollowUpPolicy;
-use crate::error::TikiResult;
+use crate::error::{TikiError, TikiResult};
 use crate::i18n::Translator;
 use crate::preferences::UserPreferences;
 use crate::projects::ProjectBook;
@@ -68,7 +68,7 @@ impl<'context> AlertScheduler<'context> {
         let composer = NotificationComposer::new(self.translator);
         let mut alert = composer.compose(&brief, moment);
         if moment == BriefMoment::Morning {
-            let meetings = self.calendar().agenda(now.date())?;
+            let meetings = CalendarBook::new(self.database, self.settings).agenda(now.date())?;
             let today = CalendarBook::meetings_on(&meetings, now.date());
             if let Some(line) = composer.meetings_line(&today) {
                 alert.body = format!("{}\n{line}", alert.body);
@@ -100,10 +100,9 @@ impl<'context> AlertScheduler<'context> {
                     alerts.push(composer.compose_follow_up(&task, project_name, now.date()));
                     events.push(task.ring_follow_up(now, &policy));
                 }
+                let task_id = task.id.ok_or(TikiError::UnsavedTask)?;
                 repositories.tasks().update(&task, now)?;
-                if let Some(task_id) = task.id {
-                    repositories.activity().record(task_id, now, &events)?;
-                }
+                repositories.activity().record(task_id, now, &events)?;
             }
             Ok(alerts)
         })
@@ -116,8 +115,7 @@ impl<'context> AlertScheduler<'context> {
         }
         let now = self.clock.now();
         let composer = NotificationComposer::new(self.translator);
-        Ok(self
-            .calendar()
+        Ok(CalendarBook::new(self.database, self.settings)
             .take_starting_soon(now)?
             .iter()
             .map(|meeting| composer.compose_meeting(meeting, now))
@@ -145,9 +143,5 @@ impl<'context> AlertScheduler<'context> {
             }
         }
         Ok(())
-    }
-
-    fn calendar(&self) -> CalendarBook<'context> {
-        CalendarBook::new(self.database, self.settings)
     }
 }
