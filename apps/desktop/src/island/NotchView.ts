@@ -41,7 +41,7 @@ export class NotchView {
    * The aura around the notch comes from the stylesheet (`data-mode="alert"`).
    */
   alert(snapshot: IslandSnapshot, alert: TikiAlert, mood: MoodName): HTMLElement {
-    const preview = alert.body.split("\n").join(" · ");
+    const preview = alert.body.split("\n").join(UI_CONFIG.textMarks.separator);
     const kindLabel = this.translator.text(UI_CONFIG.alertStyles[alert.kind].labelKey);
     const face = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.alert);
     face.classList.add("notch-alert-face");
