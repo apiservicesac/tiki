@@ -21,6 +21,7 @@ import type {
   UserPreferences,
 } from "../../src/backend/contracts";
 import { AI_PROVIDERS } from "../../src/backend/contracts";
+import { BackendError } from "../../src/backend/BackendError";
 import { FakeShell } from "./FakeShell";
 
 /**
@@ -38,8 +39,8 @@ export class FakeBackend implements TikiBackend {
     { projectId: 3, name: "Vapestation", color: "#C2410C", openCount: 1, pressingCount: 0, notes: "" },
   ];
   delivered: DeliveredItem[] = [
-    { taskId: 9, title: "Reporte de ventas de septiembre", projectName: "Altamira", projectColor: "#2F6BD8", deliveredLabel: "hoy" },
-    { taskId: 8, title: "Ajuste del acta CAPEX", projectName: null, projectColor: null, deliveredLabel: "ayer" },
+    { taskId: 9, title: "Reporte de ventas de septiembre", projectId: 1, projectName: "Altamira", projectColor: "#2F6BD8", tags: ["ventas"], deliveredLabel: "hoy" },
+    { taskId: 8, title: "Ajuste del acta CAPEX", projectId: null, projectName: null, projectColor: null, tags: [], deliveredLabel: "ayer" },
   ];
   savedPreferences: UserPreferences = {
     locale: "spanish",
@@ -63,6 +64,8 @@ export class FakeBackend implements TikiBackend {
   aiShell = new FakeShell(() => ({}));
   calendar: CalendarStatus = { accounts: [], available: ["microsoft", "google"] };
   readonly openedLinks: string[] = [];
+  /** When set, saving a capture or an edit is refused with it, as the core would. */
+  saveFailure: BackendError | null = null;
   private readonly listeners = new Map<string, () => void>();
 
   constructor(private readonly snapshot: IslandSnapshot = FakeBackend.sampleSnapshot()) {}
@@ -90,6 +93,9 @@ export class FakeBackend implements TikiBackend {
   }
 
   async saveConfirmedCapture(capture: InterpretedCapture): Promise<void> {
+    if (this.saveFailure) {
+      throw this.saveFailure;
+    }
     this.confirmedCaptures.push(capture);
   }
 
@@ -177,6 +183,9 @@ export class FakeBackend implements TikiBackend {
   }
 
   async editTask(taskId: number, edit: TaskEdit): Promise<void> {
+    if (this.saveFailure) {
+      throw this.saveFailure;
+    }
     this.editedTasks.push({ taskId, edit });
   }
 
@@ -258,9 +267,9 @@ export class FakeBackend implements TikiBackend {
     };
   }
 
-  /** Simulates the shell delivering a brief; unless told otherwise, it may chime. */
-  deliverAlert(brief: TikiAlert, delivery: AlertDelivery = FakeBackend.AUDIBLE): void {
-    this.alertHandler?.({ ...brief, delivery });
+  /** Simulates the shell delivering an alert; unless told otherwise, it may chime. */
+  deliverAlert(alert: TikiAlert, delivery: AlertDelivery = FakeBackend.AUDIBLE): void {
+    this.alertHandler?.({ ...alert, delivery });
   }
 
   /** How an alert arrives during the day, with every way of reaching the user on. */
@@ -273,16 +282,16 @@ export class FakeBackend implements TikiBackend {
 
   /** The user's real pending work on Wednesday, October 21, 2026. */
   static sampleSnapshot(): IslandSnapshot {
-    const altamira = { projectName: "Altamira", projectColor: "#2F6BD8" };
-    const andeanvet = { projectName: "Andeanvet", projectColor: "#17837D" };
-    const vapestation = { projectName: "Vapestation", projectColor: "#C2410C" };
-    const access = { taskId: 3, title: "Acceso solo a análisis de facturas de Almendra", ...andeanvet, detailLabel: "1 día de atraso", urgency: "critical" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
-    const tracking = { taskId: 1, title: "Tracking de formularios comerciales", ...altamira, detailLabel: "mañana", urgency: "soon" as const, priority: "high" as const, tags: [], at: null, repeat: "never" as const };
-    const sales = { taskId: 2, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon" as const, priority: "normal" as const, tags: ["ventas"], at: null, repeat: "never" as const };
-    const vacation = { taskId: 4, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En curso", urgency: "normal" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
-    const github = { taskId: 5, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "3 días", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
-    const water = { taskId: 8, title: "Tomar agua", projectName: null, projectColor: null, detailLabel: "Vie 23 · 11:00 · Cada día", urgency: "reminder" as const, priority: "normal" as const, tags: [], at: "2026-10-23T11:00:00", repeat: "daily" as const };
-    const zones = { taskId: 6, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "1 día", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const altamira = { projectId: 1, projectName: "Altamira", projectColor: "#2F6BD8" };
+    const andeanvet = { projectId: 2, projectName: "Andeanvet", projectColor: "#17837D" };
+    const vapestation = { projectId: 3, projectName: "Vapestation", projectColor: "#C2410C" };
+    const access = { taskId: 3, kind: "task" as const, title: "Acceso solo a análisis de facturas de Almendra", ...andeanvet, detailLabel: "1 día de atraso", urgency: "critical" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const tracking = { taskId: 1, kind: "task" as const, title: "Tracking de formularios comerciales", ...altamira, detailLabel: "mañana", urgency: "soon" as const, priority: "high" as const, tags: [], at: null, repeat: "never" as const };
+    const sales = { taskId: 2, kind: "task" as const, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon" as const, priority: "normal" as const, tags: ["ventas"], at: "2026-10-24T16:00:00", repeat: "never" as const };
+    const vacation = { taskId: 4, kind: "task" as const, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En curso", urgency: "normal" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const github = { taskId: 5, kind: "task" as const, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "3 días", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const water = { taskId: 8, kind: "reminder" as const, title: "Tomar agua", projectId: null, projectName: null, projectColor: null, detailLabel: "Vie 23 · 11:00 · Cada día", urgency: "reminder" as const, priority: "normal" as const, tags: [], at: "2026-10-23T11:00:00", repeat: "daily" as const };
+    const zones = { taskId: 6, kind: "task" as const, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "1 día", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
     return {
       mood: "worried",
       moodLabel: "ATRASO",
@@ -290,6 +299,7 @@ export class FakeBackend implements TikiBackend {
       attentionCount: 5,
       dueCount: 3,
       waitingCount: 2,
+      openCount: 6,
       deliveredToday: 1,
       closedSummary: "3 hoy · 2 esperando",
       todaySubtitle: "miércoles 21 de octubre · 3 vencen pronto",
@@ -301,16 +311,28 @@ export class FakeBackend implements TikiBackend {
       ],
       openItems: [access, tracking, sales, vacation, github, zones, water],
       focus: { item: access, reason: "Está atrasada" },
-      meetings: [
+      agenda: [
         {
-          title: "Daily de Altamira",
-          startsAt: "2026-10-23T09:00:00",
-          endsAt: "2026-10-23T09:30:00",
-          allDay: false,
-          location: "Teams",
-          joinUrl: "https://teams.microsoft.com/l/meetup-join/daily",
-          accountEmail: "ana@microsoft.test",
+          day: "2026-10-23",
+          label: "Hoy",
+          entries: [
+            {
+              kind: "meeting",
+              timeLabel: "09:00–09:30",
+              meeting: {
+                title: "Daily de Altamira",
+                startsAt: "2026-10-23T09:00:00",
+                endsAt: "2026-10-23T09:30:00",
+                allDay: false,
+                location: "Teams",
+                joinUrl: "https://teams.microsoft.com/l/meetup-join/daily",
+                accountEmail: "ana@microsoft.test",
+              },
+            },
+            { kind: "reminder", timeLabel: "11:00", item: water },
+          ],
         },
+        { day: "2026-10-24", label: "Mañana", entries: [{ kind: "task", timeLabel: "16:00", item: sales }] },
       ],
     };
   }

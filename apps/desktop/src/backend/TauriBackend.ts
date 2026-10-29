@@ -1,6 +1,7 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, type InvokeArgs } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { SHELL_EVENTS } from "../config/uiConfig";
+import { BackendError } from "./BackendError";
 import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
 import type {
   AiProviderStatus,
@@ -25,146 +26,155 @@ import type {
 /** Talks to the Rust core through Tauri commands (see `src-tauri/src/commands`). */
 export class TauriBackend implements TikiBackend {
   islandSnapshot(): Promise<IslandSnapshot> {
-    return invoke<IslandSnapshot>("island_snapshot");
+    return this.call<IslandSnapshot>("island_snapshot");
   }
 
   async moveTask(taskId: number, status: TaskStatus): Promise<void> {
-    await invoke("move_task", { taskId, status });
+    await this.call("move_task", { taskId, status });
   }
 
   async snooze(taskId: number, minutes: number): Promise<void> {
-    await invoke("snooze", { taskId, minutes });
+    await this.call("snooze", { taskId, minutes });
   }
 
   preferences(): Promise<UserPreferences> {
-    return invoke<UserPreferences>("preferences");
+    return this.call<UserPreferences>("preferences");
   }
 
   async updatePreferences(preferences: UserPreferences): Promise<void> {
-    await invoke("update_preferences", { preferences });
+    await this.call("update_preferences", { preferences });
   }
 
   async saveConfirmedCapture(capture: InterpretedCapture): Promise<void> {
-    await invoke("save_confirmed_capture", { capture });
+    await this.call("save_confirmed_capture", { capture });
   }
 
   projectNames(): Promise<string[]> {
-    return invoke<string[]>("project_names");
+    return this.call<string[]>("project_names");
   }
 
   taskDetails(taskId: number): Promise<TaskDetails> {
-    return invoke<TaskDetails>("task_details", { taskId });
+    return this.call<TaskDetails>("task_details", { taskId });
   }
 
   projectSummaries(): Promise<ProjectSummary[]> {
-    return invoke<ProjectSummary[]>("project_summaries");
+    return this.call<ProjectSummary[]>("project_summaries");
   }
 
   createProject(name: string): Promise<number> {
-    return invoke<number>("create_project", { name });
+    return this.call<number>("create_project", { name });
   }
 
   async changeProject(projectId: number, change: ProjectChange): Promise<void> {
-    await invoke("change_project", { projectId, change });
+    await this.call("change_project", { projectId, change });
   }
 
   async removeProject(projectId: number): Promise<void> {
-    await invoke("remove_project", { projectId });
+    await this.call("remove_project", { projectId });
   }
 
   projectColors(): Promise<string[]> {
-    return invoke<string[]>("project_colors");
+    return this.call<string[]>("project_colors");
   }
 
   deliveredTasks(): Promise<DeliveredItem[]> {
-    return invoke<DeliveredItem[]>("delivered_tasks");
+    return this.call<DeliveredItem[]>("delivered_tasks");
   }
 
   captureLessons(): Promise<CaptureLesson[]> {
-    return invoke<CaptureLesson[]>("capture_lessons");
+    return this.call<CaptureLesson[]>("capture_lessons");
   }
 
   async recordCaptureLesson(lesson: CaptureLesson): Promise<void> {
-    await invoke("record_capture_lesson", { lesson });
+    await this.call("record_capture_lesson", { lesson });
   }
 
   assistantContext(): Promise<AdvisorContext> {
-    return invoke<AdvisorContext>("assistant_context");
+    return this.call<AdvisorContext>("assistant_context");
   }
 
   async editTask(taskId: number, edit: TaskEdit): Promise<void> {
-    await invoke("edit_task", { taskId, edit });
+    await this.call("edit_task", { taskId, edit });
   }
 
   aiStatus(): Promise<AiProviderStatus[]> {
-    return invoke<AiProviderStatus[]>("ai_status");
+    return this.call<AiProviderStatus[]>("ai_status");
   }
 
   async saveAiKey(provider: AiProviderName, apiKey: string): Promise<void> {
-    await invoke("save_ai_key", { provider, apiKey });
+    await this.call("save_ai_key", { provider, apiKey });
   }
 
   async removeAiKey(provider: AiProviderName): Promise<void> {
-    await invoke("remove_ai_key", { provider });
+    await this.call("remove_ai_key", { provider });
   }
 
   aiFetch(request: ProxiedRequest): Promise<ProxiedResponse> {
-    return invoke<ProxiedResponse>("ai_fetch", { request });
+    return this.call<ProxiedResponse>("ai_fetch", { request });
   }
 
   calendarStatus(): Promise<CalendarStatus> {
-    return invoke<CalendarStatus>("calendar_status");
+    return this.call<CalendarStatus>("calendar_status");
   }
 
   connectCalendar(provider: CalendarProvider): Promise<CalendarAccount> {
-    return invoke<CalendarAccount>("connect_calendar", { provider });
+    return this.call<CalendarAccount>("connect_calendar", { provider });
   }
 
   async disconnectCalendar(accountId: number): Promise<void> {
-    await invoke("disconnect_calendar", { accountId });
+    await this.call("disconnect_calendar", { accountId });
   }
 
   async syncCalendars(): Promise<void> {
-    await invoke("sync_calendars");
+    await this.call("sync_calendars");
   }
 
   async openMeetingLink(url: string): Promise<void> {
-    await invoke("open_meeting_link", { url });
+    await this.call("open_meeting_link", { url });
   }
 
   async openAdvancedSettings(section?: string): Promise<void> {
-    await invoke("open_advanced_settings", { section: section ?? null });
+    await this.call("open_advanced_settings", { section: section ?? null });
   }
 
   autostartEnabled(): Promise<boolean> {
-    return invoke<boolean>("autostart_enabled");
+    return this.call<boolean>("autostart_enabled");
   }
 
   appVersion(): Promise<string> {
-    return invoke<string>("app_version");
+    return this.call<string>("app_version");
   }
 
   checkForUpdate(): Promise<AvailableUpdate | null> {
-    return invoke<AvailableUpdate | null>("check_for_update");
+    return this.call<AvailableUpdate | null>("check_for_update");
   }
 
   async installUpdate(): Promise<void> {
-    await invoke("install_update");
+    await this.call("install_update");
   }
 
   async setAutostart(enabled: boolean): Promise<void> {
-    await invoke("set_autostart", { enabled });
+    await this.call("set_autostart", { enabled });
   }
 
   async setHitArea(area: HitArea): Promise<void> {
-    await invoke("set_island_hit_area", { area });
+    await this.call("set_island_hit_area", { area });
   }
 
   onAlert(handler: (alert: DueAlert) => void): Promise<() => void> {
-    return listen<DueAlert>(SHELL_EVENTS.briefReady, (event) => handler(event.payload));
+    return listen<DueAlert>(SHELL_EVENTS.alertReady, (event) => handler(event.payload));
   }
 
   listen(eventName: string, handler: () => void): Promise<() => void> {
     return listen(eventName, handler);
+  }
+
+  /** Runs a command; a refusal from the core or the shell rejects with a `BackendError`. */
+  private async call<T>(command: string, args?: InvokeArgs): Promise<T> {
+    try {
+      return await invoke<T>(command, args);
+    } catch (failure) {
+      throw BackendError.from(failure);
+    }
   }
 }

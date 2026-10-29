@@ -81,7 +81,7 @@ fn every_change_to_an_item_is_recorded_in_its_history() {
 }
 
 #[test]
-fn snoozing_a_reminder_that_rang_keeps_its_delivery_in_the_history() {
+fn a_reminder_that_rings_closes_without_counting_as_a_delivery() {
     let five = TestDay::today().and_hms_opt(17, 0, 0).unwrap();
     let workspace = TimedWorkspace::sample_at(five);
     let call = workspace
@@ -105,14 +105,74 @@ fn snoozing_a_reminder_that_rang_keeps_its_delivery_in_the_history() {
         [
             ItemEvent::Created,
             ItemEvent::Rang,
-            ItemEvent::Delivered,
+            ItemEvent::Moved {
+                from: TaskStatus::ToDo,
+                to: TaskStatus::Done
+            },
             ItemEvent::Snoozed {
                 until: TestDay::today().and_hms_opt(17, 10, 0).unwrap()
             },
-            ItemEvent::Reopened,
+            ItemEvent::Moved {
+                from: TaskStatus::Done,
+                to: TaskStatus::ToDo
+            },
         ]
     );
-    assert_eq!(workspace.delivered_tasks().unwrap()[0].task_id, call);
+    assert_eq!(workspace.delivered_tasks().unwrap(), Vec::new());
+}
+
+#[test]
+fn reminders_never_reach_the_delivered_history_or_the_reports() {
+    let five = TestDay::today().and_hms_opt(17, 0, 0).unwrap();
+    let workspace = TimedWorkspace::sample_at(five);
+    let rings = workspace
+        .save_confirmed(ConfirmedCapture {
+            kind: ItemKind::Reminder,
+            remind_at: Some(five),
+            ..capture("Llamar a mamá", None)
+        })
+        .unwrap();
+    let checked_off = workspace
+        .save_confirmed(ConfirmedCapture {
+            kind: ItemKind::Reminder,
+            remind_at: Some(TestDay::october(22).and_hms_opt(9, 0, 0).unwrap()),
+            ..capture("Regar las plantas", None)
+        })
+        .unwrap();
+    workspace.take_due_task_reminders().unwrap();
+    workspace.deliver(checked_off).unwrap();
+
+    assert_eq!(
+        workspace.task_details(rings).unwrap().status,
+        TaskStatus::Done
+    );
+    assert_eq!(
+        workspace.task_details(checked_off).unwrap().status,
+        TaskStatus::Done
+    );
+    assert_eq!(workspace.delivered_tasks().unwrap(), Vec::new());
+    assert_eq!(workspace.island_snapshot().unwrap().delivered_today, 0);
+}
+
+#[test]
+fn a_follow_up_nudge_is_recorded_as_a_nudge() {
+    let nine = TestDay::october(24).and_hms_opt(9, 0, 0).unwrap();
+    let workspace = TimedWorkspace::sample_at(TestDay::start());
+    let contract = workspace
+        .save_confirmed(ConfirmedCapture {
+            waiting_for: Some("Lucía".into()),
+            ..capture("Contrato firmado", None)
+        })
+        .unwrap();
+    workspace.at(nine).take_due_task_reminders().unwrap();
+
+    let events: Vec<ItemEvent> = workspace
+        .activity_of(contract)
+        .unwrap()
+        .into_iter()
+        .map(|record| record.event)
+        .collect();
+    assert_eq!(events, [ItemEvent::Created, ItemEvent::Nudged]);
 }
 
 #[test]

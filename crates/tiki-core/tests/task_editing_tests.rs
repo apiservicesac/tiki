@@ -113,3 +113,33 @@ fn a_delivery_stays_in_the_history_after_reopening() {
     let details = workspace.task_details(task_id).unwrap();
     assert_eq!(details.status, TaskStatus::InProgress);
 }
+
+#[test]
+fn a_delivered_item_keeps_its_project_and_tags() {
+    let workspace = sample_workspace();
+    let task_id = first_task_id(&workspace);
+    let details = workspace.task_details(task_id).unwrap();
+    workspace
+        .edit_task(
+            task_id,
+            TaskEdit {
+                title: details.title,
+                notes: details.notes,
+                project_name: details.project_name,
+                due_date: details.due_date,
+                priority: details.priority,
+                status: details.status,
+                remind_at: details.remind_at,
+                kind: details.kind,
+                tags: vec!["facturas".into()],
+                repeat: details.repeat,
+                waiting_for: details.waiting_for,
+            },
+        )
+        .unwrap();
+    workspace.deliver(task_id).unwrap();
+
+    let delivered = &workspace.delivered_tasks().unwrap()[0];
+    assert_eq!(delivered.tags, ["facturas"]);
+    assert!(delivered.project_id.is_some());
+}

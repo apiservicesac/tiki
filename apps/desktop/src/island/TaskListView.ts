@@ -50,14 +50,14 @@ export class TaskListView {
     });
   }
 
-  /** One delivered task: project color, title (opens it, to reopen it) and when it was delivered. */
+  /** One delivered task: project color, title (opens it, to reopen it) with its project and tags, and when it was delivered. */
   deliveredRow(item: DeliveredItem, onOpen: (taskId: number) => void): HTMLElement {
     return this.itemRow.render({
       variant: "island-row-delivered",
       attributes: { "data-task-id": String(item.taskId) },
       lead: this.itemRow.colorBar(item.projectColor),
       title: item.title,
-      context: ItemContext.describe(item.projectName, []),
+      context: ItemContext.describe(item.projectName, item.tags),
       onOpen: () => onOpen(item.taskId),
       badge: this.itemRow.when("done", item.deliveredLabel),
       trailing: this.itemRow.deliveredMark(),

@@ -47,6 +47,7 @@ fn the_snapshot_is_translated_and_ready_to_draw() {
     // Today only shows what presses today; every open item is in `open_items`.
     assert_eq!(keys, ["overdue", "due_soon", "follow_up"]);
     assert_eq!(snapshot.open_items.len(), 7);
+    assert_eq!(snapshot.open_count, 7);
     let focus = snapshot.focus.as_ref().unwrap();
     assert_eq!(focus.reason, "Está atrasada");
     assert_eq!(focus.item.title, snapshot.sections[0].items[0].title);
@@ -56,6 +57,42 @@ fn the_snapshot_is_translated_and_ready_to_draw() {
     assert_eq!(due_soon.items[0].detail_label, "mañana");
     assert_eq!(due_soon.items[0].project_color.as_deref(), Some("#2F6BD8"));
     assert_eq!(due_soon.items[0].urgency, Urgency::Soon);
+}
+
+#[test]
+fn snapshot_items_say_what_they_are_and_which_project_they_belong_to() {
+    let sample = SampleWorkspace::create();
+    let altamira = sample.altamira;
+    let workspace = TimedWorkspace::open(sample.database, TestDay::start());
+    workspace
+        .save_confirmed(ConfirmedCapture {
+            title: "Tomar agua".into(),
+            project_name: None,
+            due_date: None,
+            priority: Priority::Normal,
+            remind_at: Some(TestDay::october(23).and_hms_opt(11, 0, 0).unwrap()),
+            kind: ItemKind::Reminder,
+            tags: Vec::new(),
+            repeat: tiki_core::domain::Repeat::Never,
+            waiting_for: None,
+        })
+        .unwrap();
+
+    let snapshot = workspace.island_snapshot().unwrap();
+    let item = |title: &str| {
+        snapshot
+            .open_items
+            .iter()
+            .find(|item| item.title == title)
+            .unwrap()
+    };
+    assert_eq!(item("Tomar agua").kind, ItemKind::Reminder);
+    assert_eq!(item("Tomar agua").project_id, None);
+    let tracking = item("Tracking de formularios comerciales");
+    assert_eq!(tracking.kind, ItemKind::Task);
+    assert_eq!(tracking.project_id, Some(altamira));
+    // The reminder is not open work.
+    assert_eq!(snapshot.open_count, snapshot.open_items.len() - 1);
 }
 
 #[test]
@@ -233,7 +270,7 @@ fn tags_are_normalized_and_standalone_reminders_list_apart_from_work() {
             .iter()
             .all(|section| section.key != "reminders")
     );
-    assert_eq!(after.delivered_today, 1);
+    assert_eq!(after.delivered_today, 0);
 }
 
 #[test]

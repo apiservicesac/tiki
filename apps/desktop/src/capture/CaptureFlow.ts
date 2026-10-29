@@ -1,5 +1,6 @@
 import type { AssistantActions } from "../assistant/AssistantActions";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
+import { BackendError } from "../backend/BackendError";
 import type { TikiBackend } from "../backend/contracts";
 import type { IslandStore } from "../island/IslandStore";
 import type { CaptureView } from "./CaptureView";
@@ -46,7 +47,13 @@ export class CaptureFlow {
     if (capture.title === "") {
       return;
     }
-    await this.backend.saveConfirmedCapture(capture);
+    try {
+      await this.backend.saveConfirmedCapture(capture);
+    } catch (error) {
+      // The box keeps what the user wrote, so they can fix it and save again.
+      this.view.showSaveFailed(BackendError.messageKeyOf(error));
+      return;
+    }
     const reading = this.view.aiReading;
     if (reading) {
       // What the user changed before saving teaches the AI their way of saying things.

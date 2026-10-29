@@ -8,10 +8,11 @@ use crate::app_state::AppState;
 use crate::desktop_config::DesktopConfig;
 use crate::shell_events::ShellEvent;
 
-/// Delivers the morning brief, the end-of-day close and task reminders: always to the
-/// island, which shows them in the notch, and as Windows notifications when the core says
-/// so (see `AlertDelivery`). The core decides when each one is due, what it says and how
-/// it reaches the user; this loop only asks it every minute.
+/// Delivers every alert (the morning brief, the end-of-day close, item reminders, follow-up
+/// nudges and meetings starting soon): always to the island, which shows them in the notch,
+/// and as Windows notifications when the core says so (see `AlertDelivery`). The core
+/// decides when each one is due, what it says and how it reaches the user; this loop only
+/// asks it every minute.
 pub struct BriefReminders;
 
 impl BriefReminders {
@@ -38,7 +39,7 @@ impl BriefReminders {
                     {
                         tracing::warn!(%error, "could not show the Windows notification");
                     }
-                    ShellEvent::BriefReady.emit_with(app, &due);
+                    ShellEvent::AlertReady.emit_with(app, &due);
                 }
             }
             Err(error) => tracing::warn!(%error, "could not prepare the alerts"),
@@ -49,7 +50,7 @@ impl BriefReminders {
         app.notification()
             .builder()
             .title(&alert.title)
-            .body(&alert.body)
+            .body(&alert.notification_body())
             .show()
     }
 }

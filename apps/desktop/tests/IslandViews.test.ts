@@ -9,12 +9,13 @@ import { FakeBackend } from "./support/FakeBackend";
 
 const SNAPSHOT = FakeBackend.sampleSnapshot();
 const DELIVERED = new FakeBackend().delivered;
-const TODAY = new Date(2026, 9, 23, 8, 0);
 
 const REMINDER_ALERT: TikiAlert = {
   kind: "reminder",
   title: "Tomar agua",
-  body: "Son las 11:00",
+  summary: "Son las 11:00",
+  tips: [],
+  actions: ["open", "done", "snooze"],
   taskId: 8,
   link: null,
 };
@@ -71,6 +72,26 @@ describe("TodayView", () => {
       recordingHandlers(),
     );
     expect(element.querySelector(".island-notice")?.outerHTML).toMatchSnapshot();
+  });
+
+  it("draws the alert's summary and tips and only the actions the core offers", () => {
+    const taskAlarm: TikiAlert = {
+      kind: "task",
+      title: "Aviso de tarea",
+      summary: "Llamar",
+      tips: ["Altamira · mañana"],
+      actions: ["open", "snooze"],
+      taskId: 1,
+      link: null,
+    };
+    const element = view.render(
+      { snapshot: SNAPSHOT, alert: taskAlarm, dayBrief: null, preparingBrief: false, aiReady: true },
+      recordingHandlers(),
+    );
+    const lines = [...element.querySelectorAll(".island-notice p")].map((line) => line.textContent);
+    expect(lines).toEqual(["Llamar", "Altamira · mañana"]);
+    expect(element.querySelector("#alert-done")).toBeNull();
+    expect(element.querySelector("#alert-snooze-10")).not.toBeNull();
   });
 
   it("calls its handlers without letting the click reach the island", () => {
@@ -141,14 +162,14 @@ describe("TasksTabView", () => {
 describe("AgendaView", () => {
   const view = new AgendaView(new Translator("es"));
 
-  it("draws reminders and meetings by day and time", () => {
-    const element = view.render(SNAPSHOT.openItems, SNAPSHOT.meetings, TODAY, recordingHandlers());
+  it("draws meetings, reminders and task alarms by day and time", () => {
+    const element = view.render(SNAPSHOT.agenda, recordingHandlers());
     expect(element.outerHTML).toMatchSnapshot();
   });
 
   it("opens and delivers a reminder and joins a meeting without letting the click reach the island", () => {
     const handlers = recordingHandlers();
-    const element = view.render(SNAPSHOT.openItems, SNAPSHOT.meetings, TODAY, handlers);
+    const element = view.render(SNAPSHOT.agenda, handlers);
     const island = mount(element);
     click(element, '.agenda-row[data-task-id="8"] .island-row-text');
     click(element, '.agenda-row[data-task-id="8"] .island-row-done');

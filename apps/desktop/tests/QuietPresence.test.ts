@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AlertDelivery, IslandSnapshot } from "../src/backend/contracts";
+import type { AlertDelivery, IslandSnapshot, TikiAlert } from "../src/backend/contracts";
 import { SHELL_EVENTS } from "../src/config/uiConfig";
 import type { IslandController } from "../src/island/IslandController";
 import { AlertSound } from "../src/island/AlertSound";
 import { TikiApp } from "../src/TikiApp";
 import { FakeBackend } from "./support/FakeBackend";
 
-const MEETING_ALERT = { kind: "meeting" as const, title: "Daily", body: "En 15 min", taskId: null, link: null };
+const MEETING_ALERT: TikiAlert = { kind: "meeting", title: "Daily", summary: "En 15 min", tips: [], actions: ["open"], taskId: null, link: null };
 const SILENT: AlertDelivery = { sound: false, windowsNotification: false };
 
 describe("Tiki keeping quiet", () => {
@@ -50,7 +50,7 @@ describe("Tiki keeping quiet", () => {
       from.value = "23:30";
       from.dispatchEvent(new Event("change"));
     }
-    await vi.waitFor(() => expect(backend.savedPreferences.quietHours.from).toBe("23:30"));
+    await vi.waitFor(() => expect(backend.savedPreferences.quietHours.from).toBe("23:30:00"));
     expect(backend.savedPreferences.quietHours.until).toBe("07:00:00");
   });
 

@@ -70,9 +70,7 @@ impl<'context> AlertScheduler<'context> {
         if moment == BriefMoment::Morning {
             let meetings = CalendarBook::new(self.database, self.settings).agenda(now.date())?;
             let today = CalendarBook::meetings_on(&meetings, now.date());
-            if let Some(line) = composer.meetings_line(&today) {
-                alert.body = format!("{}\n{line}", alert.body);
-            }
+            alert.tips.extend(composer.meetings_line(&today));
         }
         Ok(Some(alert))
     }

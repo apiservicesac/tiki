@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { BackendError } from "../src/backend/BackendError";
 import { SHELL_EVENTS, UI_CONFIG } from "../src/config/uiConfig";
 import type { IslandController } from "../src/island/IslandController";
 import { TikiApp } from "../src/TikiApp";
@@ -16,7 +17,9 @@ function typeCapture(root: HTMLElement, sentence: string): void {
 const EVENING_BRIEF = {
   kind: "evening" as const,
   title: "Cierre del día",
-  body: "Atrasado: 1 · Vence pronto: 2 · Esperando: 2\nMañana vence: Tracking",
+  summary: "Atrasado: 1 · Vence pronto: 2 · Esperando: 2",
+  tips: ["Mañana vence: Tracking"],
+  actions: ["open" as const],
   taskId: null,
   link: null,
 };
@@ -190,7 +193,7 @@ describe("IslandController", () => {
       pickerSearch.value = "alta";
       pickerSearch.dispatchEvent(new Event("input"));
     }
-    root.querySelector<HTMLButtonElement>('.picker-option[data-value="Altamira"]')?.click();
+    root.querySelector<HTMLButtonElement>('.picker-option[data-value="1"]')?.click();
     expect(groups()).toEqual(["Altamira"]);
     expect(root.querySelectorAll(".tasks-tab .island-row")).toHaveLength(2);
   });
@@ -211,7 +214,7 @@ describe("IslandController", () => {
   it("puts calendar meetings in the Agenda, by time, with a Join button", async () => {
     controller.selectTab("agenda");
     const rows = [...root.querySelectorAll<HTMLElement>(".agenda-row")];
-    expect(rows.map((row) => row.querySelector(".agenda-time")?.textContent)).toEqual(["09:00–09:30", "11:00"]);
+    expect(rows.map((row) => row.querySelector(".agenda-time")?.textContent)).toEqual(["09:00–09:30", "11:00", "16:00"]);
     expect(rows[0]?.querySelector(".island-row-text")?.textContent).toBe("Daily de AltamiraTeams");
 
     rows[0]?.querySelector<HTMLButtonElement>(".agenda-join")?.click();
@@ -286,6 +289,35 @@ describe("IslandController", () => {
     }
     await controller.submitCapture();
     expect(backend.confirmedCaptures[0]).toMatchObject({ kind: "reminder", remindAt: "2026-10-22T08:00:00", repeat: "daily", tags: [] });
+  });
+
+  it("says what to fix when the core refuses a capture, keeping what the user wrote", async () => {
+    backend.saveFailure = new BackendError("reminder_needs_time", "a reminder needs a time to ring");
+    controller.openPanel("capture");
+    typeCapture(root, "Llamar a mamá");
+    root.querySelector<HTMLButtonElement>('[data-kind="reminder"]')?.click();
+    await controller.submitCapture();
+
+    expect(root.querySelector(".capture-status-error")?.textContent).toBe("Un recordatorio necesita fecha y hora para sonar.");
+    expect(root.querySelector<HTMLInputElement>("#capture-input")?.value).toBe("Llamar a mamá");
+    expect(controller.currentState.panel).toBe("capture");
+  });
+
+  it("says what went wrong when the core refuses an edit, keeping the form filled", async () => {
+    backend.saveFailure = new BackendError("database", "database error: disk full");
+    controller.setMode("expanded");
+    root.querySelector<HTMLButtonElement>('[data-task-id="1"] .island-row-text')?.click();
+    await vi.waitFor(() => expect(root.querySelector("#edit-title")).not.toBeNull());
+    const title = root.querySelector<HTMLInputElement>("#edit-title");
+    if (title) {
+      title.value = "Tracking de formularios";
+    }
+    root.querySelector<HTMLFormElement>(".edit-form")?.requestSubmit();
+
+    await vi.waitFor(() => expect(root.querySelector<HTMLElement>(".edit-problem")?.hidden).toBe(false));
+    expect(root.querySelector(".edit-problem")?.textContent).toBe("No se pudo guardar. Inténtalo de nuevo.");
+    expect(root.querySelector<HTMLInputElement>("#edit-title")?.value).toBe("Tracking de formularios");
+    expect(controller.currentState.panel).toBe("edit");
   });
 
   it("creates a new project from the picker by typing its name", async () => {
@@ -399,7 +431,7 @@ describe("IslandController", () => {
       morning.value = "07:45";
       morning.dispatchEvent(new Event("change"));
     }
-    await vi.waitFor(() => expect(backend.savedPreferences.morningBriefTime).toBe("07:45"));
+    await vi.waitFor(() => expect(backend.savedPreferences.morningBriefTime).toBe("07:45:00"));
   });
 
   it("shows Settings without the big mascot on the narrow left and right island", async () => {
@@ -442,7 +474,7 @@ describe("IslandController", () => {
 
   it("announces an alert with its kind, its own face and color, then goes back to the day's mood", async () => {
     vi.useFakeTimers();
-    backend.deliverAlert({ kind: "meeting", title: "Daily", body: "En 15 min", taskId: null, link: null });
+    backend.deliverAlert({ kind: "meeting", title: "Daily", summary: "En 15 min", tips: [], actions: ["open"], taskId: null, link: null });
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
     expect(root.querySelector(".notch-alert")?.getAttribute("data-alert-kind")).toBe("meeting");
     expect(root.querySelector(".notch-alert-kind")?.textContent).toBe("Reunión");
@@ -481,7 +513,7 @@ describe("IslandController", () => {
   });
 
   it("opens the task of a task reminder", async () => {
-    backend.deliverAlert({ kind: "task", title: "Recordatorio", body: "Tracking de formularios\nAltamira · mañana", taskId: 1, link: null });
+    backend.deliverAlert({ kind: "task", title: "Recordatorio", summary: "Tracking de formularios", tips: ["Altamira · mañana"], actions: ["open", "snooze"], taskId: 1, link: null });
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
 
     notch()?.click();
@@ -498,7 +530,7 @@ describe("IslandController", () => {
 
   it("lets the user mark a reminder done or snooze it from Today", async () => {
     controller.setMode("expanded");
-    backend.deliverAlert({ kind: "reminder", title: "Recordatorio", body: "Llamar a mamá", taskId: 7, link: null });
+    backend.deliverAlert({ kind: "reminder", title: "Recordatorio", summary: "Llamar a mamá", tips: [], actions: ["open", "done", "snooze"], taskId: 7, link: null });
     await vi.waitFor(() => expect(root.querySelector("#alert-snooze-10")).not.toBeNull());
 
     root.querySelector<HTMLButtonElement>("#alert-snooze-10")?.click();
@@ -508,7 +540,7 @@ describe("IslandController", () => {
 
   it("offers Join on a meeting alert and opens the call", async () => {
     controller.setMode("expanded");
-    backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", body: "Daily\n09:00–09:30", taskId: null, link: "https://meet.google.com/abc" });
+    backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", summary: "Daily", tips: ["09:00–09:30"], actions: ["open", "join"], taskId: null, link: "https://meet.google.com/abc" });
     await vi.waitFor(() => expect(root.querySelector("#alert-join")).not.toBeNull());
 
     root.querySelector<HTMLButtonElement>("#alert-join")?.click();
@@ -517,7 +549,7 @@ describe("IslandController", () => {
   });
 
   it("opens the Agenda from a meeting alert in the notch", async () => {
-    backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", body: "Daily", taskId: null, link: null });
+    backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", summary: "Daily", tips: [], actions: ["open"], taskId: null, link: null });
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
 
     notch()?.click();

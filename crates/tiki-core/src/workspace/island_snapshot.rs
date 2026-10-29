@@ -2,8 +2,8 @@ use serde::Serialize;
 
 use chrono::NaiveDateTime;
 
-use crate::calendar::MeetingItem;
-use crate::domain::{Priority, Repeat, TaskId};
+use crate::agenda::AgendaDay;
+use crate::domain::{ItemKind, Priority, ProjectId, Repeat, TaskId};
 use crate::mood::Mood;
 
 /// How pressing a line is; the interface turns it into a color.
@@ -18,28 +18,32 @@ pub enum Urgency {
     Reminder,
 }
 
-/// One task line, already translated and ready to draw.
+/// One item line, already translated and ready to draw.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SnapshotItem {
     pub task_id: TaskId,
+    /// A task, or a standalone reminder: the Tasks tab lists only tasks, the Agenda both.
+    pub kind: ItemKind,
     pub title: String,
+    pub project_id: Option<ProjectId>,
     pub project_name: Option<String>,
     pub project_color: Option<String>,
     pub detail_label: String,
     pub priority: Priority,
     pub tags: Vec<String>,
-    /// For reminders: when it rings, and how often it comes back (for the Agenda).
+    /// When it rings (a reminder's moment, or the alarm on a task), and how often a
+    /// reminder comes back.
     pub at: Option<NaiveDateTime>,
     pub repeat: Repeat,
     pub urgency: Urgency,
 }
 
-/// A titled group of lines: "Vence pronto", "Te toca"…
+/// A titled group of lines of Today: "Atrasado", "Vence pronto", "Avisos", "Toca insistir".
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SnapshotSection {
-    /// Stable key: `overdue`, `due_soon`, `your_turn` or `waiting`.
+    /// Stable key: `overdue`, `due_soon`, `reminders` (today's) or `follow_up`.
     pub key: String,
     pub title: String,
     pub items: Vec<SnapshotItem>,
@@ -68,6 +72,8 @@ pub struct IslandSnapshot {
     pub due_count: usize,
     /// Waiting on others.
     pub waiting_count: usize,
+    /// Open work: every open task, without standalone reminders.
+    pub open_count: usize,
     /// Delivered today.
     pub delivered_today: usize,
     /// Text of the closed island: "3 hoy · 2 esperando".
@@ -80,8 +86,8 @@ pub struct IslandSnapshot {
     pub open_items: Vec<SnapshotItem>,
     /// What to do now, with why; `None` when nothing presses.
     pub focus: Option<FocusSuggestion>,
-    /// Meetings from today on, for the Agenda.
-    pub meetings: Vec<MeetingItem>,
+    /// Meetings from today on and the items that ring at a time, by day.
+    pub agenda: Vec<AgendaDay>,
     /// The brief as Tiki says it out loud.
     pub narration: String,
 }

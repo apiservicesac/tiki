@@ -7,8 +7,9 @@ pub enum ShellEvent {
     OpenCapture,
     OpenSettings,
     ToggleIsland,
-    /// A brief is due; the island shows it in the notch (the payload is the brief).
-    BriefReady,
+    /// An alert is due; the island shows it in the notch (the payload is a `DueAlert`: the
+    /// alert and how it reaches the user).
+    AlertReady,
     /// Preferences or AI keys changed in one window; the others reload them.
     PreferencesChanged,
     /// The calendars were copied again: the Agenda refreshes.
@@ -23,14 +24,14 @@ impl ShellEvent {
             ShellEvent::OpenCapture => "tiki://open-capture",
             ShellEvent::OpenSettings => "tiki://open-settings",
             ShellEvent::ToggleIsland => "tiki://toggle-island",
-            ShellEvent::BriefReady => "tiki://brief-ready",
+            ShellEvent::AlertReady => "tiki://alert-ready",
             ShellEvent::PreferencesChanged => "tiki://preferences-changed",
             ShellEvent::CalendarSynced => "tiki://calendar-synced",
             ShellEvent::InCallChanged => "tiki://in-call-changed",
         }
     }
 
-    /// Sends the event with data, such as the brief the island should show.
+    /// Sends the event with data, such as the alert the island should show.
     pub fn emit_with(self, app: &AppHandle, payload: &impl serde::Serialize) {
         if let Err(error) = app.emit(self.name(), payload) {
             tracing::warn!(event = self.name(), %error, "could not notify the interface");

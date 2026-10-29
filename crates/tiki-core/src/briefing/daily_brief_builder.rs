@@ -36,7 +36,7 @@ impl<'settings> DailyBriefBuilder<'settings> {
         ] {
             section.sort_by_key(|item| std::cmp::Reverse(item.priority));
         }
-        brief.reminders.sort_by_key(BriefItem::rings_at);
+        brief.reminders.sort_by_key(|item| item.remind_at);
         brief
     }
 
@@ -92,11 +92,13 @@ impl<'settings> DailyBriefBuilder<'settings> {
     ) -> BriefItem {
         BriefItem {
             task_id,
+            kind: task.kind,
             title: task.title.clone(),
             project_id: task.project_id,
             project_name: projects.name_of(task.project_id).map(str::to_owned),
             tags: task.tags.clone(),
             priority: task.priority,
+            remind_at: task.remind_at,
             detail,
         }
     }

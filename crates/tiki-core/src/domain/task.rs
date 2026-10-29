@@ -17,7 +17,7 @@ pub struct Task {
     pub due_date: Option<NaiveDate>,
     /// Day the task moved to "waiting on others"; empty in any other status.
     pub waiting_since: Option<NaiveDate>,
-    /// Day the task was delivered; empty while it is open.
+    /// Day the task was delivered, or a reminder closed; empty while it is open.
     pub completed_on: Option<NaiveDate>,
     /// When the user asked Tiki to remind them (a reminder's moment, or an alarm on a task);
     /// cleared once it rang, unless the reminder repeats.

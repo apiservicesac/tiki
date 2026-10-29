@@ -23,7 +23,11 @@ export interface TasksTabHandlers extends TaskListHandlers {
   onManageProjects: (createNew: boolean) => void;
 }
 
+/** What the search and the project filter read from a pending or a delivered item. */
+type SearchableItem = Pick<SnapshotItem, "title" | "projectId" | "projectName" | "tags">;
+
 interface ProjectGroup {
+  projectId: number | null;
   name: string | null;
   color: string | null;
   items: SnapshotItem[];
@@ -42,7 +46,8 @@ export class TasksTabView {
   private toggle: HTMLElement | null = null;
   private list: HTMLElement | null = null;
   private readonly picker = new ProjectPicker();
-  private projectFilter: string | null = null;
+  /** The project whose tasks show, by id; `null` shows every project. */
+  private projectFilter: number | null = null;
   private data: TasksTabData | null = null;
   private handlers: TasksTabHandlers | null = null;
 
@@ -54,7 +59,7 @@ export class TasksTabView {
   render(data: TasksTabData, handlers: TasksTabHandlers): HTMLElement {
     this.data = data;
     this.handlers = handlers;
-    if (this.projectFilter !== null && !data.projects.some((project) => project.name === this.projectFilter)) {
+    if (this.projectFilter !== null && !data.projects.some((project) => project.projectId === this.projectFilter)) {
       this.projectFilter = null;
     }
     this.element ??= this.build();
@@ -117,9 +122,9 @@ export class TasksTabView {
       id: "tasks-project-picker",
       options: [
         { value: null, label: this.translator.text("tasks.all_projects"), color: null },
-        ...data.projects.map((project) => ({ value: project.name, label: project.name, color: project.color, count: project.openCount })),
+        ...data.projects.map((project) => ({ value: String(project.projectId), label: project.name, color: project.color, count: project.openCount })),
       ],
-      selected: this.projectFilter,
+      selected: this.projectFilter === null ? null : String(this.projectFilter),
       searchPlaceholder: this.translator.text("tasks.search_project"),
       emptyText: this.translator.text("tasks.no_project_match"),
       actions: [
@@ -127,7 +132,7 @@ export class TasksTabView {
         { label: this.translator.text("tasks.manage_projects"), onPress: () => this.handlers?.onManageProjects(false) },
       ],
       onSelect: (value) => {
-        this.projectFilter = value;
+        this.projectFilter = value === null ? null : Number(value);
         this.redraw();
       },
     });
@@ -172,7 +177,7 @@ export class TasksTabView {
   /** Tasks only, grouped by project; reminders are in the Agenda. */
   private pendingRows(openItems: SnapshotItem[], query: string, handlers: TaskListHandlers): HTMLElement[] {
     const items = openItems.filter((item) =>
-      item.urgency !== "reminder" && this.keeps(item.title, item.projectName, item.tags, query));
+      item.kind === "task" && this.keeps(item, query));
     return this.groups(items).flatMap((group) => [
       this.groupHeader(group),
       ...group.items.map((item) => this.taskList.row(item, handlers)),
@@ -181,33 +186,33 @@ export class TasksTabView {
 
   private deliveredRows(delivered: DeliveredItem[], query: string, handlers: TaskListHandlers): HTMLElement[] {
     return delivered
-      .filter((item) => this.keeps(item.title, item.projectName, [], query))
+      .filter((item) => this.keeps(item, query))
       .map((item) => this.taskList.deliveredRow(item, handlers.onOpenTask));
   }
 
   /** Whether a task passes the project filter and the search (title, project or #tag). */
-  private keeps(title: string, projectName: string | null, tags: readonly string[], query: string): boolean {
-    if (this.projectFilter !== null && projectName !== this.projectFilter) {
+  private keeps(item: SearchableItem, query: string): boolean {
+    if (this.projectFilter !== null && item.projectId !== this.projectFilter) {
       return false;
     }
-    return TextMatcher.matches(title, query)
-      || (projectName !== null && TextMatcher.matches(projectName, query))
-      || tags.some((tag) => TextMatcher.matches(TagText.mark(tag), query));
+    return TextMatcher.matches(item.title, query)
+      || (item.projectName !== null && TextMatcher.matches(item.projectName, query))
+      || item.tags.some((tag) => TextMatcher.matches(TagText.mark(tag), query));
   }
 
   /** One group per project: the most pressing first, then the busiest, tasks without project last. */
   private groups(items: SnapshotItem[]): ProjectGroup[] {
-    const groups = new Map<string, ProjectGroup>();
+    const groups = new Map<number | null, ProjectGroup>();
     items.forEach((item) => {
-      const key = item.projectName ?? "";
-      const group = groups.get(key) ?? { name: item.projectName, color: item.projectColor, items: [], rank: Number.MAX_SAFE_INTEGER };
+      const group = groups.get(item.projectId)
+        ?? { projectId: item.projectId, name: item.projectName, color: item.projectColor, items: [], rank: Number.MAX_SAFE_INTEGER };
       group.items.push(item);
       group.rank = Math.min(group.rank, UI_CONFIG.urgencyOrder.indexOf(item.urgency));
-      groups.set(key, group);
+      groups.set(item.projectId, group);
     });
     return [...groups.values()].sort((first, second) => {
-      if ((first.name === null) !== (second.name === null)) {
-        return first.name === null ? 1 : -1;
+      if ((first.projectId === null) !== (second.projectId === null)) {
+        return first.projectId === null ? 1 : -1;
       }
       return first.rank - second.rank
         || second.items.length - first.items.length

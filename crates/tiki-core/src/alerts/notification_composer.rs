@@ -1,13 +1,13 @@
 use chrono::NaiveDate;
 
-use super::{AlertKind, TikiAlert};
+use super::{AlertAction, AlertKind, TikiAlert};
 use crate::briefing::{BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, DailyBrief};
 use crate::calendar::MeetingItem;
 use crate::domain::{ItemKind, Task};
-use crate::i18n::Translator;
+use crate::i18n::{DateFormatter, Translator};
 
-/// Writes the short notification for a brief: counts first, then what to start with and
-/// who to follow up.
+/// Writes every alert in the user's language: the morning brief and the end-of-day close,
+/// item reminders, follow-up nudges and meetings starting soon.
 pub struct NotificationComposer<'translator> {
     translator: &'translator Translator,
 }
@@ -49,7 +49,6 @@ impl<'translator> NotificationComposer<'translator> {
         project_name: Option<&str>,
         today: NaiveDate,
     ) -> TikiAlert {
-        let mut lines = vec![task.title.clone()];
         let mut context: Vec<String> = project_name.map(str::to_owned).into_iter().collect();
         if kind == AlertKind::FollowUp {
             let days = task.days_waiting(today).unwrap_or_default().to_string();
@@ -71,15 +70,17 @@ impl<'translator> NotificationComposer<'translator> {
             };
             context.push(BriefDetailFormatter::new(self.translator).label(detail, today));
         }
-        if !context.is_empty() {
-            lines.push(context.join(" · "));
-        }
         TikiAlert {
             kind,
             title: self
                 .translator
                 .text(&format!("notify.{}.title", Self::alert_key(kind))),
-            body: lines.join("\n"),
+            summary: task.title.clone(),
+            tips: (!context.is_empty())
+                .then(|| context.join(" · "))
+                .into_iter()
+                .collect(),
+            actions: AlertAction::offered_for(kind, false),
             task_id: task.id,
             link: None,
         }
@@ -88,11 +89,10 @@ impl<'translator> NotificationComposer<'translator> {
     /// "Meeting in 12 min": its title, its time and where.
     pub fn compose_meeting(&self, meeting: &MeetingItem, now: chrono::NaiveDateTime) -> TikiAlert {
         let minutes = (meeting.starts_at - now).num_minutes().max(0);
-        let mut details = vec![format!(
-            "{}–{}",
-            meeting.starts_at.format("%H:%M"),
-            meeting.ends_at.format("%H:%M")
-        )];
+        let mut details = vec![
+            DateFormatter::new(self.translator)
+                .time_range(meeting.starts_at.time(), meeting.ends_at.time()),
+        ];
         if !meeting.location.is_empty() {
             details.push(meeting.location.clone());
         }
@@ -101,7 +101,9 @@ impl<'translator> NotificationComposer<'translator> {
             title: self
                 .translator
                 .format("notify.meeting.title", &[("minutes", &minutes.to_string())]),
-            body: format!("{}\n{}", meeting.title, details.join(" · ")),
+            summary: meeting.title.clone(),
+            tips: vec![details.join(" · ")],
+            actions: AlertAction::offered_for(AlertKind::Meeting, meeting.join_url.is_some()),
             task_id: None,
             link: meeting.join_url.clone(),
         }
@@ -114,7 +116,7 @@ impl<'translator> NotificationComposer<'translator> {
             "notify.meetings_today",
             &[
                 ("count", &meetings_today.len().to_string()),
-                ("time", &first.starts_at.format("%H:%M").to_string()),
+                ("time", &DateFormatter::time(first.starts_at.time())),
             ],
         ))
     }
@@ -127,44 +129,52 @@ impl<'translator> NotificationComposer<'translator> {
         }
     }
 
+    /// The morning brief or the end-of-day close: the counts, then what to start with,
+    /// what is due tomorrow and whom to follow up.
     pub fn compose(&self, brief: &DailyBrief, moment: BriefMoment) -> TikiAlert {
-        let lines = match moment {
+        let (summary, tips) = match moment {
             BriefMoment::Morning => self.morning_lines(brief),
             BriefMoment::Evening => self.evening_lines(brief),
         };
+        let kind = AlertKind::from(moment);
         TikiAlert {
-            kind: AlertKind::from(moment),
-            task_id: None,
-            link: None,
+            kind,
             title: self
                 .translator
                 .text(&format!("notify.{}.title", moment.key())),
-            body: lines.join("\n"),
+            summary,
+            tips,
+            actions: AlertAction::offered_for(kind, false),
+            task_id: None,
+            link: None,
         }
     }
 
-    fn morning_lines(&self, brief: &DailyBrief) -> Vec<String> {
-        let mut lines = Vec::new();
-        if brief.is_all_clear() {
-            lines.push(self.translator.text("notify.all_clear"));
+    /// The counts, or "all clear", and the tips of the morning.
+    fn morning_lines(&self, brief: &DailyBrief) -> (String, Vec<String>) {
+        let summary = if brief.is_all_clear() {
+            self.translator.text("notify.all_clear")
         } else {
-            lines.push(self.counts(brief));
-        }
+            self.counts(brief)
+        };
+        let mut tips = Vec::new();
         if let Some(first) = brief.overdue.first().or(brief.due_soon.first()) {
-            lines.push(
+            tips.push(
                 self.translator
                     .format("notify.start_with", &[("item", &self.item(first))]),
             );
         }
-        lines.extend(self.list_line("notify.follow_up", &brief.needs_follow_up));
-        lines
+        tips.extend(self.list_line("notify.follow_up", &brief.needs_follow_up));
+        (summary, tips)
     }
 
-    fn evening_lines(&self, brief: &DailyBrief) -> Vec<String> {
-        let mut lines = vec![self.counts(brief)];
-        lines.extend(self.list_line("notify.tomorrow", &brief.due_tomorrow()));
-        lines.extend(self.list_line("notify.follow_up", &brief.needs_follow_up));
-        lines
+    /// The counts and the tips of the evening.
+    fn evening_lines(&self, brief: &DailyBrief) -> (String, Vec<String>) {
+        let tips = [
+            self.list_line("notify.tomorrow", &brief.due_tomorrow()),
+            self.list_line("notify.follow_up", &brief.needs_follow_up),
+        ];
+        (self.counts(brief), tips.into_iter().flatten().collect())
     }
 
     fn counts(&self, brief: &DailyBrief) -> String {

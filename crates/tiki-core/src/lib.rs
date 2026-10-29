@@ -4,6 +4,7 @@
 //! types exported here, so the same rules run on every platform.
 
 pub mod activity;
+pub mod agenda;
 pub mod ai;
 pub mod alerts;
 pub mod briefing;

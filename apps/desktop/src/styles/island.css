@@ -705,8 +705,10 @@ button.island-row-text {
   font-size: var(--text-sm);
   line-height: 1.45;
   color: var(--island-text);
-  white-space: pre-line;
 }
+
+/* The summary and its tips read as one block of lines. */
+.island-notice p + p { margin-top: 0; }
 
 .island-notice-actions {
   display: flex;
@@ -1050,6 +1052,10 @@ button.island-row-text {
 
 /* The status line under the box: a hint, "Reading…", or a link to set up the AI. */
 .capture-status-thinking { animation: capture-thinking 1.2s ease-in-out infinite alternate; }
+
+/* What to fix after the core refused to save the item. */
+.capture-status-error,
+.edit-problem { color: var(--urgency-critical-text); }
 
 .capture-ai-link {
   padding: 0;

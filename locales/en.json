@@ -104,6 +104,9 @@
     "edit.no_project": "No project",
     "edit.save": "Save",
     "edit.cancel": "Cancel",
+    "error.reminder_needs_time": "A reminder needs a date and time to ring.",
+    "error.empty_task_title": "Write a title to save it.",
+    "error.save_failed": "Could not save. Try again.",
     "island.row.edit": "Edit task",
 
     "notify.morning.title": "Good morning · your day with Tiki",
@@ -293,6 +296,7 @@
 
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}",
+    "date.time_range": "{start}–{end}",
 
     "calendar.connected": "Connected calendars",
     "calendar.none": "None yet.",
@@ -308,7 +312,6 @@
     "calendar.provider.microsoft": "Microsoft 365 / Outlook",
     "calendar.provider.google": "Google Calendar",
     "meeting.join": "Join",
-    "meeting.time_range": "{start}–{end}",
     "meeting.all_day": "All day",
     "meeting.untitled": "(No title)"
   },

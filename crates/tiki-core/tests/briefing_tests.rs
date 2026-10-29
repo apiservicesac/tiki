@@ -102,14 +102,16 @@ fn the_brief_knows_what_is_due_tomorrow() {
 #[test]
 fn the_brief_lists_the_reminders_of_one_day() {
     use tiki_core::briefing::BriefItem;
-    use tiki_core::domain::{Priority, Repeat, TaskId};
+    use tiki_core::domain::{ItemKind, Priority, Repeat, TaskId};
     let reminder = |task_id, at| BriefItem {
         task_id: TaskId(task_id),
+        kind: ItemKind::Reminder,
         title: format!("Aviso {task_id}"),
         project_id: None,
         project_name: None,
         tags: Vec::new(),
         priority: Priority::Normal,
+        remind_at: Some(at),
         detail: BriefDetail::RemindAt {
             at,
             repeat: Repeat::Never,

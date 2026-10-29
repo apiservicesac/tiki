@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use serde::Serialize;
 
-use crate::domain::{Priority, ProjectId, Repeat, TaskId, TaskStatus};
+use crate::domain::{ItemKind, Priority, ProjectId, Repeat, TaskId, TaskStatus};
 
 /// Why a task appears in the brief.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -23,23 +23,18 @@ pub enum BriefDetail {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct BriefItem {
     pub task_id: TaskId,
+    pub kind: ItemKind,
     pub title: String,
     pub project_id: Option<ProjectId>,
     pub project_name: Option<String>,
     pub tags: Vec<String>,
     pub priority: Priority,
+    /// When it rings: a standalone reminder's moment, or the alarm the user set on a task.
+    pub remind_at: Option<NaiveDateTime>,
     pub detail: BriefDetail,
 }
 
 impl BriefItem {
-    /// When a standalone reminder rings; `None` for any other line.
-    pub fn rings_at(&self) -> Option<NaiveDateTime> {
-        match self.detail {
-            BriefDetail::RemindAt { at, .. } => Some(at),
-            _ => None,
-        }
-    }
-
     /// How often a standalone reminder comes back; `Never` for any other line.
     pub fn repeat(&self) -> Repeat {
         match self.detail {

@@ -12,7 +12,6 @@ export class ReceiptView {
   constructor(private readonly translator: Translator) {}
 
   render(snapshot: IslandSnapshot, alert: TikiAlert | null, dayBrief: string | null): HTMLElement {
-    const openCount = snapshot.openItems.filter((item) => item.urgency !== "reminder").length;
     const blocks = snapshot.sections.length > 0
       ? snapshot.sections.map((section) =>
         ElementFactory.create("section", {
@@ -62,7 +61,7 @@ export class ReceiptView {
         ElementFactory.create("p", {
           className: "receipt-foot",
           text: this.translator.format("receipt.totals", {
-            open: openCount,
+            open: snapshot.openCount,
             waiting: snapshot.waitingCount,
             delivered: snapshot.deliveredToday,
           }),
@@ -71,12 +70,12 @@ export class ReceiptView {
     });
   }
 
-  /** The AI brief when there is one; otherwise what the reminder suggests (start with, follow up). */
+  /** The AI brief when there is one; otherwise the brief's tips (start with, follow up). */
   private suggestion(alert: TikiAlert | null, dayBrief: string | null): string | null {
     if (dayBrief) {
       return dayBrief;
     }
-    const tips = alert?.body.split("\n").slice(1) ?? [];
-    return tips.length > 0 ? tips.join(" ") : null;
+    const tips = alert?.tips ?? [];
+    return tips.length > 0 ? tips.join(UI_CONFIG.textMarks.sentences) : null;
   }
 }

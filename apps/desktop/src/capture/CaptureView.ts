@@ -153,6 +153,14 @@ export class CaptureView {
     this.setStatus("capture.ai_failed", false);
   }
 
+  /** The core refused the item: the fields stay as they are, with what to fix. */
+  showSaveFailed(messageKey: string): void {
+    this.mode = "capture";
+    this.drawVisibility();
+    this.setStatus(messageKey, false);
+    this.status?.classList.add("capture-status-error");
+  }
+
   private build(handlers: CaptureViewHandlers): HTMLElement {
     this.sentence = ElementFactory.create("input", {
       className: "capture-input",

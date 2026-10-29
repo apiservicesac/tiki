@@ -65,7 +65,7 @@ export class ReminderSettingsView {
     return button;
   }
 
-  /** A time picker beside its label; `onPick` receives the time the user chose ("07:45"). */
+  /** A time picker beside its label; `onPick` receives the time the user chose, as the core writes it ("07:45:00"). */
   private timeRow(labelKey: string, name: string, time: string, onPick: (time: string) => void): HTMLElement {
     const input = ElementFactory.create("input", {
       className: "settings-input settings-time",
@@ -76,7 +76,7 @@ export class ReminderSettingsView {
     input.addEventListener("click", () => input.showPicker?.());
     input.addEventListener("change", () => {
       if (input.value !== "") {
-        onPick(input.value);
+        onPick(CoreDateTimeText.fromClock(input.value));
       }
     });
     return ElementFactory.create("label", {

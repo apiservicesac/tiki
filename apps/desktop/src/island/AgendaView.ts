@@ -1,8 +1,8 @@
-import type { MeetingItem, SnapshotItem } from "../backend/contracts";
-import { CoreDateTimeText } from "../backend/CoreDateTimeText";
+import type { AgendaDay, AgendaEntry, MeetingItem, SnapshotItem } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
+import { ItemContext } from "./ItemContext";
 import { ItemRow } from "./ItemRow";
 import type { TaskListHandlers } from "./TaskListView";
 
@@ -10,13 +10,11 @@ export interface AgendaHandlers extends TaskListHandlers {
   onJoinMeeting: (url: string) => void;
 }
 
-/** One line of the agenda: a reminder of the user's or a meeting from a calendar. */
-type AgendaEntry = { at: string; reminder: SnapshotItem } | { at: string; meeting: MeetingItem };
-
 /**
- * Agenda: everything that happens at a time, by day. Reminders and calendar meetings share
- * one list ordered by time. A reminder opens on click and has a check; a meeting shows its
- * time range and place, and a Join button when it has a video call.
+ * Agenda: everything that happens at a time, by day, as the core lays it out: calendar
+ * meetings, reminders and the alarms set on tasks, each day under its title and each line
+ * with its time. A reminder or a task opens on click and has a check; a meeting shows its
+ * place, and a Join button when it has a video call.
  */
 export class AgendaView {
   private readonly itemRow: ItemRow;
@@ -25,59 +23,45 @@ export class AgendaView {
     this.itemRow = new ItemRow(translator);
   }
 
-  render(
-    items: readonly SnapshotItem[],
-    meetings: readonly MeetingItem[],
-    today: Date,
-    handlers: AgendaHandlers,
-  ): HTMLElement {
-    const entries = AgendaView.entries(items, meetings);
-    if (entries.length === 0) {
+  render(days: readonly AgendaDay[], handlers: AgendaHandlers): HTMLElement {
+    if (days.length === 0) {
       return ElementFactory.create("div", {
         className: "island-tab-content",
         children: [ElementFactory.create("p", { className: "island-empty", text: this.translator.text("agenda.empty") })],
       });
     }
-    const days = new Map<string, AgendaEntry[]>();
-    entries.forEach((entry) => {
-      const day = CoreDateTimeText.day(entry.at);
-      days.set(day, [...(days.get(day) ?? []), entry]);
-    });
     return ElementFactory.create("div", {
       className: "island-tab-content",
       children: [
         ElementFactory.create("div", {
           className: "island-list agenda-list",
-          children: [...days.entries()].flatMap(([day, dayEntries]) => [
-            ElementFactory.create("div", { className: "island-group", text: this.dayTitle(day, today) }),
-            ...dayEntries.map((entry) => ("meeting" in entry
-              ? this.meetingRow(entry.meeting, handlers)
-              : this.reminderRow(entry.reminder, entry.at, handlers))),
+          children: days.flatMap((day) => [
+            ElementFactory.create("div", { className: "island-group", text: day.label }),
+            ...day.entries.map((entry) => this.row(entry, handlers)),
           ]),
         }),
       ],
     });
   }
 
-  /** Reminders with a time and every meeting, by time; all-day meetings lead their day. */
-  private static entries(items: readonly SnapshotItem[], meetings: readonly MeetingItem[]): AgendaEntry[] {
-    const reminders: AgendaEntry[] = items
-      .filter((item) => item.urgency === "reminder" && item.at !== null)
-      .map((reminder) => ({ at: reminder.at ?? "", reminder }));
-    const calendar: AgendaEntry[] = meetings.map((meeting) => ({ at: meeting.startsAt, meeting }));
-    return [...reminders, ...calendar].sort((left, right) => left.at.localeCompare(right.at));
+  private row(entry: AgendaEntry, handlers: AgendaHandlers): HTMLElement {
+    switch (entry.kind) {
+      case "meeting":
+        return this.meetingRow(entry.meeting, entry.timeLabel, handlers);
+      case "reminder":
+        return this.timedItemRow(entry.item, entry.timeLabel, this.repeatText(entry.item), handlers);
+      case "task":
+        return this.timedItemRow(entry.item, entry.timeLabel, ItemContext.describe(entry.item.projectName, entry.item.tags), handlers);
+    }
   }
 
   /** A meeting: its time range, title and place, and Join when it has a video call. */
-  private meetingRow(meeting: MeetingItem, handlers: AgendaHandlers): HTMLElement {
-    const time = meeting.allDay
-      ? this.translator.text("meeting.all_day")
-      : this.translator.format("meeting.time_range", { start: CoreDateTimeText.time(meeting.startsAt), end: CoreDateTimeText.time(meeting.endsAt) });
+  private meetingRow(meeting: MeetingItem, timeLabel: string, handlers: AgendaHandlers): HTMLElement {
     const joinUrl = meeting.joinUrl;
     return this.itemRow.render({
       variant: "agenda-row agenda-meeting",
       attributes: { title: meeting.accountEmail },
-      lead: this.itemRow.time(time),
+      lead: this.itemRow.time(timeLabel),
       title: meeting.title || this.translator.text("meeting.untitled"),
       context: meeting.location || null,
       badge: this.itemRow.kindIcon(ICONS.calendar),
@@ -87,29 +71,22 @@ export class AgendaView {
     });
   }
 
-  /** A reminder: its time, title (opens it) and repeat, and a check to deliver it. */
-  private reminderRow(reminder: SnapshotItem, at: string, handlers: TaskListHandlers): HTMLElement {
+  /** A reminder or a task with an alarm: its time, title (opens it) and context, and a check to deliver it. */
+  private timedItemRow(item: SnapshotItem, timeLabel: string, context: string | null, handlers: TaskListHandlers): HTMLElement {
     return this.itemRow.render({
       variant: "agenda-row",
-      attributes: { "data-task-id": String(reminder.taskId) },
-      lead: this.itemRow.time(CoreDateTimeText.time(at)),
-      title: reminder.title,
-      context: reminder.repeat === "never" ? null : this.translator.text(`repeat.${reminder.repeat}`),
-      onOpen: () => handlers.onOpenTask(reminder.taskId),
+      attributes: { "data-task-id": String(item.taskId) },
+      lead: this.itemRow.time(timeLabel),
+      title: item.title,
+      context,
+      onOpen: () => handlers.onOpenTask(item.taskId),
       badge: this.itemRow.kindIcon(ICONS.bell),
-      trailing: this.itemRow.deliverButton(() => handlers.onDeliverTask(reminder.taskId)),
+      trailing: this.itemRow.deliverButton(() => handlers.onDeliverTask(item.taskId)),
     });
   }
 
-  /** "Hoy", "Mañana" or the long date. */
-  private dayTitle(isoDay: string, today: Date): string {
-    const days = CoreDateTimeText.daysFrom(today, isoDay);
-    if (days === 0) {
-      return this.translator.text("agenda.today");
-    }
-    if (days === 1) {
-      return this.translator.text("agenda.tomorrow");
-    }
-    return new Intl.DateTimeFormat(this.translator.localeCode, { weekday: "long", day: "numeric", month: "long" }).format(CoreDateTimeText.startOf(isoDay));
+  /** How often a reminder comes back; nothing for a one-time reminder. */
+  private repeatText(reminder: SnapshotItem): string | null {
+    return reminder.repeat === "never" ? null : this.translator.text(`repeat.${reminder.repeat}`);
   }
 }

@@ -11,6 +11,7 @@ import {
   PRIORITIES,
   REPEATS,
   TASK_STATUSES,
+  USER_ERROR_KEYS,
 } from "../src/backend/contracts";
 import { UI_CONFIG } from "../src/config/uiConfig";
 import { TASKS_VIEWS } from "../src/island/islandState";
@@ -62,6 +63,7 @@ function builtKeys(): string[] {
     ]),
     ...SHORTCUTS.flatMap((shortcut) => shortcut.keys.map((key) => `advanced.key.${key.toLowerCase()}`)),
     ...Object.values(UI_CONFIG.alertStyles).map((style) => style.labelKey),
+    ...USER_ERROR_KEYS.map((key) => `error.${key}`),
   ];
 }
 

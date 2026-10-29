@@ -42,20 +42,27 @@ export type LocaleName = (typeof LOCALE_NAMES)[number];
 
 export interface SnapshotItem {
   taskId: number;
+  /** A task, or a standalone reminder: the Tasks tab lists only tasks. */
+  kind: ItemKind;
   title: string;
+  projectId: number | null;
   projectName: string | null;
   projectColor: string | null;
   detailLabel: string;
   priority: Priority;
   /** Lowercase, without "#". */
   tags: string[];
-  /** For reminders: when it rings (`2026-10-23T11:00:00`) and how often it comes back. */
+  /**
+   * When it rings (`2026-10-23T11:00:00`): a reminder's moment, or the alarm on a task; and how
+   * often a reminder comes back.
+   */
   at: string | null;
   repeat: Repeat;
   urgency: Urgency;
 }
 
 export interface SnapshotSection {
+  /** Stable key: `overdue`, `due_soon`, `reminders` (today's) or `follow_up`. */
   key: string;
   title: string;
   items: SnapshotItem[];
@@ -72,6 +79,8 @@ export interface IslandSnapshot {
   dueCount: number;
   /** Waiting on others. */
   waitingCount: number;
+  /** Open work: every open task, without standalone reminders. */
+  openCount: number;
   /** Delivered today. */
   deliveredToday: number;
   closedSummary: string;
@@ -82,8 +91,8 @@ export interface IslandSnapshot {
   openItems: SnapshotItem[];
   /** What to do now, and why; `null` when nothing presses. */
   focus: { item: SnapshotItem; reason: string } | null;
-  /** Meetings from today on, from the connected calendars. */
-  meetings: MeetingItem[];
+  /** Meetings from today on and the items that ring at a time, by day (see `AgendaBuilder`). */
+  agenda: AgendaDay[];
   narration: string;
 }
 
@@ -110,16 +119,40 @@ export interface TaskDetails extends TaskEdit {
   taskId: number;
 }
 
+/**
+ * What the user can do with an alert, decided by the core (see `AlertAction`): open what it
+ * is about, put a reminder that rang away, snooze the item's reminder, or join the call.
+ */
+export type AlertAction = "open" | "done" | "snooze" | "join";
+
 /** An alert already written in the user's language (see `TikiAlert` in the core). */
 export interface TikiAlert {
   kind: "morning" | "evening" | "task" | "reminder" | "follow_up" | "meeting";
   title: string;
-  /** Lines separated by line breaks. */
-  body: string;
-  /** The task a task reminder is about. */
+  /** What it is about, in one line: the brief's counts, or the item's or meeting's title. */
+  summary: string;
+  /** The lines after the summary: what to start with, whom to follow up, an item's project and due day. */
+  tips: string[];
+  /** In the order to offer them. */
+  actions: AlertAction[];
+  /** The item an item alert is about. */
   taskId: number | null;
   /** A link to open from the alert: the meeting's video call. */
   link: string | null;
+}
+
+/** One line of the Agenda, with the time it shows: "10:00", "10:00–10:30" or "Todo el día". */
+export type AgendaEntry =
+  | { kind: "meeting"; timeLabel: string; meeting: MeetingItem }
+  | { kind: "reminder"; timeLabel: string; item: SnapshotItem }
+  | { kind: "task"; timeLabel: string; item: SnapshotItem };
+
+/** The Agenda's lines of one day, earliest first, under its title: "Hoy", "Mañana" or the long date. */
+export interface AgendaDay {
+  /** ISO date, for example `2026-10-23`. */
+  day: string;
+  label: string;
+  entries: AgendaEntry[];
 }
 
 /** Whether an alert chimes and reaches Windows, as the core decided (see `AlertDelivery`). */
@@ -182,8 +215,11 @@ export interface ProjectChange {
 export interface DeliveredItem {
   taskId: number;
   title: string;
+  projectId: number | null;
   projectName: string | null;
   projectColor: string | null;
+  /** Lowercase, without "#". */
+  tags: string[];
   /** "hoy", "ayer" or a short date. */
   deliveredLabel: string;
 }
@@ -204,7 +240,7 @@ export interface HitArea {
 /** The night: Tiki sleeps and alerts make no sound (see `QuietHours` in the core). */
 export interface QuietHours {
   enabled: boolean;
-  /** "22:00" or "22:00:00"; the range may cross midnight. */
+  /** A time of day, "22:00:00" both ways (see `CoreDateTimeText`); the range may cross midnight. */
   from: string;
   until: string;
 }
@@ -215,7 +251,7 @@ export interface UserPreferences {
   aiProvider: AiProviderName;
   /** `null` uses the provider's default model. */
   aiModel: string | null;
-  /** "08:30" or "08:30:00". */
+  /** A time of day, "08:30:00" both ways (see `CoreDateTimeText`). */
   morningBriefTime: string;
   eveningBriefTime: string;
   /** Master switch for reminders. */
@@ -242,7 +278,16 @@ export const LOCALE_CODES: Readonly<Record<LocaleName, LocaleCode>> = Object.fre
   english: "en",
 });
 
-/** Everything the interface can ask of the core and the desktop shell. */
+/** What a refused command sends back (see `CommandError` in the shell): a stable key and a readable message. */
+export interface CommandFailure {
+  key: string;
+  message: string;
+}
+
+/** Failures the user can fix in the capture or edit form; each has its own message (`error.<key>`). */
+export const USER_ERROR_KEYS = Object.freeze(["reminder_needs_time", "empty_task_title"] as const);
+
+/** Everything the interface can ask of the core and the desktop shell; a refused command rejects with a `BackendError`. */
 export interface TikiBackend {
   islandSnapshot(): Promise<IslandSnapshot>;
   moveTask(taskId: number, status: TaskStatus): Promise<void>;

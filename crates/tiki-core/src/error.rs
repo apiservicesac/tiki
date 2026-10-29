@@ -49,4 +49,28 @@ pub enum TikiError {
     Plugin(String),
 }
 
+impl TikiError {
+    /// Stable key of the failure, sent to the interface with the readable message so it can
+    /// show the user a translated text for the ones they can fix (`error.<key>`).
+    pub fn key(&self) -> &'static str {
+        match self {
+            TikiError::Io(_) => "io",
+            TikiError::Database(_) => "database",
+            TikiError::Migration(_) => "migration",
+            TikiError::LocaleCatalog(_) => "locale_catalog",
+            TikiError::UnknownValue { .. } => "unknown_value",
+            TikiError::NotFound { .. } => "not_found",
+            TikiError::UnsavedTask => "unsaved_task",
+            TikiError::UnsavedProject => "unsaved_project",
+            TikiError::EmptyProjectName => "empty_project_name",
+            TikiError::DuplicateProjectName(_) => "duplicate_project_name",
+            TikiError::EmptyTaskTitle => "empty_task_title",
+            TikiError::ReminderNeedsTime => "reminder_needs_time",
+            TikiError::Ai(_) => "ai",
+            TikiError::Calendar(_) => "calendar",
+            TikiError::Plugin(_) => "plugin",
+        }
+    }
+}
+
 pub type TikiResult<T> = Result<T, TikiError>;

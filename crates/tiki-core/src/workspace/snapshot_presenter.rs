@@ -1,12 +1,13 @@
 use chrono::NaiveDateTime;
 
 use super::{FocusSuggestion, IslandSnapshot, SnapshotItem, SnapshotSection, Urgency};
+use crate::agenda::AgendaBuilder;
 use crate::briefing::{
     BriefDetailFormatter, BriefItem, BriefMoment, BriefNarrator, DailyBrief, FocusPicker,
     FocusReason,
 };
 use crate::calendar::MeetingItem;
-use crate::domain::ProjectDirectory;
+use crate::domain::{ItemKind, ProjectDirectory};
 use crate::i18n::{DateFormatter, Translator};
 use crate::mood::Mood;
 
@@ -69,6 +70,10 @@ impl<'context> SnapshotPresenter<'context> {
             attention_count: brief.pressing_count() + brief.waiting.len(),
             due_count: brief.pressing_count(),
             waiting_count: brief.waiting.len(),
+            open_count: open_items
+                .iter()
+                .filter(|item| item.kind == ItemKind::Task)
+                .count(),
             delivered_today,
             closed_summary: self.translator.format(
                 "island.closed.summary",
@@ -88,9 +93,13 @@ impl<'context> SnapshotPresenter<'context> {
                 ],
             ),
             sections,
+            agenda: AgendaBuilder::new(self.translator).build(
+                &open_items,
+                &meetings.agenda,
+                brief.date,
+            ),
             open_items,
             focus: self.focus(brief, meetings),
-            meetings: meetings.agenda.clone(),
             narration: BriefNarrator::new(self.translator).narrate(brief, BriefMoment::Morning),
         }
     }
@@ -115,13 +124,15 @@ impl<'context> SnapshotPresenter<'context> {
     fn item(&self, item: &BriefItem, urgency: Urgency, brief: &DailyBrief) -> SnapshotItem {
         SnapshotItem {
             task_id: item.task_id,
+            kind: item.kind,
             title: item.title.clone(),
+            project_id: item.project_id,
             project_name: item.project_name.clone(),
             project_color: self.project_color(item),
             detail_label: BriefDetailFormatter::new(self.translator).label(item.detail, brief.date),
             priority: item.priority,
             tags: item.tags.clone(),
-            at: item.rings_at(),
+            at: item.remind_at,
             repeat: item.repeat(),
             urgency,
         }

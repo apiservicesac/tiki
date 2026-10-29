@@ -53,7 +53,8 @@ impl SchemaMigrations {
 
     /// The activity history: one row per thing that happened to an item, at local time.
     /// Deliveries made before it existed are recorded at the start of their delivery day,
-    /// oldest first, so the history keeps the order it had.
+    /// oldest first, so the history keeps the order it had. A reminder that rang is not a
+    /// delivery, so it gets none.
     const ITEM_EVENTS: &'static str = "
         CREATE TABLE item_events (
             id      INTEGER PRIMARY KEY,
@@ -68,7 +69,7 @@ impl SchemaMigrations {
 
         INSERT INTO item_events (item_id, at, kind)
         SELECT id, completed_on || ' 00:00:00', 'delivered' FROM tasks
-         WHERE status = 'done' AND completed_on IS NOT NULL
+         WHERE status = 'done' AND completed_on IS NOT NULL AND kind = 'task'
          ORDER BY completed_on, updated_at, id;
     ";
 
@@ -271,7 +272,9 @@ mod tests {
                 "INSERT INTO tasks (title, status, priority, completed_on, updated_at) VALUES
                     ('Segunda', 'done', 'normal', '2026-10-20', '2026-10-20 18:00:00'),
                     ('Primera', 'done', 'normal', '2026-10-20', '2026-10-20 10:00:00'),
-                    ('Abierta', 'to_do', 'normal', NULL, '2026-10-20 10:00:00');",
+                    ('Abierta', 'to_do', 'normal', NULL, '2026-10-20 10:00:00');
+                 INSERT INTO tasks (title, kind, status, priority, completed_on, updated_at) VALUES
+                    ('Sonó', 'reminder', 'done', 'normal', '2026-10-20', '2026-10-20 09:00:00');",
             )
             .unwrap();
 
