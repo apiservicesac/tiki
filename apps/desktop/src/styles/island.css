@@ -529,10 +529,12 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 
 .island-row:hover { background: var(--island-soft); }
 
+/* The project's color comes from the item; without a project the bar stays faint. */
 .island-row-bar {
   width: 4px;
   height: 30px;
   border-radius: 2px;
+  background: var(--island-faint);
 }
 
 /* The title opens the item; its context (project, #tags) goes under it. */
@@ -791,7 +793,7 @@ button.island-row-text {
   gap: 7px;
 }
 
-.tasks-group-dot { width: 7px; height: 7px; border-radius: 50%; }
+.tasks-group-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--island-faint); }
 .tasks-group-count { margin-left: auto; font-weight: 500; }
 
 /* 9. Agenda --------------------------------------------------------------------------- */

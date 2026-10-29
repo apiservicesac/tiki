@@ -217,7 +217,9 @@ export class TasksTabView {
 
   private groupHeader(group: ProjectGroup): HTMLElement {
     const dot = ElementFactory.create("i", { className: "tasks-group-dot" });
-    dot.style.background = group.color ?? "var(--island-faint)";
+    if (group.color !== null) {
+      dot.style.background = group.color;
+    }
     return ElementFactory.create("div", {
       className: "island-group tasks-group",
       children: [

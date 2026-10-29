@@ -183,8 +183,9 @@ export class ProjectPicker {
 
   private optionContent(option: ProjectPickerOption): HTMLElement[] {
     const dot = ElementFactory.create("span", { className: "picker-dot" });
-    dot.style.background = option.color ?? "transparent";
-    if (!option.color) {
+    if (option.color) {
+      dot.style.background = option.color;
+    } else {
       dot.classList.add("picker-dot-empty");
     }
     return [

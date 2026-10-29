@@ -42,10 +42,12 @@ export class ItemRow {
     });
   }
 
-  /** The project's color, or a faint bar for items without a project. */
+  /** The project's color; items without a project keep the stylesheet's faint bar. */
   colorBar(color: string | null): HTMLElement {
     const bar = ElementFactory.create("span", { className: "island-row-bar" });
-    bar.style.background = color ?? "var(--island-faint)";
+    if (color !== null) {
+      bar.style.background = color;
+    }
     return bar;
   }
 
