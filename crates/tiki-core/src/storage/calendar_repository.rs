@@ -68,6 +68,7 @@ impl<'connection> CalendarRepository<'connection> {
 
     /// Replaces the account's meetings between `from` and `to` with `meetings`, keeping
     /// whether each one was already announced. Meetings before `from` are past and dropped.
+    /// Run it inside `Database::transaction`, so a sync is saved whole or not at all.
     pub fn replace_meetings(
         &self,
         account_id: AccountId,
@@ -75,9 +76,8 @@ impl<'connection> CalendarRepository<'connection> {
         to: NaiveDateTime,
         meetings: &[Meeting],
     ) -> TikiResult<()> {
-        let transaction = self.connection.unchecked_transaction()?;
         for meeting in meetings {
-            transaction.execute(
+            self.connection.execute(
                 "INSERT INTO meetings (account_id, external_id, title, starts_at, ends_at, all_day, location, join_url)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
                  ON CONFLICT(account_id, external_id) DO UPDATE SET
@@ -102,16 +102,15 @@ impl<'connection> CalendarRepository<'connection> {
             .map(|meeting| meeting.external_id.clone())
             .collect();
         let kept_json = serde_json::to_string(&kept).unwrap_or_else(|_| "[]".to_owned());
-        transaction.execute(
+        self.connection.execute(
             "DELETE FROM meetings WHERE account_id = ?1 AND starts_at >= ?2 AND starts_at < ?3
                 AND external_id NOT IN (SELECT value FROM json_each(?4))",
             params![account_id.0, from, to, kept_json],
         )?;
-        transaction.execute(
+        self.connection.execute(
             "DELETE FROM meetings WHERE account_id = ?1 AND starts_at < ?2",
             params![account_id.0, from],
         )?;
-        transaction.commit()?;
         Ok(())
     }
 

@@ -52,9 +52,11 @@ impl<'context> CalendarBook<'context> {
         meetings: &[Meeting],
     ) -> TikiResult<()> {
         let (from, to) = self.window(today);
-        self.database
-            .calendar()
-            .replace_meetings(account_id, from, to, meetings)
+        self.database.transaction(|repositories| {
+            repositories
+                .calendar()
+                .replace_meetings(account_id, from, to, meetings)
+        })
     }
 
     /// The meetings of the Agenda: the window that starts `today`.

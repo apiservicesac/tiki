@@ -95,3 +95,30 @@ fn updating_a_project_that_was_never_saved_reports_it() {
         Err(TikiError::UnsavedProject)
     ));
 }
+
+#[test]
+fn a_failed_transaction_saves_nothing() {
+    let database = Database::open_in_memory().unwrap();
+    let result: tiki_core::TikiResult<()> = database.transaction(|repositories| {
+        repositories
+            .tasks()
+            .insert(&Task::new("A medias").unwrap())?;
+        Err(TikiError::EmptyTaskTitle)
+    });
+
+    assert!(result.is_err());
+    assert_eq!(database.tasks().list_open().unwrap().len(), 0);
+}
+
+#[test]
+fn a_transaction_saves_every_change_together() {
+    let database = Database::open_in_memory().unwrap();
+    database
+        .transaction(|repositories| {
+            repositories.tasks().insert(&Task::new("Uno").unwrap())?;
+            repositories.tasks().insert(&Task::new("Dos").unwrap())
+        })
+        .unwrap();
+
+    assert_eq!(database.tasks().list_open().unwrap().len(), 2);
+}
