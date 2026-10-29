@@ -240,6 +240,8 @@ export class ProjectsPanelView {
     if (project.openCount === 0) {
       return this.translator.text("projects.no_open");
     }
-    return this.translator.format("projects.open", { count: project.openCount });
+    return project.openCount === 1
+      ? this.translator.text("projects.open_one")
+      : this.translator.format("projects.open", { count: project.openCount });
   }
 }
