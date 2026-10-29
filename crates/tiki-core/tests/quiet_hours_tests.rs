@@ -1,8 +1,9 @@
 mod support;
 
 use chrono::NaiveTime;
-use support::SampleWorkspace;
+use support::{SampleWorkspace, TestDay, TimedWorkspace};
 use tiki_core::TikiSettings;
+use tiki_core::mood::Mood;
 use tiki_core::preferences::{QuietHours, UserPreferences};
 
 fn at(hour: u32, minute: u32) -> NaiveTime {
@@ -88,4 +89,13 @@ fn quiet_hours_accept_times_as_the_time_picker_writes_them() {
 
     let preferences: UserPreferences = serde_json::from_value(json).unwrap();
     assert_eq!(preferences.quiet_hours.from, at(23, 15));
+}
+
+#[test]
+fn tiki_sleeps_through_the_night_and_wakes_up_to_the_overdue_work() {
+    let workspace = TimedWorkspace::sample_at(TestDay::today().and_time(at(23, 0)));
+    assert_eq!(workspace.island_snapshot().unwrap().mood, Mood::Sleep);
+
+    let morning = workspace.at(TestDay::working_hours());
+    assert_eq!(morning.island_snapshot().unwrap().mood, Mood::Worried);
 }

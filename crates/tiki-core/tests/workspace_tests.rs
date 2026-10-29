@@ -19,7 +19,7 @@ fn sample_workspace() -> TikiWorkspace {
     TikiWorkspace::new(
         sample.database,
         TikiSettings::default(),
-        Box::new(FixedClock::new(TestDay::today())),
+        Box::new(FixedClock::at(TestDay::working_hours())),
     )
     .unwrap()
 }

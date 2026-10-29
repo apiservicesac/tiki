@@ -56,6 +56,7 @@ impl<'context> WorkspaceViews<'context> {
             minutes_to_next_meeting: next_meeting
                 .map(|meeting| (meeting.starts_at - now).num_minutes()),
             focus_mode: self.preferences.focus_mode,
+            quiet_hours: self.preferences.quiet_hours.covers(now.time()),
         });
         let delivered_today = self.database.activity().count_delivered_on(now.date())?;
         Ok(SnapshotPresenter::new(self.translator, &projects).present(
