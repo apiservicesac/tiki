@@ -7,6 +7,7 @@ export class CoreDateTimeText {
   private static readonly MINUTES_LENGTH = "09:30".length;
   private static readonly PICKER_LENGTH = "2026-10-29T09:30".length;
   private static readonly WHOLE_MINUTE = ":00";
+  private static readonly START_OF_DAY = "T00:00:00";
 
   /** "08:30" from a time of day, for a time picker. */
   static clock(timeOfDay: string): string {
@@ -26,5 +27,10 @@ export class CoreDateTimeText {
   /** The moment a date-and-time picker shows, as the core expects it; `null` when empty. */
   static fromPicker(value: string): string | null {
     return value === "" ? null : `${value}${CoreDateTimeText.WHOLE_MINUTE}`;
+  }
+
+  /** The start of a day the core wrote as "2026-10-23", in local time. */
+  static localDay(isoDate: string): Date {
+    return new Date(`${isoDate}${CoreDateTimeText.START_OF_DAY}`);
   }
 }

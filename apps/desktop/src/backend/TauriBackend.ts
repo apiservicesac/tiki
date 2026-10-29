@@ -2,7 +2,7 @@ import { convertFileSrc, invoke, type InvokeArgs } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { SHELL_EVENTS } from "../config/uiConfig";
 import { BackendError } from "./BackendError";
-import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
+import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse, WrittenSessionNotes } from "../ai";
 import type {
   AiProviderStatus,
   AvailableUpdate,
@@ -173,6 +173,19 @@ export class TauriBackend implements TikiBackend {
 
   sessionStorage(): Promise<SessionStorage> {
     return this.call<SessionStorage>("session_storage");
+  }
+
+  async saveSessionNotes(sessionId: number, notes: WrittenSessionNotes): Promise<void> {
+    const { tasks, ...written } = notes;
+    await this.call("save_session_notes", { sessionId, notes: written, tasks });
+  }
+
+  applySessionTask(actionItemId: number): Promise<number> {
+    return this.call<number>("apply_session_task", { actionItemId });
+  }
+
+  onTranscriptReady(handler: (sessionId: number) => void): Promise<() => void> {
+    return listen<number>(SHELL_EVENTS.transcriptReady, (event) => handler(event.payload));
   }
 
   mediaUrl(mediaPath: string): string {

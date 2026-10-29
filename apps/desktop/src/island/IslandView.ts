@@ -356,7 +356,7 @@ export class IslandView {
         return this.recordingPrompt.render(handlers);
       case "session":
         return state.openSession
-          ? this.sessionDetail.render(state.openSession, handlers)
+          ? this.sessionDetail.render(state.openSession, { aiReady: this.assistantReady, writingNotes: state.writingNotes }, handlers)
           : this.tabContent(state, handlers);
       case "tabs":
         return this.tabContent(state, handlers);

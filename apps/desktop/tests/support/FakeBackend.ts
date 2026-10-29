@@ -1,4 +1,4 @@
-import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../../src/ai";
+import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse, WrittenSessionNotes } from "../../src/ai";
 import type {
   AiProviderStatus,
   AlertDelivery,
@@ -267,6 +267,10 @@ export class FakeBackend implements TikiBackend {
     ]],
   ]);
   readonly deletedSessions: number[] = [];
+  /** Notes saved per session, and the proposed tasks applied, in order. */
+  readonly savedSessionNotes = new Map<number, WrittenSessionNotes>();
+  readonly appliedSessionTasks: number[] = [];
+  private transcriptReadyHandler: ((sessionId: number) => void) | null = null;
   readonly retriedTranscriptions: number[] = [];
   private modelDownloadHandler: ((progress: ModelDownload) => void) | null = null;
 
@@ -283,8 +287,16 @@ export class FakeBackend implements TikiBackend {
       summary,
       language: "es",
       transcript: this.sessionTranscripts.get(sessionId) ?? [],
-      notes: null,
-      actionItems: [],
+      notes: this.savedSessionNotes.get(sessionId) ?? null,
+      actionItems: (this.savedSessionNotes.get(sessionId)?.tasks ?? []).map((task, index) => {
+        const actionItemId = index + 1;
+        return {
+          actionItemId,
+          title: task.title,
+          dueDate: task.dueDate,
+          taskId: this.appliedSessionTasks.includes(actionItemId) ? FakeBackend.taskOf(actionItemId) : null,
+        };
+      }),
       mediaPath: summary.hasMedia ? `C:\\Tiki\\sessions\\${sessionId}\\session.mp4` : null,
     };
   }
@@ -307,6 +319,33 @@ export class FakeBackend implements TikiBackend {
 
   async sessionStorage(): Promise<SessionStorage> {
     return { mediaBytes: 24_000_000, mediaDays: 90 };
+  }
+
+  async saveSessionNotes(sessionId: number, notes: WrittenSessionNotes): Promise<void> {
+    this.savedSessionNotes.set(sessionId, notes);
+  }
+
+  async applySessionTask(actionItemId: number): Promise<number> {
+    this.appliedSessionTasks.push(actionItemId);
+    return FakeBackend.taskOf(actionItemId);
+  }
+
+  /** The task a proposed task becomes, numbered after the sample tasks. */
+  private static taskOf(actionItemId: number): number {
+    const firstFreeTaskId = 100;
+    return firstFreeTaskId + actionItemId;
+  }
+
+  async onTranscriptReady(handler: (sessionId: number) => void): Promise<() => void> {
+    this.transcriptReadyHandler = handler;
+    return () => {
+      this.transcriptReadyHandler = null;
+    };
+  }
+
+  /** Simulates the shell saying a session's transcript is ready. */
+  reportTranscriptReady(sessionId: number): void {
+    this.transcriptReadyHandler?.(sessionId);
   }
 
   mediaUrl(mediaPath: string): string {

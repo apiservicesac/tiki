@@ -1,7 +1,9 @@
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
+use tiki_core::domain::TaskId;
 use tiki_core::sessions::{
-    RecordingMode, SessionDetails, SessionId, SessionSearchHit, SessionSummary,
+    ActionItemId, ProposedSessionTask, RecordingMode, SessionDetails, SessionId, SessionNotes,
+    SessionSearchHit, SessionSummary,
 };
 
 use super::command_error::{CommandError, CommandResult};
@@ -127,5 +129,32 @@ pub fn session_storage(state: State<'_, AppState>) -> CommandResult<SessionStora
             media_bytes: workspace.sessions().media_bytes()?,
             media_days: workspace.preferences().session_media_days,
         })
+    })?)
+}
+
+/// Saves the notes the AI wrote for a session and the tasks they propose.
+#[tauri::command]
+pub fn save_session_notes(
+    app: AppHandle,
+    session_id: i64,
+    notes: SessionNotes,
+    tasks: Vec<ProposedSessionTask>,
+) -> CommandResult<()> {
+    app.state::<AppState>().with_workspace(|workspace| {
+        workspace
+            .sessions()
+            .save_notes(SessionId(session_id), &notes, &tasks)
+    })?;
+    ShellEvent::RecordingChanged.emit(&app);
+    Ok(())
+}
+
+/// Turns a task the AI proposed into a task of the user, pointing back to its session.
+#[tauri::command]
+pub fn apply_session_task(state: State<'_, AppState>, action_item_id: i64) -> CommandResult<TaskId> {
+    Ok(state.with_workspace(|workspace| {
+        workspace
+            .sessions()
+            .apply_action_item(ActionItemId(action_item_id))
     })?)
 }

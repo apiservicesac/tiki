@@ -107,4 +107,22 @@ export class HarnessPieces {
   static answerSkill(): string {
     return "When answering, refer to items by their title; use their taskId only inside actions.";
   }
+
+  static sessionNotesSkill(): string {
+    return [
+      "Job: write the notes of a recorded call or meeting from its transcript. Lines from \"You (the user)\" are the user's own words; \"Others\" are everyone else.",
+      "- summary: three to five sentences on what the session was about and how it ended.",
+      "- keyPoints: the facts and topics worth remembering, one short line each.",
+      "- decisions: what was agreed or decided, one short line each; empty when nothing was decided.",
+      "- tasks: only what the user (not others) said they would do or was asked to do; a short title in the user's language and dueDate (YYYY-MM-DD) when a day was said, resolved against the session's start; otherwise null. Empty when there is none.",
+      "Use only what the transcript says; it may have recognition mistakes, so do not quote garbled words.",
+    ].join("\n");
+  }
+
+  static joinSessionNotesSkill(): string {
+    return [
+      "Job: the notes of a long session were written in parts, in order. Join them into one set of notes with the same fields.",
+      "Write one summary for the whole session, keep every distinct key point, decision and task once, and drop repeats.",
+    ].join("\n");
+  }
 }

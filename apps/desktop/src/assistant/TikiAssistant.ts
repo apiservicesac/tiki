@@ -1,14 +1,16 @@
 import {
   CommandInterpreter,
   DayAdvisor,
+  SessionNotesAdvisor,
   TikiAi,
   type AdvisorLanguage,
   type AiModelOption,
   type AiProviderName,
   type CommandReply,
   type InterpretedCapture,
+  type WrittenSessionNotes,
 } from "../ai";
-import { AI_PROVIDERS, type LocaleName, type TikiBackend, type UserPreferences } from "../backend/contracts";
+import { AI_PROVIDERS, type LocaleName, type SessionDetails, type TikiBackend, type UserPreferences } from "../backend/contracts";
 
 export type ConfiguredProviders = Record<AiProviderName, boolean>;
 
@@ -67,6 +69,18 @@ export class TikiAssistant {
   async summarizeDay(preferences: UserPreferences): Promise<string> {
     const context = await this.backend.assistantContext();
     return this.advisor(preferences).summarizeDay(context, ADVISOR_LANGUAGES[preferences.locale]);
+  }
+
+  /** The notes of a session from its transcript, with the projects' notes as context. */
+  async sessionNotes(details: SessionDetails, preferences: UserPreferences): Promise<WrittenSessionNotes> {
+    const context = await this.backend.assistantContext();
+    const advisor = new SessionNotesAdvisor(this.ai.model(preferences.aiProvider, preferences.aiModel));
+    return advisor.write(details.transcript, {
+      title: details.summary.title,
+      startedAt: details.summary.startedAt,
+      language: ADVISOR_LANGUAGES[preferences.locale],
+      projects: context.projects,
+    });
   }
 
   private advisor(preferences: UserPreferences): DayAdvisor {

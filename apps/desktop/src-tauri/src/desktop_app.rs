@@ -89,6 +89,8 @@ impl TikiDesktopApp {
                 commands::session_commands::delete_session,
                 commands::session_commands::retry_transcription,
                 commands::session_commands::session_storage,
+                commands::session_commands::save_session_notes,
+                commands::session_commands::apply_session_task,
                 commands::ai_commands::ai_status,
                 commands::ai_commands::save_ai_key,
                 commands::ai_commands::remove_ai_key,

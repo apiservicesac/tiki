@@ -84,6 +84,8 @@ export interface IslandState {
   openSession: OpenSession | null;
   /** The transcription model downloading; `null` when it is not. */
   modelDownload: ModelDownload | null;
+  /** The session whose notes the AI is writing. */
+  writingNotes: number | null;
 }
 
 /** How the island starts, before it knows where it sits and what the day holds. */
@@ -107,4 +109,5 @@ export const ISLAND_STATE_DEFAULTS: Readonly<Omit<IslandState, "placement" | "sn
   sessionHits: null,
   openSession: null,
   modelDownload: null,
+  writingNotes: null,
 });

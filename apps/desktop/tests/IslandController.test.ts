@@ -697,6 +697,13 @@ describe("IslandController", () => {
     expect(controller.currentState.panel).toBe("tabs");
   });
 
+  it("keeps only the transcript of a session without an AI key", async () => {
+    backend.reportTranscriptReady(2);
+    await controller.openSession(2);
+    expect(backend.savedSessionNotes.size).toBe(0);
+    expect(root.querySelector(".session-notes .session-note")?.textContent).toBe("Con una clave de IA, Tiki escribe el resumen, las decisiones y las tareas de cada sesión.");
+  });
+
   it("says how far the transcription model download got", async () => {
     controller.selectTab("sessions");
     backend.reportModelDownload({ downloadedBytes: 35, totalBytes: 100 });
@@ -760,6 +767,43 @@ describe("IslandController with the AI assistant", () => {
     typeCapture(root, text);
     await controller.submitCapture();
   };
+
+  const sessionNotes = {
+    summary: "Se revisó la facturación de octubre.",
+    keyPoints: ["Octubre cerrado"],
+    decisions: ["Enviar el informe mañana"],
+    tasks: [{ title: "Enviar el informe", dueDate: "2026-10-22" }],
+  };
+
+  it("writes a session's notes as soon as its transcript is ready", async () => {
+    backend.aiShell = new FakeShell(claudeReads(sessionNotes));
+    backend.reportTranscriptReady(2);
+    await vi.waitFor(() => expect(backend.savedSessionNotes.get(2)?.summary).toBe("Se revisó la facturación de octubre."));
+    expect(JSON.stringify(backend.aiShell.lastBody())).toContain("Mañana envío el informe");
+  });
+
+  it("does not write notes by itself when the user turned that off, but writes them on request", async () => {
+    await controller.changePreferences({ ...backend.savedPreferences, sessionNotesAutomatic: false });
+    backend.aiShell = new FakeShell(claudeReads(sessionNotes));
+    backend.reportTranscriptReady(2);
+    await controller.refresh();
+    expect(backend.savedSessionNotes.size).toBe(0);
+
+    await controller.openSession(2);
+    root.querySelector<HTMLButtonElement>(".session-write-notes")?.click();
+    await vi.waitFor(() => expect(backend.savedSessionNotes.has(2)).toBe(true));
+  });
+
+  it("shows the notes and creates a proposed task with one click", async () => {
+    await backend.saveSessionNotes(2, sessionNotes);
+    await controller.openSession(2);
+    expect(root.querySelector(".session-summary")?.textContent).toBe("Se revisó la facturación de octubre.");
+    expect([...root.querySelectorAll(".session-notes h4")].map((title) => title.textContent)).toEqual(["Puntos clave", "Decisiones", "Tareas propuestas"]);
+
+    root.querySelector<HTMLButtonElement>(".session-task-apply")?.click();
+    await vi.waitFor(() => expect(root.querySelector(".session-task-created")).not.toBeNull());
+    expect(backend.appliedSessionTasks).toEqual([1]);
+  });
 
   it("fills the fields of an item with AI and saves them on the second Enter, learning from changes", async () => {
     backend.aiShell = new FakeShell(captureReply(item({

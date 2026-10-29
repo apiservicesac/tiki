@@ -1,4 +1,5 @@
 import { ActionApplier } from "../assistant/ActionApplier";
+import { SessionNotesFlow } from "../assistant/SessionNotesFlow";
 import { AssistantActions } from "../assistant/AssistantActions";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
 import type { IslandSnapshot, MoodName, TikiBackend, UserPreferences } from "../backend/contracts";
@@ -42,6 +43,7 @@ export class IslandController {
   private readonly alerts: AlertFlow;
   private readonly recording: RecordingFlow;
   private readonly sessions: SessionsFlow;
+  private readonly sessionNotes: SessionNotesFlow;
   private readonly stopListening: Array<() => void> = [];
   /** The window changes size when the island moves to another orientation. */
   private readonly redrawOnResize = () => this.render();
@@ -76,6 +78,7 @@ export class IslandController {
     this.alerts = new AlertFlow(store, this.modes, this.items, this.assistantActions);
     this.recording = new RecordingFlow(backend, store, this.modes);
     this.sessions = new SessionsFlow(backend, store);
+    this.sessionNotes = new SessionNotesFlow(backend, store, assistant);
   }
 
   get currentState(): Readonly<IslandState> {
@@ -95,7 +98,7 @@ export class IslandController {
       await this.backend.listen(SHELL_EVENTS.inCallChanged, () => void this.refresh()),
       await this.backend.listen(SHELL_EVENTS.recordingChanged, () => void this.refresh()),
       await this.backend.listen(SHELL_EVENTS.toggleRecording, () => void this.recording.toggle()),
-      await this.backend.listen(SHELL_EVENTS.transcriptReady, () => void this.refresh()),
+      await this.backend.onTranscriptReady((sessionId) => void this.sessionNotes.transcriptReady(sessionId)),
       await this.backend.onModelDownload((progress) => this.sessions.followDownload(progress)),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
@@ -229,6 +232,8 @@ export class IslandController {
       onSearchSessions: (text) => void this.sessions.search(text),
       onRetryTranscription: (sessionId) => void this.sessions.retry(sessionId),
       onDeleteSession: (sessionId) => void this.sessions.delete(sessionId),
+      onWriteSessionNotes: (sessionId) => void this.sessionNotes.write(sessionId),
+      onApplySessionTask: (actionItemId) => void this.sessionNotes.applyTask(actionItemId),
       onDeliverTask: (taskId) => void this.items.deliver(taskId),
       onOpenTask: (taskId) => void this.items.open(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),

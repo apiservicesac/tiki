@@ -2,7 +2,15 @@
  * Shapes the Rust core sends to the interface (see `tiki_core`).
  * Field names are camelCase because the core serializes them that way.
  */
-import type { AdvisorContext, AiProviderName, HarnessLesson, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
+import type {
+  AdvisorContext,
+  AiProviderName,
+  HarnessLesson,
+  InterpretedCapture,
+  ProxiedRequest,
+  ProxiedResponse,
+  WrittenSessionNotes,
+} from "../ai";
 import type { LocaleCode } from "../i18n/LocaleCode";
 
 export type MoodName =
@@ -447,6 +455,12 @@ export interface TikiBackend {
   deleteSession(sessionId: number): Promise<void>;
   retryTranscription(sessionId: number): Promise<void>;
   sessionStorage(): Promise<SessionStorage>;
+  /** Saves the notes the AI wrote for a session and the tasks they propose. */
+  saveSessionNotes(sessionId: number, notes: WrittenSessionNotes): Promise<void>;
+  /** Turns a proposed task into a task of the user; returns its id. */
+  applySessionTask(actionItemId: number): Promise<number>;
+  /** Calls `handler` with the id of each session whose transcript is ready; returns a function that stops listening. */
+  onTranscriptReady(handler: (sessionId: number) => void): Promise<() => void>;
   /** The URL the web view plays a session's media from. */
   mediaUrl(mediaPath: string): string;
   /** Calls `handler` with each step of the model download; returns a function that stops listening. */

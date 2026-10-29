@@ -1,13 +1,24 @@
-import type { SessionStatus, TranscriptSegment } from "../backend/contracts";
+import type { SessionActionItem, SessionDetails, SessionNotes, SessionStatus, TranscriptSegment } from "../backend/contracts";
+import { CoreDateTimeText } from "../backend/CoreDateTimeText";
 import { UI_CONFIG } from "../config/uiConfig";
 import { DurationText } from "../dom/DurationText";
 import { ElementFactory } from "../dom/ElementFactory";
+import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
 import type { OpenSession } from "./islandState";
 
 export interface SessionDetailHandlers {
   onDeleteSession: (sessionId: number) => void;
   onRetryTranscription: (sessionId: number) => void;
+  onWriteSessionNotes: (sessionId: number) => void;
+  onApplySessionTask: (actionItemId: number) => void;
+}
+
+/** What the notes section needs to know about the AI. */
+export interface SessionNotesState {
+  aiReady: boolean;
+  /** The session whose notes the AI is writing now. */
+  writingNotes: number | null;
 }
 
 /** A transcript line on screen, with the stretch of the media it covers. */
@@ -17,9 +28,11 @@ interface ShownLine {
 }
 
 /**
- * One recorded session: its player, the transcript labelled "You" and "Others" that follows
- * the player (the line being said is highlighted, and clicking a line plays from there), and
- * deleting it. The player is kept between redraws, so a refresh never stops playback.
+ * One recorded session: its player, the AI notes (summary, key points, decisions and the
+ * proposed tasks, each created with one click), the transcript labelled "You" and "Others"
+ * that follows the player (the line being said is highlighted, and clicking a line plays
+ * from there), and deleting it. The player is kept between redraws, so a refresh never
+ * stops playback.
  */
 export class SessionDetailView {
   private player: { sessionId: number; element: HTMLMediaElement } | null = null;
@@ -30,7 +43,7 @@ export class SessionDetailView {
 
   constructor(private readonly translator: Translator) {}
 
-  render(session: OpenSession, handlers: SessionDetailHandlers): HTMLElement {
+  render(session: OpenSession, ai: SessionNotesState, handlers: SessionDetailHandlers): HTMLElement {
     const { summary, transcript } = session.details;
     const player = session.mediaUrl === null ? null : this.playerOf(summary.sessionId, summary.mode === "audio_and_video", session.mediaUrl);
     this.lines = [];
@@ -57,6 +70,7 @@ export class SessionDetailView {
           ],
         }),
         player ?? ElementFactory.create("p", { className: "session-note", text: this.translator.text("session.media_removed") }),
+        this.notes(session.details, ai, handlers),
         transcriptList,
         this.actions(summary.sessionId, summary.status, handlers),
       ],
@@ -130,6 +144,71 @@ export class SessionDetailView {
     const nowMs = DurationText.milliseconds(this.player?.element.currentTime ?? 0);
     const current = this.lines.filter((line) => line.startMs <= nowMs).at(-1);
     this.lines.forEach((line) => line.element.classList.toggle("session-line-now", line === current));
+  }
+
+  /** The AI notes, the AI writing them, a button to write them, or why there are none. */
+  private notes(details: SessionDetails, ai: SessionNotesState, handlers: SessionDetailHandlers): HTMLElement {
+    const sessionId = details.summary.sessionId;
+    const section = (children: HTMLElement[]) => ElementFactory.create("div", { className: "session-notes", children });
+    if (details.notes) {
+      return section(this.writtenNotes(details.notes, details.actionItems, handlers));
+    }
+    if (details.summary.status !== "ready" || details.transcript.length === 0) {
+      return section([]);
+    }
+    if (ai.writingNotes === sessionId) {
+      return section([ElementFactory.create("p", { className: "session-note", attributes: { role: "status" }, text: this.translator.text("session.notes.writing") })]);
+    }
+    if (!ai.aiReady) {
+      return section([ElementFactory.create("p", { className: "session-note", text: this.translator.text("session.notes.without_ai") })]);
+    }
+    return section([ElementFactory.textButton({
+      className: "settings-button session-write-notes",
+      text: this.translator.text("session.notes.write"),
+    }, () => handlers.onWriteSessionNotes(sessionId))]);
+  }
+
+  private writtenNotes(notes: SessionNotes, items: SessionActionItem[], handlers: SessionDetailHandlers): HTMLElement[] {
+    const list = (titleKey: string, lines: string[]) => lines.length === 0 ? [] : [
+      ElementFactory.create("h4", { text: this.translator.text(titleKey) }),
+      ElementFactory.create("ul", { children: lines.map((line) => ElementFactory.create("li", { text: line })) }),
+    ];
+    return [
+      ElementFactory.create("p", { className: "session-summary", text: notes.summary }),
+      ...list("session.notes.key_points", notes.keyPoints),
+      ...list("session.notes.decisions", notes.decisions),
+      ...(items.length === 0 ? [] : [
+        ElementFactory.create("h4", { text: this.translator.text("session.notes.tasks") }),
+        ElementFactory.create("div", { className: "session-tasks", children: items.map((item) => this.proposedTask(item, handlers)) }),
+      ]),
+    ];
+  }
+
+  /** A task the AI proposed: created with one click, then marked as created. */
+  private proposedTask(item: SessionActionItem, handlers: SessionDetailHandlers): HTMLElement {
+    const due = item.dueDate === null
+      ? []
+      : [ElementFactory.create("small", { text: this.dueLabel(item.dueDate) })];
+    const action = item.taskId === null
+      ? ElementFactory.textButton({
+        className: "settings-button settings-button-quiet session-task-apply",
+        text: this.translator.text("session.notes.create_task"),
+      }, () => handlers.onApplySessionTask(item.actionItemId))
+      : ElementFactory.create("span", {
+        className: "session-task-created",
+        children: [ElementFactory.fromTrustedMarkup("island-row-check", ICONS.check), document.createTextNode(this.translator.text("session.notes.task_created"))],
+      });
+    return ElementFactory.create("div", {
+      className: "session-task",
+      attributes: { "data-action-item-id": String(item.actionItemId) },
+      children: [ElementFactory.create("span", { className: "session-task-title", text: item.title }), ...due, action],
+    });
+  }
+
+  /** "vie 23" / "Fri 23" for a due date the AI read. */
+  private dueLabel(isoDate: string): string {
+    return new Intl.DateTimeFormat(this.translator.localeCode, { weekday: "short", day: "numeric" })
+      .format(CoreDateTimeText.localDay(isoDate));
   }
 
   private statusNote(status: SessionStatus): string {

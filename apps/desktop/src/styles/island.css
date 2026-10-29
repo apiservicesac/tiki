@@ -1354,6 +1354,36 @@ button.island-row-text {
 
 .session-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
+/* The AI notes: summary, key points, decisions and the proposed tasks. */
+.session-notes { display: grid; gap: 6px; }
+.session-notes:empty { display: none; }
+.session-summary { margin: 0; font-size: var(--text-md); line-height: 1.45; }
+
+.session-notes h4 {
+  margin: 4px 0 0;
+  font: 600 var(--text-label) var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--island-faint);
+}
+
+.session-notes ul { margin: 0; padding-left: 18px; font-size: var(--text-sm); color: var(--island-text); }
+.session-tasks { display: grid; gap: 4px; }
+
+.session-task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--island-soft);
+  font-size: var(--text-sm);
+}
+
+.session-task-title { flex: 1; }
+.session-task small { color: var(--island-muted); }
+.session-task-created { display: inline-flex; align-items: center; gap: 4px; color: var(--good); font-weight: 600; }
+
 /* 18. Left and right edges ------------------------------------------------------------ */
 /*
  * The island is a column. The folded notch stacks Tiki and the count bubbles (rotated text
