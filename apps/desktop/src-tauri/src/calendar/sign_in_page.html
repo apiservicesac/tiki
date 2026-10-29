@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiki</title>
+<style>
+  :root { --bg: #111216; --card: #0a0a0d; --text: #f5f6f8; --muted: #a5abb5; --eye: {{eye}}; }
+  @media (prefers-color-scheme: light) { :root { --bg: #f3f4f7; --text: #12161c; --muted: #566071; } }
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; place-items: center; background: var(--bg); color: var(--text); font: 16px/1.5 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
+  main { display: grid; justify-items: center; gap: 18px; text-align: center; padding: 24px; }
+  .face { display: flex; gap: 14px; align-items: center; justify-content: center; width: 132px; height: 64px; border-radius: 32px; background: var(--card); box-shadow: 0 14px 40px -12px var(--eye); }
+  .face span { width: 13px; height: 24px; border-radius: 7px; background: var(--eye); box-shadow: 0 0 8px var(--eye); }
+  h1 { margin: 0; font-size: 24px; font-weight: 700; }
+  p { margin: 0; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <div class="face" aria-hidden="true"><span></span><span></span></div>
+  <h1>{{title}}</h1>
+  <p>{{hint}}</p>
+</main>
+<script>setTimeout(() => window.close(), {{close_after_ms}});</script>
+</body>
+</html>

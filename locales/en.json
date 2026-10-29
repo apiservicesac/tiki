@@ -404,7 +404,13 @@
     "focus.free_time": "{minutes} min free before “{meeting}”",
     "focus.reason_with_free_time": "{reason} · {free}",
 
-    "calendar.signed_in_page": "Done: your calendar is connected. You can go back to Tiki.",
+    "calendar.sign_in.connected": "Calendar connected",
+
+    "calendar.sign_in.connected_hint": "You can close this tab.",
+
+    "calendar.sign_in.failed": "Could not connect",
+
+    "calendar.sign_in.failed_hint": "Go back to Tiki and try again.",
 
     "date.long": "{weekday}, {month} {day}",
     "date.short": "{weekday_short} {day}",

@@ -404,7 +404,13 @@
     "focus.free_time": "{minutes} min libres antes de «{meeting}»",
     "focus.reason_with_free_time": "{reason} · {free}",
 
-    "calendar.signed_in_page": "Listo: tu calendario quedó conectado. Ya puedes volver a Tiki.",
+    "calendar.sign_in.connected": "Calendario conectado",
+
+    "calendar.sign_in.connected_hint": "Ya puedes cerrar esta pestaña.",
+
+    "calendar.sign_in.failed": "No se pudo conectar",
+
+    "calendar.sign_in.failed_hint": "Vuelve a Tiki e inténtalo de nuevo.",
 
     "date.long": "{weekday} {day} de {month}",
     "date.short": "{weekday_short} {day}",

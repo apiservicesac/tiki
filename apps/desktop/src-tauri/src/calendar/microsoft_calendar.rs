@@ -4,6 +4,8 @@ use tiki_core::calendar::Meeting;
 use tiki_core::{TikiError, TikiResult};
 use url::Url;
 
+use super::provider_answer::ProviderAnswer;
+
 /// Reads the meetings of a Microsoft 365 or Outlook.com calendar (Microsoft Graph).
 pub struct MicrosoftCalendar<'http> {
     http: &'http reqwest::Client,
@@ -74,17 +76,15 @@ impl<'http> MicrosoftCalendar<'http> {
         let mut next = Some(url.to_string());
         let mut meetings = Vec::new();
         while let Some(page_url) = next {
-            let body = self
+            let response = self
                 .http
                 .get(&page_url)
                 .bearer_auth(access_token)
                 .header("Prefer", "outlook.timezone=\"UTC\"")
                 .send()
                 .await
-                .map_err(|error| Self::error(&error))?
-                .error_for_status()
-                .map_err(|error| Self::error(&error))?
-                .text()
+                .map_err(|error| Self::error(&error))?;
+            let body = ProviderAnswer::body(response)
                 .await
                 .map_err(|error| Self::error(&error))?;
             let page: EventPage =

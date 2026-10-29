@@ -5,6 +5,7 @@ use tiki_core::{TikiError, TikiResult};
 use url::Url;
 
 use super::microsoft_calendar::local_from_rfc3339;
+use super::provider_answer::ProviderAnswer;
 
 /// Reads the meetings of the calendars a Google account shows (Google Calendar API).
 pub struct GoogleCalendar<'http> {
@@ -169,16 +170,14 @@ impl<'http> GoogleCalendar<'http> {
         access_token: &str,
         url: String,
     ) -> TikiResult<T> {
-        let body = self
+        let response = self
             .http
             .get(url)
             .bearer_auth(access_token)
             .send()
             .await
-            .map_err(|error| Self::error(&error))?
-            .error_for_status()
-            .map_err(|error| Self::error(&error))?
-            .text()
+            .map_err(|error| Self::error(&error))?;
+        let body = ProviderAnswer::body(response)
             .await
             .map_err(|error| Self::error(&error))?;
         serde_json::from_str(&body).map_err(|error| Self::error(&error))

@@ -10,6 +10,8 @@ use url::Url;
 use super::loopback_receiver::LoopbackReceiver;
 use super::oauth_client::OAuthClient;
 use super::pkce::Pkce;
+use super::provider_answer::ProviderAnswer;
+use super::sign_in_page::SignInPages;
 
 /// What a token endpoint answers.
 #[derive(Debug, Deserialize)]
@@ -46,7 +48,7 @@ impl SignIn {
         &self,
         app: &AppHandle,
         client: OAuthClient,
-        done_page: String,
+        pages: SignInPages,
     ) -> TikiResult<SignedIn> {
         let pkce = Pkce::new().map_err(|error| Self::error(&error))?;
         let receiver = LoopbackReceiver::bind()?;
@@ -82,7 +84,7 @@ impl SignIn {
 
         let state = pkce.state.clone();
         let code = tauri::async_runtime::spawn_blocking(move || {
-            receiver.wait_for_code(&state, Self::TIMEOUT, &done_page)
+            receiver.wait_for_code(&state, Self::TIMEOUT, &pages)
         })
         .await
         .map_err(|error| Self::error(&error))?
@@ -139,13 +141,9 @@ impl SignIn {
             .send()
             .await
             .map_err(|error| Self::error(&error))?;
-        let status = response.status();
-        let body = response.text().await.map_err(|error| Self::error(&error))?;
-        if !status.is_success() {
-            return Err(TikiError::Calendar(format!(
-                "sign-in refused ({status}): {body}"
-            )));
-        }
+        let body = ProviderAnswer::body(response)
+            .await
+            .map_err(|refusal| TikiError::Calendar(format!("sign-in {refusal}")))?;
         serde_json::from_str(&body).map_err(|error| Self::error(&error))
     }
 

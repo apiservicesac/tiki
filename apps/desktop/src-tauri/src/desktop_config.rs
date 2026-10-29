@@ -22,6 +22,8 @@ impl DesktopConfig {
     pub const HORIZONTAL_WINDOW_SIZE: (f64, f64) = (860.0, 680.0);
     pub const VERTICAL_WINDOW_SIZE: (f64, f64) = (520.0, 860.0);
     /// How often the shell checks whether the pointer is over the island.
+    /// The page that confirms a calendar sign-in tries to close itself after this long.
+    pub const SIGN_IN_PAGE_CLOSE_AFTER: Duration = Duration::from_millis(2_500);
     pub const CURSOR_POLL_INTERVAL: Duration = Duration::from_millis(30);
     /// How often the shell asks the core whether a brief notification is due.
     pub const REMINDER_CHECK_INTERVAL: Duration = Duration::from_secs(60);
