@@ -120,6 +120,17 @@ export interface TikiAlert {
   link: string | null;
 }
 
+/** Whether an alert chimes and reaches Windows, as the core decided (see `AlertDelivery`). */
+export interface AlertDelivery {
+  sound: boolean;
+  windowsNotification: boolean;
+}
+
+/** An alert as the shell delivers it: with how it reaches the user (see `DueAlert`). */
+export interface DueAlert extends TikiAlert {
+  delivery: AlertDelivery;
+}
+
 /** A meeting copied from a connected calendar (see `MeetingItem` in the core). */
 export interface MeetingItem {
   title: string;
@@ -272,7 +283,7 @@ export interface TikiBackend {
   /** Tells the shell which part of the window is the island; the rest lets clicks through. */
   setHitArea(area: HitArea): Promise<void>;
   /** Calls `handler` with each alert the shell delivers; returns a function that stops listening. */
-  onAlert(handler: (brief: TikiAlert) => void): Promise<() => void>;
+  onAlert(handler: (alert: DueAlert) => void): Promise<() => void>;
   /** Calls `handler` whenever the shell emits `eventName`; returns a function that stops listening. */
   listen(eventName: string, handler: () => void): Promise<() => void>;
 }
