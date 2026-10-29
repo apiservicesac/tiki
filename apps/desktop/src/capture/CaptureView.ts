@@ -1,5 +1,5 @@
 import type { InterpretedCapture, ProposedAction } from "../ai";
-import { ProposedActionsView, type ApplyAction } from "../assistant/ProposedActionsView";
+import { ProposedActionsView, type ApplyAction } from "./ProposedActionsView";
 import { ITEM_KINDS, type ItemKind, type Priority, type ProjectSummary, type Repeat } from "../backend/contracts";
 import { CoreDateTimeText } from "../backend/CoreDateTimeText";
 import { UI_CONFIG } from "../config/uiConfig";
