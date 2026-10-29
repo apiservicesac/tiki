@@ -12,6 +12,7 @@ import type {
   CaptureLesson,
   ProjectChange,
   ProjectSummary,
+  RecordingMode,
   DeliveredItem,
   DueAlert,
   HitArea,
@@ -127,6 +128,22 @@ export class TauriBackend implements TikiBackend {
 
   async syncCalendars(): Promise<void> {
     await this.call("sync_calendars");
+  }
+
+  async startRecording(mode: RecordingMode): Promise<void> {
+    await this.call("start_recording", { mode });
+  }
+
+  async pauseRecording(): Promise<void> {
+    await this.call("pause_recording");
+  }
+
+  async resumeRecording(): Promise<void> {
+    await this.call("resume_recording");
+  }
+
+  async stopRecording(): Promise<void> {
+    await this.call("stop_recording");
   }
 
   async openMeetingLink(url: string): Promise<void> {

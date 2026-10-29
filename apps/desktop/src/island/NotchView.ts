@@ -1,8 +1,9 @@
-import type { TikiAlert, IslandSnapshot, MoodName } from "../backend/contracts";
+import type { ActiveRecording, TikiAlert, IslandSnapshot, MoodName } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
+import type { RecordingIndicator } from "./RecordingIndicator";
 
 /**
  * Content of the folded island. Resting, it shows Tiki's face with the day's summary when
@@ -10,17 +11,31 @@ import type { MascotRenderer } from "../mascot/MascotRenderer";
  * word. The mood color (eyes, glow, chip) comes from the stylesheet through `data-mood`.
  *
  * The summary is written as text for the top and bottom edges and as count bubbles for the
- * left and right edges; the stylesheet shows the one that fits the orientation.
+ * left and right edges; the stylesheet shows the one that fits the orientation. While a
+ * session records, the resting and compact notch keep its red dot and timer in sight.
  */
 export class NotchView {
   constructor(
     private readonly mascot: MascotRenderer,
     private readonly translator: Translator,
+    private readonly recordingIndicator: RecordingIndicator,
   ) {}
+
+  /** The resting notch while a session records: Tiki, the red dot and the timer. */
+  recording(snapshot: IslandSnapshot, recording: ActiveRecording, mood: MoodName, unread: boolean): HTMLElement {
+    return ElementFactory.create("div", {
+      className: "notch-hidden notch-hidden-busy notch-recording",
+      children: [
+        this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.hidden),
+        this.recordingIndicator.render(recording),
+        ...this.unreadDot(unread),
+      ],
+    });
+  }
 
   hidden(snapshot: IslandSnapshot, mood: MoodName, unread: boolean): HTMLElement {
     const mascot = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.hidden);
-    const unreadDot = unread ? [ElementFactory.create("span", { className: "notch-unread", attributes: { "aria-hidden": "true" } })] : [];
+    const unreadDot = this.unreadDot(unread);
     // Hovering the resting notch during a call says why Tiki is quiet.
     const callNote: Record<string, string> = snapshot.inCall ? { title: this.translator.text("island.in_call") } : {};
     if (snapshot.attentionCount === 0) {
@@ -73,6 +88,7 @@ export class NotchView {
         this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.compact),
         this.summaryText(snapshot),
         this.countBubbles(snapshot),
+        ...(snapshot.recording ? [this.recordingIndicator.render(snapshot.recording)] : []),
         ElementFactory.create("span", {
           className: `notch-chip notch-chip-${mood}`,
           text: snapshot.moodLabel,
@@ -80,6 +96,10 @@ export class NotchView {
         }),
       ],
     });
+  }
+
+  private unreadDot(unread: boolean): HTMLElement[] {
+    return unread ? [ElementFactory.create("span", { className: "notch-unread", attributes: { "aria-hidden": "true" } })] : [];
   }
 
   private mascotOf(snapshot: IslandSnapshot, mood: MoodName, size: number): HTMLElement {

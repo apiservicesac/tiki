@@ -562,6 +562,65 @@ describe("IslandController", () => {
     expect(root.querySelector(".island-content-leaving")).toBeNull();
   });
 
+  it("records only after the user picks a mode, reminding them to tell the participants", async () => {
+    controller.setMode("expanded");
+    root.querySelector<HTMLButtonElement>('[aria-label="Grabar"]')?.click();
+    expect(controller.currentState.panel).toBe("record");
+    expect(root.querySelector(".record-consent")?.textContent).toBe("Antes de grabar, avisa a los participantes.");
+    expect(backend.recordingRequests).toEqual([]);
+
+    root.querySelector<HTMLButtonElement>('.record-option[data-mode="audio_only"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector(".island-head .recording-indicator")).not.toBeNull());
+    expect(backend.recordingRequests).toEqual(["start:audio_only"]);
+    expect(controller.currentState.panel).toBe("tabs");
+  });
+
+  it("keeps the red dot and the timer in the folded notch while recording", async () => {
+    vi.useFakeTimers();
+    await backend.startRecording("audio_only");
+    await controller.refresh();
+    expect(notch()?.dataset.mode).toBe("recording");
+    expect(root.querySelector(".notch-recording .recording-timer")?.textContent).toBe("00:00");
+    await vi.advanceTimersByTimeAsync(UI_CONFIG.recordingTimerTickMs * 65);
+    expect(root.querySelector(".notch-recording .recording-timer")?.textContent).toBe("01:05");
+
+    await backend.stopRecording();
+    await controller.refresh();
+    expect(notch()?.dataset.mode).toBe("hidden");
+  });
+
+  it("pauses, resumes and stops from the header", async () => {
+    await backend.startRecording("audio_only");
+    await controller.refresh();
+    controller.setMode("expanded");
+    root.querySelector<HTMLButtonElement>('[aria-label="Pausar la grabación"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector('.recording-indicator[data-paused="true"]')).not.toBeNull());
+    root.querySelector<HTMLButtonElement>('[aria-label="Seguir grabando"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector('.recording-indicator[data-paused="false"]')).not.toBeNull());
+    root.querySelector<HTMLButtonElement>('[aria-label="Terminar la grabación"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector(".recording-indicator")).toBeNull());
+    expect(backend.recordingRequests).toEqual(["start:audio_only", "pause", "resume", "stop"]);
+  });
+
+  it("stops with the shortcut while recording, and otherwise asks what to record", async () => {
+    backend.emit(SHELL_EVENTS.toggleRecording);
+    await vi.waitFor(() => expect(controller.currentState.panel).toBe("record"));
+    await backend.startRecording("audio_only");
+    await controller.refresh();
+    backend.emit(SHELL_EVENTS.toggleRecording);
+    await vi.waitFor(() => expect(backend.recordingRequests).toEqual(["start:audio_only", "stop"]));
+  });
+
+  it("opens the choice of what to record from Tiki's offer when a call starts", async () => {
+    backend.deliverAlert({ kind: "recording", title: "¿Grabar esta llamada?", summary: "Hay una llamada en curso.", tips: ["Si grabas, avisa a los participantes."], actions: ["open"], taskId: null, link: null }, { sound: false, windowsNotification: false });
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
+    expect(root.querySelector(".notch-alert-kind")?.textContent).toBe("Grabar");
+
+    notch()?.click();
+    await vi.waitFor(() => expect(controller.currentState.panel).toBe("record"));
+    expect(backend.recordingRequests).toEqual([]);
+  });
+
   it("shows only Tiki while resting when the day is clear", async () => {
     controller.stop();
     const clearDay = { ...FakeBackend.sampleSnapshot(), attentionCount: 0, sections: [] };

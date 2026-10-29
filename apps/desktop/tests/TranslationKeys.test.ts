@@ -9,6 +9,7 @@ import {
   CALENDAR_PROVIDERS,
   ITEM_KINDS,
   PRIORITIES,
+  RECORDING_MODES,
   REPEATS,
   TASK_STATUSES,
   USER_ERROR_KEYS,
@@ -64,6 +65,7 @@ function builtKeys(): string[] {
     ...SHORTCUTS.flatMap((shortcut) => shortcut.keys.map((key) => `advanced.key.${key.toLowerCase()}`)),
     ...Object.values(UI_CONFIG.alertStyles).map((style) => style.labelKey),
     ...USER_ERROR_KEYS.map((key) => `error.${key}`),
+    ...RECORDING_MODES.flatMap((mode) => [`record.mode.${mode}`, `record.mode.${mode}.hint`]),
   ];
 }
 

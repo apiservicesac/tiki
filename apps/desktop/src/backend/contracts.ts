@@ -68,11 +68,26 @@ export interface SnapshotSection {
   items: SnapshotItem[];
 }
 
+/** What a session records, chosen by the user each time; both are always transcribed. */
+export const RECORDING_MODES = Object.freeze(["audio_only", "audio_and_video"] as const);
+export type RecordingMode = (typeof RECORDING_MODES)[number];
+
+/** The session being recorded (see `ActiveRecording` in the core). */
+export interface ActiveRecording {
+  sessionId: number;
+  mode: RecordingMode;
+  paused: boolean;
+  /** Recorded so far, pauses excluded; the interface keeps counting from here. */
+  recordedMs: number;
+}
+
 export interface IslandSnapshot {
   mood: MoodName;
   moodLabel: string;
   /** Another app holds the microphone: Tiki keeps quiet until the call ends. */
   inCall: boolean;
+  /** The session being recorded: the notch keeps a red dot and its timer in sight. */
+  recording: ActiveRecording | null;
   /** Tasks that need attention: overdue, due soon or waiting on others. */
   attentionCount: number;
   /** Overdue or due soon. */
@@ -127,7 +142,7 @@ export type AlertAction = "open" | "done" | "snooze" | "join";
 
 /** An alert already written in the user's language (see `TikiAlert` in the core). */
 export interface TikiAlert {
-  kind: "morning" | "evening" | "task" | "reminder" | "follow_up" | "meeting";
+  kind: "morning" | "evening" | "task" | "reminder" | "follow_up" | "meeting" | "recording";
   title: string;
   /** What it is about, in one line: the brief's counts, or the item's or meeting's title. */
   summary: string;
@@ -325,6 +340,12 @@ export interface TikiBackend {
   connectCalendar(provider: CalendarProvider): Promise<CalendarAccount>;
   disconnectCalendar(accountId: number): Promise<void>;
   syncCalendars(): Promise<void>;
+  /** Starts recording a session; the core refuses a second one. */
+  startRecording(mode: RecordingMode): Promise<void>;
+  pauseRecording(): Promise<void>;
+  resumeRecording(): Promise<void>;
+  /** Stops recording; the session waits for its transcript. */
+  stopRecording(): Promise<void>;
   /** Opens a meeting's video call (https only). */
   openMeetingLink(url: string): Promise<void>;
   /** Opens the advanced settings window, optionally on one section. */

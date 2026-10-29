@@ -10,16 +10,21 @@ import type {
 
 /**
  * How much of the island is visible, like the notch of dooai. `alert` is the notch grown a
- * little to show an alert.
+ * little to show an alert; `recording` is the resting notch while a session records, with
+ * its red dot and timer.
  */
-export const ISLAND_MODES = Object.freeze(["hidden", "compact", "alert", "expanded"] as const);
+export const ISLAND_MODES = Object.freeze(["hidden", "recording", "compact", "alert", "expanded"] as const);
 export type IslandMode = (typeof ISLAND_MODES)[number];
+
+/** The folded notch: the island rests in one of these until something opens it. */
+export const RESTING_MODES: readonly IslandMode[] = Object.freeze(["hidden", "recording"]);
 
 /**
  * What the expanded island shows in its card: the tabs, or a panel such as quick capture,
- * a task being edited, the project list or the brief drawn as a receipt.
+ * a task being edited, the project list, the brief drawn as a receipt or the choice of what
+ * to record.
  */
-export type IslandPanel = "tabs" | "capture" | "settings" | "edit" | "projects" | "brief";
+export type IslandPanel = "tabs" | "capture" | "settings" | "edit" | "projects" | "brief" | "record";
 
 /** Pending tasks, or the delivered history, in the Tasks tab. Reminders live in the Agenda. */
 export const TASKS_VIEWS = Object.freeze(["pending", "delivered"] as const);

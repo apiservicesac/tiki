@@ -10,6 +10,7 @@ import type {
   TikiAlert,
   ProjectChange,
   ProjectSummary,
+  RecordingMode,
   DeliveredItem,
   DueAlert,
   HitArea,
@@ -221,6 +222,35 @@ export class FakeBackend implements TikiBackend {
 
   async syncCalendars(): Promise<void> {}
 
+  /** What the island asked the recorder, in order: `start:audio_only`, `pause`, `stop`… */
+  readonly recordingRequests: string[] = [];
+
+  async startRecording(mode: RecordingMode): Promise<void> {
+    this.recordingRequests.push(`start:${mode}`);
+    this.snapshot.recording = { sessionId: 1, mode, paused: false, recordedMs: 0 };
+  }
+
+  async pauseRecording(): Promise<void> {
+    this.recordingRequests.push("pause");
+    this.changeRecording(true);
+  }
+
+  async resumeRecording(): Promise<void> {
+    this.recordingRequests.push("resume");
+    this.changeRecording(false);
+  }
+
+  async stopRecording(): Promise<void> {
+    this.recordingRequests.push("stop");
+    this.snapshot.recording = null;
+  }
+
+  private changeRecording(paused: boolean): void {
+    if (this.snapshot.recording) {
+      this.snapshot.recording = { ...this.snapshot.recording, paused };
+    }
+  }
+
   async openMeetingLink(url: string): Promise<void> {
     this.openedLinks.push(url);
   }
@@ -296,6 +326,7 @@ export class FakeBackend implements TikiBackend {
       mood: "worried",
       moodLabel: "ATRASO",
       inCall: false,
+      recording: null,
       attentionCount: 5,
       dueCount: 3,
       waitingCount: 2,

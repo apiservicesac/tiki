@@ -18,9 +18,11 @@ import { TodayView, type TodayHandlers } from "./TodayView";
 import type { HitArea, TikiAlert } from "../backend/contracts";
 import { ContentTransition, type ContentSize } from "./ContentTransition";
 import { FocusKeeper } from "../dom/FocusKeeper";
+import { RecordingIndicator } from "./RecordingIndicator";
+import { RecordingPrompt, type RecordingPromptHandlers } from "./RecordingPrompt";
 
 export interface IslandViewHandlers
-  extends HeaderHandlers, SettingsHandlers, TasksTabHandlers, ProjectsPanelHandlers, TodayHandlers {
+  extends HeaderHandlers, SettingsHandlers, TasksTabHandlers, ProjectsPanelHandlers, TodayHandlers, RecordingPromptHandlers {
   onExpand: () => void;
   /** The island changed size without a redraw: the click-through area must follow. */
   onContentResize: () => void;
@@ -52,6 +54,8 @@ export class IslandView {
   private readonly agenda: AgendaView;
   private readonly projectsPanel: ProjectsPanelView;
   private readonly receipt: ReceiptView;
+  private readonly recordingIndicator: RecordingIndicator;
+  private readonly recordingPrompt: RecordingPrompt;
   /** The tabs in display order; a new tab (Tickets) is one more entry. */
   private readonly tabs: Readonly<Record<IslandTab, IslandTabEntry>>;
   private readonly tabLabels: readonly IslandTabLabel[];
@@ -74,8 +78,10 @@ export class IslandView {
     private readonly mascot: MascotRenderer,
     private readonly captureView: CaptureView,
   ) {
-    this.notchView = new NotchView(mascot, translator);
-    this.header = new HeaderView(translator);
+    this.recordingIndicator = new RecordingIndicator(translator);
+    this.recordingPrompt = new RecordingPrompt(translator);
+    this.notchView = new NotchView(mascot, translator, this.recordingIndicator);
+    this.header = new HeaderView(translator, this.recordingIndicator);
     this.taskList = new TaskListView(translator);
     this.settings = new SettingsView(translator);
     this.taskEdit = new TaskEditView(translator);
@@ -135,6 +141,9 @@ export class IslandView {
     } else {
       delete this.notch.dataset.activity;
     }
+    // While a session records, even an alert keeps a red dot in a corner of the notch.
+    this.notch.dataset.recording = String(state.snapshot.recording !== null);
+    this.recordingIndicator.follow(state.snapshot.recording);
     // The root carries the mood too: the alert aura behind the notch takes its color.
     this.root.dataset.mood = mood;
 
@@ -207,6 +216,7 @@ export class IslandView {
 
   stop(): void {
     this.contentTransition.stop();
+    this.recordingIndicator.stop();
   }
 
   /**
@@ -271,6 +281,9 @@ export class IslandView {
     if (state.mode === "hidden") {
       return this.notchView.hidden(state.snapshot, mood, state.unreadAlert);
     }
+    if (state.mode === "recording" && state.snapshot.recording) {
+      return this.notchView.recording(state.snapshot, state.snapshot.recording, mood, state.unreadAlert);
+    }
     if (state.mode === "alert" && state.alert) {
       return this.notchView.alert(state.snapshot, state.alert, mood);
     }
@@ -280,7 +293,7 @@ export class IslandView {
     return ElementFactory.create("div", {
       className: "island-expanded",
       children: [
-        this.header.render(state.panel, this.tabLabels, state.tab, handlers),
+        this.header.render(state.panel, this.tabLabels, state.tab, state.snapshot.recording, handlers),
         ElementFactory.create("div", {
           className: "island-card",
           attributes: { "data-mood": mood, "data-panel": state.panel, "data-tab": state.tab },
@@ -313,6 +326,8 @@ export class IslandView {
         return this.projectsPanel.render(state.projects, state.projectColors, state.creatingProject, handlers);
       case "brief":
         return this.receipt.render(state.snapshot, state.alert, state.dayBrief);
+      case "record":
+        return this.recordingPrompt.render(handlers);
       case "tabs":
         return this.tabContent(state, handlers);
     }

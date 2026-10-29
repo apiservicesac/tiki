@@ -26,6 +26,7 @@ export const UI_CONFIG = Object.freeze({
     meeting: Object.freeze({ mood: "alert", labelKey: "alert.kind.meeting" }),
     morning: Object.freeze({ mood: "calm", labelKey: "alert.kind.morning" }),
     evening: Object.freeze({ mood: "curious", labelKey: "alert.kind.evening" }),
+    recording: Object.freeze({ mood: "curious", labelKey: "alert.kind.recording" }),
   } satisfies Record<TikiAlert["kind"], { mood: MoodName; labelKey: string }>),
   /**
    * The island's chime: two notes, each this long, at a gentle volume (0 to 1). Each note
@@ -72,6 +73,8 @@ export const UI_CONFIG = Object.freeze({
   }),
   /** Width of Tiki's face in each place; its height is half of it. */
   faceWidth: Object.freeze({ hidden: 40, compact: 44, alert: 56, card: 76, settingsTitle: 36 }),
+  /** The recording timer counts every this long, between snapshots from the core. */
+  recordingTimerTickMs: 1_000,
 });
 
 /** Names of the events the desktop shell sends to the interface (see `shell_events.rs`). */
@@ -83,4 +86,6 @@ export const SHELL_EVENTS = Object.freeze({
   preferencesChanged: "tiki://preferences-changed",
   calendarSynced: "tiki://calendar-synced",
   inCallChanged: "tiki://in-call-changed",
+  recordingChanged: "tiki://recording-changed",
+  toggleRecording: "tiki://toggle-recording",
 });

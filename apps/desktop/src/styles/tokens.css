@@ -49,6 +49,12 @@
   --in-call-glow-mix: 15%;
   --in-call-eyes-opacity: 0.7;
 
+  /* Recording: the red dot, its halo and the timer. */
+  --recording-red: #ff453a;
+  --recording-halo: rgba(255, 69, 58, 0.2);
+  --recording-text: #ff8a80;
+  --recording-dot-size: 8px;
+
   /* Tiki's visor stays dark in both themes, so the face looks the same everywhere. */
   --face-visor: #050506;
   --face-visor-edge: rgba(255, 255, 255, 0.08);
@@ -139,5 +145,8 @@
     --urgency-waiting-text: #7c3aed;
     --urgency-normal-background: rgba(15, 20, 30, 0.06);
     --urgency-normal-text: #566071;
+    --recording-red: #d70015;
+    --recording-halo: rgba(215, 0, 21, 0.1);
+    --recording-text: #b0000f;
   }
 }
