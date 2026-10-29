@@ -15,6 +15,7 @@ impl SchemaMigrations {
             M::up(Self::GENERAL_STATUSES_REPEATS_AND_FOLLOW_UPS),
             M::up(Self::CALENDARS),
             M::up(Self::TIMELESS_REMINDERS_BECOME_TASKS),
+            M::up(Self::FOLLOW_UPS_APART_FROM_REMINDERS),
         ])
     }
 
@@ -47,6 +48,18 @@ impl SchemaMigrations {
         CREATE UNIQUE INDEX tasks_by_external_record
             ON tasks(origin_plugin, origin_connection, origin_record)
             WHERE origin_plugin IS NOT NULL;
+    ";
+
+    /// The automatic follow-up nudge gets its own column instead of sharing `remind_at` with
+    /// the user's reminders. A waiting item's `remind_at` moves over only when it is exactly
+    /// the nudge Tiki scheduled: 3 days after it started waiting, at 09:00 (the settings every
+    /// install had until now). Any other time was set by the user and stays a reminder.
+    const FOLLOW_UPS_APART_FROM_REMINDERS: &'static str = "
+        ALTER TABLE tasks ADD COLUMN follow_up_at TEXT;
+        UPDATE tasks SET follow_up_at = remind_at, remind_at = NULL
+         WHERE status = 'waiting' AND waiting_since IS NOT NULL
+           AND remind_at = date(waiting_since, '+3 days') || ' 09:00:00';
+        CREATE INDEX tasks_by_follow_up ON tasks(follow_up_at) WHERE follow_up_at IS NOT NULL;
     ";
 
     /// An open reminder without a time showed in no view; as a task it shows in the Tasks tab.
@@ -179,5 +192,52 @@ mod tests {
         assert_eq!(kind_of(&connection, "Sin hora"), "task");
         assert_eq!(kind_of(&connection, "Con hora"), "reminder");
         assert_eq!(kind_of(&connection, "Ya sonó"), "reminder");
+    }
+
+    fn reminder_columns(connection: &Connection, title: &str) -> (Option<String>, Option<String>) {
+        connection
+            .query_row(
+                "SELECT remind_at, follow_up_at FROM tasks WHERE title = ?1",
+                [title],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap()
+    }
+
+    #[test]
+    fn only_the_automatic_nudge_of_a_waiting_item_becomes_a_follow_up() {
+        use rusqlite::ToSql;
+        use rusqlite::types::{ToSqlOutput, Value};
+        // The backfill compares text, so it must match how a moment is written.
+        let nudge_moment = chrono::NaiveDate::from_ymd_opt(2026, 10, 24)
+            .unwrap()
+            .and_hms_opt(9, 0, 0)
+            .unwrap();
+        assert_eq!(
+            nudge_moment.to_sql().unwrap(),
+            ToSqlOutput::Owned(Value::Text("2026-10-24 09:00:00".into()))
+        );
+        let mut connection = migrated_through(8);
+        connection
+            .execute_batch(
+                "INSERT INTO tasks (title, status, priority, waiting_since, remind_at) VALUES
+                    ('Automático', 'waiting', 'normal', '2026-10-21', '2026-10-24 09:00:00'),
+                    ('Del usuario', 'waiting', 'normal', '2026-10-21', '2026-10-24 16:00:00'),
+                    ('Ya no espera', 'to_do', 'normal', NULL, '2026-10-24 09:00:00');",
+            )
+            .unwrap();
+
+        finish(&mut connection);
+
+        let nudge = Some("2026-10-24 09:00:00".to_owned());
+        assert_eq!(
+            reminder_columns(&connection, "Automático"),
+            (None, nudge.clone())
+        );
+        assert_eq!(
+            reminder_columns(&connection, "Del usuario"),
+            (Some("2026-10-24 16:00:00".to_owned()), None)
+        );
+        assert_eq!(reminder_columns(&connection, "Ya no espera"), (nudge, None));
     }
 }

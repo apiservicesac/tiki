@@ -316,8 +316,9 @@ fn waiting_on_someone_schedules_a_follow_up_reminder() {
     assert_eq!(details.status, tiki_core::domain::TaskStatus::Waiting);
     assert_eq!(details.waiting_for, "respuesta de Lucía");
     assert_eq!(details.project_name.as_deref(), Some("Constructora Sur"));
+    assert_eq!(details.remind_at, None);
     assert_eq!(
-        details.remind_at,
+        details.follow_up_at,
         Some(TestDay::october(24).and_hms_opt(9, 0, 0).unwrap())
     );
 
@@ -375,4 +376,73 @@ fn a_reminder_shows_its_moment_and_how_often_it_repeats() {
             .iter()
             .all(|section| section.key != "reminders")
     );
+}
+
+#[test]
+fn a_follow_up_nudge_comes_back_while_the_item_waits() {
+    use tiki_core::domain::{ItemKind, Repeat, TaskStatus};
+    let workspace = sample_workspace();
+    let nine = |day| TestDay::october(day).and_hms_opt(9, 0, 0).unwrap();
+    let contract = workspace
+        .save_confirmed(ConfirmedCapture {
+            title: "Contrato firmado".into(),
+            project_name: None,
+            due_date: None,
+            priority: Priority::Normal,
+            remind_at: None,
+            kind: ItemKind::Task,
+            tags: Vec::new(),
+            repeat: Repeat::Never,
+            waiting_for: Some("Lucía".into()),
+        })
+        .unwrap();
+    let nudges_at = |moment| {
+        workspace
+            .at(moment)
+            .take_due_task_reminders()
+            .unwrap()
+            .into_iter()
+            .filter(|alert| alert.task_id == Some(contract))
+            .map(|alert| alert.kind)
+            .collect::<Vec<_>>()
+    };
+
+    assert_eq!(nudges_at(nine(24)), [AlertKind::FollowUp]);
+    assert_eq!(
+        workspace.task_details(contract).unwrap().follow_up_at,
+        Some(nine(26))
+    );
+    assert_eq!(nudges_at(nine(25)), []);
+    assert_eq!(nudges_at(nine(26)), [AlertKind::FollowUp]);
+
+    workspace.move_task(contract, TaskStatus::ToDo).unwrap();
+    assert_eq!(workspace.task_details(contract).unwrap().follow_up_at, None);
+    assert_eq!(nudges_at(nine(28)), []);
+}
+
+#[test]
+fn an_alarm_on_a_waiting_task_rings_as_a_task_reminder() {
+    use tiki_core::domain::{ItemKind, Repeat};
+    let workspace = sample_workspace();
+    let ten = TestDay::october(22).and_hms_opt(10, 0, 0).unwrap();
+    let contract = workspace
+        .save_confirmed(ConfirmedCapture {
+            title: "Contrato firmado".into(),
+            project_name: None,
+            due_date: None,
+            priority: Priority::Normal,
+            remind_at: Some(ten),
+            kind: ItemKind::Task,
+            tags: Vec::new(),
+            repeat: Repeat::Never,
+            waiting_for: Some("Lucía".into()),
+        })
+        .unwrap();
+
+    let alerts = workspace.at(ten).take_due_task_reminders().unwrap();
+    let alarm = alerts
+        .iter()
+        .find(|alert| alert.task_id == Some(contract))
+        .unwrap();
+    assert_eq!(alarm.kind, AlertKind::Task);
 }

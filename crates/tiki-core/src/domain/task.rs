@@ -19,8 +19,11 @@ pub struct Task {
     pub waiting_since: Option<NaiveDate>,
     /// Day the task was delivered; empty while it is open.
     pub completed_on: Option<NaiveDate>,
-    /// When Tiki should remind the user about this task; cleared once it has.
+    /// When the user asked Tiki to remind them (a reminder's moment, or an alarm on a task);
+    /// cleared once it rang, unless the reminder repeats.
     pub remind_at: Option<NaiveDateTime>,
+    /// When Tiki nudges the user to follow up a waiting item; empty in any other status.
+    pub follow_up_at: Option<NaiveDateTime>,
     /// Lowercase tags without "#" (see `Tags`).
     pub tags: Vec<String>,
     /// How often a reminder comes back after it rings.
@@ -49,6 +52,7 @@ impl Task {
             waiting_since: None,
             completed_on: None,
             remind_at: None,
+            follow_up_at: None,
             tags: Vec::new(),
             repeat: Repeat::Never,
             waiting_for: String::new(),

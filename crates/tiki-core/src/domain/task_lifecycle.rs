@@ -1,6 +1,6 @@
 use chrono::{NaiveDate, NaiveDateTime};
 
-use super::{ItemKind, Task, TaskStatus};
+use super::{FollowUpPolicy, ItemKind, Task, TaskStatus};
 
 /// How an item moves through its life: status changes, ringing and snoozing.
 impl Task {
@@ -32,6 +32,12 @@ impl Task {
         if self.remind_at.is_none() {
             self.move_to(TaskStatus::Done, now.date());
         }
+    }
+
+    /// Rings the follow-up nudge at `now`; the next one comes after the policy's rhythm, for
+    /// as long as the item waits.
+    pub fn ring_follow_up(&mut self, now: NaiveDateTime, policy: &FollowUpPolicy) {
+        self.follow_up_at = policy.next_nudge(now);
     }
 
     /// Puts the reminder off until `until`; a reminder that already rang comes back to life.

@@ -213,8 +213,8 @@ impl TikiWorkspace {
         CalendarBook::new(&self.database, &self.settings)
     }
 
-    /// Task reminders whose time has come; each one is cleared so it rings once, all in one
-    /// transaction so an alert is never shown without its reminder being moved on. Nothing is
+    /// Reminders and follow-up nudges whose time has come; each moves on so it rings once, all
+    /// in one transaction so an alert is never shown without its item being moved on. Nothing is
     /// due while notifications are off or focus mode is on: they ring when it ends.
     pub fn take_due_task_reminders(&self) -> TikiResult<Vec<TikiAlert>> {
         if !self.preferences.allows_notifications() {
@@ -224,11 +224,19 @@ impl TikiWorkspace {
         let projects = self.project_directory()?;
         let composer = NotificationComposer::new(&self.translator);
         let today = now.date();
+        let policy = self.follow_up_policy();
         self.database.transaction(|repositories| {
             let mut alerts = Vec::new();
-            for mut task in repositories.tasks().list_reminders_due(now)? {
-                alerts.push(composer.compose_task(&task, projects.name_of(task.project_id), today));
-                task.ring(now);
+            for mut task in repositories.tasks().list_due_alerts(now)? {
+                let project_name = projects.name_of(task.project_id);
+                if task.remind_at.is_some_and(|at| at <= now) {
+                    alerts.push(composer.compose_reminder(&task, project_name, today));
+                    task.ring(now);
+                }
+                if task.follow_up_at.is_some_and(|at| at <= now) {
+                    alerts.push(composer.compose_follow_up(&task, project_name, today));
+                    task.ring_follow_up(now, &policy);
+                }
                 repositories.tasks().update(&task)?;
             }
             Ok(alerts)
@@ -240,7 +248,8 @@ impl TikiWorkspace {
     pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
         let project_id = self.project_named(capture.project_name.as_deref())?;
         let mut task = capture.into_task(project_id, self.clock.today())?;
-        self.follow_up_policy().update_nudge(&mut task, None);
+        self.follow_up_policy()
+            .schedule_first_nudge(&mut task, false);
         task.normalize()?;
         self.database.tasks().insert(&task)
     }
@@ -261,11 +270,11 @@ impl TikiWorkspace {
     /// Saves the user's changes to an item; a new project name creates the project.
     pub fn edit_task(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
-        let waiting_since_before = task.waiting_since;
+        let was_waiting = task.status == TaskStatus::Waiting;
         let project_id = self.project_named(edit.project_name.as_deref())?;
         edit.apply_to(&mut task, project_id, self.clock.today());
         self.follow_up_policy()
-            .update_nudge(&mut task, waiting_since_before);
+            .schedule_first_nudge(&mut task, was_waiting);
         task.normalize()?;
         self.database.tasks().update(&task)
     }
@@ -304,10 +313,10 @@ impl TikiWorkspace {
 
     pub fn move_task(&self, task_id: TaskId, status: TaskStatus) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
-        let waiting_since_before = task.waiting_since;
+        let was_waiting = task.status == TaskStatus::Waiting;
         task.move_to(status, self.clock.today());
         self.follow_up_policy()
-            .update_nudge(&mut task, waiting_since_before);
+            .schedule_first_nudge(&mut task, was_waiting);
         task.normalize()?;
         self.database.tasks().update(&task)
     }

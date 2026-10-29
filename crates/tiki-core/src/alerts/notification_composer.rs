@@ -3,7 +3,7 @@ use chrono::NaiveDate;
 use super::{AlertKind, TikiAlert};
 use crate::briefing::{BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, DailyBrief};
 use crate::calendar::MeetingItem;
-use crate::domain::{ItemKind, Task, TaskStatus};
+use crate::domain::{ItemKind, Task};
 use crate::i18n::Translator;
 
 /// Writes the short notification for a brief: counts first, then what to start with and
@@ -17,18 +17,38 @@ impl<'translator> NotificationComposer<'translator> {
         Self { translator }
     }
 
-    /// The reminder of one task: its title, its project and when it is due.
-    pub fn compose_task(
+    /// The reminder the user set on an item: a standalone reminder, or an alarm on a task.
+    pub fn compose_reminder(
         &self,
         task: &Task,
         project_name: Option<&str>,
         today: NaiveDate,
     ) -> TikiAlert {
-        let kind = match (task.kind, task.status) {
-            (ItemKind::Reminder, _) => AlertKind::Reminder,
-            (_, TaskStatus::Waiting) => AlertKind::FollowUp,
-            _ => AlertKind::Task,
+        let kind = match task.kind {
+            ItemKind::Reminder => AlertKind::Reminder,
+            ItemKind::Task => AlertKind::Task,
         };
+        self.compose_item(kind, task, project_name, today)
+    }
+
+    /// The nudge to follow up an item that still waits on others.
+    pub fn compose_follow_up(
+        &self,
+        task: &Task,
+        project_name: Option<&str>,
+        today: NaiveDate,
+    ) -> TikiAlert {
+        self.compose_item(AlertKind::FollowUp, task, project_name, today)
+    }
+
+    /// One item's alert: its title, its project, who it waits for and when it is due.
+    fn compose_item(
+        &self,
+        kind: AlertKind,
+        task: &Task,
+        project_name: Option<&str>,
+        today: NaiveDate,
+    ) -> TikiAlert {
         let mut lines = vec![task.title.clone()];
         let mut context: Vec<String> = project_name.map(str::to_owned).into_iter().collect();
         if kind == AlertKind::FollowUp {

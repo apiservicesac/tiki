@@ -20,8 +20,9 @@ impl<'connection> TaskRepository<'connection> {
             "INSERT INTO tasks (title, notes, project_id, status, priority, due_date, waiting_since,
                                 completed_on, remind_at,
                                 origin_plugin, origin_connection, origin_record, origin_url,
-                                kind, tags, repeat, waiting_for)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+                                kind, tags, repeat, waiting_for, follow_up_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
+                     ?18)",
             params![
                 task.title,
                 task.notes,
@@ -40,6 +41,7 @@ impl<'connection> TaskRepository<'connection> {
                 TaskRowMapper::tags_column(&task.tags),
                 task.repeat.key(),
                 task.waiting_for,
+                task.follow_up_at,
             ],
         )?;
         Ok(TaskId(self.connection.last_insert_rowid()))
@@ -51,7 +53,7 @@ impl<'connection> TaskRepository<'connection> {
             "UPDATE tasks
                 SET title = ?2, notes = ?3, project_id = ?4, status = ?5, priority = ?6,
                     due_date = ?7, waiting_since = ?8, completed_on = ?9, remind_at = ?10,
-                    kind = ?11, tags = ?12, repeat = ?13, waiting_for = ?14,
+                    kind = ?11, tags = ?12, repeat = ?13, waiting_for = ?14, follow_up_at = ?15,
                     updated_at = CURRENT_TIMESTAMP
               WHERE id = ?1",
             params![
@@ -69,6 +71,7 @@ impl<'connection> TaskRepository<'connection> {
                 TaskRowMapper::tags_column(&task.tags),
                 task.repeat.key(),
                 task.waiting_for,
+                task.follow_up_at,
             ],
         )?;
         if changed_rows == 0 {
@@ -108,11 +111,11 @@ impl<'connection> TaskRepository<'connection> {
         Ok(tasks)
     }
 
-    /// Open tasks whose reminder time has come.
-    pub fn list_reminders_due(&self, now: chrono::NaiveDateTime) -> TikiResult<Vec<Task>> {
+    /// Open items whose reminder or follow-up nudge is due at `now`.
+    pub fn list_due_alerts(&self, now: chrono::NaiveDateTime) -> TikiResult<Vec<Task>> {
         let query = format!(
-            "SELECT {} FROM tasks WHERE status <> 'done' AND remind_at IS NOT NULL
-                AND remind_at <= ?1 ORDER BY remind_at, id",
+            "SELECT {} FROM tasks WHERE status <> 'done' AND (remind_at <= ?1 OR follow_up_at <= ?1)
+              ORDER BY min(coalesce(remind_at, follow_up_at), coalesce(follow_up_at, remind_at)), id",
             TaskRowMapper::COLUMNS
         );
         let mut statement = self.connection.prepare(&query)?;

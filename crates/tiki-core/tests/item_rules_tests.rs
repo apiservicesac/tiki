@@ -107,7 +107,7 @@ fn leaving_waiting_forgets_who_it_waited_for_and_the_automatic_nudge() {
         workspace
             .task_details(contract)
             .unwrap()
-            .remind_at
+            .follow_up_at
             .is_some()
     );
 
@@ -115,7 +115,7 @@ fn leaving_waiting_forgets_who_it_waited_for_and_the_automatic_nudge() {
 
     let details = workspace.task_details(contract).unwrap();
     assert_eq!(details.waiting_for, "");
-    assert_eq!(details.remind_at, None);
+    assert_eq!(details.follow_up_at, None);
 }
 
 #[test]

@@ -7,7 +7,7 @@ impl Task {
     /// - it has a title, and its text fields carry no stray spaces;
     /// - an open reminder has a time to ring (without one it would show nowhere);
     /// - only a reminder with a time repeats;
-    /// - only a waiting item says what it waits for.
+    /// - only a waiting item says what it waits for and has a follow-up nudge.
     pub fn normalize(&mut self) -> TikiResult<()> {
         let title = self.title.trim();
         if title.is_empty() {
@@ -26,6 +26,7 @@ impl Task {
             self.waiting_for = self.waiting_for.trim().to_owned();
         } else {
             self.waiting_for.clear();
+            self.follow_up_at = None;
         }
         Ok(())
     }
