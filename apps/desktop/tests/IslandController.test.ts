@@ -359,10 +359,10 @@ describe("IslandController", () => {
     expect(notch()?.dataset.mode).toBe("expanded");
   });
 
-  it("shows Today, Tasks and Agenda, and no Tickets tab until a ticket connector exists", () => {
+  it("shows Today, Tasks, Agenda and Sessions, and no Tickets tab until a ticket connector exists", () => {
     controller.setMode("expanded");
     const tabs = [...root.querySelectorAll<HTMLElement>(".island-tab[data-tab]")].map((tab) => tab.dataset.tab);
-    expect(tabs).toEqual(["today", "all_tasks", "agenda"]);
+    expect(tabs).toEqual(["today", "all_tasks", "agenda", "sessions"]);
 
     root.querySelector<HTMLButtonElement>('[data-tab="agenda"]')?.click();
     expect(controller.currentState.tab).toBe("agenda");
@@ -619,6 +619,90 @@ describe("IslandController", () => {
     notch()?.click();
     await vi.waitFor(() => expect(controller.currentState.panel).toBe("record"));
     expect(backend.recordingRequests).toEqual([]);
+  });
+
+  it("lists the recorded sessions with their status and what their media takes", () => {
+    controller.selectTab("sessions");
+    const rows = [...root.querySelectorAll<HTMLElement>(".session-row")];
+    expect(rows.map((row) => row.dataset.sessionId)).toEqual(["2", "1"]);
+    expect(rows[0]?.querySelector(".island-when")?.textContent).toBe("Lista");
+    expect(rows[0]?.querySelector("small")?.textContent).toBe("Mié 21 · 10:00 · 30:30");
+    expect(rows[1]?.querySelector(".session-retry")).not.toBeNull();
+    expect(root.querySelector(".sessions-storage")?.textContent).toBe("El audio y el video ocupan 24 MB y se borran a los 90 días.");
+  });
+
+  it("retries a transcription that failed", async () => {
+    controller.selectTab("sessions");
+    root.querySelector<HTMLButtonElement>(".session-retry")?.click();
+    await vi.waitFor(() => expect(backend.retriedTranscriptions).toEqual([1]));
+  });
+
+  it("opens a session with its player and the transcript labelled You and Others", async () => {
+    controller.selectTab("sessions");
+    root.querySelector<HTMLButtonElement>('.session-row[data-session-id="2"] .island-row-text')?.click();
+    await vi.waitFor(() => expect(root.querySelector(".session-detail")).not.toBeNull());
+
+    const player = root.querySelector<HTMLVideoElement>("video.session-player");
+    expect(player?.getAttribute("src")).toBe("http://asset.localhost/C%3A%5CTiki%5Csessions%5C2%5Csession.mp4");
+    const speakers = [...root.querySelectorAll(".session-line-speaker")].map((speaker) => speaker.textContent);
+    expect(speakers).toEqual(["Otros", "Tú", "Otros"]);
+  });
+
+  it("follows the player in the transcript and plays from a clicked line", async () => {
+    await controller.openSession(2);
+    const player = root.querySelector<HTMLVideoElement>("video.session-player");
+    if (!player) {
+      throw new Error("no player");
+    }
+    player.play = () => Promise.resolve();
+    root.querySelectorAll<HTMLButtonElement>(".session-line")[1]?.click();
+    expect(player.currentTime).toBe(5);
+    expect(root.querySelector(".session-line-now .session-line-text")?.textContent).toBe("Mañana envío el informe");
+
+    player.currentTime = 10;
+    player.dispatchEvent(new Event("timeupdate"));
+    expect(root.querySelector(".session-line-now .session-line-text")?.textContent).toBe("Perfecto, gracias");
+  });
+
+  it("keeps the same player when the island refreshes, so playback goes on", async () => {
+    await controller.openSession(2);
+    const player = root.querySelector("video.session-player");
+    await controller.refresh();
+    expect(root.querySelector("video.session-player")).toBe(player);
+  });
+
+  it("finds what was said and opens the session at that moment", async () => {
+    controller.selectTab("sessions");
+    const search = root.querySelector<HTMLInputElement>("#sessions-search");
+    if (!search) {
+      throw new Error("no search box");
+    }
+    search.value = "informe";
+    search.dispatchEvent(new Event("input"));
+    await vi.waitFor(() => expect(root.querySelector(".session-hit")).not.toBeNull());
+    expect(root.querySelector(".session-hit .island-row-text")?.firstChild?.textContent).toBe("Mañana envío el informe");
+
+    root.querySelector<HTMLButtonElement>(".session-hit .island-row-text")?.click();
+    await vi.waitFor(() => expect(root.querySelector(".session-detail")).not.toBeNull());
+    expect(root.querySelector<HTMLVideoElement>("video.session-player")?.currentTime).toBe(5);
+  });
+
+  it("deletes a session only after a second press", async () => {
+    await controller.openSession(2);
+    root.querySelector<HTMLButtonElement>(".session-delete")?.click();
+    expect(backend.deletedSessions).toEqual([]);
+    expect(root.querySelector(".session-delete")?.textContent).toBe("¿Borrar? Pulsa otra vez");
+    root.querySelector<HTMLButtonElement>(".session-delete")?.click();
+    await vi.waitFor(() => expect(backend.deletedSessions).toEqual([2]));
+    expect(controller.currentState.panel).toBe("tabs");
+  });
+
+  it("says how far the transcription model download got", async () => {
+    controller.selectTab("sessions");
+    backend.reportModelDownload({ downloadedBytes: 35, totalBytes: 100 });
+    expect(root.querySelector(".sessions-download")?.textContent).toBe("Preparando la transcripción: 35\u00a0%");
+    backend.reportModelDownload({ downloadedBytes: 100, totalBytes: 100 });
+    expect(root.querySelector<HTMLElement>(".sessions-download")?.hidden).toBe(true);
   });
 
   it("shows only Tiki while resting when the day is clear", async () => {

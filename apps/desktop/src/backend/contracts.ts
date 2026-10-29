@@ -81,6 +81,88 @@ export interface ActiveRecording {
   recordedMs: number;
 }
 
+/** Where a session stands, from the click that starts it to its transcript. */
+export const SESSION_STATUSES = Object.freeze(["recording", "paused", "queued", "transcribing", "ready", "failed"] as const);
+export type SessionStatus = (typeof SESSION_STATUSES)[number];
+
+/** Who said a line: the microphone is the user, the system audio everyone else. */
+export const SPEAKERS = Object.freeze(["you", "others"] as const);
+export type Speaker = (typeof SPEAKERS)[number];
+
+/** A session as the Sessions tab lists it (see `SessionSummary` in the core). */
+export interface SessionSummary {
+  sessionId: number;
+  title: string;
+  mode: RecordingMode;
+  status: SessionStatus;
+  startedAt: string;
+  /** "Mié 29 · 10:30", in the user's language. */
+  startedLabel: string;
+  /** What the media lasts, pauses excluded. */
+  recordedMs: number;
+  /** The media is still on disk (the retention policy has not removed it). */
+  hasMedia: boolean;
+  mediaBytes: number;
+  meetingTitle: string | null;
+}
+
+export interface TranscriptSegment {
+  speaker: Speaker;
+  startMs: number;
+  endMs: number;
+  text: string;
+}
+
+/** What the AI wrote about a session. */
+export interface SessionNotes {
+  summary: string;
+  keyPoints: string[];
+  decisions: string[];
+}
+
+/** A task the AI proposed from a session; once applied it points to the task. */
+export interface SessionActionItem {
+  actionItemId: number;
+  title: string;
+  /** ISO date, for example `2026-10-23`. */
+  dueDate: string | null;
+  taskId: number | null;
+}
+
+/** Everything the detail of a session shows (see `SessionView` in the shell). */
+export interface SessionDetails {
+  summary: SessionSummary;
+  /** The detected language ("es", "en"), once transcribed. */
+  language: string | null;
+  transcript: TranscriptSegment[];
+  notes: SessionNotes | null;
+  actionItems: SessionActionItem[];
+  /** The media on disk for the player; `null` once it was removed. */
+  mediaPath: string | null;
+}
+
+/** A transcript line that matches a search. */
+export interface SessionSearchHit {
+  sessionId: number;
+  sessionTitle: string;
+  startedAt: string;
+  speaker: Speaker;
+  startMs: number;
+  text: string;
+}
+
+/** What the sessions take on disk and how long their media is kept. */
+export interface SessionStorage {
+  mediaBytes: number;
+  mediaDays: number;
+}
+
+/** How far the transcription model download got. */
+export interface ModelDownload {
+  downloadedBytes: number;
+  totalBytes: number;
+}
+
 export interface IslandSnapshot {
   mood: MoodName;
   moodLabel: string;
@@ -356,6 +438,19 @@ export interface TikiBackend {
   resumeRecording(): Promise<void>;
   /** Stops recording; the session waits for its transcript. */
   stopRecording(): Promise<void>;
+  /** Every session, newest first. */
+  sessions(): Promise<SessionSummary[]>;
+  sessionDetails(sessionId: number): Promise<SessionDetails>;
+  /** Transcript lines with every word of `text`. */
+  searchSessions(text: string): Promise<SessionSearchHit[]>;
+  /** Forgets a session and its files; tasks made from it stay. */
+  deleteSession(sessionId: number): Promise<void>;
+  retryTranscription(sessionId: number): Promise<void>;
+  sessionStorage(): Promise<SessionStorage>;
+  /** The URL the web view plays a session's media from. */
+  mediaUrl(mediaPath: string): string;
+  /** Calls `handler` with each step of the model download; returns a function that stops listening. */
+  onModelDownload(handler: (progress: ModelDownload) => void): Promise<() => void>;
   /** Opens a meeting's video call (https only). */
   openMeetingLink(url: string): Promise<void>;
   /** Opens the advanced settings window, optionally on one section. */

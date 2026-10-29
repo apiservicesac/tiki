@@ -20,8 +20,10 @@
  *   13. Task editing
  *   14. Settings
  *   15. Receipt            the brief drawn as a receipt
- *   16. Left and right edges, where the island is a column
- *   17. Reduced motion
+ *   16. Recording          the red dot and timer, and the choice of what to record
+ *   17. Sessions           the list, the search, and a session with its player and transcript
+ *   18. Left and right edges, where the island is a column
+ *   19. Reduced motion
  */
 
 /* 1. Window and root ------------------------------------------------------------------ */
@@ -1313,7 +1315,46 @@ button.island-row-text {
 
 .record-note { margin: 0; font-size: var(--text-xs); color: var(--island-faint); }
 
-/* 17. Left and right edges ------------------------------------------------------------ */
+/* 17. Sessions ------------------------------------------------------------------------ */
+.sessions-tab { display: grid; gap: 10px; }
+.sessions-list { max-height: 300px; }
+.sessions-download,
+.sessions-storage { margin: 0; font-size: var(--text-xs); color: var(--island-muted); }
+
+.session-detail { display: grid; gap: 10px; }
+.session-detail-head { display: grid; gap: 2px; }
+.session-detail-head strong { font-size: var(--text-lg); }
+.session-detail-head small { font-size: var(--text-xs); color: var(--island-muted); }
+
+.session-player { width: 100%; max-height: 200px; border-radius: var(--radius-md); background: var(--island-soft); }
+.session-note { margin: 0; font-size: var(--text-sm); color: var(--island-muted); }
+
+.session-transcript { display: grid; gap: 2px; max-height: 220px; overflow-y: auto; }
+
+.session-line {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 8px;
+  align-items: baseline;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--island-text);
+  font: var(--text-sm) var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.session-line:hover { background: var(--island-soft); }
+.session-line-now { background: var(--island-active); }
+.session-line-time { font: var(--text-2xs) var(--font-mono); color: var(--island-faint); font-variant-numeric: tabular-nums; }
+.session-line-speaker { font-weight: 700; color: var(--island-muted); }
+.session-line[data-speaker="you"] .session-line-speaker { color: var(--mood-curious); }
+
+.session-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* 18. Left and right edges ------------------------------------------------------------ */
 /*
  * The island is a column. The folded notch stacks Tiki and the count bubbles (rotated text
  * is hard to read at a glance), and the expanded island becomes a narrow, tall panel.
@@ -1394,7 +1435,7 @@ button.island-row-text {
 [data-orientation="vertical"] .capture-fields { grid-template-columns: minmax(0, 1fr); }
 [data-orientation="vertical"] .edit-form { grid-template-columns: minmax(0, 1fr); }
 
-/* 18. Reduced motion ------------------------------------------------------------------ */
+/* 19. Reduced motion ------------------------------------------------------------------ */
 @media (prefers-reduced-motion: reduce) {
   .island-notch { transition: none; }
   .island-content-entering,

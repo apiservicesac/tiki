@@ -1,4 +1,4 @@
-import type { MoodName, Priority, TikiAlert, Urgency } from "../backend/contracts";
+import type { MoodName, Priority, SessionStatus, TikiAlert, Urgency } from "../backend/contracts";
 
 /** Every tunable value of the interface lives here, nowhere else. */
 export const UI_CONFIG = Object.freeze({
@@ -75,6 +75,17 @@ export const UI_CONFIG = Object.freeze({
   faceWidth: Object.freeze({ hidden: 40, compact: 44, alert: 56, card: 76, settingsTitle: 36 }),
   /** The recording timer counts every this long, between snapshots from the core. */
   recordingTimerTickMs: 1_000,
+  /** Disk usage is shown in megabytes, as the system's file manager does. */
+  bytesPerMegabyte: 1_000_000,
+  /** The color of a session's status pill in the Sessions tab, as a time-badge tone. */
+  sessionStatusTones: Object.freeze({
+    recording: "critical",
+    paused: "soon",
+    queued: "waiting",
+    transcribing: "waiting",
+    ready: "done",
+    failed: "critical",
+  } satisfies Record<SessionStatus, string>),
 });
 
 /** Names of the events the desktop shell sends to the interface (see `shell_events.rs`). */
@@ -88,4 +99,6 @@ export const SHELL_EVENTS = Object.freeze({
   inCallChanged: "tiki://in-call-changed",
   recordingChanged: "tiki://recording-changed",
   toggleRecording: "tiki://toggle-recording",
+  transcriptReady: "tiki://transcript-ready",
+  modelDownloadProgress: "tiki://model-download-progress",
 });

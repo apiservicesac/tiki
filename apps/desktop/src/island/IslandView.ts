@@ -20,9 +20,18 @@ import { ContentTransition, type ContentSize } from "./ContentTransition";
 import { FocusKeeper } from "../dom/FocusKeeper";
 import { RecordingIndicator } from "./RecordingIndicator";
 import { RecordingPrompt, type RecordingPromptHandlers } from "./RecordingPrompt";
+import { SessionDetailView, type SessionDetailHandlers } from "./SessionDetailView";
+import { SessionsTabView, type SessionsTabHandlers } from "./SessionsTabView";
 
 export interface IslandViewHandlers
-  extends HeaderHandlers, SettingsHandlers, TasksTabHandlers, ProjectsPanelHandlers, TodayHandlers, RecordingPromptHandlers {
+  extends HeaderHandlers,
+    SettingsHandlers,
+    TasksTabHandlers,
+    ProjectsPanelHandlers,
+    TodayHandlers,
+    RecordingPromptHandlers,
+    SessionsTabHandlers,
+    SessionDetailHandlers {
   onExpand: () => void;
   /** The island changed size without a redraw: the click-through area must follow. */
   onContentResize: () => void;
@@ -56,6 +65,8 @@ export class IslandView {
   private readonly receipt: ReceiptView;
   private readonly recordingIndicator: RecordingIndicator;
   private readonly recordingPrompt: RecordingPrompt;
+  private readonly sessionsTab: SessionsTabView;
+  private readonly sessionDetail: SessionDetailView;
   /** The tabs in display order; a new tab (Tickets) is one more entry. */
   private readonly tabs: Readonly<Record<IslandTab, IslandTabEntry>>;
   private readonly tabLabels: readonly IslandTabLabel[];
@@ -80,6 +91,8 @@ export class IslandView {
   ) {
     this.recordingIndicator = new RecordingIndicator(translator);
     this.recordingPrompt = new RecordingPrompt(translator);
+    this.sessionsTab = new SessionsTabView(translator);
+    this.sessionDetail = new SessionDetailView(translator);
     this.notchView = new NotchView(mascot, translator, this.recordingIndicator);
     this.header = new HeaderView(translator, this.recordingIndicator);
     this.taskList = new TaskListView(translator);
@@ -111,6 +124,15 @@ export class IslandView {
       agenda: {
         labelKey: "island.tab.agenda",
         render: (state, handlers) => this.agenda.render(state.snapshot.agenda, handlers),
+      },
+      sessions: {
+        labelKey: "island.tab.sessions",
+        render: (state, handlers) => this.sessionsTab.render({
+          sessions: state.sessions,
+          hits: state.sessionHits,
+          storage: state.sessionStorage,
+          modelDownload: state.modelDownload,
+        }, handlers),
       },
     });
     // Object keys keep their order; they are exactly the tabs, as the record's type requires.
@@ -162,9 +184,13 @@ export class IslandView {
       this.captureView.reset();
       this.taskEdit.reset();
       this.projectsPanel.reset();
+      if (state.panel !== "session") {
+        this.sessionDetail.reset();
+      }
     }
     if (this.translator.localeCode !== this.shownLocale) {
       this.tasksTab.reset();
+      this.sessionsTab.reset();
       this.shownLocale = this.translator.localeCode;
     }
     this.shownMode = state.mode;
@@ -328,6 +354,10 @@ export class IslandView {
         return this.receipt.render(state.snapshot, state.alert, state.dayBrief);
       case "record":
         return this.recordingPrompt.render(handlers);
+      case "session":
+        return state.openSession
+          ? this.sessionDetail.render(state.openSession, handlers)
+          : this.tabContent(state, handlers);
       case "tabs":
         return this.tabContent(state, handlers);
     }

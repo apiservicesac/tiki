@@ -10,7 +10,13 @@ import type {
   TikiAlert,
   ProjectChange,
   ProjectSummary,
+  ModelDownload,
   RecordingMode,
+  SessionDetails,
+  SessionSearchHit,
+  SessionStorage,
+  SessionSummary,
+  TranscriptSegment,
   DeliveredItem,
   DueAlert,
   HitArea,
@@ -246,6 +252,77 @@ export class FakeBackend implements TikiBackend {
   async stopRecording(): Promise<void> {
     this.recordingRequests.push("stop");
     this.snapshot.recording = null;
+  }
+
+  /** A ready session with its transcript, and one whose transcription failed. */
+  sessionList: SessionSummary[] = [
+    { sessionId: 2, title: "Revisión con Andeanvet", mode: "audio_and_video", status: "ready", startedAt: "2026-10-21T10:00:00", startedLabel: "Mié 21 · 10:00", recordedMs: 1_830_000, hasMedia: true, mediaBytes: 21_000_000, meetingTitle: "Revisión con Andeanvet" },
+    { sessionId: 1, title: "Sesión del Mar 20, 16:00", mode: "audio_only", status: "failed", startedAt: "2026-10-20T16:00:00", startedLabel: "Mar 20 · 16:00", recordedMs: 600_000, hasMedia: true, mediaBytes: 3_000_000, meetingTitle: null },
+  ];
+  readonly sessionTranscripts = new Map<number, TranscriptSegment[]>([
+    [2, [
+      { speaker: "others", startMs: 0, endMs: 4_000, text: "Revisemos la facturación de octubre" },
+      { speaker: "you", startMs: 5_000, endMs: 8_000, text: "Mañana envío el informe" },
+      { speaker: "others", startMs: 9_000, endMs: 12_000, text: "Perfecto, gracias" },
+    ]],
+  ]);
+  readonly deletedSessions: number[] = [];
+  readonly retriedTranscriptions: number[] = [];
+  private modelDownloadHandler: ((progress: ModelDownload) => void) | null = null;
+
+  async sessions(): Promise<SessionSummary[]> {
+    return this.sessionList;
+  }
+
+  async sessionDetails(sessionId: number): Promise<SessionDetails> {
+    const summary = this.sessionList.find((session) => session.sessionId === sessionId);
+    if (!summary) {
+      throw new BackendError("not_found", "no such session");
+    }
+    return {
+      summary,
+      language: "es",
+      transcript: this.sessionTranscripts.get(sessionId) ?? [],
+      notes: null,
+      actionItems: [],
+      mediaPath: summary.hasMedia ? `C:\\Tiki\\sessions\\${sessionId}\\session.mp4` : null,
+    };
+  }
+
+  async searchSessions(text: string): Promise<SessionSearchHit[]> {
+    const word = text.trim().toLowerCase();
+    return [...this.sessionTranscripts].flatMap(([sessionId, lines]) => lines
+      .filter((line) => line.text.toLowerCase().includes(word))
+      .map((line) => ({ sessionId, sessionTitle: "Revisión con Andeanvet", startedAt: "2026-10-21T10:00:00", speaker: line.speaker, startMs: line.startMs, text: line.text })));
+  }
+
+  async deleteSession(sessionId: number): Promise<void> {
+    this.deletedSessions.push(sessionId);
+    this.sessionList = this.sessionList.filter((session) => session.sessionId !== sessionId);
+  }
+
+  async retryTranscription(sessionId: number): Promise<void> {
+    this.retriedTranscriptions.push(sessionId);
+  }
+
+  async sessionStorage(): Promise<SessionStorage> {
+    return { mediaBytes: 24_000_000, mediaDays: 90 };
+  }
+
+  mediaUrl(mediaPath: string): string {
+    return `http://asset.localhost/${encodeURIComponent(mediaPath)}`;
+  }
+
+  async onModelDownload(handler: (progress: ModelDownload) => void): Promise<() => void> {
+    this.modelDownloadHandler = handler;
+    return () => {
+      this.modelDownloadHandler = null;
+    };
+  }
+
+  /** Simulates the shell reporting the model download. */
+  reportModelDownload(progress: ModelDownload): void {
+    this.modelDownloadHandler?.(progress);
   }
 
   private changeRecording(paused: boolean): void {

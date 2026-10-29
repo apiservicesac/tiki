@@ -1,5 +1,6 @@
 import type { ActiveRecording } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
+import { DurationText } from "../dom/DurationText";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 
@@ -8,11 +9,6 @@ import type { Translator } from "../i18n/Translator";
  * own between snapshots from the core, and stands still while the recording is paused.
  */
 export class RecordingIndicator {
-  private static readonly MS_PER_SECOND = 1_000;
-  private static readonly SECONDS_PER_MINUTE = 60;
-  private static readonly SECONDS_PER_HOUR = 3_600;
-  private static readonly CLOCK_DIGITS = 2;
-
   private recording: ActiveRecording | null = null;
   /** When the core measured `recording.recordedMs`, on this page's clock. */
   private measuredAt = 0;
@@ -67,12 +63,6 @@ export class RecordingIndicator {
       return "";
     }
     const counted = recording.paused ? 0 : Date.now() - this.measuredAt;
-    const totalSeconds = Math.floor((recording.recordedMs + counted) / RecordingIndicator.MS_PER_SECOND);
-    const hours = Math.floor(totalSeconds / RecordingIndicator.SECONDS_PER_HOUR);
-    const minutes = Math.floor((totalSeconds % RecordingIndicator.SECONDS_PER_HOUR) / RecordingIndicator.SECONDS_PER_MINUTE);
-    const seconds = totalSeconds % RecordingIndicator.SECONDS_PER_MINUTE;
-    const pad = (value: number) => String(value).padStart(RecordingIndicator.CLOCK_DIGITS, "0");
-    const clock = [pad(minutes), pad(seconds)];
-    return (hours > 0 ? [String(hours), ...clock] : clock).join(":");
+    return DurationText.clock(recording.recordedMs + counted);
   }
 }

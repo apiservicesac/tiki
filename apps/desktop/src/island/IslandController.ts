@@ -16,6 +16,7 @@ import type { IslandView, IslandViewHandlers } from "./IslandView";
 import { ItemActions } from "./ItemActions";
 import { PreferencesFlow } from "./PreferencesFlow";
 import { RecordingFlow } from "./RecordingFlow";
+import { SessionsFlow } from "./SessionsFlow";
 
 /** The views the controller drives directly, besides the island itself. */
 export interface IslandViews {
@@ -40,6 +41,7 @@ export class IslandController {
   private readonly items: ItemActions;
   private readonly alerts: AlertFlow;
   private readonly recording: RecordingFlow;
+  private readonly sessions: SessionsFlow;
   private readonly stopListening: Array<() => void> = [];
   /** The window changes size when the island moves to another orientation. */
   private readonly redrawOnResize = () => this.render();
@@ -73,6 +75,7 @@ export class IslandController {
     this.items = new ItemActions(backend, store);
     this.alerts = new AlertFlow(store, this.modes, this.items, this.assistantActions);
     this.recording = new RecordingFlow(backend, store, this.modes);
+    this.sessions = new SessionsFlow(backend, store);
   }
 
   get currentState(): Readonly<IslandState> {
@@ -92,6 +95,8 @@ export class IslandController {
       await this.backend.listen(SHELL_EVENTS.inCallChanged, () => void this.refresh()),
       await this.backend.listen(SHELL_EVENTS.recordingChanged, () => void this.refresh()),
       await this.backend.listen(SHELL_EVENTS.toggleRecording, () => void this.recording.toggle()),
+      await this.backend.listen(SHELL_EVENTS.transcriptReady, () => void this.refresh()),
+      await this.backend.onModelDownload((progress) => this.sessions.followDownload(progress)),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
     window.addEventListener("resize", this.redrawOnResize);
@@ -113,14 +118,15 @@ export class IslandController {
     window.removeEventListener("resize", this.redrawOnResize);
   }
 
-  /** The day, the projects and the history, fresh from the core. */
+  /** The day, the projects, the history and the sessions, fresh from the core. */
   async refresh(): Promise<void> {
-    const [snapshot, projects, delivered] = await Promise.all([
+    const [snapshot, projects, delivered, sessions] = await Promise.all([
       this.backend.islandSnapshot(),
       this.backend.projectSummaries(),
       this.backend.deliveredTasks(),
+      this.sessions.load(),
     ]);
-    this.update({ snapshot, projects, delivered });
+    this.update({ snapshot, projects, delivered, ...sessions });
     this.recording.followSnapshot();
   }
 
@@ -134,6 +140,11 @@ export class IslandController {
 
   selectTab(tab: IslandTab): void {
     this.update({ tab, panel: "tabs", mode: "expanded" });
+  }
+
+  /** Opens a recorded session in its panel. */
+  openSession(sessionId: number): Promise<void> {
+    return this.sessions.open(sessionId);
   }
 
   submitCapture(): Promise<void> {
@@ -214,6 +225,10 @@ export class IslandController {
       onPauseRecording: () => void this.recording.pause(),
       onResumeRecording: () => void this.recording.resume(),
       onStopRecording: () => void this.recording.stop(),
+      onOpenSession: (sessionId, startAtMs) => void this.sessions.open(sessionId, startAtMs),
+      onSearchSessions: (text) => void this.sessions.search(text),
+      onRetryTranscription: (sessionId) => void this.sessions.retry(sessionId),
+      onDeleteSession: (sessionId) => void this.sessions.delete(sessionId),
       onDeliverTask: (taskId) => void this.items.deliver(taskId),
       onOpenTask: (taskId) => void this.items.open(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),

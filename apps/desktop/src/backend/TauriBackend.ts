@@ -1,4 +1,4 @@
-import { invoke, type InvokeArgs } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke, type InvokeArgs } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { SHELL_EVENTS } from "../config/uiConfig";
 import { BackendError } from "./BackendError";
@@ -12,7 +12,12 @@ import type {
   CaptureLesson,
   ProjectChange,
   ProjectSummary,
+  ModelDownload,
   RecordingMode,
+  SessionDetails,
+  SessionSearchHit,
+  SessionStorage,
+  SessionSummary,
   DeliveredItem,
   DueAlert,
   HitArea,
@@ -144,6 +149,38 @@ export class TauriBackend implements TikiBackend {
 
   async stopRecording(): Promise<void> {
     await this.call("stop_recording");
+  }
+
+  sessions(): Promise<SessionSummary[]> {
+    return this.call<SessionSummary[]>("sessions");
+  }
+
+  sessionDetails(sessionId: number): Promise<SessionDetails> {
+    return this.call<SessionDetails>("session_details", { sessionId });
+  }
+
+  searchSessions(text: string): Promise<SessionSearchHit[]> {
+    return this.call<SessionSearchHit[]>("search_sessions", { text });
+  }
+
+  async deleteSession(sessionId: number): Promise<void> {
+    await this.call("delete_session", { sessionId });
+  }
+
+  async retryTranscription(sessionId: number): Promise<void> {
+    await this.call("retry_transcription", { sessionId });
+  }
+
+  sessionStorage(): Promise<SessionStorage> {
+    return this.call<SessionStorage>("session_storage");
+  }
+
+  mediaUrl(mediaPath: string): string {
+    return convertFileSrc(mediaPath);
+  }
+
+  onModelDownload(handler: (progress: ModelDownload) => void): Promise<() => void> {
+    return listen<ModelDownload>(SHELL_EVENTS.modelDownloadProgress, (event) => handler(event.payload));
   }
 
   async openMeetingLink(url: string): Promise<void> {

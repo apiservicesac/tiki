@@ -35,6 +35,7 @@ export class HeaderView {
     projects: "projects.title",
     brief: "receipt.title",
     record: "record.title",
+    session: "session.title",
   });
 
   constructor(

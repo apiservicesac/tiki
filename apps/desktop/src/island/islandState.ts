@@ -1,4 +1,9 @@
 import type {
+  ModelDownload,
+  SessionDetails,
+  SessionSearchHit,
+  SessionStorage,
+  SessionSummary,
   ProjectSummary,
   DeliveredItem,
   IslandPlacement,
@@ -21,17 +26,25 @@ export const RESTING_MODES: readonly IslandMode[] = Object.freeze(["hidden", "re
 
 /**
  * What the expanded island shows in its card: the tabs, or a panel such as quick capture,
- * a task being edited, the project list, the brief drawn as a receipt or the choice of what
- * to record.
+ * a task being edited, the project list, the brief drawn as a receipt, the choice of what
+ * to record or a recorded session.
  */
-export type IslandPanel = "tabs" | "capture" | "settings" | "edit" | "projects" | "brief" | "record";
+export type IslandPanel = "tabs" | "capture" | "settings" | "edit" | "projects" | "brief" | "record" | "session";
 
 /** Pending tasks, or the delivered history, in the Tasks tab. Reminders live in the Agenda. */
 export const TASKS_VIEWS = Object.freeze(["pending", "delivered"] as const);
 export type TasksView = (typeof TASKS_VIEWS)[number];
 
 /** Tickets join as a tab when a ticket connector arrives. */
-export type IslandTab = "today" | "all_tasks" | "agenda";
+export type IslandTab = "today" | "all_tasks" | "agenda" | "sessions";
+
+/** The session open in its panel: its details, where its media plays from, and where to start. */
+export interface OpenSession {
+  details: SessionDetails;
+  mediaUrl: string | null;
+  /** Opened from a search: the player starts at the line found. */
+  startAtMs: number | null;
+}
 
 /** Everything the island view needs to draw one frame. */
 export interface IslandState {
@@ -62,6 +75,15 @@ export interface IslandState {
   preparingBrief: boolean;
   /** The task open in the edit panel. */
   editing: TaskDetails | null;
+  /** Recorded sessions, newest first. */
+  sessions: SessionSummary[];
+  /** What their media takes on disk; `null` until loaded. */
+  sessionStorage: SessionStorage | null;
+  /** Lines matching the search in the Sessions tab; `null` without a search. */
+  sessionHits: SessionSearchHit[] | null;
+  openSession: OpenSession | null;
+  /** The transcription model downloading; `null` when it is not. */
+  modelDownload: ModelDownload | null;
 }
 
 /** How the island starts, before it knows where it sits and what the day holds. */
@@ -80,4 +102,9 @@ export const ISLAND_STATE_DEFAULTS: Readonly<Omit<IslandState, "placement" | "sn
   dayBrief: null,
   preparingBrief: false,
   editing: null,
+  sessions: [],
+  sessionStorage: null,
+  sessionHits: null,
+  openSession: null,
+  modelDownload: null,
 });
