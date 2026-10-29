@@ -13,7 +13,7 @@ export const UI_CONFIG = Object.freeze({
    * compact notch to finish opening and rest for a moment, so the two steps read clearly.
    */
   unfoldDelayMs: 800,
-  /** A reminder stays in the grown notch this long, then folds leaving an unread dot. */
+  /** An alert stays in the grown notch this long, then folds leaving an unread dot. */
   alertDurationMs: 12_000,
   /**
    * How each kind of alert presents itself in the notch: the face Tiki makes (and so the

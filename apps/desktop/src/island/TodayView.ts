@@ -8,7 +8,7 @@ export interface TodayHandlers extends TaskListHandlers {
   /** Opens what the latest alert is about: its item, or the brief as a receipt. */
   onOpenAlert: () => void;
   onDismissAlert: () => void;
-  /** Puts off the reminder of the latest alert. */
+  /** Puts off the item's reminder from the latest alert. */
   onSnooze: (taskId: number, minutes: number) => void;
   /** Opens a meeting's video call. */
   onJoinMeeting: (url: string) => void;
@@ -27,7 +27,7 @@ export interface TodayData {
 
 /**
  * Today: only what matters today. On top, "Now: do X" and one summary card (the latest
- * reminder with its buttons, or the AI brief, or a button to write it); then today's
+ * alert with its buttons, or the AI brief, or a button to write it); then today's
  * sections and "Delivered today".
  */
 export class TodayView {

@@ -39,11 +39,11 @@ pub struct SnapshotItem {
     pub urgency: Urgency,
 }
 
-/// A titled group of lines: "Vence pronto", "Te toca"…
+/// A titled group of lines of Today: "Atrasado", "Vence pronto", "Avisos", "Toca insistir".
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SnapshotSection {
-    /// Stable key: `overdue`, `due_soon`, `your_turn` or `waiting`.
+    /// Stable key: `overdue`, `due_soon`, `reminders` (today's) or `follow_up`.
     pub key: String,
     pub title: String,
     pub items: Vec<SnapshotItem>,

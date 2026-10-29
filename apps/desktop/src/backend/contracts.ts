@@ -62,6 +62,7 @@ export interface SnapshotItem {
 }
 
 export interface SnapshotSection {
+  /** Stable key: `overdue`, `due_soon`, `reminders` (today's) or `follow_up`. */
   key: string;
   title: string;
   items: SnapshotItem[];

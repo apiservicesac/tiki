@@ -10,7 +10,7 @@ import type {
 
 /**
  * How much of the island is visible, like the notch of dooai. `alert` is the notch grown a
- * little to show a reminder.
+ * little to show an alert.
  */
 export const ISLAND_MODES = Object.freeze(["hidden", "compact", "alert", "expanded"] as const);
 export type IslandMode = (typeof ISLAND_MODES)[number];
@@ -47,9 +47,9 @@ export interface IslandState {
   creatingProject: boolean;
   /** A short-lived mood (happy after capturing) that overrides the snapshot's mood. */
   reactionMood: MoodName | null;
-  /** The latest reminder: shown in the notch, then above the Today list until seen. */
+  /** The latest alert: shown in the notch, then above the Today list until seen. */
   alert: TikiAlert | null;
-  /** A reminder arrived and the island has not been opened since: the notch shows a dot. */
+  /** An alert arrived and the island has not been opened since: the notch shows a dot. */
   unreadAlert: boolean;
   /** The AI brief of the day, shown in the summary card of Today. */
   dayBrief: string | null;
