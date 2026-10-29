@@ -37,7 +37,8 @@ export class NotchView {
 
   /**
    * The notch grown to announce something: Tiki's face with ripples, the kind of alert, its
-   * title and first line (cut with "…"), and a thin countdown until the notch folds back.
+   * title and first line (cut with "…"). Along the bottom edge a tiny Tiki walks towards a
+   * glowing goal; when it gets there, the notch folds back.
    * The aura around the notch comes from the stylesheet (`data-mode="alert"`).
    */
   alert(snapshot: IslandSnapshot, alert: TikiAlert, mood: MoodName): HTMLElement {
@@ -58,7 +59,7 @@ export class NotchView {
             ElementFactory.create("span", { className: "notch-alert-preview", text: preview }),
           ],
         }),
-        ElementFactory.create("span", { className: "notch-alert-countdown", attributes: { "aria-hidden": "true" } }),
+        this.countdown(snapshot, mood),
       ],
     });
   }
@@ -76,6 +77,18 @@ export class NotchView {
           attributes: { title: snapshot.moodLabel },
         }),
       ],
+    });
+  }
+
+  /** The walk to the goal that tells how long the alert stays. */
+  private countdown(snapshot: IslandSnapshot, mood: MoodName): HTMLElement {
+    const walker = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.walker);
+    walker.classList.add("notch-alert-walker");
+    walker.querySelector("svg")?.setAttribute("aria-hidden", "true");
+    return ElementFactory.create("span", {
+      className: "notch-alert-countdown",
+      attributes: { "aria-hidden": "true" },
+      children: [ElementFactory.create("span", { className: "notch-alert-goal" }), walker],
     });
   }
 

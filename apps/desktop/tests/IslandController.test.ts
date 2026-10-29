@@ -448,7 +448,8 @@ describe("IslandController", () => {
     expect(root.querySelector(".notch-alert-kind")?.textContent).toBe("Reunión");
     expect(notch()?.dataset.mood).toBe(UI_CONFIG.alertStyles.meeting.mood);
     expect(root.dataset.mood).toBe(UI_CONFIG.alertStyles.meeting.mood);
-    expect(root.querySelector(".notch-alert-countdown")).not.toBeNull();
+    expect(root.querySelector(".notch-alert-countdown .notch-alert-walker .mascot-alert")).not.toBeNull();
+    expect(root.querySelector(".notch-alert-countdown .notch-alert-goal")).not.toBeNull();
 
     vi.advanceTimersByTime(UI_CONFIG.alertDurationMs);
     expect(notch()?.dataset.mood).toBe("worried");
