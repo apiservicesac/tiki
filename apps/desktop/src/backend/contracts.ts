@@ -248,7 +248,7 @@ export interface TaskDetails extends TaskEdit {
  * What the user can do with an alert, decided by the core (see `AlertAction`): open what it
  * is about, put a reminder that rang away, snooze the item's reminder, or join the call.
  */
-export type AlertAction = "open" | "done" | "snooze" | "join";
+export type AlertAction = "open" | "done" | "snooze" | "join" | "record_audio" | "record_video";
 
 /** An alert already written in the user's language (see `TikiAlert` in the core). */
 export interface TikiAlert {
@@ -349,6 +349,19 @@ export interface DeliveredItem {
   deliveredLabel: string;
 }
 
+/** One item in the trash, newest first (see `TrashedItem` in the core). */
+export interface TrashedItem {
+  taskId: number;
+  kind: ItemKind;
+  title: string;
+  projectName: string | null;
+  projectColor: string | null;
+  /** "hoy", "ayer" or "hace 3 días". */
+  trashedLabel: string;
+  /** "se borra hoy", "se borra mañana" or "se borra en 27 días". */
+  deletesInLabel: string;
+}
+
 export interface AvailableUpdate {
   version: string;
   notes: string | null;
@@ -438,11 +451,23 @@ export interface TikiBackend {
   /** Creates a project; returns its id. */
   createProject(name: string): Promise<number>;
   changeProject(projectId: number, change: ProjectChange): Promise<void>;
-  /** Removes a project; their tasks stay, without project. */
+  /** Removes a project and sends its items to the trash, where they stay without project. */
   removeProject(projectId: number): Promise<void>;
   projectColors(): Promise<string[]>;
   /** Delivered tasks, most recent first. */
   deliveredTasks(): Promise<DeliveredItem[]>;
+  /** Sends an item to the trash: it leaves every view and its reminders stay silent. */
+  trashItem(taskId: number): Promise<void>;
+  /** Takes an item out of the trash exactly as it was. */
+  restoreItem(taskId: number): Promise<void>;
+  /** Deletes an item in the trash forever, with its history; one outside the trash is refused. */
+  deleteItemForever(taskId: number): Promise<void>;
+  /** Deletes every item in the trash forever. */
+  emptyTrash(): Promise<void>;
+  /** Items in the trash, most recently trashed first. */
+  trashedItems(): Promise<TrashedItem[]>;
+  /** How many days an item stays in the trash before it is deleted forever (`trash.retention_note`). */
+  trashRetentionDays(): Promise<number>;
   /** The user's recent corrections to AI captures, newest first. */
   captureLessons(): Promise<CaptureLesson[]>;
   recordCaptureLesson(lesson: CaptureLesson): Promise<void>;

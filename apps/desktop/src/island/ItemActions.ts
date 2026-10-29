@@ -27,6 +27,33 @@ export class ItemActions {
     this.store.react("happy");
   }
 
+  /** Sends the item open in the edit form to the trash and goes back to the tabs. */
+  async trash(taskId: number): Promise<void> {
+    await this.backend.trashItem(taskId);
+    await this.store.refresh();
+    this.store.update({ panel: "tabs", editing: null });
+  }
+
+  async restore(taskId: number): Promise<void> {
+    await this.backend.restoreItem(taskId);
+    await this.store.refresh();
+  }
+
+  async deleteForever(taskId: number): Promise<void> {
+    await this.backend.deleteItemForever(taskId);
+    await this.store.refresh();
+  }
+
+  async emptyTrash(): Promise<void> {
+    await this.backend.emptyTrash();
+    await this.store.refresh();
+  }
+
+  async reopen(taskId: number): Promise<void> {
+    await this.backend.moveTask(taskId, "to_do");
+    await this.store.refresh();
+  }
+
   /** Puts off the reminder and puts the alert away. */
   async snooze(taskId: number, minutes: number): Promise<void> {
     await this.backend.snooze(taskId, minutes);

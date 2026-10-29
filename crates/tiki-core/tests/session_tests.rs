@@ -4,7 +4,7 @@ use chrono::{Duration, NaiveDateTime, NaiveTime};
 use support::{TestDay, TimedWorkspace};
 use tiki_core::TikiError;
 use tiki_core::activity::ItemEvent;
-use tiki_core::alerts::AlertKind;
+use tiki_core::alerts::{AlertAction, AlertKind};
 use tiki_core::calendar::{CalendarProvider, Meeting};
 use tiki_core::i18n::{Locale, Translator};
 use tiki_core::sessions::{
@@ -465,6 +465,14 @@ fn a_call_brings_a_quiet_offer_to_record_with_the_consent_reminder() {
     assert_eq!(offer.alert.kind, AlertKind::Recording);
     assert_eq!(offer.alert.title, "¿Grabar esta llamada?");
     assert_eq!(offer.alert.tips, ["Si grabas, avisa a los participantes."]);
+    assert_eq!(
+        offer.alert.actions,
+        [
+            AlertAction::Open,
+            AlertAction::RecordAudio,
+            AlertAction::RecordVideo
+        ]
+    );
     assert!(!offer.delivery.sound);
     assert_eq!(workspace.take_recording_suggestion().unwrap(), None);
 }
@@ -534,5 +542,37 @@ fn a_session_exports_as_subtitles_text_and_markdown_notes() {
         export.notes(&details).unwrap(),
         "# Sesión del Mié 21, 10:00\n\nMié 21 · 10:00\n\n## Resumen\n\nSe revisó la facturación.\n\n\
          ## Puntos clave\n\n- Octubre cerrado\n\n## Tareas propuestas\n\n- [ ] Enviar el informe\n"
+    );
+}
+
+#[test]
+fn a_proposed_task_sent_to_the_trash_can_be_created_again() {
+    let workspace = workspace();
+    let session_id = transcribed(&workspace, vec![line(Speaker::You, 0, "Envío el acta")]);
+    let notes = SessionNotes {
+        summary: String::new(),
+        key_points: Vec::new(),
+        decisions: Vec::new(),
+    };
+    let proposed = [ProposedSessionTask {
+        title: "Enviar el acta".to_owned(),
+        due_date: None,
+    }];
+    let sessions = workspace.sessions();
+    sessions.save_notes(session_id, &notes, &proposed).unwrap();
+    let item = sessions.details(session_id).unwrap().action_items[0].clone();
+    let first = sessions.apply_action_item(item.action_item_id).unwrap();
+
+    workspace.trash_item(first).unwrap();
+
+    assert_eq!(
+        sessions.details(session_id).unwrap().action_items[0].task_id,
+        None
+    );
+    let second = sessions.apply_action_item(item.action_item_id).unwrap();
+    assert_ne!(second, first);
+    assert_eq!(
+        sessions.details(session_id).unwrap().action_items[0].task_id,
+        Some(second)
     );
 }

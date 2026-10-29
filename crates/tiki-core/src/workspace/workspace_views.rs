@@ -1,9 +1,10 @@
 use super::{
     AssistantContext, Clock, DeliveredItem, IslandSnapshot, SnapshotPresenter, TodaysMeetings,
+    TrashedItem,
 };
 use crate::briefing::DailyBriefBuilder;
 use crate::calendar::CalendarBook;
-use crate::domain::TaskId;
+use crate::domain::{TaskId, TrashPolicy};
 use crate::editing::TaskDetails;
 use crate::error::TikiResult;
 use crate::i18n::Translator;
@@ -15,7 +16,7 @@ use crate::settings::TikiSettings;
 use crate::storage::Database;
 
 /// Reads what the interface and the assistant show: the island snapshot, the delivered
-/// history, the edit form and the assistant's context. It never changes anything.
+/// history, the trash, the edit form and the assistant's context. It never changes anything.
 pub struct WorkspaceViews<'context> {
     database: &'context Database,
     settings: &'context TikiSettings,
@@ -103,6 +104,22 @@ impl<'context> WorkspaceViews<'context> {
             ));
         }
         Ok(delivered)
+    }
+
+    /// Items in the trash, most recently trashed first.
+    pub fn trashed_items(&self) -> TikiResult<Vec<TrashedItem>> {
+        let projects = ProjectBook::new(self.database, self.settings).directory()?;
+        let policy = TrashPolicy::new(self.settings);
+        let today = self.clock.today();
+        Ok(self
+            .database
+            .tasks()
+            .list_trashed()?
+            .iter()
+            .filter_map(|task| {
+                TrashedItem::present(task, &projects, &policy, self.translator, today)
+            })
+            .collect())
     }
 
     /// A saved item as the edit form shows it.

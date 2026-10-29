@@ -39,6 +39,9 @@ pub enum TikiError {
     #[error("a reminder needs a time to ring")]
     ReminderNeedsTime,
 
+    #[error("the item is in the trash: restore it to change it")]
+    ItemInTrash,
+
     #[error("the session has not been saved yet")]
     UnsavedSession,
 
@@ -81,6 +84,7 @@ impl TikiError {
             TikiError::DuplicateProjectName(_) => "duplicate_project_name",
             TikiError::EmptyTaskTitle => "empty_task_title",
             TikiError::ReminderNeedsTime => "reminder_needs_time",
+            TikiError::ItemInTrash => "item_in_trash",
             TikiError::UnsavedSession => "unsaved_session",
             TikiError::SessionTransition { .. } => "session_transition",
             TikiError::AlreadyRecording => "already_recording",

@@ -17,6 +17,7 @@ impl SchemaMigrations {
             M::up(Self::TIMELESS_REMINDERS_BECOME_TASKS),
             M::up(Self::FOLLOW_UPS_APART_FROM_REMINDERS),
             M::up(Self::ITEM_EVENTS),
+            M::up(Self::TRASH),
             M::up(Self::SESSIONS),
         ])
     }
@@ -96,6 +97,12 @@ impl SchemaMigrations {
 
         ALTER TABLE tasks ADD COLUMN origin_session_id INTEGER
             REFERENCES sessions(id) ON DELETE SET NULL;
+    ";
+
+    /// When the user sent an item to the trash (local time); NULL for every item outside it.
+    const TRASH: &'static str = "
+        ALTER TABLE tasks ADD COLUMN trashed_at TEXT;
+        CREATE INDEX tasks_by_trash ON tasks(trashed_at) WHERE trashed_at IS NOT NULL;
     ";
 
     const INITIAL_SCHEMA: &'static str = "

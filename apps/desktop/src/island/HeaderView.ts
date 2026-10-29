@@ -24,8 +24,11 @@ export interface HeaderHandlers {
 }
 
 /**
- * Top row of the expanded island: tabs on the left, actions on the right. While a session
- * records, its red dot, timer, pause and stop take the place of the record button.
+ * Top row of the expanded island: Tiki's face, then the tabs (or a back button and the
+ * panel's title), and on the right the actions that make sense there. On the tabs: new and
+ * settings; inside a panel only close, since the back button already leads out.
+ * While a session records, its red dot and timer stay in the header everywhere, with pause
+ * and stop on the tabs.
  */
 export class HeaderView {
   private static readonly PANEL_TITLES: Readonly<Record<TitledPanel, string>> = Object.freeze({
@@ -44,6 +47,7 @@ export class HeaderView {
   ) {}
 
   render(
+    face: HTMLElement,
     panel: IslandPanel,
     tabs: readonly IslandTabLabel[],
     activeTab: IslandTab,
@@ -53,22 +57,25 @@ export class HeaderView {
     const leading = panel === "tabs"
       ? this.tabs(tabs, activeTab, handlers.onSelectTab)
       : this.backButton(panel, handlers.onOpenPanel);
-
-    return ElementFactory.create("header", {
-      className: "island-head",
-      children: [
-        leading,
-        ElementFactory.create("span", { className: "island-head-spacer" }),
+    const close = ElementFactory.iconButton(ICONS.close, this.translator.text("island.action.close"), handlers.onClose);
+    const actions = panel === "tabs"
+      ? [
         ...this.recordingControls(recording, handlers),
         ElementFactory.iconButton(ICONS.plus, this.translator.text("island.action.new"), () =>
           handlers.onOpenPanel("capture")),
         ElementFactory.iconButton(ICONS.settings, this.translator.text("island.action.settings"), () =>
           handlers.onOpenPanel("settings")),
-        ElementFactory.iconButton(ICONS.close, this.translator.text("island.action.close"), handlers.onClose),
-      ],
+        close,
+      ]
+      : [...(recording ? [this.recordingIndicator.render(recording)] : []), close];
+
+    return ElementFactory.create("header", {
+      className: "island-head",
+      children: [face, leading, ElementFactory.create("span", { className: "island-head-spacer" }), ...actions],
     });
   }
 
+  /** On the tabs: the record button, or the session's dot and timer with pause and stop. */
   private recordingControls(recording: ActiveRecording | null, handlers: HeaderHandlers): HTMLElement[] {
     if (!recording) {
       return [ElementFactory.iconButton(ICONS.record, this.translator.text("recording.start"), () => handlers.onOpenPanel("record"))];

@@ -33,10 +33,10 @@ fn the_snapshot_is_translated_and_ready_to_draw() {
     assert_eq!(snapshot.attention_count, 5);
     assert_eq!(snapshot.due_count, 3);
     assert_eq!(snapshot.waiting_count, 2);
-    assert_eq!(snapshot.closed_summary, "3 hoy · 2 esperando");
+    assert_eq!(snapshot.closed_summary, "3 por atender · 2 esperando");
     assert_eq!(
         snapshot.today_subtitle,
-        "miércoles 21 de octubre · 3 vencen pronto"
+        "miércoles 21 de octubre · 3 por atender"
     );
 
     let keys: Vec<&str> = snapshot
@@ -108,7 +108,13 @@ fn switching_to_english_translates_the_snapshot() {
 #[test]
 fn delivering_the_overdue_task_calms_tiki_down_to_hurry() {
     let workspace = sample_workspace();
-    let overdue_id = workspace.island_snapshot().unwrap().sections[0].items[0].task_id;
+    let overdue_id = workspace
+        .island_snapshot()
+        .unwrap()
+        .focus
+        .unwrap()
+        .item
+        .task_id;
 
     workspace.move_task(overdue_id, TaskStatus::Done).unwrap();
 
@@ -164,7 +170,12 @@ fn a_confirmed_capture_is_saved_with_its_project_priority_and_date() {
         })
         .unwrap();
 
-    let due_soon = workspace.island_snapshot().unwrap().sections[1].clone();
+    let snapshot = workspace.island_snapshot().unwrap();
+    let due_soon = snapshot
+        .sections
+        .iter()
+        .find(|section| section.key == "due_soon")
+        .unwrap();
     let saved = due_soon
         .items
         .iter()

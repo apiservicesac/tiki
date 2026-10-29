@@ -27,17 +27,22 @@ export class RecordingFlow {
     }
   }
 
-  /** Records audio only, right away. */
+  /** Records audio only, right away; from Tiki's offer in the notch, the offer goes away. */
   async startAudio(): Promise<void> {
+    const fromAlert = this.store.state().mode === "alert";
     if (await this.run(() => this.backend.startRecording("audio_only", null))) {
-      this.store.update({ panel: "tabs" });
+      this.store.update({ panel: "tabs", alert: null, unreadAlert: false });
+      if (fromAlert) {
+        this.modes.moveTo("resting");
+      }
     }
   }
 
   /** A video session first asks which screen or window to record. */
   async chooseVideo(): Promise<void> {
     try {
-      this.store.update({ videoTargets: await this.backend.captureTargets() });
+      const videoTargets = await this.backend.captureTargets();
+      this.store.update({ mode: "expanded", panel: "record", videoTargets, alert: null, unreadAlert: false });
     } catch {
       this.store.react("worried");
     }

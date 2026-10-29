@@ -271,7 +271,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font: 700 10px/1.2 var(--font-mono);
+  font: 700 var(--text-label)/1.2 var(--font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--mood-color) var(--mood-ink-mix), var(--island-text));
@@ -290,7 +290,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13.5px;
+  font-size: var(--text-lg);
   font-weight: 700;
 }
 
@@ -308,11 +308,34 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   flex: none;
 }
 
+/* The alert's buttons on the right: done, the shortest snooze, join. */
+.notch-alert-actions {
+  display: inline-flex;
+  flex: none;
+  gap: 6px;
+}
+
+.notch-alert-button {
+  display: inline-flex;
+  align-items: center;
+  height: var(--row-pill-height);
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--mood-color) 45%, transparent);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--mood-color) 14%, transparent);
+  color: color-mix(in srgb, var(--mood-color) var(--mood-ink-mix), var(--island-text));
+  font: 600 var(--text-xs) var(--font-body);
+  cursor: pointer;
+}
+
+.notch-alert-button:hover { background: color-mix(in srgb, var(--mood-color) 26%, transparent); }
+
+/* The ripples hug the face and stay inside the notch, clear of its edge and the text. */
 .notch-alert-face::before,
 .notch-alert-face::after {
   content: "";
   position: absolute;
-  inset: -4px -2px;
+  inset: 0;
   border: 1.5px solid var(--mood-color);
   border-radius: var(--radius-pill);
   opacity: 0;
@@ -401,14 +424,14 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 @keyframes alert-pulse { 50% { opacity: 0.45; } }
 @keyframes alert-aura { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
 @keyframes alert-arrive { 0% { transform: scale(0.96); } 55% { transform: scale(1.03); } 100% { transform: none; } }
-@keyframes alert-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
+@keyframes alert-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.25); } }
 @keyframes alert-countdown { to { transform: scaleX(0); } }
 
 /* 5. Expanded island ------------------------------------------------------------------ */
 /* Header with tabs and actions, then a card. */
 .island-expanded {
   width: var(--notch-expanded-width);
-  padding-bottom: 10px;
+  padding-bottom: var(--card-bottom-gap);
 }
 
 .island-head {
@@ -418,6 +441,12 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   height: var(--notch-head-height);
   padding: 0 12px 0 14px;
   color: var(--island-muted);
+}
+
+.island-head-face {
+  display: inline-flex;
+  margin-right: 4px;
+  line-height: 0;
 }
 
 .island-head-spacer { flex: 1; }
@@ -451,8 +480,6 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 
 .island-card {
   position: relative;
-  display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
   margin: 0 10px;
   overflow: hidden;
   border: 1px solid var(--island-card-edge);
@@ -473,47 +500,25 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 .island-card[data-mood="calm"],
 .island-card[data-mood="sleep"] { --wash: transparent; }
 
-.island-card-mascot {
-  display: flex;
-  justify-content: center;
-  padding-top: 18px;
-  line-height: 0;
-}
-
+/*
+ * The card never grows past the window (the window is the viewport): what does not fit
+ * scrolls inside it, so no panel is ever cut at the bottom.
+ */
 .island-card-body {
   position: relative;
   min-width: 0;
-  padding: 14px 16px 14px 0;
-}
-
-/* Tasks tab, project panel and receipt use the whole card: no big mascot beside them. */
-.island-card[data-tab="all_tasks"][data-panel="tabs"],
-.island-card[data-panel="projects"],
-.island-card[data-panel="brief"] {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.island-card[data-tab="all_tasks"][data-panel="tabs"] .island-card-mascot,
-.island-card[data-panel="projects"] .island-card-mascot,
-.island-card[data-panel="brief"] .island-card-mascot {
-  display: none;
-}
-
-/* Cards without the big mascot keep the same margin on both sides. */
-.island-card[data-tab="all_tasks"][data-panel="tabs"] .island-card-body,
-.island-card[data-panel="projects"] .island-card-body,
-.island-card[data-panel="brief"] .island-card-body {
+  max-height: var(--card-max-height);
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 14px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--island-soft) transparent;
 }
 
 /* 6. Lists and rows ------------------------------------------------------------------- */
 .island-list {
   display: grid;
   gap: 1px;
-  max-height: 340px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--island-soft) transparent;
 }
 
 .island-group {
@@ -526,7 +531,8 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 
 .island-row {
   display: grid;
-  grid-template-columns: 4px minmax(0, 1fr) auto 28px;
+  /* Bar, title, badge, then the action: as wide as its button, never cut. */
+  grid-template-columns: 4px minmax(0, 1fr) auto minmax(28px, auto);
   gap: 10px;
   align-items: center;
   padding: 7px 6px;
@@ -573,15 +579,20 @@ button.island-row-text {
 .island-priority-urgent { color: var(--urgency-critical-text); }
 .island-priority-high { color: var(--urgency-soon-text); }
 
-/* The check that delivers an item shows on hover. */
-.island-row-done { opacity: 0; }
+/* The check that delivers an item: always there, faint until the row is pointed at. */
+.island-row-done { opacity: 0.4; }
 .island-row:hover .island-row-done,
 .island-row-done:focus-visible { opacity: 1; }
 .island-row-done:hover { color: var(--good); }
 
 /* When the item is due, colored by its urgency. */
+/* Badges and the small buttons beside them share one height, so a row lines up. */
 .island-when {
-  padding: 2px 8px;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: var(--row-pill-height);
+  padding: 0 9px;
   border-radius: var(--radius-pill);
   font: 600 var(--text-2xs) var(--font-mono);
   white-space: nowrap;
@@ -595,17 +606,24 @@ button.island-row-text {
 .island-when-reminder { background: var(--kind-instance-background); color: var(--kind-instance-text); }
 .island-when-done { background: var(--good-background); color: var(--good); }
 
-/* A delivered task: muted title and a check instead of the deliver button. */
+/* A delivered task: muted title and a Reopen button instead of the deliver check. */
 .island-row-delivered .island-row-text { color: var(--island-muted); }
 
-.island-row-check {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  color: var(--good);
+.island-row-reopen {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: var(--row-pill-height);
+  padding: 0 11px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--island-muted);
+  font: 600 var(--text-2xs) var(--font-body);
+  cursor: pointer;
 }
 
-.island-row-check svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+.island-row-reopen:hover { background: var(--island-soft); color: var(--island-text); }
 
 .island-empty,
 .island-hint {
@@ -736,6 +754,51 @@ button.island-row-text {
 .island-delivered-link:hover { background: var(--island-soft); }
 
 /* 8. Tasks tab ------------------------------------------------------------------------ */
+/* The trash: how long things stay, Empty trash, and on each item Restore and Delete forever. */
+.trash-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+
+.trash-note {
+  flex: 1;
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--island-muted);
+}
+
+.trash-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trash-empty,
+.trash-confirm {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: var(--row-pill-height);
+  padding: 0 11px;
+  border: 1px solid var(--island-card-edge);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--island-muted);
+  font: 600 var(--text-2xs) var(--font-body);
+  cursor: pointer;
+}
+
+.trash-empty:hover { background: var(--island-soft); color: var(--island-text); }
+
+/* The second click that deletes for good says so in red. */
+.trash-confirm {
+  border-color: transparent;
+  background: var(--urgency-critical-background);
+  color: var(--urgency-critical-text);
+}
+
 .tasks-tab { display: grid; gap: 10px; }
 
 .tasks-toolbar {
@@ -793,7 +856,6 @@ button.island-row-text {
 
 .tasks-toggle-on { background: var(--island-active); color: var(--island-text); }
 
-.tasks-list { max-height: 330px; }
 
 .tasks-group {
   display: flex;
@@ -806,8 +868,8 @@ button.island-row-text {
 
 /* 9. Agenda --------------------------------------------------------------------------- */
 /* Reminders and meetings by day, with their time first and a bell or a calendar. */
-.agenda-row { grid-template-columns: 80px minmax(0, 1fr) auto 28px; }
-.agenda-meeting { grid-template-columns: 80px minmax(0, 1fr) auto auto; }
+.agenda-row { grid-template-columns: var(--agenda-time-width) minmax(0, 1fr) auto minmax(28px, auto); }
+.agenda-meeting { grid-template-columns: var(--agenda-time-width) minmax(0, 1fr) auto auto; }
 
 .agenda-join {
   padding: 3px 10px;
@@ -820,7 +882,9 @@ button.island-row-text {
 }
 
 .agenda-join:hover { filter: brightness(1.1); }
-.agenda-time { font: 600 var(--text-sm) var(--font-mono); color: var(--kind-instance-text); }
+/* Wide enough for a meeting's "09:00–09:30" on one line. */
+.agenda-row { --agenda-time-width: 128px; }
+.agenda-time { font: 600 var(--text-sm) var(--font-mono); color: var(--kind-instance-text); white-space: nowrap; }
 .agenda-bell { display: flex; color: var(--island-faint); }
 .agenda-bell svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
 
@@ -946,8 +1010,19 @@ button.island-row-text {
 
 /* 11. Project panel ------------------------------------------------------------------- */
 .projects-panel { display: grid; gap: 10px; }
-.projects-new { margin-top: 0; }
-.projects-list { max-height: 330px; gap: 2px; }
+.projects-create {
+  padding: 10px 12px;
+  border: 1px dashed var(--island-card-edge);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--island-text);
+  font: 600 var(--text-md) var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.projects-create:hover { background: var(--island-soft); }
+.projects-list { gap: 2px; }
 
 .project-row {
   display: flex;
@@ -1002,7 +1077,7 @@ button.island-row-text {
   border-radius: var(--radius-lg);
   background: var(--island-soft);
   color: var(--island-text);
-  font: 14px var(--font-body);
+  font: var(--text-xl) var(--font-body);
   outline: none;
 }
 
@@ -1080,8 +1155,6 @@ button.island-row-text {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px 10px;
-  max-height: 400px;
-  overflow-y: auto;
 }
 
 .edit-field {
@@ -1092,6 +1165,9 @@ button.island-row-text {
 }
 
 .edit-field-wide { grid-column: 1 / -1; }
+
+/* Task or reminder: as wide as its two choices, not the whole row. */
+.item-kind { justify-self: start; }
 
 .edit-notes {
   resize: none;
@@ -1109,6 +1185,10 @@ button.island-row-text {
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* Move to the trash stands apart, on the left, so it is never taken for Save. */
+.edit-trash { margin-right: auto; }
+.edit-trash:hover { color: var(--urgency-critical-text); }
 
 /* 14. Settings ------------------------------------------------------------------------ */
 .settings {
@@ -1175,8 +1255,6 @@ button.island-row-text {
 /* 15. Receipt ------------------------------------------------------------------------- */
 /* The brief as a receipt, as in the design: dashed blocks, a suggestion and the totals. */
 .receipt {
-  max-height: 400px;
-  overflow-y: auto;
   padding: 16px 18px;
   border: 1px solid var(--receipt-line);
   border-radius: var(--radius-sm);
@@ -1191,7 +1269,7 @@ button.island-row-text {
   border-bottom: 1.5px dashed var(--receipt-line);
 }
 
-.receipt-head strong { font-size: 17px; font-weight: 800; }
+.receipt-head strong { font-size: var(--text-title); font-weight: 800; }
 .receipt-head span { font: var(--text-xs) var(--font-mono); color: var(--island-muted); }
 
 .receipt-block {
@@ -1317,7 +1395,7 @@ button.island-row-text {
 
 /* A video session: the quality, then the screen or window to record. */
 .record-picker { display: grid; gap: 8px; }
-.record-targets { display: grid; gap: 4px; max-height: 220px; overflow-y: auto; }
+.record-targets { display: grid; gap: 4px; }
 
 .record-target {
   display: flex;
@@ -1338,7 +1416,6 @@ button.island-row-text {
 
 /* 17. Sessions ------------------------------------------------------------------------ */
 .sessions-tab { display: grid; gap: 10px; }
-.sessions-list { max-height: 300px; }
 .sessions-download,
 .sessions-storage { margin: 0; font-size: var(--text-xs); color: var(--island-muted); }
 
@@ -1350,7 +1427,7 @@ button.island-row-text {
 .session-player { width: 100%; max-height: 200px; border-radius: var(--radius-md); background: var(--island-soft); }
 .session-note { margin: 0; font-size: var(--text-sm); color: var(--island-muted); }
 
-.session-transcript { display: grid; gap: 2px; max-height: 220px; overflow-y: auto; }
+.session-transcript { display: grid; gap: 2px; }
 
 .session-line {
   display: grid;
@@ -1411,7 +1488,8 @@ button.island-row-text {
  * is hard to read at a glance), and the expanded island becomes a narrow, tall panel.
  */
 [data-orientation="vertical"] {
-  --notch-expanded-width: 380px;
+  --notch-expanded-width: 460px;
+  --card-max-height: calc(100vh - var(--notch-head-height) - var(--card-bottom-gap) - 2 * var(--notch-ear) - 2px);
 }
 
 [data-orientation="vertical"] .notch-hidden {
@@ -1455,34 +1533,16 @@ button.island-row-text {
 [data-orientation="vertical"] .island-head { gap: 2px; padding: 0 8px 0 10px; }
 [data-orientation="vertical"] .island-tab { padding: 5px 7px; }
 
-[data-orientation="vertical"] .island-card {
-  grid-template-columns: minmax(0, 1fr);
+[data-orientation="vertical"] .island-card-body { padding: 12px 14px; }
+
+/* Two placements per row in the narrow island, instead of three and one left alone. */
+[data-orientation="vertical"] .settings-group .settings-options[role="radiogroup"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-[data-orientation="vertical"] .island-card-mascot {
-  padding-top: 14px;
-}
-
-[data-orientation="vertical"] .island-card-body {
-  padding: 6px 14px 14px;
-}
-
-/* The narrow island has no room for the big mascot above Settings; the notch already shows it. */
-[data-orientation="vertical"] .island-card[data-panel="settings"] .island-card-mascot {
-  display: none;
-}
-
-[data-orientation="vertical"] .island-card[data-panel="settings"] .island-card-body {
-  padding-top: 14px;
-}
-
-[data-orientation="vertical"] .island-list {
-  max-height: 420px;
-}
-
-[data-orientation="vertical"] .tasks-toolbar { grid-template-columns: minmax(0, 1fr) auto; }
-[data-orientation="vertical"] .tasks-search-box { grid-column: 1 / -1; }
-[data-orientation="vertical"] .tasks-list { max-height: 440px; }
+/* In the narrow column the search, the project and the view each take a whole row. */
+[data-orientation="vertical"] .tasks-toolbar { grid-template-columns: minmax(0, 1fr); }
 [data-orientation="vertical"] .capture-fields { grid-template-columns: minmax(0, 1fr); }
 [data-orientation="vertical"] .edit-form { grid-template-columns: minmax(0, 1fr); }
 

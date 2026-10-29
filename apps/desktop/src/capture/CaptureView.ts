@@ -1,6 +1,6 @@
 import type { InterpretedCapture, ProposedAction } from "../ai";
 import { ProposedActionsView, type ApplyAction } from "./ProposedActionsView";
-import { ITEM_KINDS, type ItemKind, type Priority, type ProjectSummary, type Repeat } from "../backend/contracts";
+import type { ItemKind, Priority, ProjectSummary, Repeat } from "../backend/contracts";
 import { CoreDateTimeText } from "../backend/CoreDateTimeText";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
@@ -241,18 +241,10 @@ export class CaptureView {
   }
 
   private drawKind(): void {
-    const buttons = ITEM_KINDS.map((kind) => {
-      const button = ElementFactory.textButton({
-        className: kind === this.kind ? "tasks-toggle-option tasks-toggle-on" : "tasks-toggle-option",
-        text: this.translator.text(`kind.${kind}`),
-        attributes: { role: "radio", "aria-checked": String(kind === this.kind), "data-kind": kind },
-      }, () => {
-        this.kind = kind;
-        this.drawKind();
-      });
-      return button;
-    });
-    this.kindToggle?.replaceChildren(...buttons);
+    this.kindToggle?.replaceChildren(...this.fieldsBuilder.kindToggle(this.kind, (kind) => {
+      this.kind = kind;
+      this.drawKind();
+    }).children);
     this.drawFields();
   }
 

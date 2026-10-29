@@ -1,17 +1,12 @@
-import type { AlertAction, IslandSnapshot, TikiAlert } from "../backend/contracts";
-import { UI_CONFIG } from "../config/uiConfig";
+import type { IslandSnapshot, SnapshotSection, TikiAlert } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
+import { AlertActionButtons, type AlertActionHandlers, type AlertButtonsPlace } from "./AlertActionButtons";
 import type { TaskListHandlers, TaskListView } from "./TaskListView";
 
-export interface TodayHandlers extends TaskListHandlers {
+export interface TodayHandlers extends TaskListHandlers, AlertActionHandlers {
   /** Opens what the latest alert is about: its item, or the brief as a receipt. */
   onOpenAlert: () => void;
-  onDismissAlert: () => void;
-  /** Puts off the item's reminder from the latest alert. */
-  onSnooze: (taskId: number, minutes: number) => void;
-  /** Opens a meeting's video call. */
-  onJoinMeeting: (url: string) => void;
   onPrepareBrief: () => void;
   /** "Delivered today" at the end: opens Tasks › Delivered. */
   onShowDelivered: () => void;
@@ -31,14 +26,24 @@ export interface TodayData {
  * sections and "Delivered today".
  */
 export class TodayView {
+  /** The latest alert's buttons above the list, with every snooze. */
+  private static readonly NOTICE_BUTTONS: AlertButtonsPlace = Object.freeze({ idPrefix: "alert", className: "settings-option", everySnooze: true });
+  private readonly alertButtons: AlertActionButtons;
+
   constructor(
     private readonly translator: Translator,
     private readonly taskList: TaskListView,
-  ) {}
+  ) {
+    this.alertButtons = new AlertActionButtons(translator);
+  }
 
   render(data: TodayData, handlers: TodayHandlers): HTMLElement {
     const subtitle = ElementFactory.create("p", { className: "island-subtitle", text: data.snapshot.todaySubtitle });
-    const list = this.taskList.render(data.snapshot.sections, this.translator.text("island.today.empty"), handlers);
+    const list = this.taskList.render(
+      TodayView.withoutFocus(data.snapshot),
+      this.translator.text("island.today.empty"),
+      handlers,
+    );
     return ElementFactory.create("div", {
       className: "island-tab-content",
       children: [
@@ -49,6 +54,14 @@ export class TodayView {
         ...this.deliveredToday(data.snapshot, handlers),
       ],
     });
+  }
+
+  /** Today's sections without the item already shown as "Now"; a section left empty goes. */
+  private static withoutFocus(snapshot: IslandSnapshot): SnapshotSection[] {
+    const focusId = snapshot.focus?.item.taskId;
+    return snapshot.sections
+      .map((section) => ({ ...section, items: section.items.filter((item) => item.taskId !== focusId) }))
+      .filter((section) => section.items.length > 0);
   }
 
   /** "Now · Due today: Send the report", opening the item. */
@@ -106,7 +119,7 @@ export class TodayView {
         children: text,
       }, handlers.onOpenAlert)
       : ElementFactory.create("div", { className: "island-notice-open", children: text });
-    const buttons = alert.actions.flatMap((action) => this.actionButtons(action, alert, handlers));
+    const buttons = this.alertButtons.build(alert, handlers, TodayView.NOTICE_BUTTONS);
     return ElementFactory.create("div", {
       className: "island-notice",
       children: [content, ...(buttons.length > 0 ? [ElementFactory.create("div", { className: "island-notice-actions", children: buttons })] : [])],
@@ -114,31 +127,7 @@ export class TodayView {
   }
 
   /** The buttons of one action: Done, one per snooze length, or Join; opening is the card itself. */
-  private actionButtons(action: AlertAction, alert: TikiAlert, handlers: TodayHandlers): HTMLElement[] {
-    const { taskId, link } = alert;
-    switch (action) {
-      case "open":
-        return [];
-      case "done":
-        return [this.alertOption("alert.done", "alert-done", handlers.onDismissAlert)];
-      case "snooze":
-        return taskId === null
-          ? []
-          : UI_CONFIG.snoozeMinutes.map(({ minutes, labelKey }) =>
-            this.alertOption(labelKey, `alert-snooze-${minutes}`, () => handlers.onSnooze(taskId, minutes)));
-      case "join":
-        return link === null ? [] : [this.alertOption("meeting.join", "alert-join", () => handlers.onJoinMeeting(link))];
-    }
-  }
 
-  /** One of the alert's buttons: done, a snooze or join. */
-  private alertOption(labelKey: string, id: string, onPress: () => void): HTMLElement {
-    return ElementFactory.textButton({
-      className: "settings-option",
-      text: this.translator.text(labelKey),
-      attributes: { id },
-    }, onPress);
-  }
 
   /** "Delivered today (3)", leading to the history; nothing on a day with no deliveries. */
   private deliveredToday(snapshot: IslandSnapshot, handlers: TodayHandlers): HTMLElement[] {

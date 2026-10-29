@@ -1,6 +1,6 @@
-use chrono::{Duration, NaiveDateTime};
+use chrono::{Duration, NaiveDate, NaiveDateTime};
 
-use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, WorkspaceViews};
+use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, TrashedItem, WorkspaceViews};
 use crate::activity::ItemEventRecord;
 use crate::alerts::{AlertDelivery, AlertScheduler, DueAlert, NotificationComposer, TikiAlert};
 use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
@@ -9,7 +9,7 @@ use crate::domain::{Project, ProjectId, TaskId, TaskStatus};
 use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
-use crate::items::ItemService;
+use crate::items::{ItemService, TrashBin};
 use crate::preferences::UserPreferences;
 use crate::projects::{ProjectBook, ProjectChange, ProjectSummary};
 use crate::sessions::{PresenceSignals, RecordingSuggestionPolicy, SessionService};
@@ -17,7 +17,7 @@ use crate::settings::TikiSettings;
 use crate::storage::Database;
 
 /// The entry point every platform uses: it owns the user's data, settings, preferences and
-/// clock, and hands each request to the part that owns the rules (`ItemService`,
+/// clock, and hands each request to the part that owns the rules (`ItemService`, `TrashBin`,
 /// `AlertScheduler`, `CalendarBook`, `ProjectBook`, `SessionService`, `WorkspaceViews`).
 pub struct TikiWorkspace {
     database: Database,
@@ -27,6 +27,8 @@ pub struct TikiWorkspace {
     clock: Box<dyn Clock>,
     /// Another app holds the microphone, as the shell reports it.
     in_call: bool,
+    /// The day the expired trash was last purged; empty until the first purge since start.
+    trash_purged_on: Option<NaiveDate>,
     /// Remembers which calls and meetings Tiki already offered to record.
     recording_suggestions: RecordingSuggestionPolicy,
 }
@@ -48,6 +50,7 @@ impl TikiWorkspace {
             translator,
             clock,
             in_call: false,
+            trash_purged_on: None,
             recording_suggestions: RecordingSuggestionPolicy::default(),
         })
     }
@@ -118,6 +121,11 @@ impl TikiWorkspace {
         self.views().delivered_tasks()
     }
 
+    /// Items in the trash, most recently trashed first, with when each is deleted forever.
+    pub fn trashed_items(&self) -> TikiResult<Vec<TrashedItem>> {
+        self.views().trashed_items()
+    }
+
     /// Everything that happened to an item, oldest first.
     pub fn activity_of(&self, task_id: TaskId) -> TikiResult<Vec<ItemEventRecord>> {
         self.database.activity().events_of(task_id)
@@ -164,6 +172,40 @@ impl TikiWorkspace {
             task_id,
             self.clock.now() + chrono::Duration::minutes(minutes),
         )
+    }
+
+    /// Sends an item to the trash: it leaves every view, the brief, the reports and the
+    /// alerts until it is restored or deleted forever.
+    pub fn trash_item(&self, task_id: TaskId) -> TikiResult<()> {
+        self.items().trash(task_id)
+    }
+
+    /// Takes an item out of the trash exactly as it was.
+    pub fn restore_item(&self, task_id: TaskId) -> TikiResult<()> {
+        self.items().restore(task_id)
+    }
+
+    /// Deletes an item in the trash forever, with its whole history.
+    pub fn delete_item_forever(&self, task_id: TaskId) -> TikiResult<()> {
+        self.trash_bin().delete_forever(task_id)
+    }
+
+    /// Deletes every item in the trash forever.
+    pub fn empty_trash(&self) -> TikiResult<()> {
+        self.trash_bin().empty()
+    }
+
+    /// Deletes forever the items whose time in the trash is over. It works once a day, the
+    /// first time it is asked (the shell asks on start and then every minute). Returns how
+    /// many items went.
+    pub fn purge_expired_trash(&mut self) -> TikiResult<usize> {
+        let today = self.clock.today();
+        if self.trash_purged_on == Some(today) {
+            return Ok(0);
+        }
+        let purged = self.trash_bin().purge_expired(today)?;
+        self.trash_purged_on = Some(today);
+        Ok(purged)
     }
 
     /// Remembers a correction the user made to an AI capture.
@@ -283,9 +325,9 @@ impl TikiWorkspace {
         self.project_book().change(project_id, change)
     }
 
-    /// Removes a project; their tasks stay, without project.
+    /// Removes a project and sends its items to the trash, where they stay without project.
     pub fn remove_project(&self, project_id: ProjectId) -> TikiResult<()> {
-        self.project_book().remove(project_id)
+        self.project_book().remove(project_id, self.clock.now())
     }
 
     /// The colors new projects get, offered when changing one.
@@ -316,6 +358,10 @@ impl TikiWorkspace {
 
     fn items(&self) -> ItemService<'_> {
         ItemService::new(&self.database, &self.settings, self.clock.as_ref())
+    }
+
+    fn trash_bin(&self) -> TrashBin<'_> {
+        TrashBin::new(&self.database, &self.settings)
     }
 
     fn alerts(&self) -> AlertScheduler<'_> {

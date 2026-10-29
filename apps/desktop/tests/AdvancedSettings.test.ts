@@ -100,7 +100,9 @@ describe("AdvancedSettingsApp", () => {
     backend.savedPreferences = { ...backend.savedPreferences, locale: "english" };
     backend.emit(SHELL_EVENTS.preferencesChanged);
     await vi.waitFor(() => expect(root.querySelector("h1")?.textContent).toBe("Plugins and sources"));
-    expect(root.querySelectorAll(".catalog-card")).toHaveLength(6);
+    // The next plugin gets a card; the ones further away are named in one line.
+    expect(root.querySelectorAll(".catalog-card")).toHaveLength(1);
+    expect(root.querySelector(".catalog-later")?.textContent).toBe("Later: Slack, Jira, GitHub, Zendesk, and PostgreSQL.");
   });
 
   it("connects and disconnects calendar accounts", async () => {
@@ -128,7 +130,7 @@ describe("AdvancedSettingsApp", () => {
       .find((button) => button.textContent === label);
     option("Precisa")?.click();
     await vi.waitFor(() => expect(backend.savedPreferences.transcriptionQuality).toBe("precise"));
-    option("Escribirlos al terminar la transcripción")?.click();
+    root.querySelector<HTMLButtonElement>('[data-setting="advanced.sessions.notes_automatic"]')?.click();
     await vi.waitFor(() => expect(backend.savedPreferences.sessionNotesAutomatic).toBe(false));
     option("30 días")?.click();
     await vi.waitFor(() => expect(backend.savedPreferences.sessionMediaDays).toBe(30));

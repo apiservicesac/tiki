@@ -15,23 +15,27 @@ pub enum AlertAction {
     Snooze,
     /// Opens the meeting's video call.
     Join,
+    /// Starts recording the call or meeting, audio only.
+    RecordAudio,
+    /// Asks which screen or window to record with the audio.
+    RecordVideo,
 }
 
 impl AlertAction {
     /// The actions an alert of this kind offers, in the order to show them. Snoozing puts
     /// off the item's own reminder, so a follow-up nudge, a brief or a meeting cannot be
-    /// snoozed; only a meeting with a video call can be joined.
+    /// snoozed; only a meeting with a video call can be joined; the offer to record starts
+    /// audio or asks for the screen to record.
     pub fn offered_for(kind: AlertKind, has_link: bool) -> Vec<Self> {
         let mut actions = vec![AlertAction::Open];
         match kind {
             AlertKind::Reminder => actions.extend([AlertAction::Done, AlertAction::Snooze]),
             AlertKind::Task => actions.push(AlertAction::Snooze),
             AlertKind::Meeting if has_link => actions.push(AlertAction::Join),
-            AlertKind::Meeting
-            | AlertKind::FollowUp
-            | AlertKind::Morning
-            | AlertKind::Evening
-            | AlertKind::Recording => {}
+            AlertKind::Recording => {
+                actions.extend([AlertAction::RecordAudio, AlertAction::RecordVideo]);
+            }
+            AlertKind::Meeting | AlertKind::FollowUp | AlertKind::Morning | AlertKind::Evening => {}
         }
         actions
     }

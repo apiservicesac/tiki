@@ -91,7 +91,7 @@ body {
 
 .advanced-content h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--text-title);
   font-weight: 650;
   letter-spacing: -0.01em;
 }
@@ -133,7 +133,7 @@ body {
   height: 34px;
   border-radius: 11px;
   background: var(--island-active);
-  font: 700 14px var(--font-mono);
+  font: 700 var(--text-md) var(--font-mono);
 }
 
 .catalog-text { display: grid; gap: 6px; min-width: 0; }
@@ -194,3 +194,10 @@ body {
 
 .catalog-kind-ticket_source { border-color: transparent; background: var(--kind-ticket-background); color: var(--kind-ticket-text); }
 .catalog-kind-client_instance { border-color: transparent; background: var(--kind-instance-background); color: var(--kind-instance-text); }
+
+/* The plugins further away, named in one line under the cards. */
+.catalog-later {
+  margin: 14px 0 0;
+  font-size: var(--text-sm);
+  color: var(--island-muted);
+}

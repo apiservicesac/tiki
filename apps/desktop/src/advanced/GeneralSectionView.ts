@@ -1,5 +1,5 @@
-import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
+import { SettingRows } from "../settings/SettingRows";
 import { UpdateSettingsView, type UpdateSettingsHandlers, type UpdateState } from "../settings/UpdateSettingsView";
 
 export interface GeneralSectionHandlers extends UpdateSettingsHandlers {
@@ -9,28 +9,21 @@ export interface GeneralSectionHandlers extends UpdateSettingsHandlers {
 /** Start with Windows, the installed version and updates. */
 export class GeneralSectionView {
   private readonly updates: UpdateSettingsView;
+  private readonly rows: SettingRows;
 
-  constructor(private readonly translator: Translator) {
+  constructor(translator: Translator) {
     this.updates = new UpdateSettingsView(translator);
+    this.rows = new SettingRows(translator);
   }
 
   render(autostart: boolean, updates: UpdateState, handlers: GeneralSectionHandlers): HTMLElement[] {
-    const toggle = ElementFactory.create("button", {
-      className: "settings-option",
-      text: this.translator.text("settings.autostart"),
-      attributes: { type: "button", role: "switch", "aria-checked": String(autostart), "data-setting": "settings.autostart" },
-    });
-    toggle.addEventListener("click", () => handlers.onSetAutostart(!autostart));
     return [
-      ElementFactory.create("section", {
-        className: "settings-group",
-        children: [
-          ElementFactory.create("h3", { text: this.translator.text("advanced.general.startup") }),
-          ElementFactory.create("div", { className: "settings-options", children: [toggle] }),
-          ElementFactory.create("p", { className: "settings-note", text: this.translator.text("advanced.general.startup_hint") }),
-        ],
-      }),
+      this.rows.section("advanced.general.startup", [
+        this.rows.switchRow({ labelKey: "settings.autostart", hintKey: "advanced.general.startup_hint" },
+          autostart, (enabled) => handlers.onSetAutostart(enabled)),
+      ]),
       this.updates.render(updates, handlers),
     ];
   }
+
 }

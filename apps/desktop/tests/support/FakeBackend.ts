@@ -26,6 +26,7 @@ import type {
   TaskEdit,
   TaskStatus,
   TikiBackend,
+  TrashedItem,
   UserPreferences,
   VideoChoice,
 } from "../../src/backend/contracts";
@@ -51,6 +52,13 @@ export class FakeBackend implements TikiBackend {
     { taskId: 9, title: "Reporte de ventas de septiembre", projectId: 1, projectName: "Altamira", projectColor: "#2F6BD8", tags: ["ventas"], deliveredLabel: "hoy" },
     { taskId: 8, title: "Ajuste del acta CAPEX", projectId: null, projectName: null, projectColor: null, tags: [], deliveredLabel: "ayer" },
   ];
+  /** What the user sent to the trash, newest first. */
+  trash: TrashedItem[] = [
+    { taskId: 21, kind: "task", title: "Cotización de licencias antiguas", projectName: "Vapestation", projectColor: "#C2410C", trashedLabel: "hoy", deletesInLabel: "se borra en 30 días" },
+    { taskId: 22, kind: "reminder", title: "Llamar al banco", projectName: null, projectColor: null, trashedLabel: "hace 3 días", deletesInLabel: "se borra en 27 días" },
+    { taskId: 23, kind: "task", title: "Borrador del acta de septiembre", projectName: "Altamira", projectColor: "#2F6BD8", trashedLabel: "hace 29 días", deletesInLabel: "se borra mañana" },
+  ];
+  readonly restoredItems: number[] = [];
   savedPreferences: UserPreferences = {
     locale: "spanish",
     islandPlacement: "top",
@@ -139,6 +147,35 @@ export class FakeBackend implements TikiBackend {
 
   async deliveredTasks(): Promise<DeliveredItem[]> {
     return this.delivered;
+  }
+
+  async trashItem(taskId: number): Promise<void> {
+    const item = this.snapshot.openItems.find((line) => line.taskId === taskId);
+    if (item) {
+      const { kind, title, projectName, projectColor } = item;
+      this.trash = [{ taskId, kind, title, projectName, projectColor, trashedLabel: "hoy", deletesInLabel: "se borra en 30 días" }, ...this.trash];
+    }
+  }
+
+  async restoreItem(taskId: number): Promise<void> {
+    this.restoredItems.push(taskId);
+    this.trash = this.trash.filter((item) => item.taskId !== taskId);
+  }
+
+  async deleteItemForever(taskId: number): Promise<void> {
+    this.trash = this.trash.filter((item) => item.taskId !== taskId);
+  }
+
+  async emptyTrash(): Promise<void> {
+    this.trash = [];
+  }
+
+  async trashedItems(): Promise<TrashedItem[]> {
+    return this.trash;
+  }
+
+  async trashRetentionDays(): Promise<number> {
+    return 30;
   }
 
   async taskDetails(taskId: number): Promise<TaskDetails> {
@@ -458,9 +495,9 @@ export class FakeBackend implements TikiBackend {
     const tracking = { taskId: 1, kind: "task" as const, title: "Tracking de formularios comerciales", ...altamira, detailLabel: "mañana", urgency: "soon" as const, priority: "high" as const, tags: [], at: null, repeat: "never" as const };
     const sales = { taskId: 2, kind: "task" as const, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon" as const, priority: "normal" as const, tags: ["ventas"], at: "2026-10-24T16:00:00", repeat: "never" as const };
     const vacation = { taskId: 4, kind: "task" as const, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En curso", urgency: "normal" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
-    const github = { taskId: 5, kind: "task" as const, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "3 días", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const github = { taskId: 5, kind: "task" as const, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "esperando 3 días", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
     const water = { taskId: 8, kind: "reminder" as const, title: "Tomar agua", projectId: null, projectName: null, projectColor: null, detailLabel: "Vie 23 · 11:00 · Cada día", urgency: "reminder" as const, priority: "normal" as const, tags: [], at: "2026-10-23T11:00:00", repeat: "daily" as const };
-    const zones = { taskId: 6, kind: "task" as const, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "1 día", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const zones = { taskId: 6, kind: "task" as const, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "esperando 1 día", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
     return {
       mood: "worried",
       moodLabel: "ATRASO",
@@ -471,8 +508,8 @@ export class FakeBackend implements TikiBackend {
       waitingCount: 2,
       openCount: 6,
       deliveredToday: 1,
-      closedSummary: "3 hoy · 2 esperando",
-      todaySubtitle: "miércoles 21 de octubre · 3 vencen pronto",
+      closedSummary: "3 por atender · 2 esperando",
+      todaySubtitle: "miércoles 21 de octubre · 3 por atender",
       narration: "Buenos días. Hoy es miércoles 21 de octubre.",
       sections: [
         { key: "overdue", title: "Atrasado", items: [access] },

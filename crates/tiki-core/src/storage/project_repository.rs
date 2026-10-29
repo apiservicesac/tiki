@@ -36,7 +36,7 @@ impl<'connection> ProjectRepository<'connection> {
         Ok(())
     }
 
-    /// Removes a project; the database leaves their tasks without project.
+    /// Removes a project; the database leaves any item still pointing to it without project.
     pub fn delete(&self, project_id: ProjectId) -> TikiResult<()> {
         self.connection
             .execute("DELETE FROM projects WHERE id = ?1", params![project_id.0])?;

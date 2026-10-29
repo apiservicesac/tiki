@@ -88,9 +88,77 @@
   color: var(--island-faint);
 }
 
-/* Reminders */
 .settings-row-label { flex: 1; }
-.settings-time { flex: 0 0 auto; width: 108px; }
+.settings-time { flex: 0 0 auto; width: 120px; }
+
+/*
+ * A settings list: each row says what the option is and what it does, with its control
+ * on the right. A row whose option depends on one that is off is dimmed.
+ */
+.settings-list {
+  display: grid;
+  border: 1px solid var(--island-card-edge);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.setting-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 11px 14px;
+}
+
+.setting-row + .setting-row { border-top: 1px solid var(--island-card-edge); }
+.setting-row-inactive { opacity: 0.45; }
+
+/* The text keeps a readable width; in a narrow island the control moves under it. */
+.setting-row-text {
+  display: grid;
+  flex: 1 1 220px;
+  gap: 2px;
+  min-width: 0;
+}
+
+.setting-row-text strong {
+  font: 600 var(--text-md) var(--font-body);
+  color: var(--island-text);
+}
+
+.setting-row-text small {
+  font-size: var(--text-xs);
+  color: var(--island-muted);
+}
+
+.setting-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--island-muted);
+  font-size: var(--text-md);
+}
+
+/* An on/off switch: a track with a knob that slides to the right when on. */
+.setting-switch {
+  flex: none;
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background-color: var(--island-soft-hover);
+  background-image: radial-gradient(circle at 12px 50%, var(--island-muted) 8px, transparent 8.5px);
+  cursor: pointer;
+  transition: background-color 0.2s, background-image 0.2s;
+}
+
+.setting-switch[aria-checked="true"] {
+  background-color: var(--switch-on);
+  background-image: radial-gradient(circle at 28px 50%, var(--switch-knob) 8px, transparent 8.5px);
+}
+
+.setting-switch:focus-visible { outline: 2px solid var(--island-muted); outline-offset: 2px; }
 
 /* Native pickers (select lists, time pickers) follow the theme instead of opening white. */
 :root { color-scheme: dark; }
@@ -155,32 +223,6 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-/* Switches (on/off settings): a small track with a knob before the label, as in the design. */
-.settings-option[role="switch"] {
-  padding-left: 6px;
-}
-
-.settings-option[role="switch"]::before {
-  content: "";
-  flex: none;
-  width: 28px;
-  height: 16px;
-  border-radius: var(--radius-pill);
-  background-color: var(--island-soft-hover);
-  background-image: radial-gradient(circle at 8px 50%, var(--island-muted) 5px, transparent 5.5px);
-  transition: background-color 0.2s, background-image 0.2s;
-}
-
-.settings-option[role="switch"][aria-checked="true"] {
-  background: transparent;
-  color: var(--island-text);
-}
-
-.settings-option[role="switch"][aria-checked="true"]::before {
-  background-color: var(--switch-on);
-  background-image: radial-gradient(circle at 20px 50%, var(--switch-knob) 5px, transparent 5.5px);
 }
 
 /* Calendar accounts: the email, then which calendar it is. */

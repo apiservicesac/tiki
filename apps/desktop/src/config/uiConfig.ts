@@ -72,7 +72,7 @@ export const UI_CONFIG = Object.freeze({
     priority: Object.freeze<Partial<Record<Priority, string>>>({ urgent: "!!", high: "!" }),
   }),
   /** Width of Tiki's face in each place; its height is half of it. */
-  faceWidth: Object.freeze({ hidden: 40, compact: 44, alert: 56, card: 76, settingsTitle: 36 }),
+  faceWidth: Object.freeze({ hidden: 48, compact: 52, alert: 66, header: 46, settingsTitle: 40 }),
   /** The recording timer counts every this long, between snapshots from the core. */
   recordingTimerTickMs: 1_000,
   /** Disk usage is shown in megabytes, as the system's file manager does. */

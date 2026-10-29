@@ -72,13 +72,15 @@
   --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
 
   /* Type scale: titles and body, controls, hints, context lines, badges. */
-  --text-lg: 13px;
-  --text-md: 12.5px;
-  --text-sm: 12px;
-  --text-xs: 11.5px;
-  --text-2xs: 11px;
+  --text-title: 20px;
+  --text-xl: 16px;
+  --text-lg: 15px;
+  --text-md: 14px;
+  --text-sm: 13.5px;
+  --text-xs: 13px;
+  --text-2xs: 12.5px;
   /* Uppercase mono labels: list groups, settings groups, the receipt. */
-  --text-label: 10.5px;
+  --text-label: 11.5px;
 
   /*
    * Corner radii: choices inside a toggle or a list, small buttons, rows and inputs, larger
@@ -90,21 +92,27 @@
   --radius-lg: 14px;
   --radius-xl: 20px;
   --radius-pill: 999px;
+  /* Height of a row's badges and the small buttons beside them. */
+  --row-pill-height: 28px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Notch measures, as in dooai (`island_config.js`). */
-  --notch-hidden-length: 168px;
-  --notch-hidden-thickness: 32px;
-  --notch-compact-width: 420px;
-  --notch-alert-width: 440px;
-  --notch-alert-height: 74px;
-  --notch-alert-vertical-width: 210px;
-  --notch-head-height: 46px;
-  --notch-expanded-width: 640px;
-  --notch-ear: 14px;
+  /* Notch measures: big enough to read at a glance on a large screen. */
+  --notch-hidden-length: 200px;
+  --notch-hidden-thickness: 38px;
+  --notch-compact-width: 500px;
+  --notch-alert-width: 540px;
+  --notch-alert-height: 88px;
+  --notch-alert-vertical-width: 250px;
+  --notch-head-height: 54px;
+  --notch-expanded-width: 780px;
+  --notch-ear: 16px;
   --notch-shadow-room: 18px;
+  /* The expanded card fills the window at most: the window minus the header, the gap under
+     the card and the room for the shadow (and, on the side edges, the two ears). */
+  --card-bottom-gap: 10px;
+  --card-max-height: calc(100vh - var(--notch-head-height) - var(--card-bottom-gap) - var(--notch-shadow-room) - 2px);
 }
 
 @media (prefers-color-scheme: light) {

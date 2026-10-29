@@ -1,11 +1,11 @@
 {
-  "version": "0.4.0-rc.1",
-  "notes": "Calendars: connect Google Calendar from Settings › Accounts. Meetings in the Agenda with Join, an alert 15 minutes before each one, and free time before the next meeting in Now.",
-  "pub_date": "2026-10-22T20:06:11.450Z",
+  "version": "0.5.1-rc.1",
+  "notes": "A trash for items you don't want, with restore and automatic cleanup after 30 days. Tiki is bigger and easier to read, every panel fits the window, settings explain each option, and alerts have Done and Snooze buttons right in the notch.",
+  "pub_date": "2026-10-29T23:40:51.173Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXN0Q3pnTVlXajFyejk3TmxQTVRvbDF3VHBtWmkwaURyZnZBcmozUUJTZjRvcjFWTU9NUFF3bi9LaENQUHpWZHhrei9oY0I3SEZ3a3p0QlNoM3lrRlFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjk5NTUwCWZpbGU6VGlraV8wLjQuMC1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQuMC1yYy4xCjNoU3puUiswQWI1QzU0Vzlxa0ROSzJvUE56KzdXVlNkeWJ2RkU5bFloalVKVC9yelBaRms0M09ncVptZ3FPZS9JSlZObG44U3FOVEhaNW5md2dBL0FnPT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.4.0-rc.1/Tiki_0.4.0-rc.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXU3RnJYSWc0czNiYnNLd1ZneHpvaTdVZzNMZlRGbnY3enRFWkhwSE5TanRmd09HMHNjdkFMeFN1NXB5VlRITjYzaG9jTXV2em8zSzhyaFNSai9PSWdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMzE3MjEwCWZpbGU6VGlraV8wLjUuMS1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjUuMS1yYy4xCmR6RGZweVp6ZXNqMG1YWkFwMUVudWt0OVN2QkRyZmRkd09ScEN4RmVUR2tXZXNwVG5HaTJRRmo2VTNqcVZRa0dmSzFpcHgzZ2VOWmZYRXVBTlBQakFnPT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.5.1-rc.1/Tiki_0.5.1-rc.1_x64-setup.exe"
     }
   }
 }

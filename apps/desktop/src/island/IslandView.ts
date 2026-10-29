@@ -117,7 +117,14 @@ export class IslandView {
       all_tasks: {
         labelKey: "island.tab.all_tasks",
         render: (state, handlers) => this.tasksTab.render(
-          { items: state.snapshot.openItems, delivered: state.delivered, projects: state.projects, view: state.tasksView },
+          {
+            items: state.snapshot.openItems,
+            delivered: state.delivered,
+            trashed: state.trashed,
+            trashRetentionDays: state.trashRetentionDays,
+            projects: state.projects,
+            view: state.tasksView,
+          },
           handlers,
         ),
       },
@@ -312,7 +319,7 @@ export class IslandView {
       return this.notchView.recording(state.snapshot, state.snapshot.recording, mood, state.unreadAlert);
     }
     if (state.mode === "alert" && state.alert) {
-      return this.notchView.alert(state.snapshot, state.alert, mood);
+      return this.notchView.alert(state.snapshot, state.alert, mood, handlers);
     }
     if (state.mode === "compact") {
       return this.notchView.compact(state.snapshot, mood);
@@ -320,15 +327,21 @@ export class IslandView {
     return ElementFactory.create("div", {
       className: "island-expanded",
       children: [
-        this.header.render(state.panel, this.tabLabels, state.tab, state.snapshot.recording, handlers),
+        this.header.render(
+          ElementFactory.fromTrustedMarkup(
+            "island-head-face",
+            this.mascot.render(mood, state.snapshot.moodLabel, UI_CONFIG.faceWidth.header),
+          ),
+          state.panel,
+          this.tabLabels,
+          state.tab,
+          state.snapshot.recording,
+          handlers,
+        ),
         ElementFactory.create("div", {
           className: "island-card",
           attributes: { "data-mood": mood, "data-panel": state.panel, "data-tab": state.tab },
           children: [
-            ElementFactory.fromTrustedMarkup(
-              "island-card-mascot",
-              this.mascot.render(mood, state.snapshot.moodLabel, UI_CONFIG.faceWidth.card),
-            ),
             ElementFactory.create("div", {
               className: "island-card-body",
               children: [this.cardBody(state, preferences, handlers)],
@@ -350,7 +363,7 @@ export class IslandView {
           ? this.taskEdit.render(state.editing, state.projects, handlers.edit)
           : this.tabContent(state, handlers);
       case "projects":
-        return this.projectsPanel.render(state.projects, state.projectColors, state.creatingProject, handlers);
+        return this.projectsPanel.render(state.projects, state.projectColors, handlers);
       case "brief":
         return this.receipt.render(state.snapshot, state.alert, state.dayBrief);
       case "record":

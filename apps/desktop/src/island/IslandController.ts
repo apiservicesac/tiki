@@ -123,13 +123,15 @@ export class IslandController {
 
   /** The day, the projects, the history and the sessions, fresh from the core. */
   async refresh(): Promise<void> {
-    const [snapshot, projects, delivered, sessions] = await Promise.all([
+    const [snapshot, projects, delivered, trashed, trashRetentionDays, sessions] = await Promise.all([
       this.backend.islandSnapshot(),
       this.backend.projectSummaries(),
       this.backend.deliveredTasks(),
+      this.backend.trashedItems(),
+      this.backend.trashRetentionDays(),
       this.sessions.load(),
     ]);
-    this.update({ snapshot, projects, delivered, ...sessions });
+    this.update({ snapshot, projects, delivered, trashed, trashRetentionDays, ...sessions });
     this.recording.followSnapshot();
   }
 
@@ -195,6 +197,10 @@ export class IslandController {
     } else if (RESTING_MODES.includes(next.mode) && this.state.mode === "expanded") {
       next.alert = null;
     }
+    // An alert handled from the notch (done, snoozed, joined) leaves it at once.
+    if (next.mode === "alert" && next.alert === null) {
+      next.mode = "hidden";
+    }
     this.state = next;
     this.render();
   }
@@ -215,7 +221,7 @@ export class IslandController {
       onPrepareBrief: () => void this.assistantActions.prepareDayBrief(),
       onShowDelivered: () => this.update({ panel: "tabs", tab: "all_tasks", tasksView: "delivered" }),
       onSelectTasksView: (tasksView) => this.update({ tasksView }),
-      onManageProjects: (creatingProject) => this.update({ mode: "expanded", panel: "projects", creatingProject }),
+      onManageProjects: () => this.update({ mode: "expanded", panel: "projects" }),
       onCreateProject: (name) => void this.items.createProject(name),
       onChangeProject: (projectId, change) => void this.items.changeProject(projectId, change),
       onRemoveProject: (projectId) => void this.items.removeProject(projectId),
@@ -238,11 +244,16 @@ export class IslandController {
       onWriteSessionNotes: (sessionId) => void this.sessionNotes.write(sessionId),
       onApplySessionTask: (actionItemId) => void this.sessionNotes.applyTask(actionItemId),
       onDeliverTask: (taskId) => void this.items.deliver(taskId),
+      onReopenTask: (taskId) => void this.items.reopen(taskId),
+      onRestoreTask: (taskId) => void this.items.restore(taskId),
+      onDeleteForever: (taskId) => void this.items.deleteForever(taskId),
+      onEmptyTrash: () => void this.items.emptyTrash(),
       onOpenTask: (taskId) => void this.items.open(taskId),
       onChangePreferences: (preferences) => void this.changePreferences(preferences),
       onOpenAdvancedSettings: () => this.openAdvancedSettings(),
       edit: {
         onSave: (taskId, edit) => this.items.save(taskId, edit),
+        onTrash: (taskId) => void this.items.trash(taskId),
         onCancel: () => this.update({ panel: "tabs", editing: null }),
       },
       capture: {

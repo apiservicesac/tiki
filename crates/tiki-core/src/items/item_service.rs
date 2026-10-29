@@ -115,23 +115,47 @@ impl<'context> ItemService<'context> {
         self.change(task_id, |task, _| Ok(task.snooze(until)))
     }
 
-    /// Loads an item, applies `apply` (which returns the events of the change), keeps the
-    /// item's rules and saves it with its events in one transaction.
+    /// Sends the item to the trash: it shows nowhere else and its reminders stay silent until
+    /// it is restored.
+    pub fn trash(&self, task_id: TaskId) -> TikiResult<()> {
+        self.change(task_id, |task, now| {
+            Ok(task.trash(now).into_iter().collect())
+        })
+    }
+
+    /// Takes the item out of the trash exactly as it was; its reminders ring again.
+    pub fn restore(&self, task_id: TaskId) -> TikiResult<()> {
+        let mut task = self.database.tasks().find(task_id)?;
+        let events: Vec<ItemEvent> = task.restore().into_iter().collect();
+        self.save(&task, self.clock.now(), &events)
+    }
+
+    /// Loads an item outside the trash, applies `apply` (which returns the events of the
+    /// change), keeps the item's rules and saves it with its events. An item in the trash
+    /// does not change until it is restored.
     fn change(
         &self,
         task_id: TaskId,
         apply: impl FnOnce(&mut Task, NaiveDateTime) -> TikiResult<Vec<ItemEvent>>,
     ) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
+        if task.is_trashed() {
+            return Err(TikiError::ItemInTrash);
+        }
         let was_waiting = task.status == TaskStatus::Waiting;
         let now = self.clock.now();
         let events = apply(&mut task, now)?;
         FollowUpPolicy::new(self.settings).schedule_first_nudge(&mut task, was_waiting);
         task.normalize()?;
+        self.save(&task, now, &events)
+    }
+
+    /// Saves the item with the events of its change in one transaction.
+    fn save(&self, task: &Task, now: NaiveDateTime, events: &[ItemEvent]) -> TikiResult<()> {
         let task_id = task.id.ok_or(TikiError::UnsavedTask)?;
         self.database.transaction(|repositories| {
-            repositories.tasks().update(&task, now)?;
-            repositories.activity().record(task_id, now, &events)
+            repositories.tasks().update(task, now)?;
+            repositories.activity().record(task_id, now, events)
         })
     }
 }

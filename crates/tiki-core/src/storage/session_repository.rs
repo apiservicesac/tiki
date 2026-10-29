@@ -344,10 +344,13 @@ impl<'connection> SessionRepository<'connection> {
             .transpose()
     }
 
+    /// The tasks a session's notes propose; one whose task is in the trash reads as not
+    /// applied yet, so the user can create it again.
     pub fn action_items(&self, session_id: SessionId) -> TikiResult<Vec<SessionActionItem>> {
         let mut statement = self.connection.prepare(
-            "SELECT id, title, due_date, task_id FROM session_action_items
-              WHERE session_id = ?1 ORDER BY id",
+            "SELECT a.id, a.title, a.due_date, t.id FROM session_action_items a
+               LEFT JOIN tasks t ON t.id = a.task_id AND t.trashed_at IS NULL
+              WHERE a.session_id = ?1 ORDER BY a.id",
         )?;
         let items = statement
             .query_map(params![session_id.0], Self::read_action_item)?
@@ -362,8 +365,9 @@ impl<'connection> SessionRepository<'connection> {
     ) -> TikiResult<(SessionId, SessionActionItem)> {
         self.connection
             .query_row(
-                "SELECT id, title, due_date, task_id, session_id FROM session_action_items
-                  WHERE id = ?1",
+                "SELECT a.id, a.title, a.due_date, t.id, a.session_id FROM session_action_items a
+                   LEFT JOIN tasks t ON t.id = a.task_id AND t.trashed_at IS NULL
+                  WHERE a.id = ?1",
                 params![action_item_id.0],
                 |row| Ok((SessionId(row.get(4)?), Self::read_action_item(row)?)),
             )

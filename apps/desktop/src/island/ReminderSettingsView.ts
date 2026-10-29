@@ -1,87 +1,68 @@
 import type { UserPreferences } from "../backend/contracts";
-import { CoreDateTimeText } from "../backend/CoreDateTimeText";
-import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
+import { SettingRows } from "../settings/SettingRows";
 
 export interface ReminderSettingsHandlers {
   onChangePreferences: (preferences: UserPreferences) => void;
 }
 
 /**
- * Settings for when Tiki speaks up: reminders on or off, the island's chime, Windows
- * notifications as an extra, focus mode, the quiet hours of the night and the brief times.
+ * When Tiki speaks up, in three blocks: how alerts arrive (on or off, the chime, Windows
+ * notifications), when Tiki keeps quiet (focus mode, the night) and when the two briefs come.
+ * Options that depend on alerts being on are dimmed while they are off.
  */
 export class ReminderSettingsView {
-  constructor(private readonly translator: Translator) {}
+  private readonly rows: SettingRows;
 
-  render(preferences: UserPreferences, handlers: ReminderSettingsHandlers): HTMLElement {
-    const onChange = handlers.onChangePreferences;
-    const quietHours = preferences.quietHours;
-    return ElementFactory.create("section", {
-      className: "settings-group settings-reminders",
-      children: [
-        ElementFactory.create("h3", { text: this.translator.text("settings.reminders") }),
-        ElementFactory.create("div", {
-          className: "settings-options",
-          children: [
-            this.toggle("settings.notifications", preferences.notificationsEnabled, (enabled) =>
-              onChange({ ...preferences, notificationsEnabled: enabled })),
-            this.toggle("settings.alert_sound", preferences.alertSound, (enabled) =>
-              onChange({ ...preferences, alertSound: enabled })),
-            this.toggle("settings.windows_notifications", preferences.windowsNotifications, (enabled) =>
-              onChange({ ...preferences, windowsNotifications: enabled })),
-            this.toggle("settings.focus_mode", preferences.focusMode, (enabled) =>
-              onChange({ ...preferences, focusMode: enabled })),
-            this.toggle("settings.quiet_hours", quietHours.enabled, (enabled) =>
-              onChange({ ...preferences, quietHours: { ...quietHours, enabled } })),
-          ],
-        }),
-        ...(quietHours.enabled ? this.quietHoursRows(preferences, onChange) : []),
-        this.timeRow("settings.morning_brief", "morningBriefTime", preferences.morningBriefTime, (time) =>
-          onChange({ ...preferences, morningBriefTime: time })),
-        this.timeRow("settings.evening_brief", "eveningBriefTime", preferences.eveningBriefTime, (time) =>
-          onChange({ ...preferences, eveningBriefTime: time })),
-      ],
-    });
+  constructor(translator: Translator) {
+    this.rows = new SettingRows(translator);
   }
 
-  /** When Tiki falls asleep and when it wakes up; shown while the quiet hours are on. */
-  private quietHoursRows(preferences: UserPreferences, onChange: (preferences: UserPreferences) => void): HTMLElement[] {
-    const quietHours = preferences.quietHours;
+  render(preferences: UserPreferences, handlers: ReminderSettingsHandlers): HTMLElement[] {
     return [
-      this.timeRow("settings.quiet_hours_from", "quietHoursFrom", quietHours.from, (from) =>
-        onChange({ ...preferences, quietHours: { ...quietHours, from } })),
-      this.timeRow("settings.quiet_hours_until", "quietHoursUntil", quietHours.until, (until) =>
-        onChange({ ...preferences, quietHours: { ...quietHours, until } })),
+      this.alerts(preferences, handlers.onChangePreferences),
+      this.silence(preferences, handlers.onChangePreferences),
+      this.briefs(preferences, handlers.onChangePreferences),
     ];
   }
 
-  private toggle(labelKey: string, enabled: boolean, onToggle: (enabled: boolean) => void): HTMLElement {
-    const button = ElementFactory.textButton({
-      className: "settings-option",
-      text: this.translator.text(labelKey),
-      attributes: { role: "switch", "aria-checked": String(enabled), "data-setting": labelKey },
-    }, () => onToggle(!enabled));
-    return button;
+  private alerts(preferences: UserPreferences, onChange: (preferences: UserPreferences) => void): HTMLElement {
+    const alertsOff = !preferences.notificationsEnabled;
+    return this.rows.section("settings.alerts", [
+      this.rows.switchRow({ labelKey: "settings.notifications", hintKey: "settings.notifications_hint" },
+        preferences.notificationsEnabled, (enabled) => onChange({ ...preferences, notificationsEnabled: enabled })),
+      this.rows.switchRow({ labelKey: "settings.alert_sound", hintKey: "settings.alert_sound_hint" },
+        preferences.alertSound, (enabled) => onChange({ ...preferences, alertSound: enabled }), alertsOff),
+      this.rows.switchRow({ labelKey: "settings.windows_notifications", hintKey: "settings.windows_notifications_hint" },
+        preferences.windowsNotifications, (enabled) => onChange({ ...preferences, windowsNotifications: enabled }), alertsOff),
+    ]);
   }
 
-  /** A time picker beside its label; `onPick` receives the time the user chose, as the core writes it ("07:45:00"). */
-  private timeRow(labelKey: string, name: string, time: string, onPick: (time: string) => void): HTMLElement {
-    const input = ElementFactory.create("input", {
-      className: "settings-input settings-time",
-      attributes: { type: "time", id: `setting-${name}`, "aria-label": this.translator.text(labelKey) },
-    });
-    input.value = CoreDateTimeText.clock(time);
-    // The clock icon is hidden; clicking anywhere on the field opens the picker instead.
-    input.addEventListener("click", () => input.showPicker?.());
-    input.addEventListener("change", () => {
-      if (input.value !== "") {
-        onPick(CoreDateTimeText.fromClock(input.value));
-      }
-    });
-    return ElementFactory.create("label", {
-      className: "settings-row",
-      children: [ElementFactory.create("span", { className: "settings-row-label", text: this.translator.text(labelKey) }), input],
-    });
+  private silence(preferences: UserPreferences, onChange: (preferences: UserPreferences) => void): HTMLElement {
+    const quietHours = preferences.quietHours;
+    const nightRange = quietHours.enabled
+      ? [this.rows.rangeRow(
+        { labelKey: "settings.quiet_hours_range", hintKey: "settings.quiet_hours_range_hint" },
+        { name: "quietHoursFrom", time: quietHours.from, labelKey: "settings.quiet_hours_from" },
+        { name: "quietHoursUntil", time: quietHours.until, labelKey: "settings.quiet_hours_until" },
+        (range) => onChange({ ...preferences, quietHours: { ...quietHours, ...range } }),
+      )]
+      : [];
+    return this.rows.section("settings.silence", [
+      this.rows.switchRow({ labelKey: "settings.focus_mode", hintKey: "settings.focus_mode_hint" },
+        preferences.focusMode, (enabled) => onChange({ ...preferences, focusMode: enabled })),
+      this.rows.switchRow({ labelKey: "settings.quiet_hours", hintKey: "settings.quiet_hours_hint" },
+        quietHours.enabled, (enabled) => onChange({ ...preferences, quietHours: { ...quietHours, enabled } })),
+      ...nightRange,
+    ]);
+  }
+
+  private briefs(preferences: UserPreferences, onChange: (preferences: UserPreferences) => void): HTMLElement {
+    return this.rows.section("settings.briefs", [
+      this.rows.timeRow({ labelKey: "settings.morning_brief", hintKey: "settings.morning_brief_hint" },
+        "morningBriefTime", preferences.morningBriefTime, (time) => onChange({ ...preferences, morningBriefTime: time })),
+      this.rows.timeRow({ labelKey: "settings.evening_brief", hintKey: "settings.evening_brief_hint" },
+        "eveningBriefTime", preferences.eveningBriefTime, (time) => onChange({ ...preferences, eveningBriefTime: time })),
+    ]);
   }
 }

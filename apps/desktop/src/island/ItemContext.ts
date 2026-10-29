@@ -5,7 +5,12 @@ import { TagText } from "../dom/TagText";
 export class ItemContext {
   /** The project and the tags, or `null` when the item has neither. */
   static describe(projectName: string | null, tags: readonly string[]): string | null {
-    const parts = [...(projectName ? [projectName] : []), ...tags.map(TagText.mark)];
-    return parts.length > 0 ? parts.join(UI_CONFIG.textMarks.separator) : null;
+    return ItemContext.join([projectName, ...tags.map(TagText.mark)]);
+  }
+
+  /** The parts that are there, in one line: "Altamira · se borra en 27 días". */
+  static join(parts: ReadonlyArray<string | null>): string | null {
+    const present = parts.filter((part): part is string => part !== null && part !== "");
+    return present.length > 0 ? present.join(UI_CONFIG.textMarks.separator) : null;
   }
 }

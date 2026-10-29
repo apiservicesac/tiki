@@ -73,7 +73,7 @@ function builtKeys(): string[] {
     ...SESSION_STATUSES.flatMap((status) => [`session.status.${status}`, `session.note.${status}`]),
     ...SPEAKERS.map((speaker) => `session.speaker.${speaker}`),
     ...VIDEO_QUALITIES.map((quality) => `record.quality.${quality}`),
-    ...TRANSCRIPTION_QUALITIES.flatMap((quality) => [`transcription.quality.${quality}`, `transcription.quality.${quality}.hint`]),
+    ...TRANSCRIPTION_QUALITIES.map((quality) => `transcription.quality.${quality}`),
   ];
 }
 

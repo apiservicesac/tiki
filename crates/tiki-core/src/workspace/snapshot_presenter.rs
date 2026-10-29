@@ -43,6 +43,7 @@ impl<'context> SnapshotPresenter<'context> {
         meetings: &TodaysMeetings,
     ) -> IslandSnapshot {
         let todays_reminders = brief.reminders_on(brief.date);
+        let focus = self.focus(brief, meetings);
         let sections = [
             ("overdue", &brief.overdue, Urgency::Critical),
             ("due_soon", &brief.due_soon, Urgency::Soon),
@@ -102,7 +103,7 @@ impl<'context> SnapshotPresenter<'context> {
                 brief.date,
             ),
             open_items,
-            focus: self.focus(brief, meetings),
+            focus,
             narration: BriefNarrator::new(self.translator).narrate(brief, BriefMoment::Morning),
         }
     }
@@ -150,7 +151,10 @@ impl<'context> SnapshotPresenter<'context> {
                 "focus.free_time",
                 &[("minutes", &minutes.to_string()), ("meeting", &next.title)],
             );
-            focus.reason = format!("{} · {free}", focus.reason);
+            focus.reason = self.translator.format(
+                "focus.reason_with_free_time",
+                &[("reason", &focus.reason), ("free", &free)],
+            );
         }
         Some(focus)
     }

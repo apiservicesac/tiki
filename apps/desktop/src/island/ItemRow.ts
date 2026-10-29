@@ -66,16 +66,19 @@ export class ItemRow {
     return ElementFactory.fromTrustedMarkup("agenda-bell", iconMarkup);
   }
 
-  /** The check that delivers the item, shown on hover. */
+  /** The check that delivers the item: always there, faint until the row is pointed at. */
   deliverButton(onDeliver: () => void): HTMLElement {
     const button = ElementFactory.iconButton(ICONS.check, this.translator.text("island.row.done"), onDeliver);
     button.classList.add("island-row-done");
     return button;
   }
 
-  /** The check of an item already delivered. */
-  deliveredMark(): HTMLElement {
-    return ElementFactory.fromTrustedMarkup("island-row-check", ICONS.check);
+  /** "Reopen", on an item already delivered. */
+  reopenButton(onReopen: () => void): HTMLElement {
+    return ElementFactory.textButton({
+      className: "island-row-reopen",
+      text: this.translator.text("island.row.reopen"),
+    }, onReopen);
   }
 
   private title(content: ItemRowContent): HTMLElement {

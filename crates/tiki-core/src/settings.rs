@@ -35,6 +35,8 @@ pub struct TikiSettings {
     pub capture_lesson_limit: usize,
     /// How many delivered tasks the history shows, most recent first.
     pub delivered_history_limit: usize,
+    /// Items stay this many days in the trash, then Tiki deletes them forever.
+    pub trash_retention_days: u64,
     /// Colors given to new projects, in turn.
     pub project_colors: Vec<String>,
     /// A meeting that began at most this many minutes ago still gets the offer to record.
@@ -67,6 +69,7 @@ impl Default for TikiSettings {
             agenda_days: 8,
             daily_focus_task_count: 3,
             delivered_history_limit: 300,
+            trash_retention_days: 30,
             capture_lesson_limit: 20,
             // Sixteen colors that read on dark and light, so even many projects repeat little.
             project_colors: [

@@ -7,6 +7,8 @@ import { ItemRow } from "./ItemRow";
 
 export interface TaskListHandlers {
   onDeliverTask: (taskId: number) => void;
+  /** Brings a delivered task back to "to do". */
+  onReopenTask: (taskId: number) => void;
   onOpenTask: (taskId: number) => void;
 }
 
@@ -50,17 +52,17 @@ export class TaskListView {
     });
   }
 
-  /** One delivered task: project color, title (opens it, to reopen it) with its project and tags, and when it was delivered. */
-  deliveredRow(item: DeliveredItem, onOpen: (taskId: number) => void): HTMLElement {
+  /** One delivered task: project color, title (opens it) with its project and tags, when it was delivered and a button to reopen it. */
+  deliveredRow(item: DeliveredItem, handlers: TaskListHandlers): HTMLElement {
     return this.itemRow.render({
       variant: "island-row-delivered",
       attributes: { "data-task-id": String(item.taskId) },
       lead: this.itemRow.colorBar(item.projectColor),
       title: item.title,
       context: ItemContext.describe(item.projectName, item.tags),
-      onOpen: () => onOpen(item.taskId),
+      onOpen: () => handlers.onOpenTask(item.taskId),
       badge: this.itemRow.when("done", item.deliveredLabel),
-      trailing: this.itemRow.deliveredMark(),
+      trailing: this.itemRow.reopenButton(() => handlers.onReopenTask(item.taskId)),
     });
   }
 

@@ -1,7 +1,7 @@
 mod support;
 
 use support::{SampleWorkspace, TestDay};
-use tiki_core::domain::ProjectId;
+use tiki_core::domain::{ProjectId, TaskStatus};
 use tiki_core::projects::ProjectChange;
 use tiki_core::workspace::{FixedClock, TikiWorkspace};
 use tiki_core::{TikiError, TikiSettings};
@@ -90,8 +90,18 @@ fn a_project_can_be_renamed_and_recolored_but_not_to_a_taken_name() {
 }
 
 #[test]
-fn removing_a_project_keeps_its_tasks_without_project() {
+fn removing_a_project_sends_its_items_to_the_trash_without_project() {
     let (workspace, ids) = sample_workspace();
+    let in_progress = workspace
+        .island_snapshot()
+        .unwrap()
+        .open_items
+        .into_iter()
+        .find(|item| item.title == "Saldo vacacional con solicitud rechazada")
+        .unwrap()
+        .task_id;
+    workspace.deliver(in_progress).unwrap();
+
     workspace.remove_project(ids.andeanvet).unwrap();
 
     assert!(
@@ -101,14 +111,16 @@ fn removing_a_project_keeps_its_tasks_without_project() {
             .iter()
             .all(|project| project.project_id != ids.andeanvet)
     );
-    let snapshot = workspace.island_snapshot().unwrap();
-    let all_items = &snapshot.open_items;
-    assert_eq!(all_items.len(), 7);
-    assert!(
-        all_items
-            .iter()
-            .all(|item| item.project_name.as_deref() != Some("Andeanvet"))
-    );
+    assert_eq!(workspace.island_snapshot().unwrap().open_items.len(), 4);
+    assert_eq!(workspace.delivered_tasks().unwrap(), Vec::new());
+    let trash = workspace.trashed_items().unwrap();
+    assert_eq!(trash.len(), 3);
+    assert!(trash.iter().all(|item| item.project_name.is_none()));
+
+    workspace.restore_item(in_progress).unwrap();
+    let restored = workspace.task_details(in_progress).unwrap();
+    assert_eq!(restored.project_name, None);
+    assert_eq!(restored.status, TaskStatus::Done);
 }
 
 #[test]

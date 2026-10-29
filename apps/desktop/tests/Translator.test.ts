@@ -9,7 +9,7 @@ describe("Translator", () => {
 
   it("fills placeholders", () => {
     const summary = new Translator("es").format("island.closed.summary", { due: 3, waiting: 2 });
-    expect(summary).toBe("3 hoy · 2 esperando");
+    expect(summary).toBe("3 por atender · 2 esperando");
   });
 
   it("returns the key when a message is missing", () => {

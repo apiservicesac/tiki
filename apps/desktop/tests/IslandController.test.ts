@@ -51,7 +51,7 @@ describe("IslandController", () => {
 
   it("shows Tiki's face and the day's summary while resting when work is pending", () => {
     expect(root.querySelector(".notch-hidden-busy .mascot-worried")).not.toBeNull();
-    expect(root.querySelector(".notch-hidden-busy .notch-summary")?.textContent).toBe("3 hoy · 2 esperando");
+    expect(root.querySelector(".notch-hidden-busy .notch-summary")?.textContent).toBe("3 por atender · 2 esperando");
   });
 
   it("lays the island out vertically on the left and right edges", async () => {
@@ -70,7 +70,7 @@ describe("IslandController", () => {
 
     vi.advanceTimersByTime(UI_CONFIG.peekDelayMs);
     expect(notch()?.dataset.mode).toBe("compact");
-    expect(root.querySelector(".notch-summary")?.textContent).toBe("3 hoy · 2 esperando");
+    expect(root.querySelector(".notch-summary")?.textContent).toBe("3 por atender · 2 esperando");
 
     vi.advanceTimersByTime(UI_CONFIG.unfoldDelayMs);
     expect(notch()?.dataset.mode).toBe("expanded");
@@ -118,8 +118,9 @@ describe("IslandController", () => {
     notch()?.click();
 
     const groups = [...root.querySelectorAll(".island-group")].map((group) => group.textContent);
-    expect(groups).toEqual(["Atrasado", "Vence pronto", "Toca insistir"]);
-    expect(root.querySelectorAll(".island-tab-content .island-row")).toHaveLength(4);
+    // The overdue task is "Now", so it is not listed again below it.
+    expect(groups).toEqual(["Vence pronto", "Toca insistir"]);
+    expect(root.querySelectorAll(".island-tab-content .island-row")).toHaveLength(3);
     expect(root.querySelector("#today-focus")?.textContent).toContain("Ahora · Está atrasada");
     expect(root.querySelector('[data-task-id="1"] .island-priority-high')?.textContent).toBe("!");
   });
@@ -202,7 +203,7 @@ describe("IslandController", () => {
     controller.selectTab("all_tasks");
     expect(root.querySelector('.tasks-tab [data-task-id="8"]')).toBeNull();
     const views = [...root.querySelectorAll<HTMLElement>("[data-view]")].map((view) => view.dataset.view);
-    expect(views).toEqual(["pending", "delivered"]);
+    expect(views).toEqual(["pending", "delivered", "trash"]);
 
     controller.selectTab("agenda");
     const row = root.querySelector('.agenda-row[data-task-id="8"]');
@@ -252,9 +253,10 @@ describe("IslandController", () => {
     [...root.querySelectorAll<HTMLButtonElement>(".picker-action")].find((action) => action.textContent === "Gestionar proyectos")?.click();
     expect(controller.currentState.panel).toBe("projects");
 
-    const name = root.querySelector<HTMLInputElement>("#new-project");
+    const name = root.querySelector<HTMLInputElement>("#projects-search");
     if (name) {
       name.value = "Constructora Sur";
+      name.dispatchEvent(new Event("input"));
     }
     root.querySelector<HTMLButtonElement>("#add-project")?.click();
     await vi.waitFor(() => expect(backend.projects.map((project) => project.name)).toContain("Constructora Sur"));
@@ -444,12 +446,22 @@ describe("IslandController", () => {
   it("keeps only the island's own settings and links to the advanced ones", () => {
     controller.openPanel("settings");
     const groups = [...root.querySelectorAll(".settings-group h3")].map((title) => title.textContent);
-    expect(groups).toEqual(["Posición de la isla", "Idioma", "Recordatorios"]);
+    expect(groups).toEqual(["Dónde aparece Tiki", "Idioma", "Avisos", "Silencio", "Resúmenes"]);
     expect(root.querySelector(".settings-ai")).toBeNull();
 
     root.querySelector<HTMLButtonElement>("#open-advanced-settings")?.click();
     expect(backend.openedSettings).toEqual([undefined]);
     expect(notch()?.dataset.mode).toBe("hidden");
+  });
+
+  it("explains every alert option and dims the ones that depend on alerts while they are off", async () => {
+    controller.openPanel("settings");
+    const rows = [...root.querySelectorAll(".setting-row")];
+    expect(rows.every((row) => row.querySelector(".setting-row-text small")?.textContent)).toBe(true);
+
+    await controller.changePreferences({ ...backend.savedPreferences, notificationsEnabled: false });
+    const sound = root.querySelector('[data-setting="settings.alert_sound"]')?.closest(".setting-row");
+    expect(sound?.classList.contains("setting-row-inactive")).toBe(true);
   });
 
   it("reloads preferences changed in the advanced settings window", async () => {
@@ -486,6 +498,15 @@ describe("IslandController", () => {
     expect(notch()?.dataset.mood).toBe("worried");
   });
 
+  it("sends the task being edited to the trash and goes back to the tabs", async () => {
+    controller.setMode("expanded");
+    root.querySelector<HTMLButtonElement>('[data-task-id="1"] .island-row-text')?.click();
+    await vi.waitFor(() => expect(root.querySelector("#edit-trash")).not.toBeNull());
+    root.querySelector<HTMLButtonElement>("#edit-trash")?.click();
+    await vi.waitFor(() => expect(controller.currentState.panel).toBe("tabs"));
+    expect(backend.trash.some((item) => item.taskId === 1)).toBe(true);
+  });
+
   it("keeps the alert in the notch untouched while other things redraw the island", async () => {
     backend.deliverAlert(EVENING_BRIEF);
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
@@ -504,7 +525,7 @@ describe("IslandController", () => {
     expect(root.querySelector(".receipt-head strong")?.textContent).toBe("Cierre del día");
     expect(root.querySelectorAll(".receipt-block")).toHaveLength(3);
     expect(root.querySelector(".receipt-tip")?.textContent).toContain("Mañana vence: Tracking");
-    expect(root.querySelector(".receipt-foot")?.textContent).toBe("6 pendientes · 2 esperando · 1 entregadas hoy");
+    expect(root.querySelector(".receipt-foot")?.textContent).toBe("Pendientes: 6 · Esperando: 2 · Entregadas hoy: 1");
     expect(controller.currentState.unreadAlert).toBe(false);
 
     controller.setMode("hidden");
@@ -627,13 +648,35 @@ describe("IslandController", () => {
     await vi.waitFor(() => expect(backend.recordingRequests).toEqual(["start:audio_only", "stop"]));
   });
 
+  const recordingOffer = { kind: "recording" as const, title: "¿Grabar esta llamada?", summary: "Hay una llamada en curso.", tips: ["Si grabas, avisa a los participantes."], actions: ["open" as const, "record_audio" as const, "record_video" as const], taskId: null, link: null };
+  const quietly = { sound: false, windowsNotification: false };
+
   it("opens the choice of what to record from Tiki's offer when a call starts", async () => {
-    backend.deliverAlert({ kind: "recording", title: "¿Grabar esta llamada?", summary: "Hay una llamada en curso.", tips: ["Si grabas, avisa a los participantes."], actions: ["open"], taskId: null, link: null }, { sound: false, windowsNotification: false });
+    backend.deliverAlert(recordingOffer, quietly);
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
     expect(root.querySelector(".notch-alert-kind")?.textContent).toBe("Grabar");
 
     notch()?.click();
     await vi.waitFor(() => expect(controller.currentState.panel).toBe("record"));
+    expect(backend.recordingRequests).toEqual([]);
+  });
+
+  it("records audio from the offer's button in the notch and rests with the red dot", async () => {
+    backend.deliverAlert(recordingOffer, quietly);
+    await vi.waitFor(() => expect(root.querySelector("#notch-alert-record-audio")).not.toBeNull());
+    expect(root.querySelector("#notch-alert-record-video")?.textContent).toBe("Audio y video");
+
+    root.querySelector<HTMLButtonElement>("#notch-alert-record-audio")?.click();
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("recording"));
+    expect(backend.recordingRequests).toEqual(["start:audio_only"]);
+    expect(controller.currentState.alert).toBeNull();
+  });
+
+  it("asks which screen or window to record from the offer's video button", async () => {
+    backend.deliverAlert(recordingOffer, quietly);
+    await vi.waitFor(() => expect(root.querySelector("#notch-alert-record-video")).not.toBeNull());
+    root.querySelector<HTMLButtonElement>("#notch-alert-record-video")?.click();
+    await vi.waitFor(() => expect(root.querySelector(".record-target")).not.toBeNull());
     expect(backend.recordingRequests).toEqual([]);
   });
 

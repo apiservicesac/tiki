@@ -11,13 +11,13 @@ export interface ProjectsPanelHandlers {
 }
 
 /**
- * Every project, with a search box: create one, rename it, change its color or remove it.
- * Built once and kept, so the search and the project being edited survive refreshes.
+ * Every project, with one box on top: typing filters the list, and a name no project has
+ * yet can be created from it (button or Enter). Each project can be renamed, recolored or
+ * removed. Built once and kept, so the search and the project being edited survive refreshes.
  */
 export class ProjectsPanelView {
   private element: HTMLElement | null = null;
   private search: HTMLInputElement | null = null;
-  private newProject: HTMLInputElement | null = null;
   private list: HTMLElement | null = null;
   private editing: { projectId: number; name: string; color: string; notes: string } | null = null;
   private confirmingRemoval: number | null = null;
@@ -27,7 +27,7 @@ export class ProjectsPanelView {
 
   constructor(private readonly translator: Translator) {}
 
-  render(projects: ProjectSummary[], colors: string[], focusNewProject: boolean, handlers: ProjectsPanelHandlers): HTMLElement {
+  render(projects: ProjectSummary[], colors: string[], handlers: ProjectsPanelHandlers): HTMLElement {
     this.projects = projects;
     this.colors = colors;
     this.handlers = handlers;
@@ -35,7 +35,8 @@ export class ProjectsPanelView {
     this.element ??= this.build();
     this.drawList();
     if (firstBuild) {
-      queueMicrotask(() => (focusNewProject ? this.newProject : this.search)?.focus());
+      // Creating a project and searching start in the same box.
+      queueMicrotask(() => this.search?.focus());
     }
     return this.element;
   }
@@ -53,47 +54,42 @@ export class ProjectsPanelView {
         type: "search",
         id: "projects-search",
         autocomplete: "off",
-        placeholder: this.translator.text("projects.search"),
-        "aria-label": this.translator.text("projects.search"),
+        placeholder: this.translator.text("projects.search_or_create"),
+        "aria-label": this.translator.text("projects.search_or_create"),
       },
     });
     this.search.addEventListener("input", () => this.drawList());
-    this.newProject = ElementFactory.create("input", {
-      className: "settings-input",
-      attributes: {
-        type: "text",
-        id: "new-project",
-        autocomplete: "off",
-        placeholder: this.translator.text("projects.new_placeholder"),
-        "aria-label": this.translator.text("projects.new_placeholder"),
-      },
-    });
-    const create = () => {
-      const name = this.newProject?.value.trim() ?? "";
-      if (name !== "" && this.newProject) {
-        this.newProject.value = "";
-        this.handlers?.onCreateProject(name);
-      }
-    };
-    const add = ElementFactory.textButton({
-      className: "settings-button",
-      text: this.translator.text("projects.add"),
-      attributes: { id: "add-project" },
-    }, create);
-    this.newProject.addEventListener("keydown", (event) => {
+    this.search.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
-        create();
+        this.createTyped();
       }
     });
     this.list = ElementFactory.create("div", { className: "island-list projects-list" });
-    return ElementFactory.create("div", {
-      className: "projects-panel",
-      children: [
-        ElementFactory.create("div", { className: "settings-row projects-new", children: [this.newProject, add] }),
-        this.search,
-        this.list,
-      ],
-    });
+    return ElementFactory.create("div", { className: "projects-panel", children: [this.search, this.list] });
+  }
+
+  /** The name typed in the box when no project is called that yet. */
+  private newName(): string | null {
+    const name = this.search?.value.trim() ?? "";
+    const taken = this.projects.some((project) => project.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+    return name === "" || taken ? null : name;
+  }
+
+  private createTyped(): void {
+    const name = this.newName();
+    if (name && this.search) {
+      this.search.value = "";
+      this.handlers?.onCreateProject(name);
+    }
+  }
+
+  /** "Create «Northern Builders»", first in the list while the typed name is new. */
+  private createRow(name: string): HTMLElement {
+    return ElementFactory.textButton({
+      className: "projects-create",
+      text: this.translator.format("projects.create", { name }),
+      attributes: { id: "add-project" },
+    }, () => this.createTyped());
   }
 
   private drawList(): void {
@@ -102,11 +98,12 @@ export class ProjectsPanelView {
     }
     const query = this.search?.value ?? "";
     const projects = this.projects.filter((project) => TextMatcher.matches(project.name, query));
-    this.list.replaceChildren(
-      ...(projects.length > 0
-        ? projects.map((project) => (this.editing?.projectId === project.projectId ? this.editRow(project) : this.row(project)))
-        : [ElementFactory.create("p", { className: "island-empty", text: this.translator.text("projects.empty") })]),
-    );
+    const newName = this.newName();
+    const rows = projects.map((project) => (this.editing?.projectId === project.projectId ? this.editRow(project) : this.row(project)));
+    const empty = rows.length === 0 && !newName
+      ? [ElementFactory.create("p", { className: "island-empty", text: this.translator.text("projects.empty") })]
+      : [];
+    this.list.replaceChildren(...(newName ? [this.createRow(newName)] : []), ...rows, ...empty);
   }
 
   private row(project: ProjectSummary): HTMLElement {
@@ -240,6 +237,8 @@ export class ProjectsPanelView {
     if (project.openCount === 0) {
       return this.translator.text("projects.no_open");
     }
-    return this.translator.format("projects.open", { count: project.openCount });
+    return project.openCount === 1
+      ? this.translator.text("projects.open_one")
+      : this.translator.format("projects.open", { count: project.openCount });
   }
 }
