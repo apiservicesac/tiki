@@ -7,6 +7,7 @@ mod delivered_item;
 mod island_snapshot;
 mod snapshot_presenter;
 mod tiki_workspace;
+mod workspace_views;
 
 pub use assistant_context::{AssistantContext, AssistantProject, AssistantTask};
 pub use clock::{Clock, FixedClock, ManualClock, SystemClock};
@@ -16,3 +17,4 @@ pub use island_snapshot::{
 };
 pub use snapshot_presenter::{SnapshotPresenter, TodaysMeetings};
 pub use tiki_workspace::TikiWorkspace;
+pub use workspace_views::WorkspaceViews;

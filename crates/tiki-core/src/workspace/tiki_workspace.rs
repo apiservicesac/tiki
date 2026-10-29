@@ -1,25 +1,23 @@
-use super::{
-    AssistantContext, Clock, DeliveredItem, IslandSnapshot, SnapshotPresenter, TodaysMeetings,
-};
 use chrono::NaiveDateTime;
 
+use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, WorkspaceViews};
 use crate::activity::ItemEventRecord;
 use crate::alerts::{AlertScheduler, TikiAlert};
-use crate::briefing::{DailyBrief, DailyBriefBuilder};
 use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
 use crate::capture::{CaptureLesson, ConfirmedCapture};
-use crate::domain::{Project, ProjectDirectory, ProjectId, TaskId, TaskStatus};
+use crate::domain::{Project, ProjectId, TaskId, TaskStatus};
 use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
 use crate::items::ItemService;
-use crate::mood::{MoodResolver, MoodSignals};
 use crate::preferences::UserPreferences;
 use crate::projects::{ProjectBook, ProjectChange, ProjectSummary};
 use crate::settings::TikiSettings;
 use crate::storage::Database;
 
-/// Owns the user's data and settings and exposes the actions every project needs.
+/// The entry point every platform uses: it owns the user's data, settings, preferences and
+/// clock, and hands each request to the part that owns the rules (`ItemService`,
+/// `AlertScheduler`, `CalendarBook`, `ProjectBook`, `WorkspaceViews`).
 pub struct TikiWorkspace {
     database: Database,
     settings: TikiSettings,
@@ -90,46 +88,74 @@ impl TikiWorkspace {
 
     /// What the island shows right now.
     pub fn island_snapshot(&self) -> TikiResult<IslandSnapshot> {
-        let now = self.clock.now();
-        let projects = self.project_book().directory()?;
-        let brief = self.brief(&projects)?;
-        let meetings = self.calendar_book().agenda(now.date())?;
-        let next_meeting = CalendarBook::next_today(&meetings, now);
-        let mood = MoodResolver::new(&self.settings).resolve(&MoodSignals {
-            brief: &brief,
-            minutes_to_next_meeting: next_meeting
-                .map(|meeting| (meeting.starts_at - now).num_minutes()),
-            focus_mode: self.preferences.focus_mode,
-        });
-        let delivered_today = self
-            .database
-            .activity()
-            .count_delivered_on(self.clock.today())?;
-        Ok(SnapshotPresenter::new(&self.translator, &projects).present(
-            &brief,
-            mood,
-            delivered_today,
-            &TodaysMeetings {
-                now,
-                next: next_meeting.cloned(),
-                agenda: meetings.clone(),
-            },
-        ))
+        self.views().island_snapshot()
     }
 
-    /// Open tasks in the shape the assistant needs to summarize the day or answer questions.
+    /// Open items in the shape the assistant needs to summarize the day or answer questions.
     pub fn assistant_context(&self) -> TikiResult<AssistantContext> {
-        let tasks = self.database.tasks().list_open()?;
-        Ok(AssistantContext::build(
-            &tasks,
-            &self.project_book().directory()?,
-            self.clock.now(),
-        ))
+        self.views().assistant_context()
+    }
+
+    /// A saved item as the edit form shows it.
+    pub fn task_details(&self, task_id: TaskId) -> TikiResult<TaskDetails> {
+        self.views().task_details(task_id)
+    }
+
+    /// Delivered items, most recent delivery first, for the history.
+    pub fn delivered_tasks(&self) -> TikiResult<Vec<DeliveredItem>> {
+        self.views().delivered_tasks()
+    }
+
+    /// Everything that happened to an item, oldest first.
+    pub fn activity_of(&self, task_id: TaskId) -> TikiResult<Vec<ItemEventRecord>> {
+        self.database.activity().events_of(task_id)
+    }
+
+    /// Saves an item exactly as the user confirmed it. A project named for the first time is
+    /// created on the spot: Tiki never asks the user to keep a list of projects.
+    pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
+        self.items().capture(capture)
+    }
+
+    /// Saves the user's changes to an item; a new project name creates the project.
+    pub fn edit_task(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
+        self.items().edit(task_id, edit)
+    }
+
+    pub fn move_task(&self, task_id: TaskId, status: TaskStatus) -> TikiResult<()> {
+        self.items().move_to(task_id, status)
+    }
+
+    /// Puts off a reminder for `minutes`; a reminder that already rang comes back to life.
+    pub fn snooze(&self, task_id: TaskId, minutes: i64) -> TikiResult<()> {
+        self.items().snooze(
+            task_id,
+            self.clock.now() + chrono::Duration::minutes(minutes),
+        )
+    }
+
+    /// Remembers a correction the user made to an AI capture.
+    pub fn record_capture_lesson(&self, lesson: &CaptureLesson) -> TikiResult<()> {
+        self.database
+            .capture_lessons()
+            .record(lesson, self.settings.capture_lesson_limit)
+    }
+
+    /// The user's recent corrections, newest first, for the AI to learn from.
+    pub fn capture_lessons(&self) -> TikiResult<Vec<CaptureLesson>> {
+        self.database
+            .capture_lessons()
+            .recent(self.settings.capture_lesson_limit)
     }
 
     /// The brief due now, if any; it arrives once a day (see `AlertScheduler`).
     pub fn take_due_notification(&self) -> TikiResult<Option<TikiAlert>> {
         self.alerts().take_due_brief()
+    }
+
+    /// Reminders and follow-up nudges whose time has come; each rings once.
+    pub fn take_due_task_reminders(&self) -> TikiResult<Vec<TikiAlert>> {
+        self.alerts().take_due_item_alerts()
     }
 
     /// "Meeting in 15 min" alerts for meetings about to start; each is announced once.
@@ -170,101 +196,8 @@ impl TikiWorkspace {
             .store(account_id, self.clock.today(), meetings)
     }
 
-    fn calendar_book(&self) -> CalendarBook<'_> {
-        CalendarBook::new(&self.database, &self.settings)
-    }
-
-    /// Reminders and follow-up nudges whose time has come; each rings once.
-    pub fn take_due_task_reminders(&self) -> TikiResult<Vec<TikiAlert>> {
-        self.alerts().take_due_item_alerts()
-    }
-
-    fn alerts(&self) -> AlertScheduler<'_> {
-        AlertScheduler::new(
-            &self.database,
-            &self.settings,
-            &self.preferences,
-            &self.translator,
-            self.clock.as_ref(),
-        )
-    }
-
-    /// Saves an item exactly as the user confirmed it. A project named for the first time is
-    /// created on the spot: Tiki never asks the user to keep a list of projects.
-    pub fn save_confirmed(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
-        self.items().capture(capture)
-    }
-
-    /// Puts off a reminder for `minutes`; a reminder that already rang comes back to life.
-    pub fn snooze(&self, task_id: TaskId, minutes: i64) -> TikiResult<()> {
-        self.items().snooze(
-            task_id,
-            self.clock.now() + chrono::Duration::minutes(minutes),
-        )
-    }
-
-    /// A saved task as the edit form shows it.
-    pub fn task_details(&self, task_id: TaskId) -> TikiResult<TaskDetails> {
-        let task = self.database.tasks().find(task_id)?;
-        TaskDetails::from_task(&task, &self.project_book().directory()?)
-    }
-
-    /// Saves the user's changes to an item; a new project name creates the project.
-    pub fn edit_task(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
-        self.items().edit(task_id, edit)
-    }
-
-    /// Remembers a correction the user made to an AI capture.
-    pub fn record_capture_lesson(&self, lesson: &CaptureLesson) -> TikiResult<()> {
-        self.database
-            .capture_lessons()
-            .record(lesson, self.settings.capture_lesson_limit)
-    }
-
-    /// The user's recent corrections, newest first, for the AI to learn from.
-    pub fn capture_lessons(&self) -> TikiResult<Vec<CaptureLesson>> {
-        self.database
-            .capture_lessons()
-            .recent(self.settings.capture_lesson_limit)
-    }
-
-    /// Everything that happened to an item, oldest first.
-    pub fn activity_of(&self, task_id: TaskId) -> TikiResult<Vec<ItemEventRecord>> {
-        self.database.activity().events_of(task_id)
-    }
-
-    /// Delivered tasks, most recent first, for the history.
-    pub fn delivered_tasks(&self) -> TikiResult<Vec<DeliveredItem>> {
-        let deliveries = self
-            .database
-            .activity()
-            .latest_deliveries(self.settings.delivered_history_limit)?;
-        let projects = self.project_book().directory()?;
-        let today = self.clock.today();
-        let mut delivered = Vec::new();
-        for delivery in deliveries {
-            let task = self.database.tasks().find(delivery.item_id)?;
-            delivered.extend(DeliveredItem::present(
-                &task,
-                delivery.at.date(),
-                &projects,
-                &self.translator,
-                today,
-            ));
-        }
-        Ok(delivered)
-    }
-
     pub fn projects(&self) -> TikiResult<Vec<Project>> {
         self.database.projects().list()
-    }
-
-    pub fn move_task(&self, task_id: TaskId, status: TaskStatus) -> TikiResult<()> {
-        self.items().move_to(task_id, status)
-    }
-
-    fn items(&self) -> ItemService<'_> {
-        ItemService::new(&self.database, &self.settings, self.clock.as_ref())
     }
 
     /// Saves a project with the next color of the palette.
@@ -293,12 +226,35 @@ impl TikiWorkspace {
         &self.settings.project_colors
     }
 
-    fn project_book(&self) -> ProjectBook<'_> {
-        ProjectBook::new(&self.database, &self.settings)
+    fn views(&self) -> WorkspaceViews<'_> {
+        WorkspaceViews::new(
+            &self.database,
+            &self.settings,
+            &self.preferences,
+            &self.translator,
+            self.clock.as_ref(),
+        )
     }
 
-    fn brief(&self, projects: &ProjectDirectory) -> TikiResult<DailyBrief> {
-        let tasks = self.database.tasks().list_open()?;
-        Ok(DailyBriefBuilder::new(&self.settings).build(&tasks, projects, self.clock.today()))
+    fn items(&self) -> ItemService<'_> {
+        ItemService::new(&self.database, &self.settings, self.clock.as_ref())
+    }
+
+    fn alerts(&self) -> AlertScheduler<'_> {
+        AlertScheduler::new(
+            &self.database,
+            &self.settings,
+            &self.preferences,
+            &self.translator,
+            self.clock.as_ref(),
+        )
+    }
+
+    fn calendar_book(&self) -> CalendarBook<'_> {
+        CalendarBook::new(&self.database, &self.settings)
+    }
+
+    fn project_book(&self) -> ProjectBook<'_> {
+        ProjectBook::new(&self.database, &self.settings)
     }
 }
