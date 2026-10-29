@@ -228,3 +228,72 @@ fn reports_leave_out_the_deliveries_of_items_in_the_trash() {
     );
     assert_eq!(activity.count_delivered_on(TestDay::today()).unwrap(), 0);
 }
+
+#[test]
+fn an_item_deleted_forever_takes_its_history_with_it() {
+    let workspace = TimedWorkspace::sample_at(TestDay::working_hours());
+    let kept = id_of(&workspace, "Saldo vacacional con solicitud rechazada");
+    let deleted = id_of(&workspace, "Completar módulo de importaciones");
+    workspace.deliver(deleted).unwrap();
+    workspace.trash_item(deleted).unwrap();
+
+    assert!(matches!(
+        workspace.delete_item_forever(kept),
+        Err(TikiError::NotFound { .. })
+    ));
+    workspace.delete_item_forever(deleted).unwrap();
+
+    assert!(matches!(
+        workspace.task_details(deleted),
+        Err(TikiError::NotFound { .. })
+    ));
+    assert_eq!(workspace.activity_of(deleted).unwrap(), Vec::new());
+    assert!(workspace.task_details(kept).is_ok());
+}
+
+#[test]
+fn emptying_the_trash_deletes_only_what_is_in_it() {
+    let workspace = TimedWorkspace::sample_at(TestDay::working_hours());
+    let trashed = [
+        id_of(&workspace, "Saldo vacacional con solicitud rechazada"),
+        id_of(&workspace, "Completar módulo de importaciones"),
+    ];
+    for task_id in trashed {
+        workspace.trash_item(task_id).unwrap();
+    }
+
+    workspace.empty_trash().unwrap();
+
+    for task_id in trashed {
+        assert!(matches!(
+            workspace.task_details(task_id),
+            Err(TikiError::NotFound { .. })
+        ));
+    }
+    assert_eq!(workspace.island_snapshot().unwrap().open_count, 5);
+}
+
+#[test]
+fn the_trash_deletes_forever_only_what_stayed_past_its_retention() {
+    let first_of_october = TestDay::october(1).and_hms_opt(10, 0, 0).unwrap();
+    let mut workspace = TimedWorkspace::sample_at(first_of_october);
+    let older = id_of(&workspace, "Saldo vacacional con solicitud rechazada");
+    let newer = id_of(&workspace, "Completar módulo de importaciones");
+    workspace.trash_item(older).unwrap();
+    workspace
+        .at(TestDay::october(10).and_hms_opt(10, 0, 0).unwrap())
+        .trash_item(newer)
+        .unwrap();
+
+    workspace.at(TestDay::october(30).and_hms_opt(8, 0, 0).unwrap());
+    assert_eq!(workspace.purge_expired_trash().unwrap(), 0);
+    workspace.at(TestDay::october(31).and_hms_opt(8, 0, 0).unwrap());
+    assert_eq!(workspace.purge_expired_trash().unwrap(), 1);
+
+    assert!(matches!(
+        workspace.task_details(older),
+        Err(TikiError::NotFound { .. })
+    ));
+    assert!(workspace.task_details(newer).is_ok());
+    assert_eq!(workspace.island_snapshot().unwrap().open_count, 5);
+}

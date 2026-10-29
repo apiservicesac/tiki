@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{NaiveDate, NaiveDateTime};
 use rusqlite::{Connection, OptionalExtension, params};
 
 use super::task_row_mapper::TaskRowMapper;
@@ -116,6 +116,50 @@ impl<'connection> TaskRepository<'connection> {
             .query_map(params![now], TaskRowMapper::read_row)?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(tasks)
+    }
+
+    /// Every item in the trash, most recently trashed first.
+    pub fn list_trashed(&self) -> TikiResult<Vec<Task>> {
+        let query = format!(
+            "SELECT {} FROM tasks WHERE trashed_at IS NOT NULL ORDER BY trashed_at DESC, id DESC",
+            TaskRowMapper::COLUMNS
+        );
+        let mut statement = self.connection.prepare(&query)?;
+        let tasks = statement
+            .query_map([], TaskRowMapper::read_row)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(tasks)
+    }
+
+    /// Deletes an item in the trash, and its history with it (`item_events` cascades).
+    pub fn delete_trashed(&self, task_id: TaskId) -> TikiResult<()> {
+        let deleted_rows = self.connection.execute(
+            "DELETE FROM tasks WHERE id = ?1 AND trashed_at IS NOT NULL",
+            params![task_id.0],
+        )?;
+        if deleted_rows == 0 {
+            return Err(TikiError::NotFound {
+                entity: "trashed item",
+                id: task_id.0,
+            });
+        }
+        Ok(())
+    }
+
+    /// Deletes every item in the trash, and their history with them.
+    pub fn delete_all_trashed(&self) -> TikiResult<()> {
+        self.connection
+            .execute("DELETE FROM tasks WHERE trashed_at IS NOT NULL", [])?;
+        Ok(())
+    }
+
+    /// Deletes the items sent to the trash on `last_day` or earlier, and their history with
+    /// them. Returns how many went.
+    pub fn delete_trashed_through(&self, last_day: NaiveDate) -> TikiResult<usize> {
+        Ok(self.connection.execute(
+            "DELETE FROM tasks WHERE date(trashed_at) <= ?1",
+            params![last_day],
+        )?)
     }
 
     /// Every task that is not delivered yet and not in the trash, earliest due date first.

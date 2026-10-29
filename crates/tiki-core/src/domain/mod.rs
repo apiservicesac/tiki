@@ -14,6 +14,7 @@ mod task_lifecycle;
 mod task_origin;
 mod task_status;
 mod task_trash;
+mod trash_policy;
 
 pub use follow_up_policy::FollowUpPolicy;
 pub use identifiers::{ProjectId, TaskId};
@@ -26,3 +27,4 @@ pub use tags::Tags;
 pub use task::Task;
 pub use task_origin::{ExternalReference, TaskOrigin};
 pub use task_status::TaskStatus;
+pub use trash_policy::TrashPolicy;

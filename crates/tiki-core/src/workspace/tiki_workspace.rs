@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{NaiveDate, NaiveDateTime};
 
 use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, WorkspaceViews};
 use crate::activity::ItemEventRecord;
@@ -9,14 +9,14 @@ use crate::domain::{Project, ProjectId, TaskId, TaskStatus};
 use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
 use crate::i18n::{Locale, Translator};
-use crate::items::ItemService;
+use crate::items::{ItemService, TrashBin};
 use crate::preferences::UserPreferences;
 use crate::projects::{ProjectBook, ProjectChange, ProjectSummary};
 use crate::settings::TikiSettings;
 use crate::storage::Database;
 
 /// The entry point every platform uses: it owns the user's data, settings, preferences and
-/// clock, and hands each request to the part that owns the rules (`ItemService`,
+/// clock, and hands each request to the part that owns the rules (`ItemService`, `TrashBin`,
 /// `AlertScheduler`, `CalendarBook`, `ProjectBook`, `WorkspaceViews`).
 pub struct TikiWorkspace {
     database: Database,
@@ -26,6 +26,8 @@ pub struct TikiWorkspace {
     clock: Box<dyn Clock>,
     /// Another app holds the microphone, as the shell reports it.
     in_call: bool,
+    /// The day the expired trash was last deleted; empty until the first time this run.
+    trash_purged_on: Option<NaiveDate>,
 }
 
 impl TikiWorkspace {
@@ -45,6 +47,7 @@ impl TikiWorkspace {
             translator,
             clock,
             in_call: false,
+            trash_purged_on: None,
         })
     }
 
@@ -173,6 +176,29 @@ impl TikiWorkspace {
         self.items().restore(task_id)
     }
 
+    /// Deletes an item in the trash forever, with its whole history.
+    pub fn delete_item_forever(&self, task_id: TaskId) -> TikiResult<()> {
+        self.trash_bin().delete_forever(task_id)
+    }
+
+    /// Deletes every item in the trash forever.
+    pub fn empty_trash(&self) -> TikiResult<()> {
+        self.trash_bin().empty()
+    }
+
+    /// Deletes forever the items whose time in the trash is over. It works once a day, the
+    /// first time it is asked (the shell asks on start and then every minute). Returns how
+    /// many items went.
+    pub fn purge_expired_trash(&mut self) -> TikiResult<usize> {
+        let today = self.clock.today();
+        if self.trash_purged_on == Some(today) {
+            return Ok(0);
+        }
+        let purged = self.trash_bin().purge_expired(today)?;
+        self.trash_purged_on = Some(today);
+        Ok(purged)
+    }
+
     /// Remembers a correction the user made to an AI capture.
     pub fn record_capture_lesson(&self, lesson: &CaptureLesson) -> TikiResult<()> {
         self.database
@@ -292,6 +318,10 @@ impl TikiWorkspace {
 
     fn items(&self) -> ItemService<'_> {
         ItemService::new(&self.database, &self.settings, self.clock.as_ref())
+    }
+
+    fn trash_bin(&self) -> TrashBin<'_> {
+        TrashBin::new(&self.database, &self.settings)
     }
 
     fn alerts(&self) -> AlertScheduler<'_> {
