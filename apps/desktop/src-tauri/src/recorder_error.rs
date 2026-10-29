@@ -17,6 +17,6 @@ pub enum RecorderError {
     #[error("a video session needs a screen or a window to record")]
     NoVideoTarget,
 
-    #[error("could not start the recorder thread: {0}")]
-    Thread(#[from] std::io::Error),
+    #[error("file system error: {0}")]
+    Io(#[from] std::io::Error),
 }

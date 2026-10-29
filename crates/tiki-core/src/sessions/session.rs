@@ -97,6 +97,19 @@ impl Session {
         Ok(())
     }
 
+    /// Tiki closed while recording: the session ends where its tracks end (`recorded`,
+    /// pauses excluded), with the media that could be saved, and waits for its transcript.
+    pub fn recover(&mut self, recorded: Duration, media: Option<(String, u64)>) -> TikiResult<()> {
+        self.status = self.status.checked_move(SessionStatus::Queued)?;
+        // The tracks hold no paused time, so a pause in progress just ends with them.
+        self.clock.paused_since = None;
+        self.ended_at =
+            Some(self.clock.started_at + Duration::milliseconds(self.clock.paused_ms) + recorded);
+        (self.media_file, self.media_bytes) =
+            media.map_or((None, 0), |(file, bytes)| (Some(file), bytes));
+        Ok(())
+    }
+
     pub fn begin_transcription(&mut self) -> TikiResult<()> {
         self.status = self.status.checked_move(SessionStatus::Transcribing)?;
         self.failure = None;

@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{Duration, NaiveDateTime};
 
 use super::{
     ActionItemId, MeetingLink, ProposedSessionTask, RecordingMode, RetentionPolicy, Session,
@@ -103,6 +103,26 @@ impl<'context> SessionService<'context> {
     pub fn awaits_transcription(&self) -> TikiResult<bool> {
         let sessions = self.database.sessions();
         Ok(sessions.capturing()?.is_some() || sessions.next_transcription()?.is_some())
+    }
+
+    /// Ends a session Tiki was recording when it closed, with what its tracks hold, and
+    /// queues its transcription.
+    pub fn recover(
+        &self,
+        session_id: SessionId,
+        recorded: Duration,
+        media: Option<(String, u64)>,
+    ) -> TikiResult<Session> {
+        let mut session = self.database.sessions().find(session_id)?;
+        session.recover(recorded, media)?;
+        let now = self.clock.now();
+        self.database.transaction(|repositories| {
+            repositories.sessions().update(&session)?;
+            repositories
+                .sessions()
+                .enqueue_transcription(session_id, now)
+        })?;
+        Ok(session)
     }
 
     /// Takes the oldest session in the transcription queue and marks it as transcribing.

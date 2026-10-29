@@ -20,6 +20,7 @@ mod recorder_error;
 mod registry_consent_store;
 mod session_files;
 mod session_recorder;
+mod session_recovery;
 mod session_retention;
 mod settings_window;
 mod shell_events;

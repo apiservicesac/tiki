@@ -21,6 +21,9 @@ pub struct OggOpusWriter {
     frame_samples: usize,
     /// Decoder delay the player skips, at 48 kHz.
     pre_skip: u16,
+    /// Ogg Opus counts time at 48 kHz whatever the input rate: granules per input sample.
+    granules_per_sample: u64,
+    input_rate: u32,
     /// Samples encoded so far, not counting the padding of the last frame.
     encoded_samples: u64,
     packets_in_page: u32,
@@ -37,18 +40,26 @@ impl OggOpusWriter {
     const CHANNEL_MAPPING: u8 = 0;
     const OUTPUT_GAIN: i16 = 0;
     const NO_USER_COMMENTS: u32 = 0;
+    /// Ogg Opus granule positions always count 48 kHz samples (RFC 7845).
+    const GRANULE_RATE: u32 = 48_000;
+    const MILLIS_PER_SECOND: u128 = 1_000;
 
+    /// A writer for the mix, at `RecordingConfig::MIX_SAMPLE_RATE`.
     pub fn create(path: &Path) -> RecordingResult<Self> {
-        let mut encoder = Encoder::new(
-            RecordingConfig::MIX_SAMPLE_RATE,
-            Channels::Mono,
-            Application::Voip,
-        )?;
+        Self::create_at(path, RecordingConfig::MIX_SAMPLE_RATE)
+    }
+
+    /// A writer for mono audio at `input_rate`, one of the rates Opus takes (48, 24, 16,
+    /// 12 or 8 kHz): the tracks rebuild a session's audio at 16 kHz after a crash.
+    pub fn create_at(path: &Path, input_rate: u32) -> RecordingResult<Self> {
+        let mut encoder = Encoder::new(input_rate, Channels::Mono, Application::Voip)?;
         encoder.set_bitrate(Bitrate::Bits(RecordingConfig::OPUS_BITRATE))?;
-        let pre_skip = u16::try_from(encoder.get_lookahead()?).unwrap_or_default();
+        let granules_per_sample = u64::from(Self::GRANULE_RATE / input_rate);
+        let lookahead = u64::try_from(encoder.get_lookahead()?).unwrap_or_default();
+        let pre_skip = u16::try_from(lookahead * granules_per_sample).unwrap_or_default();
         let frame_samples = usize::try_from(
-            u128::from(RecordingConfig::MIX_SAMPLE_RATE) * RecordingConfig::OPUS_FRAME.as_millis()
-                / 1_000,
+            u128::from(input_rate) * RecordingConfig::OPUS_FRAME.as_millis()
+                / Self::MILLIS_PER_SECOND,
         )
         .unwrap_or_default();
         let mut writer = Self {
@@ -58,6 +69,8 @@ impl OggOpusWriter {
             pending: Vec::with_capacity(frame_samples),
             frame_samples,
             pre_skip,
+            granules_per_sample,
+            input_rate,
             encoded_samples: 0,
             packets_in_page: 0,
         };
@@ -70,7 +83,7 @@ impl OggOpusWriter {
         let mut head = Vec::from(Self::HEAD_MAGIC);
         head.extend([Self::HEAD_VERSION, Self::MONO]);
         head.extend(self.pre_skip.to_le_bytes());
-        head.extend(RecordingConfig::MIX_SAMPLE_RATE.to_le_bytes());
+        head.extend(self.input_rate.to_le_bytes());
         head.extend(Self::OUTPUT_GAIN.to_le_bytes());
         head.push(Self::CHANNEL_MAPPING);
         self.packets
@@ -110,7 +123,7 @@ impl OggOpusWriter {
         } else {
             PacketWriteEndInfo::NormalPacket
         };
-        let granule = u64::from(self.pre_skip) + self.encoded_samples;
+        let granule = u64::from(self.pre_skip) + self.encoded_samples * self.granules_per_sample;
         self.packets
             .write_packet(packet, Self::STREAM_SERIAL, end, granule)?;
         Ok(())

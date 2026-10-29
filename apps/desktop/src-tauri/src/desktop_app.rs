@@ -18,6 +18,7 @@ use crate::diagnostics_log::DiagnosticsLog;
 use crate::island_window::IslandWindow;
 use crate::session_files::SessionFiles;
 use crate::session_recorder::SessionRecorder;
+use crate::session_recovery::SessionRecovery;
 use crate::session_retention::SessionRetention;
 use crate::shortcuts::GlobalShortcuts;
 use crate::transcription_runner::TranscriptionRunner;
@@ -111,6 +112,7 @@ impl TikiDesktopApp {
         app.manage(state);
         app.manage(SessionFiles::new(&app_data_folder));
         app.manage(SessionRecorder::default());
+        SessionRecovery::run(app.handle());
         app.manage(TranscriptionRunner::start(
             app.handle().clone(),
             &app_data_folder.join(DesktopConfig::MODELS_FOLDER),

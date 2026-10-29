@@ -156,6 +156,54 @@ fn the_recorded_time_leaves_pauses_out() {
 }
 
 #[test]
+fn a_session_cut_by_a_crash_ends_where_its_tracks_end_and_is_transcribed() {
+    let workspace = workspace();
+    let session_id = workspace
+        .sessions()
+        .start(RecordingMode::AudioOnly)
+        .unwrap()
+        .id
+        .unwrap();
+    workspace
+        .at(at(10, 10))
+        .sessions()
+        .pause(session_id)
+        .unwrap();
+    workspace
+        .at(at(10, 20))
+        .sessions()
+        .resume(session_id)
+        .unwrap();
+    workspace
+        .at(at(10, 25))
+        .sessions()
+        .pause(session_id)
+        .unwrap();
+
+    let recovered = workspace
+        .at(at(18, 0))
+        .sessions()
+        .recover(
+            session_id,
+            Duration::minutes(15),
+            Some(("session.ogg".to_owned(), 500)),
+        )
+        .unwrap();
+
+    assert_eq!(recovered.status, SessionStatus::Queued);
+    assert_eq!(recovered.ended_at, Some(at(10, 25)));
+    assert_eq!(recovered.recorded(at(23, 0)), Duration::minutes(15));
+    assert!(recovered.has_media());
+    assert!(
+        workspace
+            .sessions()
+            .begin_next_transcription()
+            .unwrap()
+            .is_some()
+    );
+}
+
+#[test]
 fn a_video_session_does_not_pause() {
     let workspace = workspace();
     let session_id = workspace
@@ -440,3 +488,4 @@ fn the_snapshot_shows_the_session_being_recorded() {
     assert_eq!(recording.recorded_ms, 5 * 60 * 1_000);
     assert!(!recording.paused);
 }
+
