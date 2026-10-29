@@ -13,7 +13,7 @@ pub struct TikiSettings {
     /// When the morning brief is prepared.
     pub morning_brief_time: NaiveTime,
     /// When the end-of-day close is prepared.
-    pub evening_close_time: NaiveTime,
+    pub evening_brief_time: NaiveTime,
     /// A task due within this many days counts as "due soon" (0 = today, 1 = today and tomorrow).
     pub due_soon_window_days: i64,
     /// A follow-up reminder rings at this time of the day it is due.
@@ -39,7 +39,7 @@ impl Default for TikiSettings {
         Self {
             locale: Locale::Spanish,
             morning_brief_time: NaiveTime::from_hms_opt(8, 30, 0).expect("valid time"),
-            evening_close_time: NaiveTime::from_hms_opt(18, 0, 0).expect("valid time"),
+            evening_brief_time: NaiveTime::from_hms_opt(18, 0, 0).expect("valid time"),
             due_soon_window_days: 2,
             follow_up_time: NaiveTime::from_hms_opt(9, 0, 0).expect("valid time"),
             follow_up_after_days: 3,
