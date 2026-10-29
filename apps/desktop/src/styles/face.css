@@ -59,3 +59,8 @@
 @keyframes face-tilt { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-7deg); } }
 @keyframes face-bounce { 30% { transform: translateY(-3px); } 60% { transform: translateY(0.5px); } }
 @keyframes face-breathe { 50% { opacity: 0.45; } }
+
+/* With arms and legs the face is drawn shifted (ACTOR_GEOMETRY.faceShift): eyes pivot there. */
+.mascot-actor .mascot-eyes { transform-origin: 42px 16px; }
+.mascot-actor .mascot-eye:first-child { transform-origin: 34px 16px; }
+.mascot-actor .mascot-eye:last-child { transform-origin: 50px 16px; }

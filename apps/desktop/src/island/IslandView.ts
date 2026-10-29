@@ -15,7 +15,7 @@ import { TaskListView } from "./TaskListView";
 import { TasksTabView, type TasksTabHandlers } from "./TasksTabView";
 import { AgendaView } from "./AgendaView";
 import { TodayView, type TodayHandlers } from "./TodayView";
-import type { HitArea } from "../backend/contracts";
+import type { HitArea, TikiAlert } from "../backend/contracts";
 import { ContentTransition, type ContentSize } from "./ContentTransition";
 import { FocusKeeper } from "../dom/FocusKeeper";
 
@@ -55,6 +55,8 @@ export class IslandView {
   private notchSize: ContentSize = { width: 0, height: 0 };
   private shownMode: IslandMode | null = null;
   private shownPanel = "";
+  /** The alert drawn in the notch, kept until another one comes or the notch changes shape. */
+  private shownAlert: TikiAlert | null = null;
   private assistantReady = false;
 
   constructor(
@@ -96,6 +98,13 @@ export class IslandView {
     // The root carries the mood too: the alert aura behind the notch takes its color.
     this.root.dataset.mood = mood;
 
+    // An alert already in the notch is left as it is: redrawing it would restart Tiki's
+    // journey to the goal (the brief, a sync or a resize can redraw while it shows).
+    if (this.isShowingAlert(state)) {
+      return;
+    }
+    this.shownAlert = state.mode === "alert" ? state.alert : null;
+
     // Content cross-fades only when the island changes shape (hidden, compact, expanded).
     // Tabs and panels swap instantly, so switching them never flashes an empty card.
     const animate = this.shownMode !== null && state.mode !== this.shownMode;
@@ -116,6 +125,14 @@ export class IslandView {
     const content = this.content(state, mood, preferences, handlers);
     this.resizeNotch(this.contentTransition.swap(content, animate));
     focus.restore();
+  }
+
+  private isShowingAlert(state: IslandState): boolean {
+    return state.mode === "alert"
+      && this.shownMode === "alert"
+      && state.alert !== null
+      && state.alert === this.shownAlert
+      && this.translator.localeCode === this.shownLocale;
   }
 
   /** Where the island is inside the window, so the shell can let other clicks through. */
@@ -215,7 +232,7 @@ export class IslandView {
       return this.notchView.hidden(state.snapshot, mood, state.unreadAlert);
     }
     if (state.mode === "alert" && state.alert) {
-      return this.notchView.alert(state.snapshot, state.alert, mood);
+      return this.notchView.alert(state.alert, mood);
     }
     if (state.mode === "compact") {
       return this.notchView.compact(state.snapshot, mood);

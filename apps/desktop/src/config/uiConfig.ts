@@ -1,4 +1,16 @@
 import type { MoodName, TikiAlert } from "../backend/contracts";
+import type { ICONS } from "../dom/iconLibrary";
+
+/** How Tiki moves on its way to an alert's goal; each one is an animation in island.css. */
+export type AlertGait = "run" | "hop" | "fidget" | "sprint" | "stretch" | "sleepy";
+
+/** How one kind of alert looks in the notch. */
+export interface AlertStyle {
+  mood: MoodName;
+  labelKey: string;
+  gait: AlertGait;
+  goalIcon: keyof typeof ICONS;
+}
 
 /** Every tunable value of the interface lives here, nowhere else. */
 export const UI_CONFIG = Object.freeze({
@@ -17,16 +29,17 @@ export const UI_CONFIG = Object.freeze({
   alertDurationMs: 12_000,
   /**
    * How each kind of alert presents itself in the notch: the face Tiki makes (and so the
-   * color of the eyes, the aura and the countdown) and the translation key of its label.
+   * color of the eyes and the aura), the translation key of its label, how Tiki moves on
+   * its way to the goal (`gait`, see island.css) and the icon of that goal.
    */
   alertStyles: Object.freeze({
-    reminder: Object.freeze({ mood: "hurry", labelKey: "alert.kind.reminder" }),
-    task: Object.freeze({ mood: "hurry", labelKey: "alert.kind.task" }),
-    follow_up: Object.freeze({ mood: "impatient", labelKey: "alert.kind.follow_up" }),
-    meeting: Object.freeze({ mood: "alert", labelKey: "alert.kind.meeting" }),
-    morning: Object.freeze({ mood: "calm", labelKey: "alert.kind.morning" }),
-    evening: Object.freeze({ mood: "curious", labelKey: "alert.kind.evening" }),
-  } satisfies Record<TikiAlert["kind"], { mood: MoodName; labelKey: string }>),
+    reminder: Object.freeze({ mood: "hurry", labelKey: "alert.kind.reminder", gait: "run", goalIcon: "bell" }),
+    task: Object.freeze({ mood: "hurry", labelKey: "alert.kind.task", gait: "hop", goalIcon: "check" }),
+    follow_up: Object.freeze({ mood: "impatient", labelKey: "alert.kind.follow_up", gait: "fidget", goalIcon: "mail" }),
+    meeting: Object.freeze({ mood: "alert", labelKey: "alert.kind.meeting", gait: "sprint", goalIcon: "video" }),
+    morning: Object.freeze({ mood: "calm", labelKey: "alert.kind.morning", gait: "stretch", goalIcon: "sun" }),
+    evening: Object.freeze({ mood: "curious", labelKey: "alert.kind.evening", gait: "sleepy", goalIcon: "moon" }),
+  } satisfies Record<TikiAlert["kind"], AlertStyle>),
   /** The island's chime: two notes, each this long, at a gentle volume (0 to 1). */
   alertChime: Object.freeze({ notesHz: Object.freeze([880, 1318.5]), noteSeconds: 0.16, volume: 0.12 }),
   /** The snooze buttons of a reminder: minutes, and the translation key of the label. */
@@ -46,7 +59,7 @@ export const UI_CONFIG = Object.freeze({
     contentOutMs: 180,
   }),
   /** Width of Tiki's face in each place; its height is half of it. */
-  faceWidth: Object.freeze({ hidden: 40, compact: 44, alert: 56, card: 76, settingsTitle: 36, walker: 24 }),
+  faceWidth: Object.freeze({ hidden: 40, compact: 44, card: 76, settingsTitle: 36, actor: 72 }),
 });
 
 /** Names of the events the desktop shell sends to the interface (see `shell_events.rs`). */

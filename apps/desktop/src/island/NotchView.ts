@@ -1,6 +1,7 @@
 import type { TikiAlert, IslandSnapshot, MoodName } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
+import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
 
@@ -36,30 +37,33 @@ export class NotchView {
   }
 
   /**
-   * The notch grown to announce something: Tiki's face with ripples, the kind of alert, its
-   * title and first line (cut with "…"). Along the bottom edge a tiny Tiki walks towards a
-   * glowing goal; when it gets there, the notch folds back.
-   * The aura around the notch comes from the stylesheet (`data-mode="alert"`).
+   * The notch grown to announce something: the kind of alert, its title and first line
+   * (cut with "…"), and Tiki itself. As the alert arrives Tiki grows arms and legs, jumps
+   * down to the bottom edge and heads for the alert's goal, moving its own way for each
+   * kind (`gait`); it gets there as the notch folds back. The aura comes from the
+   * stylesheet (`data-mode="alert"`).
    */
-  alert(snapshot: IslandSnapshot, alert: TikiAlert, mood: MoodName): HTMLElement {
+  alert(alert: TikiAlert, mood: MoodName): HTMLElement {
+    const style = UI_CONFIG.alertStyles[alert.kind];
     const preview = alert.body.split("\n").join(" · ");
-    const kindLabel = this.translator.text(UI_CONFIG.alertStyles[alert.kind].labelKey);
-    const face = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.alert);
-    face.classList.add("notch-alert-face");
     return ElementFactory.create("div", {
       className: "notch-alert",
-      attributes: { role: "status", "aria-live": "polite", "data-alert-kind": alert.kind },
+      attributes: { role: "status", "aria-live": "polite", "data-alert-kind": alert.kind, "data-gait": style.gait },
       children: [
-        face,
         ElementFactory.create("span", {
           className: "notch-alert-text",
           children: [
-            ElementFactory.create("span", { className: "notch-alert-kind", text: kindLabel }),
+            ElementFactory.create("span", { className: "notch-alert-kind", text: this.translator.text(style.labelKey) }),
             ElementFactory.create("strong", { text: alert.title }),
             ElementFactory.create("span", { className: "notch-alert-preview", text: preview }),
           ],
         }),
-        this.countdown(snapshot, mood),
+        ElementFactory.fromTrustedMarkup("notch-alert-goal", ICONS[style.goalIcon]),
+        ElementFactory.create("span", {
+          className: "notch-alert-actor",
+          attributes: { "aria-hidden": "true" },
+          children: [ElementFactory.fromTrustedMarkup("notch-alert-actor-body", this.mascot.renderActor(mood, UI_CONFIG.faceWidth.actor))],
+        }),
       ],
     });
   }
@@ -77,18 +81,6 @@ export class NotchView {
           attributes: { title: snapshot.moodLabel },
         }),
       ],
-    });
-  }
-
-  /** The walk to the goal that tells how long the alert stays. */
-  private countdown(snapshot: IslandSnapshot, mood: MoodName): HTMLElement {
-    const walker = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.walker);
-    walker.classList.add("notch-alert-walker");
-    walker.querySelector("svg")?.setAttribute("aria-hidden", "true");
-    return ElementFactory.create("span", {
-      className: "notch-alert-countdown",
-      attributes: { "aria-hidden": "true" },
-      children: [ElementFactory.create("span", { className: "notch-alert-goal" }), walker],
     });
   }
 

@@ -527,71 +527,76 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   color: var(--island-muted);
 }
 
-/* Ripples leave Tiki's face when the alert arrives. */
-.notch-alert-face {
-  position: relative;
-  flex: none;
+/*
+ * Tiki on its way to the alert's goal. It starts as the face, on the left; arms and legs
+ * grow, it jumps down to the bottom edge and heads for the goal on the right, moving its
+ * own way for each kind (`data-gait`). It gets there as the notch folds back.
+ */
+.notch-alert {
+  --actor-start-left: 14px;
+  --actor-start-bottom: 22px;
+  --actor-track-bottom: 3px;
+  --actor-walk-scale: 0.46;
+  --actor-goal-room: 52px;
 }
 
-.notch-alert-face::before,
-.notch-alert-face::after {
-  content: "";
+.notch-alert-text { margin-left: 84px; }
+
+.notch-alert-actor {
   position: absolute;
-  inset: -4px -2px;
-  border: 1.5px solid var(--mood-color);
-  border-radius: 99px;
-  opacity: 0;
+  left: var(--actor-start-left);
+  bottom: var(--actor-start-bottom);
+  line-height: 0;
+  transform-origin: left bottom;
   pointer-events: none;
 }
 
-/*
- * The countdown: along the bottom edge a tiny Tiki walks over a faint dotted path towards a
- * glowing goal. It arrives when the notch folds back (`--alert-duration`).
- */
-.notch-alert-countdown {
-  position: absolute;
-  left: 22px;
-  right: 22px;
-  bottom: 5px;
-  height: 10px;
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--mood-color) 35%, transparent) 0.9px, transparent 1.4px);
-  background-size: 7px 10px;
-  background-position: left center;
-  background-repeat: repeat-x;
-}
-
-.notch-alert-goal {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  margin-top: -3px;
-  border-radius: 50%;
-  background: var(--mood-color);
-  box-shadow: 0 0 8px 1px var(--mood-color);
-}
-
-.notch-alert-walker {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  margin-top: -6px;
+.notch-alert-actor-body {
+  position: relative;
+  display: block;
   line-height: 0;
 }
 
-/* The path already walked is eaten up behind Tiki, so what is left reads at a glance. */
-.notch-alert-countdown::before {
-  content: "";
+.mascot-actor .actor-limb,
+.mascot-actor .actor-limb path { transform-box: fill-box; }
+.mascot-actor .actor-leg,
+.mascot-actor .actor-leg path { transform-origin: 50% 0; }
+.mascot-actor .actor-arm-start,
+.mascot-actor .actor-arm-start path { transform-origin: 100% 0; }
+.mascot-actor .actor-arm-end,
+.mascot-actor .actor-arm-end path { transform-origin: 0 0; }
+
+/* The goal waits on the right with a soft glow, and pops when Tiki gets there. */
+.notch-alert-goal {
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0;
-  background: var(--island-notch);
+  right: 16px;
+  bottom: 5px;
+  width: 15px;
+  height: 15px;
+  color: var(--mood-color);
+  filter: drop-shadow(0 0 4px var(--mood-color));
 }
 
-.notch-alert-walker .mascot-eyes { filter: none; }
+.notch-alert-goal svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Two ripples burst from Tiki as it transforms. */
+.notch-alert-actor-body::before,
+.notch-alert-actor-body::after {
+  content: "";
+  position: absolute;
+  inset: 0 6px 14px;
+  border: 1.5px solid var(--mood-color);
+  border-radius: 99px;
+  opacity: 0;
+}
 
 /*
  * While an alert is announced, a wide aura in the alert's color spreads from the notch over
@@ -627,13 +632,21 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 [data-placement="left"] .island-notch { transform-origin: center left; }
 [data-placement="right"] .island-notch { transform-origin: center right; }
 
+/* In the narrow column Tiki starts above the text and walks along the bottom edge. */
 [data-orientation="vertical"] .notch-alert {
+  --actor-start-left: calc(50% - 36px);
+  --actor-start-bottom: calc(100% - 50px);
   flex-direction: column;
   justify-content: center;
   width: var(--notch-alert-vertical-width);
   height: auto;
-  padding: 14px 12px;
+  padding: 56px 12px 30px;
   text-align: center;
+}
+
+[data-orientation="vertical"] .notch-alert-text {
+  margin-left: 0;
+  animation: none;
 }
 
 [data-orientation="vertical"] .notch-alert-preview {
@@ -676,22 +689,95 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 @media (prefers-reduced-motion: no-preference) {
   #island-root:has(> .island-notch[data-mode="alert"])::before { animation: alert-aura 2.4s ease-in-out infinite; }
   .island-notch[data-mode="alert"] { animation: alert-arrive 0.7s var(--ease-out); }
-  .notch-alert-face::before { animation: alert-ripple 1.6s var(--ease-out) 3; }
-  .notch-alert-face::after { animation: alert-ripple 1.6s var(--ease-out) 0.5s 3; }
-  .notch-alert-walker { animation: alert-walk var(--alert-duration) linear forwards; }
-  .notch-alert-countdown::before { animation: alert-path-eaten var(--alert-duration) linear forwards; }
-  .notch-alert-walker .mascot { animation: alert-step 0.42s ease-in-out infinite alternate; }
-  .notch-alert-goal { animation: alert-pulse 1.4s ease-in-out infinite; }
+
+  /* The journey, the text making room, the limbs growing and the ripples. */
+  .notch-alert-actor { animation: alert-journey var(--alert-duration) linear forwards; }
+  .notch-alert[data-gait="fidget"] .notch-alert-actor { animation-name: alert-journey-in-fits; }
+  .notch-alert-text { animation: alert-text-makes-room var(--alert-duration) var(--ease-out) forwards; }
+  .mascot-actor .actor-limb path { transform: scale(0); animation: actor-limb-grow 0.45s var(--ease-out) 0.3s forwards; }
+  .notch-alert-actor-body::before { animation: alert-ripple 1s var(--ease-out) 0.2s; }
+  .notch-alert-actor-body::after { animation: alert-ripple 1s var(--ease-out) 0.55s; }
+  .notch-alert-goal { animation: alert-goal-waits 1.4s ease-in-out infinite, alert-goal-reached 0.6s var(--ease-out) calc(var(--alert-duration) - 0.7s) forwards; }
+
+  /* Reminder: runs. */
+  .notch-alert[data-gait="run"] .actor-leg { animation: actor-swing-wide 0.3s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="run"] .actor-arm { animation: actor-swing 0.3s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="run"] .notch-alert-actor-body { animation: actor-bob 0.15s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="run"] .actor-leg-end,
+  .notch-alert[data-gait="run"] .actor-arm-start { animation-direction: alternate-reverse; }
+
+  /* Meeting: sprints, leaning forward and pumping its arms. */
+  .notch-alert[data-gait="sprint"] .actor-leg { animation: actor-swing-wide 0.17s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="sprint"] .actor-arm { animation: actor-swing-wide 0.17s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="sprint"] .notch-alert-actor-body { animation: actor-lean-and-bob 0.17s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="sprint"] .actor-leg-end,
+  .notch-alert[data-gait="sprint"] .actor-arm-start { animation-direction: alternate-reverse; }
+
+  /* Task: hops to the check. */
+  .notch-alert[data-gait="hop"] .notch-alert-actor-body { animation: actor-hop 0.7s var(--ease-out) infinite; }
+  .notch-alert[data-gait="hop"] .actor-leg { animation: actor-tuck 0.7s var(--ease-out) infinite; }
+  .notch-alert[data-gait="hop"] .actor-arm-start { animation: actor-arm-start-up 0.7s var(--ease-out) infinite; }
+  .notch-alert[data-gait="hop"] .actor-arm-end { animation: actor-arm-end-up 0.7s var(--ease-out) infinite; }
+
+  /* Follow-up: goes in fits, hands on hips, tapping a foot while it waits. */
+  .notch-alert[data-gait="fidget"] .actor-arm-start { transform: rotate(-70deg); animation: none; }
+  .notch-alert[data-gait="fidget"] .actor-arm-end { transform: rotate(70deg); animation: none; }
+  .notch-alert[data-gait="fidget"] .actor-leg-end { animation: actor-foot-tap 0.45s ease-in-out infinite; }
+  .notch-alert[data-gait="fidget"] .notch-alert-actor-body { animation: actor-shake 1.33s ease-in-out infinite; }
+
+  /* Morning: strolls, stretching its arms. */
+  .notch-alert[data-gait="stretch"] .actor-leg { animation: actor-swing 0.55s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="stretch"] .actor-leg-end { animation-direction: alternate-reverse; }
+  .notch-alert[data-gait="stretch"] .actor-arm-start { animation: actor-arm-start-up 1.6s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="stretch"] .actor-arm-end { animation: actor-arm-end-up 1.6s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="stretch"] .notch-alert-actor-body { animation: actor-bob 0.55s ease-in-out infinite alternate; }
+
+  /* End of day: walks sleepily towards the moon, swaying. */
+  .notch-alert[data-gait="sleepy"] .actor-leg { animation: actor-swing-small 0.8s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="sleepy"] .actor-arm { animation: actor-swing-small 0.8s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="sleepy"] .notch-alert-actor-body { animation: actor-sway 1.6s ease-in-out infinite alternate; }
+  .notch-alert[data-gait="sleepy"] .actor-leg-end,
+  .notch-alert[data-gait="sleepy"] .actor-arm-start { animation-direction: alternate-reverse; }
+
+  /* Every gait starts once Tiki has landed on the bottom edge. */
+  .notch-alert[data-gait] .mascot-actor .actor-limb,
+  .notch-alert[data-gait] .notch-alert-actor-body { animation-delay: calc(var(--alert-duration) * 0.1); }
+
   .notch-unread { animation: alert-pulse 1.8s ease-in-out infinite; }
 }
 
 @keyframes alert-pulse { 50% { opacity: 0.45; } }
 @keyframes alert-aura { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
 @keyframes alert-arrive { 0% { transform: scale(0.96); } 55% { transform: scale(1.03); } 100% { transform: none; } }
-@keyframes alert-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
-@keyframes alert-walk { from { left: 0; } to { left: calc(100% - 32px); } }
-@keyframes alert-path-eaten { from { width: 0; } to { width: calc(100% - 32px); } }
-@keyframes alert-step { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-2px) rotate(4deg); } }
+@keyframes alert-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.8); } }
+@keyframes alert-journey {
+  0%, 5% { left: var(--actor-start-left); bottom: var(--actor-start-bottom); transform: none; }
+  8% { left: var(--actor-start-left); bottom: var(--actor-start-bottom); transform: scale(var(--actor-walk-scale)); }
+  10% { left: var(--actor-start-left); bottom: var(--actor-track-bottom); transform: scale(var(--actor-walk-scale)); }
+  100% { left: calc(100% - var(--actor-goal-room)); bottom: var(--actor-track-bottom); transform: scale(var(--actor-walk-scale)); }
+}
+@keyframes alert-journey-in-fits {
+  0%, 5% { left: var(--actor-start-left); bottom: var(--actor-start-bottom); transform: none; }
+  8% { left: var(--actor-start-left); bottom: var(--actor-start-bottom); transform: scale(var(--actor-walk-scale)); }
+  10% { left: var(--actor-start-left); bottom: var(--actor-track-bottom); transform: scale(var(--actor-walk-scale)); animation-timing-function: steps(8, jump-end); }
+  100% { left: calc(100% - var(--actor-goal-room)); bottom: var(--actor-track-bottom); transform: scale(var(--actor-walk-scale)); }
+}
+@keyframes alert-text-makes-room { 0%, 8% { margin-left: 84px; } 11%, 100% { margin-left: 0; } }
+@keyframes alert-goal-waits { 50% { opacity: 0.55; } }
+@keyframes alert-goal-reached { 50% { transform: scale(1.6); } 100% { transform: scale(1.2); } }
+@keyframes actor-limb-grow { from { transform: scale(0); } to { transform: none; } }
+@keyframes actor-swing { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
+@keyframes actor-swing-wide { from { transform: rotate(-34deg); } to { transform: rotate(34deg); } }
+@keyframes actor-swing-small { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+@keyframes actor-bob { to { transform: translateY(-3px); } }
+@keyframes actor-lean-and-bob { from { transform: rotate(9deg); } to { transform: rotate(9deg) translateY(-3px); } }
+@keyframes actor-hop { 0%, 100% { transform: none; } 45% { transform: translateY(-22px); } }
+@keyframes actor-tuck { 0%, 100% { transform: none; } 45% { transform: scaleY(0.6); } }
+@keyframes actor-arm-start-up { 0%, 100% { transform: none; } 45% { transform: rotate(120deg); } }
+@keyframes actor-arm-end-up { 0%, 100% { transform: none; } 45% { transform: rotate(-120deg); } }
+@keyframes actor-foot-tap { 0%, 100% { transform: none; } 50% { transform: rotate(-28deg); } }
+@keyframes actor-shake { 0%, 80%, 100% { transform: none; } 86% { transform: translateX(-2px); } 93% { transform: translateX(2px); } }
+@keyframes actor-sway { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
 
 @media (prefers-reduced-motion: reduce) {
   .island-notch { transition: none; }
