@@ -13,6 +13,7 @@ pub mod domain;
 pub mod editing;
 pub mod error;
 pub mod i18n;
+pub mod items;
 pub mod mood;
 pub mod plugins;
 pub mod preferences;
