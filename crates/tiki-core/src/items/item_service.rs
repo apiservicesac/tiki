@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 
 use crate::activity::{ItemEvent, ItemField};
 use crate::capture::ConfirmedCapture;
-use crate::domain::{FollowUpPolicy, Task, TaskId, TaskOrigin, TaskStatus};
+use crate::domain::{FollowUpPolicy, Task, TaskId, TaskStatus};
 use crate::editing::TaskEdit;
 use crate::error::{TikiError, TikiResult};
 use crate::projects::ProjectBook;
@@ -40,14 +40,12 @@ impl<'context> ItemService<'context> {
         let mut task = capture.into_task(project_id, self.clock.today())?;
         FollowUpPolicy::new(self.settings).schedule_first_nudge(&mut task, false);
         task.normalize()?;
-        let created = match task.origin {
-            TaskOrigin::Manual => ItemEvent::Created,
-            TaskOrigin::External(_) => ItemEvent::Imported,
-        };
         let now = self.clock.now();
         self.database.transaction(|repositories| {
             let task_id = repositories.tasks().insert(&task, now)?;
-            repositories.activity().record(task_id, now, &[created])?;
+            repositories
+                .activity()
+                .record(task_id, now, &[ItemEvent::Created])?;
             Ok(task_id)
         })
     }
