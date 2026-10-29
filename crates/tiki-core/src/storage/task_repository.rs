@@ -94,23 +94,6 @@ impl<'connection> TaskRepository<'connection> {
             })
     }
 
-    /// Delivered tasks, most recent first, at most `limit` of them.
-    pub fn list_delivered(&self, limit: usize) -> TikiResult<Vec<Task>> {
-        let query = format!(
-            "SELECT {} FROM tasks WHERE status = 'done'
-              ORDER BY completed_on DESC, updated_at DESC, id DESC LIMIT ?1",
-            TaskRowMapper::COLUMNS
-        );
-        let mut statement = self.connection.prepare(&query)?;
-        let tasks = statement
-            .query_map(
-                params![i64::try_from(limit).unwrap_or(i64::MAX)],
-                TaskRowMapper::read_row,
-            )?
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(tasks)
-    }
-
     /// Open items whose reminder or follow-up nudge is due at `now`.
     pub fn list_due_alerts(&self, now: chrono::NaiveDateTime) -> TikiResult<Vec<Task>> {
         let query = format!(
@@ -123,16 +106,6 @@ impl<'connection> TaskRepository<'connection> {
             .query_map(params![now], TaskRowMapper::read_row)?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(tasks)
-    }
-
-    /// How many tasks were delivered on `day`.
-    pub fn count_delivered_on(&self, day: chrono::NaiveDate) -> TikiResult<usize> {
-        let count: i64 = self.connection.query_row(
-            "SELECT COUNT(*) FROM tasks WHERE status = 'done' AND completed_on = ?1",
-            params![day],
-            |row| row.get(0),
-        )?;
-        Ok(usize::try_from(count).unwrap_or_default())
     }
 
     /// Every task that is not delivered yet, earliest due date first.

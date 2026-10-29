@@ -94,7 +94,7 @@ fn a_task_cannot_lose_its_title() {
 }
 
 #[test]
-fn delivering_a_task_moves_it_to_the_history_and_reopening_brings_it_back() {
+fn a_delivery_stays_in_the_history_after_reopening() {
     let workspace = sample_workspace();
     let task_id = first_task_id(&workspace);
     workspace.move_task(task_id, TaskStatus::Done).unwrap();
@@ -108,12 +108,8 @@ fn delivering_a_task_moves_it_to_the_history_and_reopening_brings_it_back() {
     workspace
         .move_task(task_id, TaskStatus::InProgress)
         .unwrap();
-    assert!(
-        workspace
-            .delivered_tasks()
-            .unwrap()
-            .iter()
-            .all(|item| item.task_id != task_id)
-    );
-    assert_eq!(workspace.island_snapshot().unwrap().delivered_today, 0);
+    assert_eq!(workspace.delivered_tasks().unwrap()[0].task_id, task_id);
+    assert_eq!(workspace.island_snapshot().unwrap().delivered_today, 1);
+    let details = workspace.task_details(task_id).unwrap();
+    assert_eq!(details.status, TaskStatus::InProgress);
 }

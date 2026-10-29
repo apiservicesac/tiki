@@ -1,6 +1,7 @@
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::Deserialize;
 
+use crate::activity::ItemEvent;
 use crate::domain::{ItemKind, Priority, ProjectId, Repeat, Task, TaskStatus};
 
 /// The fields the user changed in the edit form. The project comes by name, so the
@@ -29,8 +30,14 @@ pub struct TaskEdit {
 
 impl TaskEdit {
     /// Applies the edit to a saved task; `project_id` is the project already resolved by name.
-    /// The caller normalizes the task afterwards (see `Task::normalize`).
-    pub fn apply_to(self, task: &mut Task, project_id: Option<ProjectId>, today: NaiveDate) {
+    /// The caller normalizes the task afterwards (see `Task::normalize`). Returns the status
+    /// change to record, if the status changed.
+    pub fn apply_to(
+        self,
+        task: &mut Task,
+        project_id: Option<ProjectId>,
+        today: NaiveDate,
+    ) -> Option<ItemEvent> {
         task.title = self.title;
         task.notes = self.notes;
         task.project_id = project_id;
@@ -41,6 +48,6 @@ impl TaskEdit {
         task.tags = self.tags;
         task.repeat = self.repeat;
         task.waiting_for = self.waiting_for;
-        task.move_to(self.status, today);
+        task.move_to(self.status, today)
     }
 }

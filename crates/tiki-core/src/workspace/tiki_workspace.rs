@@ -3,13 +3,16 @@ use super::{
 };
 use chrono::NaiveDateTime;
 
+use crate::activity::{ItemEvent, ItemEventRecord, ItemField};
 use crate::alerts::{BriefPlanner, NotificationComposer, TikiAlert};
 use crate::briefing::{BriefMoment, DailyBrief, DailyBriefBuilder};
 use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
 use crate::capture::{CaptureLesson, ConfirmedCapture};
-use crate::domain::{FollowUpPolicy, Project, ProjectDirectory, ProjectId, TaskId, TaskStatus};
+use crate::domain::{
+    FollowUpPolicy, Project, ProjectDirectory, ProjectId, Task, TaskId, TaskOrigin, TaskStatus,
+};
 use crate::editing::{TaskDetails, TaskEdit};
-use crate::error::TikiResult;
+use crate::error::{TikiError, TikiResult};
 use crate::i18n::{Locale, Translator};
 use crate::mood::{MoodResolver, MoodSignals};
 use crate::preferences::UserPreferences;
@@ -101,7 +104,7 @@ impl TikiWorkspace {
         });
         let delivered_today = self
             .database
-            .tasks()
+            .activity()
             .count_delivered_on(self.clock.today())?;
         Ok(SnapshotPresenter::new(&self.translator, &projects).present(
             &brief,
@@ -229,15 +232,19 @@ impl TikiWorkspace {
             let mut alerts = Vec::new();
             for mut task in repositories.tasks().list_due_alerts(now)? {
                 let project_name = projects.name_of(task.project_id);
+                let mut events = Vec::new();
                 if task.remind_at.is_some_and(|at| at <= now) {
                     alerts.push(composer.compose_reminder(&task, project_name, today));
-                    task.ring(now);
+                    events.extend(task.ring(now));
                 }
                 if task.follow_up_at.is_some_and(|at| at <= now) {
                     alerts.push(composer.compose_follow_up(&task, project_name, today));
-                    task.ring_follow_up(now, &policy);
+                    events.push(task.ring_follow_up(now, &policy));
                 }
                 repositories.tasks().update(&task)?;
+                if let Some(task_id) = task.id {
+                    repositories.activity().record(task_id, now, &events)?;
+                }
             }
             Ok(alerts)
         })
@@ -251,14 +258,24 @@ impl TikiWorkspace {
         self.follow_up_policy()
             .schedule_first_nudge(&mut task, false);
         task.normalize()?;
-        self.database.tasks().insert(&task)
+        let created = match task.origin {
+            TaskOrigin::Manual => ItemEvent::Created,
+            TaskOrigin::External(_) => ItemEvent::Imported,
+        };
+        self.database.transaction(|repositories| {
+            let task_id = repositories.tasks().insert(&task)?;
+            repositories
+                .activity()
+                .record(task_id, self.clock.now(), &[created])?;
+            Ok(task_id)
+        })
     }
 
     /// Puts off a reminder for `minutes`; a reminder that already rang comes back to life.
     pub fn snooze(&self, task_id: TaskId, minutes: i64) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
-        task.snooze(self.clock.now() + chrono::Duration::minutes(minutes));
-        self.database.tasks().update(&task)
+        let events = task.snooze(self.clock.now() + chrono::Duration::minutes(minutes));
+        self.save_changes(&task, &events)
     }
 
     /// A saved task as the edit form shows it.
@@ -270,13 +287,16 @@ impl TikiWorkspace {
     /// Saves the user's changes to an item; a new project name creates the project.
     pub fn edit_task(&self, task_id: TaskId, edit: TaskEdit) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
-        let was_waiting = task.status == TaskStatus::Waiting;
+        let before = task.clone();
         let project_id = self.project_named(edit.project_name.as_deref())?;
-        edit.apply_to(&mut task, project_id, self.clock.today());
+        let moved = edit.apply_to(&mut task, project_id, self.clock.today());
         self.follow_up_policy()
-            .schedule_first_nudge(&mut task, was_waiting);
+            .schedule_first_nudge(&mut task, before.status == TaskStatus::Waiting);
         task.normalize()?;
-        self.database.tasks().update(&task)
+        let fields = ItemField::changed_between(&before, &task);
+        let edited = (!fields.is_empty()).then_some(ItemEvent::Edited { fields });
+        let events: Vec<ItemEvent> = edited.into_iter().chain(moved).collect();
+        self.save_changes(&task, &events)
     }
 
     /// Remembers a correction the user made to an AI capture.
@@ -293,18 +313,31 @@ impl TikiWorkspace {
             .recent(self.settings.capture_lesson_limit)
     }
 
+    /// Everything that happened to an item, oldest first.
+    pub fn activity_of(&self, task_id: TaskId) -> TikiResult<Vec<ItemEventRecord>> {
+        self.database.activity().events_of(task_id)
+    }
+
     /// Delivered tasks, most recent first, for the history.
     pub fn delivered_tasks(&self) -> TikiResult<Vec<DeliveredItem>> {
-        let tasks = self
+        let deliveries = self
             .database
-            .tasks()
-            .list_delivered(self.settings.delivered_history_limit)?;
+            .activity()
+            .latest_deliveries(self.settings.delivered_history_limit)?;
         let projects = self.project_directory()?;
         let today = self.clock.today();
-        Ok(tasks
-            .iter()
-            .filter_map(|task| DeliveredItem::present(task, &projects, &self.translator, today))
-            .collect())
+        let mut delivered = Vec::new();
+        for delivery in deliveries {
+            let task = self.database.tasks().find(delivery.item_id)?;
+            delivered.extend(DeliveredItem::present(
+                &task,
+                delivery.at.date(),
+                &projects,
+                &self.translator,
+                today,
+            ));
+        }
+        Ok(delivered)
     }
 
     pub fn projects(&self) -> TikiResult<Vec<Project>> {
@@ -314,11 +347,22 @@ impl TikiWorkspace {
     pub fn move_task(&self, task_id: TaskId, status: TaskStatus) -> TikiResult<()> {
         let mut task = self.database.tasks().find(task_id)?;
         let was_waiting = task.status == TaskStatus::Waiting;
-        task.move_to(status, self.clock.today());
+        let moved = task.move_to(status, self.clock.today());
         self.follow_up_policy()
             .schedule_first_nudge(&mut task, was_waiting);
         task.normalize()?;
-        self.database.tasks().update(&task)
+        self.save_changes(&task, moved.as_slice())
+    }
+
+    /// Saves a changed item together with what happened to it.
+    fn save_changes(&self, task: &Task, events: &[ItemEvent]) -> TikiResult<()> {
+        let task_id = task.id.ok_or(TikiError::UnsavedTask)?;
+        self.database.transaction(|repositories| {
+            repositories.tasks().update(task)?;
+            repositories
+                .activity()
+                .record(task_id, self.clock.now(), events)
+        })
     }
 
     fn follow_up_policy(&self) -> FollowUpPolicy {

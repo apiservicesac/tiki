@@ -1,8 +1,8 @@
 use rusqlite::Connection;
 
 use super::{
-    BriefLogRepository, CalendarRepository, CaptureLessonRepository, PreferencesRepository,
-    ProjectRepository, TaskRepository,
+    ActivityRepository, BriefLogRepository, CalendarRepository, CaptureLessonRepository,
+    PreferencesRepository, ProjectRepository, TaskRepository,
 };
 
 /// Every repository over one connection: an open transaction (see `Database::transaction`).
@@ -33,6 +33,10 @@ impl<'connection> Repositories<'connection> {
 
     pub fn calendar(&self) -> CalendarRepository<'connection> {
         CalendarRepository::new(self.connection)
+    }
+
+    pub fn activity(&self) -> ActivityRepository<'connection> {
+        ActivityRepository::new(self.connection)
     }
 
     pub fn capture_lessons(&self) -> CaptureLessonRepository<'connection> {

@@ -16,6 +16,7 @@ impl SchemaMigrations {
             M::up(Self::CALENDARS),
             M::up(Self::TIMELESS_REMINDERS_BECOME_TASKS),
             M::up(Self::FOLLOW_UPS_APART_FROM_REMINDERS),
+            M::up(Self::ITEM_EVENTS),
         ])
     }
 
@@ -48,6 +49,27 @@ impl SchemaMigrations {
         CREATE UNIQUE INDEX tasks_by_external_record
             ON tasks(origin_plugin, origin_connection, origin_record)
             WHERE origin_plugin IS NOT NULL;
+    ";
+
+    /// The activity history: one row per thing that happened to an item, at local time.
+    /// Deliveries made before it existed are recorded at the start of their delivery day,
+    /// oldest first, so the history keeps the order it had.
+    const ITEM_EVENTS: &'static str = "
+        CREATE TABLE item_events (
+            id      INTEGER PRIMARY KEY,
+            item_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            at      TEXT NOT NULL,
+            kind    TEXT NOT NULL,
+            payload TEXT NOT NULL DEFAULT '{}'
+        );
+
+        CREATE INDEX item_events_by_item ON item_events(item_id, at);
+        CREATE INDEX item_events_by_kind ON item_events(kind, at);
+
+        INSERT INTO item_events (item_id, at, kind)
+        SELECT id, completed_on || ' 00:00:00', 'delivered' FROM tasks
+         WHERE status = 'done' AND completed_on IS NOT NULL
+         ORDER BY completed_on, updated_at, id;
     ";
 
     /// The automatic follow-up nudge gets its own column instead of sharing `remind_at` with
@@ -239,5 +261,43 @@ mod tests {
             (Some("2026-10-24 16:00:00".to_owned()), None)
         );
         assert_eq!(reminder_columns(&connection, "Ya no espera"), (nudge, None));
+    }
+
+    #[test]
+    fn deliveries_made_before_the_history_are_recorded_in_their_order() {
+        let mut connection = migrated_through(9);
+        connection
+            .execute_batch(
+                "INSERT INTO tasks (title, status, priority, completed_on, updated_at) VALUES
+                    ('Segunda', 'done', 'normal', '2026-10-20', '2026-10-20 18:00:00'),
+                    ('Primera', 'done', 'normal', '2026-10-20', '2026-10-20 10:00:00'),
+                    ('Abierta', 'to_do', 'normal', NULL, '2026-10-20 10:00:00');",
+            )
+            .unwrap();
+
+        finish(&mut connection);
+
+        let mut statement = connection
+            .prepare(
+                "SELECT t.title, e.at, e.kind, e.payload FROM item_events e
+                   JOIN tasks t ON t.id = e.item_id ORDER BY e.id",
+            )
+            .unwrap();
+        let events: Vec<(String, String, String, String)> = statement
+            .query_map([], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
+            })
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        let delivery = |title: &str| {
+            (
+                title.to_owned(),
+                "2026-10-20 00:00:00".to_owned(),
+                "delivered".to_owned(),
+                "{}".to_owned(),
+            )
+        };
+        assert_eq!(events, [delivery("Primera"), delivery("Segunda")]);
     }
 }

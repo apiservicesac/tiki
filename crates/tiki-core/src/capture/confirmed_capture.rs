@@ -50,7 +50,8 @@ impl ConfirmedCapture {
         task.tags = self.tags;
         task.repeat = self.repeat;
         task.waiting_for = self.waiting_for.unwrap_or_default();
-        task.move_to(status, today);
+        // A new item has no history to record yet: its first event is its creation.
+        let _ = task.move_to(status, today);
         Ok(task)
     }
 }
