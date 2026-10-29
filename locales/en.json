@@ -160,7 +160,7 @@
     "advanced.window_title": "Tiki · Advanced settings",
 
     "settings.advanced": "Advanced settings",
-    "settings.advanced_hint": "AI assistant, plugins, accounts, shortcuts and updates",
+    "settings.advanced_hint": "AI assistant, plugins, mail and calendar, shortcuts and updates",
 
     "advanced.section.general": "General",
     "advanced.section.general.subtitle": "Start with Windows, version and updates.",
@@ -178,6 +178,7 @@
     "advanced.accounts.intro": "Connect your Microsoft 365 / Outlook or Google calendars: your meetings show in the Agenda and Tiki warns you before each one.",
     "advanced.availability.next": "Next version",
     "advanced.availability.later": "Coming later",
+    "advanced.catalog.later": "Later: {names}.",
     "advanced.kind.ticket_source": "Tickets and projects",
     "advanced.kind.client_instance": "Client instance",
     "advanced.plugin.odoo": "Helpdesk and projects; read-only client instances.",
