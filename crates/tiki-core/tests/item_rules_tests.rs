@@ -57,6 +57,8 @@ fn a_reminder_cannot_be_captured_without_a_time() {
     let workspace = sample_workspace();
     let saved = workspace.save_confirmed(capture("Llamar", ItemKind::Reminder, None));
     assert!(matches!(saved, Err(TikiError::ReminderNeedsTime)));
+    // The interface shows its own message for this key.
+    assert_eq!(saved.unwrap_err().key(), "reminder_needs_time");
 }
 
 #[test]
