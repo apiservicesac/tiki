@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 
 use super::{BriefDetail, BriefItem, DailyBrief};
-use crate::domain::{ItemKind, ProjectDirectory, Task, TaskId, TaskStatus};
+use crate::domain::{FollowUpPolicy, ItemKind, ProjectDirectory, Task, TaskId, TaskStatus};
 use crate::settings::TikiSettings;
 
 /// Sorts open tasks into the sections of the daily brief.
@@ -68,7 +68,7 @@ impl<'settings> DailyBriefBuilder<'settings> {
 
         if let Some(days) = task.days_waiting(today) {
             let waiting_line = line(BriefDetail::Waiting { days });
-            if days >= self.settings.follow_up_after_days {
+            if FollowUpPolicy::new(self.settings).is_due(days) {
                 brief.needs_follow_up.push(waiting_line.clone());
             }
             brief.waiting.push(waiting_line);

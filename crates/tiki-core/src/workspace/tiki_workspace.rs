@@ -9,7 +9,7 @@ use crate::calendar::{
 };
 use crate::capture::{CaptureLesson, ConfirmedCapture};
 use crate::domain::{
-    ItemKind, Project, ProjectDirectory, ProjectId, Tags, Task, TaskId, TaskStatus,
+    FollowUpPolicy, ItemKind, Project, ProjectDirectory, ProjectId, Tags, Task, TaskId, TaskStatus,
 };
 use crate::editing::{TaskDetails, TaskEdit};
 use crate::error::TikiResult;
@@ -332,11 +332,7 @@ impl TikiWorkspace {
             return;
         }
         let since = task.waiting_since.unwrap_or_else(|| self.clock.today());
-        task.remind_at = since
-            .checked_add_days(chrono::Days::new(
-                self.settings.follow_up_after_days.unsigned_abs(),
-            ))
-            .map(|day| day.and_time(self.settings.follow_up_time));
+        task.remind_at = FollowUpPolicy::new(&self.settings).first_nudge(since);
     }
 
     /// Saves a project with the next color of the palette.

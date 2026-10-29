@@ -1,5 +1,6 @@
 //! Business entities: tasks, projects and the values that describe them.
 
+mod follow_up_policy;
 mod identifiers;
 mod item_kind;
 mod priority;
@@ -11,6 +12,7 @@ mod task;
 mod task_origin;
 mod task_status;
 
+pub use follow_up_policy::FollowUpPolicy;
 pub use identifiers::{ProjectId, TaskId};
 pub use item_kind::ItemKind;
 pub use priority::Priority;
