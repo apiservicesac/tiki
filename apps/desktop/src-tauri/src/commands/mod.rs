@@ -13,4 +13,5 @@ pub mod island_commands;
 pub mod project_commands;
 pub mod settings_commands;
 pub mod system_commands;
+pub mod trash_commands;
 pub mod window_commands;
