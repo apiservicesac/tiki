@@ -196,6 +196,28 @@ fn the_transcript_joins_both_sources_by_time() {
 }
 
 #[test]
+fn the_model_is_needed_from_the_first_recording_until_the_queue_is_empty() {
+    let workspace = workspace();
+    let sessions = workspace.sessions();
+    assert!(!sessions.awaits_transcription().unwrap());
+    let session_id = sessions
+        .start(RecordingMode::AudioOnly)
+        .unwrap()
+        .id
+        .unwrap();
+    assert!(sessions.awaits_transcription().unwrap());
+    sessions
+        .stop(session_id, "session.ogg".to_owned(), 1)
+        .unwrap();
+    assert!(sessions.awaits_transcription().unwrap());
+    sessions.begin_next_transcription().unwrap();
+    sessions
+        .save_transcript(session_id, &Transcript::default(), None)
+        .unwrap();
+    assert!(!sessions.awaits_transcription().unwrap());
+}
+
+#[test]
 fn a_transcribed_session_is_ready_and_leaves_the_queue() {
     let workspace = workspace();
     let session_id = transcribed(&workspace, vec![line(Speaker::Others, 0, "Empezamos")]);

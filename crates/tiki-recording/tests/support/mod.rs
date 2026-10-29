@@ -4,6 +4,8 @@
 //! Each test file uses a different part of this module, so unused items are expected.
 #![allow(dead_code)]
 
+pub mod model_server;
+
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};

@@ -1,4 +1,5 @@
 use thiserror::Error;
+use tiki_core::TikiError;
 
 /// Every failure the recorder and the transcriber can report.
 #[derive(Debug, Error)]
@@ -25,13 +26,19 @@ pub enum RecordingError {
     },
 
     #[error("could not download the transcription model: {0}")]
-    Download(String),
+    Download(#[from] reqwest::Error),
+
+    #[error("the model server answered {0}")]
+    DownloadRefused(u16),
 
     #[error("the downloaded model does not match its checksum")]
     ChecksumMismatch,
 
     #[error("could not transcribe: {0}")]
     Transcription(String),
+
+    #[error(transparent)]
+    Core(#[from] TikiError),
 }
 
 pub type RecordingResult<T> = Result<T, RecordingError>;

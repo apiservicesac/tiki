@@ -13,6 +13,7 @@ use crate::app_state::AppState;
 use crate::recorder_error::RecorderError;
 use crate::session_files::SessionFiles;
 use crate::shell_events::ShellEvent;
+use crate::transcription_runner::TranscriptionRunner;
 
 /// What the recorder thread is asked to do.
 enum RecorderCommand {
@@ -66,6 +67,8 @@ impl SessionRecorder {
         });
         tracing::info!(?session_id, ?mode, "recording started");
         ShellEvent::RecordingChanged.emit(app);
+        // The first recording downloads the transcription model meanwhile.
+        app.state::<TranscriptionRunner>().wake();
         Ok(())
     }
 
@@ -152,6 +155,7 @@ impl SessionRecorder {
         }
         app.state::<SessionRecorder>().forget(session_id);
         ShellEvent::RecordingChanged.emit(app);
+        app.state::<TranscriptionRunner>().wake();
     }
 
     fn pump_until_stopped(

@@ -21,6 +21,10 @@ pub enum ShellEvent {
     RecordingChanged,
     /// The recording shortcut: the island stops the session or asks what to record.
     ToggleRecording,
+    /// A session's transcript is ready (the payload is its id): the AI may write its notes.
+    TranscriptReady,
+    /// The transcription model is downloading (the payload says how far it got).
+    ModelDownloadProgress,
 }
 
 impl ShellEvent {
@@ -35,6 +39,8 @@ impl ShellEvent {
             ShellEvent::InCallChanged => "tiki://in-call-changed",
             ShellEvent::RecordingChanged => "tiki://recording-changed",
             ShellEvent::ToggleRecording => "tiki://toggle-recording",
+            ShellEvent::TranscriptReady => "tiki://transcript-ready",
+            ShellEvent::ModelDownloadProgress => "tiki://model-download-progress",
         }
     }
 

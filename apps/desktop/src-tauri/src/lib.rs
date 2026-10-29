@@ -10,6 +10,7 @@ mod calendar;
 mod call_watch;
 mod click_through;
 mod commands;
+mod core_transcription_queue;
 mod desktop_app;
 mod desktop_config;
 mod diagnostics_log;
@@ -22,6 +23,7 @@ mod session_recorder;
 mod settings_window;
 mod shell_events;
 mod shortcuts;
+mod transcription_runner;
 mod tray;
 
 pub use desktop_app::TikiDesktopApp;

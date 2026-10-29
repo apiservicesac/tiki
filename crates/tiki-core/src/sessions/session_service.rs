@@ -98,6 +98,13 @@ impl<'context> SessionService<'context> {
         Ok(session)
     }
 
+    /// Whether a session records or waits for its transcript: the transcription model must
+    /// be ready.
+    pub fn awaits_transcription(&self) -> TikiResult<bool> {
+        let sessions = self.database.sessions();
+        Ok(sessions.capturing()?.is_some() || sessions.next_transcription()?.is_some())
+    }
+
     /// Takes the oldest session in the transcription queue and marks it as transcribing.
     pub fn begin_next_transcription(&self) -> TikiResult<Option<Session>> {
         let Some((session_id, _attempts)) = self.database.sessions().next_transcription()? else {

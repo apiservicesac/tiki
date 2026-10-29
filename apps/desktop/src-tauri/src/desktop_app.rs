@@ -13,10 +13,12 @@ use crate::calendar::CalendarSync;
 use crate::call_watch::CallWatch;
 use crate::click_through::ClickThrough;
 use crate::commands;
+use crate::desktop_config::DesktopConfig;
 use crate::diagnostics_log::DiagnosticsLog;
 use crate::island_window::IslandWindow;
 use crate::session_files::SessionFiles;
 use crate::session_recorder::SessionRecorder;
+use crate::transcription_runner::TranscriptionRunner;
 use crate::shortcuts::GlobalShortcuts;
 use crate::tray::IslandTray;
 
@@ -99,6 +101,10 @@ impl TikiDesktopApp {
         app.manage(state);
         app.manage(SessionFiles::new(&app_data_folder));
         app.manage(SessionRecorder::default());
+        app.manage(TranscriptionRunner::start(
+            app.handle().clone(),
+            &app_data_folder.join(DesktopConfig::MODELS_FOLDER),
+        )?);
         AiCredentials::use_system_store()?;
         app.manage(AiProxy::new());
 

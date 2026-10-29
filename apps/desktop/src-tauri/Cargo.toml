@@ -16,7 +16,7 @@ tauri-build = { version = "2.7.4", features = [] }
 
 [dependencies]
 tiki-core.workspace = true
-tiki-recording.workspace = true
+tiki-recording = { workspace = true, features = ["whisper"] }
 chrono.workspace = true
 serde.workspace = true
 serde_json.workspace = true
