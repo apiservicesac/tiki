@@ -303,7 +303,7 @@ export interface TikiBackend {
   /** Creates a project; returns its id. */
   createProject(name: string): Promise<number>;
   changeProject(projectId: number, change: ProjectChange): Promise<void>;
-  /** Removes a project; their tasks stay, without project. */
+  /** Removes a project and sends its items to the trash, where they stay without project. */
   removeProject(projectId: number): Promise<void>;
   projectColors(): Promise<string[]>;
   /** Delivered tasks, most recent first. */

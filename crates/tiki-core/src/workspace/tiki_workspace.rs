@@ -300,9 +300,9 @@ impl TikiWorkspace {
         self.project_book().change(project_id, change)
     }
 
-    /// Removes a project; their tasks stay, without project.
+    /// Removes a project and sends its items to the trash, where they stay without project.
     pub fn remove_project(&self, project_id: ProjectId) -> TikiResult<()> {
-        self.project_book().remove(project_id)
+        self.project_book().remove(project_id, self.clock.now())
     }
 
     /// The colors new projects get, offered when changing one.

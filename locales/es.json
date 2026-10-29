@@ -222,7 +222,7 @@
     "projects.edit": "Editar proyecto",
     "projects.name": "Nombre del proyecto",
     "projects.remove": "Eliminar proyecto",
-    "projects.remove_confirm": "¿Eliminar? Sus tareas se quedan",
+    "projects.remove_confirm": "¿Eliminar? Sus tareas van a la papelera",
     "projects.open": "{count} abiertas",
     "projects.open_one": "1 abierta",
     "projects.no_open": "Sin tareas abiertas",

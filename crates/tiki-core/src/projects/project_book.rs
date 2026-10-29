@@ -1,6 +1,7 @@
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
 
 use super::{ProjectChange, ProjectSummary};
+use crate::activity::ItemEvent;
 use crate::domain::{Project, ProjectDirectory, ProjectId, Task};
 use crate::error::{TikiError, TikiResult};
 use crate::settings::TikiSettings;
@@ -98,9 +99,18 @@ impl<'context> ProjectBook<'context> {
         })
     }
 
-    /// Removes a project; their tasks stay, without project.
-    pub fn remove(&self, project_id: ProjectId) -> TikiResult<()> {
-        self.database.projects().delete(project_id)
+    /// Removes a project and, in the same transaction, sends its items (open and delivered)
+    /// to the trash at `now`, where they stay without project until restored or deleted.
+    pub fn remove(&self, project_id: ProjectId, now: NaiveDateTime) -> TikiResult<()> {
+        self.database.transaction(|repositories| {
+            for mut task in repositories.tasks().list_untrashed_of_project(project_id)? {
+                let task_id = task.id.ok_or(TikiError::UnsavedTask)?;
+                let events: Vec<ItemEvent> = task.trash(now).into_iter().collect();
+                repositories.tasks().update(&task, now)?;
+                repositories.activity().record(task_id, now, &events)?;
+            }
+            repositories.projects().delete(project_id)
+        })
     }
 
     /// The trimmed name, if no other project already uses it (ignoring case).

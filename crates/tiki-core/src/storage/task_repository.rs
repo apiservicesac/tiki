@@ -2,7 +2,7 @@ use chrono::{NaiveDate, NaiveDateTime};
 use rusqlite::{Connection, OptionalExtension, params};
 
 use super::task_row_mapper::TaskRowMapper;
-use crate::domain::{Task, TaskId};
+use crate::domain::{ProjectId, Task, TaskId};
 use crate::error::{TikiError, TikiResult};
 
 /// Reads and writes tasks.
@@ -114,6 +114,19 @@ impl<'connection> TaskRepository<'connection> {
         let mut statement = self.connection.prepare(&query)?;
         let tasks = statement
             .query_map(params![now], TaskRowMapper::read_row)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(tasks)
+    }
+
+    /// The project's items outside the trash, open and delivered.
+    pub fn list_untrashed_of_project(&self, project_id: ProjectId) -> TikiResult<Vec<Task>> {
+        let query = format!(
+            "SELECT {} FROM tasks WHERE project_id = ?1 AND trashed_at IS NULL ORDER BY id",
+            TaskRowMapper::COLUMNS
+        );
+        let mut statement = self.connection.prepare(&query)?;
+        let tasks = statement
+            .query_map(params![project_id.0], TaskRowMapper::read_row)?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(tasks)
     }

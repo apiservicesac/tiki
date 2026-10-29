@@ -222,7 +222,7 @@
     "projects.edit": "Edit project",
     "projects.name": "Project name",
     "projects.remove": "Remove project",
-    "projects.remove_confirm": "Remove? Their tasks stay",
+    "projects.remove_confirm": "Remove? Their tasks go to the trash",
     "projects.open": "{count} open",
     "projects.open_one": "1 open",
     "projects.no_open": "No open tasks",
