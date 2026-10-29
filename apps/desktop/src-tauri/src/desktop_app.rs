@@ -18,6 +18,7 @@ use crate::diagnostics_log::DiagnosticsLog;
 use crate::island_window::IslandWindow;
 use crate::session_files::SessionFiles;
 use crate::session_recorder::SessionRecorder;
+use crate::session_retention::SessionRetention;
 use crate::transcription_runner::TranscriptionRunner;
 use crate::shortcuts::GlobalShortcuts;
 use crate::tray::IslandTray;
@@ -82,6 +83,12 @@ impl TikiDesktopApp {
                 commands::session_commands::pause_recording,
                 commands::session_commands::resume_recording,
                 commands::session_commands::stop_recording,
+                commands::session_commands::sessions,
+                commands::session_commands::session_details,
+                commands::session_commands::search_sessions,
+                commands::session_commands::delete_session,
+                commands::session_commands::retry_transcription,
+                commands::session_commands::session_storage,
                 commands::ai_commands::ai_status,
                 commands::ai_commands::save_ai_key,
                 commands::ai_commands::remove_ai_key,
@@ -119,6 +126,7 @@ impl TikiDesktopApp {
         ClickThrough::start(app.handle().clone(), click_through);
         BriefReminders::start(app.handle().clone());
         CalendarSync::start(app.handle().clone());
+        SessionRetention::start(app.handle().clone());
         #[cfg(windows)]
         CallWatch::start(app.handle().clone());
         AppUpdates::watch(app.handle().clone(), Translator::new(preferences.locale)?);

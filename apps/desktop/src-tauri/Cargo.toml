@@ -23,7 +23,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
-tauri = { version = "2.12.5", features = ["tray-icon"] }
+tauri = { version = "2.12.5", features = ["tray-icon", "protocol-asset"] }
 tauri-plugin-notification = "2.7.0"
 tauri-plugin-global-shortcut = "2.4.1"
 tauri-plugin-autostart = "2.7.0"

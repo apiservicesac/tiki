@@ -228,7 +228,7 @@ impl<'context> SessionService<'context> {
             .sessions()
             .list()?
             .iter()
-            .map(|session| SessionSummary::of(session, now))
+            .map(|session| SessionSummary::of(session, now, self.translator))
             .collect()
     }
 
@@ -236,7 +236,7 @@ impl<'context> SessionService<'context> {
         let sessions = self.database.sessions();
         let session = sessions.find(session_id)?;
         Ok(SessionDetails {
-            summary: SessionSummary::of(&session, self.clock.now())?,
+            summary: SessionSummary::of(&session, self.clock.now(), self.translator)?,
             language: session.language,
             transcript: sessions.transcript(session_id)?,
             notes: sessions.notes(session_id)?,

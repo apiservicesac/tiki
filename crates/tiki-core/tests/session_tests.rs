@@ -224,6 +224,7 @@ fn a_transcribed_session_is_ready_and_leaves_the_queue() {
     let details = workspace.sessions().details(session_id).unwrap();
     assert_eq!(details.summary.status, SessionStatus::Ready);
     assert_eq!(details.language.as_deref(), Some("es"));
+    assert_eq!(details.summary.started_label, "Mié 21 · 10:00");
     assert_eq!(details.transcript.segments().len(), 1);
     assert!(
         workspace
