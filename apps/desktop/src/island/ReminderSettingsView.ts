@@ -1,6 +1,6 @@
 import type { UserPreferences } from "../backend/contracts";
 import type { Translator } from "../i18n/Translator";
-import { SettingRows } from "./SettingRows";
+import { SettingRows } from "../settings/SettingRows";
 
 export interface ReminderSettingsHandlers {
   onChangePreferences: (preferences: UserPreferences) => void;

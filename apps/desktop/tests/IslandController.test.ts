@@ -525,7 +525,7 @@ describe("IslandController", () => {
     expect(root.querySelector(".receipt-head strong")?.textContent).toBe("Cierre del día");
     expect(root.querySelectorAll(".receipt-block")).toHaveLength(3);
     expect(root.querySelector(".receipt-tip")?.textContent).toContain("Mañana vence: Tracking");
-    expect(root.querySelector(".receipt-foot")?.textContent).toBe("6 pendientes · 2 esperando · 1 entregadas hoy");
+    expect(root.querySelector(".receipt-foot")?.textContent).toBe("Pendientes: 6 · Esperando: 2 · Entregadas hoy: 1");
     expect(controller.currentState.unreadAlert).toBe(false);
 
     controller.setMode("hidden");

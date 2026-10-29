@@ -104,17 +104,19 @@
 
 .setting-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
+  gap: 10px 14px;
   padding: 11px 14px;
 }
 
 .setting-row + .setting-row { border-top: 1px solid var(--island-card-edge); }
 .setting-row-inactive { opacity: 0.45; }
 
+/* The text keeps a readable width; in a narrow island the control moves under it. */
 .setting-row-text {
   display: grid;
-  flex: 1;
+  flex: 1 1 220px;
   gap: 2px;
   min-width: 0;
 }
@@ -221,32 +223,6 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-/* Switches (on/off settings): a small track with a knob before the label, as in the design. */
-.settings-option[role="switch"] {
-  padding-left: 6px;
-}
-
-.settings-option[role="switch"]::before {
-  content: "";
-  flex: none;
-  width: 28px;
-  height: 16px;
-  border-radius: var(--radius-pill);
-  background-color: var(--island-soft-hover);
-  background-image: radial-gradient(circle at 8px 50%, var(--island-muted) 5px, transparent 5.5px);
-  transition: background-color 0.2s, background-image 0.2s;
-}
-
-.settings-option[role="switch"][aria-checked="true"] {
-  background: transparent;
-  color: var(--island-text);
-}
-
-.settings-option[role="switch"][aria-checked="true"]::before {
-  background-color: var(--switch-on);
-  background-image: radial-gradient(circle at 20px 50%, var(--switch-knob) 5px, transparent 5.5px);
 }
 
 /* Calendar accounts: the email, then which calendar it is. */
