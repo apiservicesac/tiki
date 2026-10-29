@@ -279,7 +279,7 @@ export class IslandView {
       return this.notchView.hidden(state.snapshot, mood, state.unreadAlert);
     }
     if (state.mode === "alert" && state.alert) {
-      return this.notchView.alert(state.snapshot, state.alert, mood);
+      return this.notchView.alert(state.snapshot, state.alert, mood, handlers);
     }
     if (state.mode === "compact") {
       return this.notchView.compact(state.snapshot, mood);

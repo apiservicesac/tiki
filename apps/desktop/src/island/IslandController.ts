@@ -171,6 +171,10 @@ export class IslandController {
     } else if (next.mode === "hidden" && this.state.mode === "expanded") {
       next.alert = null;
     }
+    // An alert handled from the notch (done, snoozed, joined) leaves it at once.
+    if (next.mode === "alert" && next.alert === null) {
+      next.mode = "hidden";
+    }
     this.state = next;
     this.render();
   }

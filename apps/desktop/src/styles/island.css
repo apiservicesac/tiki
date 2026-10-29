@@ -305,11 +305,34 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   flex: none;
 }
 
+/* The alert's buttons on the right: done, the shortest snooze, join. */
+.notch-alert-actions {
+  display: inline-flex;
+  flex: none;
+  gap: 6px;
+}
+
+.notch-alert-button {
+  display: inline-flex;
+  align-items: center;
+  height: var(--row-pill-height);
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--mood-color) 45%, transparent);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--mood-color) 14%, transparent);
+  color: color-mix(in srgb, var(--mood-color) var(--mood-ink-mix), var(--island-text));
+  font: 600 var(--text-xs) var(--font-body);
+  cursor: pointer;
+}
+
+.notch-alert-button:hover { background: color-mix(in srgb, var(--mood-color) 26%, transparent); }
+
+/* The ripples hug the face and stay inside the notch, clear of its edge and the text. */
 .notch-alert-face::before,
 .notch-alert-face::after {
   content: "";
   position: absolute;
-  inset: -4px -2px;
+  inset: 0;
   border: 1.5px solid var(--mood-color);
   border-radius: var(--radius-pill);
   opacity: 0;
@@ -398,7 +421,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
 @keyframes alert-pulse { 50% { opacity: 0.45; } }
 @keyframes alert-aura { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
 @keyframes alert-arrive { 0% { transform: scale(0.96); } 55% { transform: scale(1.03); } 100% { transform: none; } }
-@keyframes alert-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
+@keyframes alert-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.25); } }
 @keyframes alert-countdown { to { transform: scaleX(0); } }
 
 /* 5. Expanded island ------------------------------------------------------------------ */
@@ -560,8 +583,13 @@ button.island-row-text {
 .island-row-done:hover { color: var(--good); }
 
 /* When the item is due, colored by its urgency. */
+/* Badges and the small buttons beside them share one height, so a row lines up. */
 .island-when {
-  padding: 2px 8px;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: var(--row-pill-height);
+  padding: 0 9px;
   border-radius: var(--radius-pill);
   font: 600 var(--text-2xs) var(--font-mono);
   white-space: nowrap;
@@ -579,7 +607,11 @@ button.island-row-text {
 .island-row-delivered .island-row-text { color: var(--island-muted); }
 
 .island-row-reopen {
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: var(--row-pill-height);
+  padding: 0 11px;
   border: 1px solid var(--island-card-edge);
   border-radius: var(--radius-pill);
   background: transparent;
@@ -742,7 +774,11 @@ button.island-row-text {
 
 .trash-empty,
 .trash-confirm {
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: var(--row-pill-height);
+  padding: 0 11px;
   border: 1px solid var(--island-card-edge);
   border-radius: var(--radius-pill);
   background: transparent;
@@ -1332,6 +1368,12 @@ button.island-row-text {
 [data-orientation="vertical"] .island-tab { padding: 5px 7px; }
 
 [data-orientation="vertical"] .island-card-body { padding: 12px 14px; }
+
+/* Two placements per row in the narrow island, instead of three and one left alone. */
+[data-orientation="vertical"] .settings-group .settings-options[role="radiogroup"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 
 /* In the narrow column the search, the project and the view each take a whole row. */
 [data-orientation="vertical"] .tasks-toolbar { grid-template-columns: minmax(0, 1fr); }

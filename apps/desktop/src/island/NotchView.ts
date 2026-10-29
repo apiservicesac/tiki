@@ -3,6 +3,7 @@ import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
+import { AlertActionButtons, type AlertActionHandlers, type AlertButtonsPlace } from "./AlertActionButtons";
 
 /**
  * Content of the folded island. Resting, it shows Tiki's face with the day's summary when
@@ -13,10 +14,16 @@ import type { MascotRenderer } from "../mascot/MascotRenderer";
  * left and right edges; the stylesheet shows the one that fits the orientation.
  */
 export class NotchView {
+  /** The alert's buttons on the right of the notch, with only the shortest snooze. */
+  private static readonly NOTCH_BUTTONS: AlertButtonsPlace = Object.freeze({ idPrefix: "notch-alert", className: "notch-alert-button", everySnooze: false });
+  private readonly alertButtons: AlertActionButtons;
+
   constructor(
     private readonly mascot: MascotRenderer,
     private readonly translator: Translator,
-  ) {}
+  ) {
+    this.alertButtons = new AlertActionButtons(translator);
+  }
 
   hidden(snapshot: IslandSnapshot, mood: MoodName, unread: boolean): HTMLElement {
     const mascot = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.hidden);
@@ -40,10 +47,12 @@ export class NotchView {
 
   /**
    * The notch grown to announce something: Tiki's face with ripples, the kind of alert, its
-   * title and one preview line of its summary and tips (cut with "…"), and a thin countdown until the notch folds back.
+   * title and one preview line of its summary and tips (cut with "…"), its buttons on the
+   * right (done, the shortest snooze, join), and a thin countdown until the notch folds back.
    * The aura around the notch comes from the stylesheet (`data-mode="alert"`).
    */
-  alert(snapshot: IslandSnapshot, alert: TikiAlert, mood: MoodName): HTMLElement {
+  alert(snapshot: IslandSnapshot, alert: TikiAlert, mood: MoodName, handlers: AlertActionHandlers): HTMLElement {
+    const buttons = this.alertButtons.build(alert, handlers, NotchView.NOTCH_BUTTONS);
     const preview = [alert.summary, ...alert.tips].join(UI_CONFIG.textMarks.separator);
     const kindLabel = this.translator.text(UI_CONFIG.alertStyles[alert.kind].labelKey);
     const face = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.alert);
@@ -61,6 +70,7 @@ export class NotchView {
             ElementFactory.create("span", { className: "notch-alert-preview", text: preview }),
           ],
         }),
+        ...(buttons.length > 0 ? [ElementFactory.create("span", { className: "notch-alert-actions", children: buttons })] : []),
         ElementFactory.create("span", { className: "notch-alert-countdown", attributes: { "aria-hidden": "true" } }),
       ],
     });
