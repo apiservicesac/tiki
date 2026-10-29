@@ -9,7 +9,7 @@ mod snapshot_presenter;
 mod tiki_workspace;
 
 pub use assistant_context::{AssistantContext, AssistantProject, AssistantTask};
-pub use clock::{Clock, FixedClock, SystemClock};
+pub use clock::{Clock, FixedClock, ManualClock, SystemClock};
 pub use delivered_item::DeliveredItem;
 pub use island_snapshot::{
     FocusSuggestion, IslandSnapshot, SnapshotItem, SnapshotSection, Urgency,

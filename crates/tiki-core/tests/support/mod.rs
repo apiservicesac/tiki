@@ -4,9 +4,14 @@
 //! Each test file uses a different part of this module, so unused items are expected.
 #![allow(dead_code)]
 
-use chrono::NaiveDate;
+use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
+
+use chrono::{NaiveDate, NaiveDateTime};
+use tiki_core::TikiSettings;
 use tiki_core::domain::{Project, ProjectDirectory, ProjectId, Task, TaskStatus};
 use tiki_core::storage::Database;
+use tiki_core::workspace::{ManualClock, TikiWorkspace};
 
 pub struct TestDay;
 
@@ -103,5 +108,49 @@ impl SampleWorkspace {
     fn moved(mut task: Task, status: TaskStatus, on: NaiveDate) -> Task {
         task.move_to(status, on);
         task
+    }
+}
+
+/// A workspace on a clock the test moves: `workspace.at(moment).take_due_notification()`.
+pub struct TimedWorkspace {
+    workspace: TikiWorkspace,
+    clock: Arc<ManualClock>,
+}
+
+impl TimedWorkspace {
+    pub fn open(database: Database, now: NaiveDateTime) -> Self {
+        let clock = Arc::new(ManualClock::at(now));
+        let workspace = TikiWorkspace::new(
+            database,
+            TikiSettings::default(),
+            Box::new(Arc::clone(&clock)),
+        )
+        .expect("workspace");
+        Self { workspace, clock }
+    }
+
+    /// The sample data, with the clock at `now`.
+    pub fn sample_at(now: NaiveDateTime) -> Self {
+        Self::open(SampleWorkspace::create().database, now)
+    }
+
+    /// Moves the clock to `now` and hands the workspace back.
+    pub fn at(&self, now: NaiveDateTime) -> &TikiWorkspace {
+        self.clock.set(now);
+        &self.workspace
+    }
+}
+
+impl Deref for TimedWorkspace {
+    type Target = TikiWorkspace;
+
+    fn deref(&self) -> &TikiWorkspace {
+        &self.workspace
+    }
+}
+
+impl DerefMut for TimedWorkspace {
+    fn deref_mut(&mut self) -> &mut TikiWorkspace {
+        &mut self.workspace
     }
 }

@@ -4,7 +4,7 @@ use tiki_core::domain::ItemKind;
 
 use chrono::NaiveTime;
 
-use support::{SampleWorkspace, TestDay};
+use support::{SampleWorkspace, TestDay, TimedWorkspace};
 use tiki_core::TikiSettings;
 use tiki_core::ai::AiProvider;
 use tiki_core::capture::ConfirmedCapture;
@@ -173,7 +173,7 @@ fn the_assistant_sees_open_tasks_without_their_private_notes() {
 
 #[test]
 fn tags_are_normalized_and_standalone_reminders_list_apart_from_work() {
-    let workspace = sample_workspace();
+    let workspace = TimedWorkspace::sample_at(TestDay::today().and_hms_opt(0, 0, 0).unwrap());
     let today = TestDay::today();
     let task_id = workspace
         .save_confirmed(ConfirmedCapture {
@@ -222,7 +222,8 @@ fn tags_are_normalized_and_standalone_reminders_list_apart_from_work() {
     assert_eq!(snapshot.due_count, 3);
 
     let alerts = workspace
-        .take_due_task_reminders(today.and_hms_opt(17, 0, 0).unwrap())
+        .at(today.and_hms_opt(17, 0, 0).unwrap())
+        .take_due_task_reminders()
         .unwrap();
     assert_eq!(alerts.len(), 1);
     let after = workspace.island_snapshot().unwrap();

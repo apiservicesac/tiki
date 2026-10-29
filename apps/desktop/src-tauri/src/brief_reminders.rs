@@ -1,6 +1,5 @@
 use std::thread;
 
-use chrono::Local;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_notification::NotificationExt;
 use tiki_core::alerts::TikiAlert;
@@ -26,16 +25,19 @@ impl BriefReminders {
     }
 
     fn send_due(app: &AppHandle) {
-        let now = Local::now().naive_local();
         let due = app.state::<AppState>().with_workspace(|workspace| {
             let mut alerts: Vec<TikiAlert> =
-                workspace.take_due_notification(now)?.into_iter().collect();
-            alerts.extend(workspace.take_due_task_reminders(now)?);
-            alerts.extend(workspace.take_due_meeting_alerts(now)?);
-            Ok((alerts, workspace.preferences().windows_notifications))
+                workspace.take_due_notification()?.into_iter().collect();
+            alerts.extend(workspace.take_due_task_reminders()?);
+            alerts.extend(workspace.take_due_meeting_alerts()?);
+            Ok((
+                alerts,
+                workspace.preferences().windows_notifications,
+                workspace.now(),
+            ))
         });
         match due {
-            Ok((alerts, also_in_windows)) => {
+            Ok((alerts, also_in_windows, now)) => {
                 for alert in alerts {
                     tracing::info!(kind = ?alert.kind, %now, also_in_windows, "alert due");
                     if also_in_windows && let Err(error) = Self::show(app, &alert) {

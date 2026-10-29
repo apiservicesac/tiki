@@ -45,6 +45,11 @@ impl TikiWorkspace {
         })
     }
 
+    /// The moment the workspace's clock reads: the one clock every rule uses.
+    pub fn now(&self) -> NaiveDateTime {
+        self.clock.now()
+    }
+
     pub fn settings(&self) -> &TikiSettings {
         &self.settings
     }
@@ -120,12 +125,13 @@ impl TikiWorkspace {
         ))
     }
 
-    /// The brief notification due at `now`, if any; it is marked as sent so it arrives once
+    /// The brief notification due now, if any; it is marked as sent so it arrives once
     /// a day. Nothing is due while notifications are off or focus mode is on.
-    pub fn take_due_notification(&self, now: NaiveDateTime) -> TikiResult<Option<TikiAlert>> {
+    pub fn take_due_notification(&self) -> TikiResult<Option<TikiAlert>> {
         if !self.preferences.allows_notifications() {
             return Ok(None);
         }
+        let now = self.clock.now();
         let log = self.database.brief_log();
         let morning_sent = log.last_sent(BriefMoment::Morning)?;
         let evening_sent = log.last_sent(BriefMoment::Evening)?;
@@ -156,10 +162,11 @@ impl TikiWorkspace {
 
     /// "Meeting in 15 min" alerts for meetings about to start; each is announced once.
     /// Nothing is announced while notifications are off or focus mode is on.
-    pub fn take_due_meeting_alerts(&self, now: NaiveDateTime) -> TikiResult<Vec<TikiAlert>> {
+    pub fn take_due_meeting_alerts(&self) -> TikiResult<Vec<TikiAlert>> {
         if !self.preferences.allows_notifications() {
             return Ok(Vec::new());
         }
+        let now = self.clock.now();
         let composer = NotificationComposer::new(&self.translator);
         Ok(self
             .calendar_book()
@@ -209,10 +216,11 @@ impl TikiWorkspace {
     /// Task reminders whose time has come; each one is cleared so it rings once, all in one
     /// transaction so an alert is never shown without its reminder being moved on. Nothing is
     /// due while notifications are off or focus mode is on: they ring when it ends.
-    pub fn take_due_task_reminders(&self, now: NaiveDateTime) -> TikiResult<Vec<TikiAlert>> {
+    pub fn take_due_task_reminders(&self) -> TikiResult<Vec<TikiAlert>> {
         if !self.preferences.allows_notifications() {
             return Ok(Vec::new());
         }
+        let now = self.clock.now();
         let projects = self.project_directory()?;
         let composer = NotificationComposer::new(&self.translator);
         let today = now.date();
