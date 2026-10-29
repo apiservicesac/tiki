@@ -170,10 +170,9 @@ impl<'context> SnapshotPresenter<'context> {
     }
 
     fn project_color(&self, item: &BriefItem) -> Option<String> {
-        let name = item.project_name.as_deref()?;
+        let project_id = item.project_id?;
         self.projects
-            .projects()
-            .find(|project| project.name == name)
+            .find(project_id)
             .map(|project| project.color.clone())
     }
 }

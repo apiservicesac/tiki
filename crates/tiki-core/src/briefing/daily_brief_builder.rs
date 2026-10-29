@@ -93,6 +93,7 @@ impl<'settings> DailyBriefBuilder<'settings> {
         BriefItem {
             task_id,
             title: task.title.clone(),
+            project_id: task.project_id,
             project_name: projects.name_of(task.project_id).map(str::to_owned),
             tags: task.tags.clone(),
             priority: task.priority,

@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use serde::Serialize;
 
-use crate::domain::{Priority, Repeat, TaskId, TaskStatus};
+use crate::domain::{Priority, ProjectId, Repeat, TaskId, TaskStatus};
 
 /// Why a task appears in the brief.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -24,6 +24,7 @@ pub enum BriefDetail {
 pub struct BriefItem {
     pub task_id: TaskId,
     pub title: String,
+    pub project_id: Option<ProjectId>,
     pub project_name: Option<String>,
     pub tags: Vec<String>,
     pub priority: Priority,

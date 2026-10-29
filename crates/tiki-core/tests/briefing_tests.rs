@@ -106,6 +106,7 @@ fn the_brief_lists_the_reminders_of_one_day() {
     let reminder = |task_id, at| BriefItem {
         task_id: TaskId(task_id),
         title: format!("Aviso {task_id}"),
+        project_id: None,
         project_name: None,
         tags: Vec::new(),
         priority: Priority::Normal,
@@ -127,4 +128,18 @@ fn the_brief_lists_the_reminders_of_one_day() {
         brief.reminders_on(TestDay::october(22))[0].task_id,
         TaskId(2)
     );
+}
+
+#[test]
+fn each_brief_line_keeps_the_id_of_its_project() {
+    let workspace = SampleWorkspace::create();
+    let tasks = workspace.database.tasks().list_open().unwrap();
+    let brief = DailyBriefBuilder::new(&TikiSettings::default()).build(
+        &tasks,
+        &workspace.directory(),
+        TestDay::today(),
+    );
+
+    assert_eq!(brief.overdue[0].project_id, Some(workspace.andeanvet));
+    assert_eq!(brief.your_turn[1].project_id, None);
 }
