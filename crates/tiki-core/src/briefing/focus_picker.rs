@@ -1,5 +1,4 @@
 use super::{BriefDetail, BriefItem, DailyBrief};
-use crate::domain::Priority;
 
 /// Why an item is the one to do now.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,12 +36,9 @@ pub struct FocusPick<'brief> {
 pub struct FocusPicker;
 
 impl FocusPicker {
-    /// Work at this priority or above counts as important.
-    const IMPORTANT_PRIORITY: Priority = Priority::High;
-
     pub fn pick(brief: &DailyBrief) -> Option<FocusPick<'_>> {
         let due_today = |item: &&BriefItem| item.detail == BriefDetail::DueIn { days: 0 };
-        let important = |item: &&BriefItem| item.priority >= Self::IMPORTANT_PRIORITY;
+        let important = |item: &&BriefItem| item.priority.is_important();
         let candidates = [
             (brief.overdue.first(), FocusReason::Overdue),
             (brief.due_soon.iter().find(due_today), FocusReason::DueToday),

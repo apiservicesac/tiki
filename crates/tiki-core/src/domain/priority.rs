@@ -33,6 +33,11 @@ impl Priority {
         }
     }
 
+    /// Whether work at this priority counts as important (high or urgent).
+    pub fn is_important(self) -> bool {
+        self >= Priority::High
+    }
+
     /// Reads a priority back from its stable key.
     pub fn from_key(key: &str) -> TikiResult<Self> {
         Self::ALL
