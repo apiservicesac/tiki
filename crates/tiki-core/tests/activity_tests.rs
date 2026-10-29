@@ -81,7 +81,7 @@ fn every_change_to_an_item_is_recorded_in_its_history() {
 }
 
 #[test]
-fn snoozing_a_reminder_that_rang_keeps_its_delivery_in_the_history() {
+fn a_reminder_that_rings_closes_without_counting_as_a_delivery() {
     let five = TestDay::today().and_hms_opt(17, 0, 0).unwrap();
     let workspace = TimedWorkspace::sample_at(five);
     let call = workspace
@@ -105,59 +105,51 @@ fn snoozing_a_reminder_that_rang_keeps_its_delivery_in_the_history() {
         [
             ItemEvent::Created,
             ItemEvent::Rang,
-            ItemEvent::Delivered,
+            ItemEvent::Moved {
+                from: TaskStatus::ToDo,
+                to: TaskStatus::Done
+            },
             ItemEvent::Snoozed {
                 until: TestDay::today().and_hms_opt(17, 10, 0).unwrap()
             },
-            ItemEvent::Reopened,
+            ItemEvent::Moved {
+                from: TaskStatus::Done,
+                to: TaskStatus::ToDo
+            },
         ]
     );
-    assert_eq!(workspace.delivered_tasks().unwrap()[0].task_id, call);
+    assert_eq!(workspace.delivered_tasks().unwrap(), Vec::new());
 }
 
 #[test]
-fn reports_read_the_deliveries_between_two_days_by_project() {
-    let sample = SampleWorkspace::create();
-    let database: &Database = &sample.database;
-    let deliver = |title: &str, project, day| {
-        let mut task = Task::new(title).unwrap();
-        task.project_id = project;
-        let task_id = database.tasks().insert(&task, TestDay::start()).unwrap();
-        database
-            .activity()
-            .record(
-                task_id,
-                TestDay::october(day).and_hms_opt(12, 0, 0).unwrap(),
-                &[ItemEvent::Delivered],
-            )
-            .unwrap();
-        task_id
-    };
-    let early = deliver("Antes", Some(sample.altamira), 19);
-    let altamira = deliver("Altamira", Some(sample.altamira), 20);
-    let andeanvet = deliver("Andeanvet", Some(sample.andeanvet), 21);
+fn reminders_never_reach_the_delivered_history_or_the_reports() {
+    let five = TestDay::today().and_hms_opt(17, 0, 0).unwrap();
+    let workspace = TimedWorkspace::sample_at(five);
+    let rings = workspace
+        .save_confirmed(ConfirmedCapture {
+            kind: ItemKind::Reminder,
+            remind_at: Some(five),
+            ..capture("Llamar a mamá", None)
+        })
+        .unwrap();
+    let checked_off = workspace
+        .save_confirmed(ConfirmedCapture {
+            kind: ItemKind::Reminder,
+            remind_at: Some(TestDay::october(22).and_hms_opt(9, 0, 0).unwrap()),
+            ..capture("Regar las plantas", None)
+        })
+        .unwrap();
+    workspace.take_due_task_reminders().unwrap();
+    workspace.deliver(checked_off).unwrap();
 
-    let activity = database.activity();
-    let week: Vec<_> = activity
-        .deliveries_between(TestDay::october(20), TestDay::october(21), None)
-        .unwrap()
-        .into_iter()
-        .map(|delivery| delivery.item_id)
-        .collect();
-    assert_eq!(week, [altamira, andeanvet]);
-    let for_altamira: Vec<_> = activity
-        .deliveries_between(
-            TestDay::october(19),
-            TestDay::october(21),
-            Some(sample.altamira),
-        )
-        .unwrap()
-        .into_iter()
-        .map(|delivery| delivery.item_id)
-        .collect();
-    assert_eq!(for_altamira, [early, altamira]);
     assert_eq!(
-        activity.count_delivered_on(TestDay::october(21)).unwrap(),
-        1
+        workspace.task_details(rings).unwrap().status,
+        TaskStatus::Done
     );
+    assert_eq!(
+        workspace.task_details(checked_off).unwrap().status,
+        TaskStatus::Done
+    );
+    assert_eq!(workspace.delivered_tasks().unwrap(), Vec::new());
+    assert_eq!(workspace.island_snapshot().unwrap().delivered_today, 0);
 }

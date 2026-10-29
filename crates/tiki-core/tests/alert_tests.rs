@@ -288,7 +288,8 @@ fn a_repeating_reminder_comes_back_and_a_one_time_reminder_is_done() {
         pill_details.remind_at,
         Some(TestDay::october(22).and_hms_opt(8, 0, 0).unwrap())
     );
-    assert_eq!(workspace.island_snapshot().unwrap().delivered_today, 1);
+    // Reminders are not work: the one that rang is done, not delivered.
+    assert_eq!(workspace.island_snapshot().unwrap().delivered_today, 0);
 }
 
 #[test]

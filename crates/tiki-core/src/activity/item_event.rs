@@ -2,9 +2,10 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
 use super::ItemField;
-use crate::domain::TaskStatus;
+use crate::domain::{ItemKind, TaskStatus};
 
-/// Something that happened to an item.
+/// Something that happened to an item. Only `Delivered` counts as work done: the delivered
+/// history and the reports read it alone.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ItemEvent {
@@ -13,30 +14,27 @@ pub enum ItemEvent {
     /// A connector brought it from another system.
     Imported,
     /// The user changed these fields.
-    Edited {
-        fields: Vec<ItemField>,
-    },
-    /// It changed status, without being delivered or reopened.
-    Moved {
-        from: TaskStatus,
-        to: TaskStatus,
-    },
+    Edited { fields: Vec<ItemField> },
+    /// It changed status without being delivered or reopened: a task moving between open
+    /// statuses, or any move of a standalone reminder. Reminders are not work, so they are
+    /// never delivered: one that rang once closes with `Rang` and a move to done.
+    Moved { from: TaskStatus, to: TaskStatus },
     /// Its reminder was put off until this moment.
-    Snoozed {
-        until: NaiveDateTime,
-    },
+    Snoozed { until: NaiveDateTime },
     /// Its reminder or follow-up nudge rang.
     Rang,
+    /// The user delivered the task.
     Delivered,
     /// It came back after being delivered.
     Reopened,
 }
 
 impl ItemEvent {
-    /// The event a status change records, if the status changed.
-    pub fn status_change(from: TaskStatus, to: TaskStatus) -> Option<Self> {
+    /// The event a status change of an item of this kind records, if the status changed.
+    pub fn status_change(kind: ItemKind, from: TaskStatus, to: TaskStatus) -> Option<Self> {
         match (from, to) {
             _ if from == to => None,
+            _ if kind == ItemKind::Reminder => Some(ItemEvent::Moved { from, to }),
             (_, TaskStatus::Done) => Some(ItemEvent::Delivered),
             (TaskStatus::Done, _) => Some(ItemEvent::Reopened),
             _ => Some(ItemEvent::Moved { from, to }),

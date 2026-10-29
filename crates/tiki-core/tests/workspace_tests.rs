@@ -270,7 +270,7 @@ fn tags_are_normalized_and_standalone_reminders_list_apart_from_work() {
             .iter()
             .all(|section| section.key != "reminders")
     );
-    assert_eq!(after.delivered_today, 1);
+    assert_eq!(after.delivered_today, 0);
 }
 
 #[test]
