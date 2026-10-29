@@ -7,7 +7,7 @@
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use tiki_core::TikiSettings;
 use tiki_core::domain::{Project, ProjectDirectory, ProjectId, Task, TaskStatus};
 use tiki_core::storage::Database;
@@ -19,6 +19,11 @@ impl TestDay {
     /// Wednesday, October 21, 2026.
     pub fn today() -> NaiveDate {
         Self::october(21)
+    }
+
+    /// The start of today, when the sample tasks were saved.
+    pub fn start() -> NaiveDateTime {
+        Self::today().and_time(NaiveTime::MIN)
     }
 
     pub fn october(day: u32) -> NaiveDate {
@@ -101,7 +106,10 @@ impl SampleWorkspace {
             Task::new("Completar módulo de importaciones").unwrap(),
         ];
         for task in tasks {
-            self.database.tasks().insert(&task).expect("insert task");
+            self.database
+                .tasks()
+                .insert(&task, TestDay::start())
+                .expect("insert task");
         }
     }
 

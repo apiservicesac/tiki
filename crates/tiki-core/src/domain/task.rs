@@ -31,6 +31,11 @@ pub struct Task {
     /// Who or what a waiting task waits for, as the user wrote it ("Lucía's answer").
     pub waiting_for: String,
     pub origin: TaskOrigin,
+    /// When the task was first saved and last changed, in local time from the workspace
+    /// clock; empty until it is saved. Rows saved before version 0.5 hold UTC instead
+    /// (the database's `CURRENT_TIMESTAMP` default), up to a few hours off.
+    pub created_at: Option<NaiveDateTime>,
+    pub updated_at: Option<NaiveDateTime>,
 }
 
 impl Task {
@@ -57,6 +62,8 @@ impl Task {
             repeat: Repeat::Never,
             waiting_for: String::new(),
             origin: TaskOrigin::Manual,
+            created_at: None,
+            updated_at: None,
         })
     }
 

@@ -122,7 +122,7 @@ fn reports_read_the_deliveries_between_two_days_by_project() {
     let deliver = |title: &str, project, day| {
         let mut task = Task::new(title).unwrap();
         task.project_id = project;
-        let task_id = database.tasks().insert(&task).unwrap();
+        let task_id = database.tasks().insert(&task, TestDay::start()).unwrap();
         database
             .activity()
             .record(

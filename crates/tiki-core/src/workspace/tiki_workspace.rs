@@ -241,7 +241,7 @@ impl TikiWorkspace {
                     alerts.push(composer.compose_follow_up(&task, project_name, today));
                     events.push(task.ring_follow_up(now, &policy));
                 }
-                repositories.tasks().update(&task)?;
+                repositories.tasks().update(&task, now)?;
                 if let Some(task_id) = task.id {
                     repositories.activity().record(task_id, now, &events)?;
                 }
@@ -262,11 +262,10 @@ impl TikiWorkspace {
             TaskOrigin::Manual => ItemEvent::Created,
             TaskOrigin::External(_) => ItemEvent::Imported,
         };
+        let now = self.clock.now();
         self.database.transaction(|repositories| {
-            let task_id = repositories.tasks().insert(&task)?;
-            repositories
-                .activity()
-                .record(task_id, self.clock.now(), &[created])?;
+            let task_id = repositories.tasks().insert(&task, now)?;
+            repositories.activity().record(task_id, now, &[created])?;
             Ok(task_id)
         })
     }
@@ -357,11 +356,10 @@ impl TikiWorkspace {
     /// Saves a changed item together with what happened to it.
     fn save_changes(&self, task: &Task, events: &[ItemEvent]) -> TikiResult<()> {
         let task_id = task.id.ok_or(TikiError::UnsavedTask)?;
+        let now = self.clock.now();
         self.database.transaction(|repositories| {
-            repositories.tasks().update(task)?;
-            repositories
-                .activity()
-                .record(task_id, self.clock.now(), events)
+            repositories.tasks().update(task, now)?;
+            repositories.activity().record(task_id, now, events)
         })
     }
 

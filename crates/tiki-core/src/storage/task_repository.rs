@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use rusqlite::{Connection, OptionalExtension, params};
 
 use super::task_row_mapper::TaskRowMapper;
@@ -14,15 +15,17 @@ impl<'connection> TaskRepository<'connection> {
         Self { connection }
     }
 
-    pub fn insert(&self, task: &Task) -> TikiResult<TaskId> {
+    /// Saves a new task created at `now` (the workspace clock's local time).
+    pub fn insert(&self, task: &Task, now: NaiveDateTime) -> TikiResult<TaskId> {
         let (plugin, connection_id, record, url) = TaskRowMapper::origin_columns(&task.origin);
         self.connection.execute(
             "INSERT INTO tasks (title, notes, project_id, status, priority, due_date, waiting_since,
                                 completed_on, remind_at,
                                 origin_plugin, origin_connection, origin_record, origin_url,
-                                kind, tags, repeat, waiting_for, follow_up_at)
+                                kind, tags, repeat, waiting_for, follow_up_at,
+                                created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18)",
+                     ?18, ?19, ?19)",
             params![
                 task.title,
                 task.notes,
@@ -42,19 +45,21 @@ impl<'connection> TaskRepository<'connection> {
                 task.repeat.key(),
                 task.waiting_for,
                 task.follow_up_at,
+                now,
             ],
         )?;
         Ok(TaskId(self.connection.last_insert_rowid()))
     }
 
-    pub fn update(&self, task: &Task) -> TikiResult<()> {
+    /// Saves the changes to a task made at `now` (the workspace clock's local time).
+    pub fn update(&self, task: &Task, now: NaiveDateTime) -> TikiResult<()> {
         let task_id = task.id.ok_or(TikiError::UnsavedTask)?;
         let changed_rows = self.connection.execute(
             "UPDATE tasks
                 SET title = ?2, notes = ?3, project_id = ?4, status = ?5, priority = ?6,
                     due_date = ?7, waiting_since = ?8, completed_on = ?9, remind_at = ?10,
                     kind = ?11, tags = ?12, repeat = ?13, waiting_for = ?14, follow_up_at = ?15,
-                    updated_at = CURRENT_TIMESTAMP
+                    updated_at = ?16
               WHERE id = ?1",
             params![
                 task_id.0,
@@ -72,6 +77,7 @@ impl<'connection> TaskRepository<'connection> {
                 task.repeat.key(),
                 task.waiting_for,
                 task.follow_up_at,
+                now,
             ],
         )?;
         if changed_rows == 0 {
