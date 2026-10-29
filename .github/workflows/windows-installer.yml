@@ -20,8 +20,17 @@ jobs:
         run: npm ci
       - name: Build the installer
         working-directory: apps/desktop
+        env:
+          # Signs the installer for the auto-updater; sign-in ids let calendars connect.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+          TIKI_GOOGLE_CLIENT_ID: ${{ secrets.TIKI_GOOGLE_CLIENT_ID }}
+          TIKI_GOOGLE_CLIENT_SECRET: ${{ secrets.TIKI_GOOGLE_CLIENT_SECRET }}
+          TIKI_MICROSOFT_CLIENT_ID: ${{ secrets.TIKI_MICROSOFT_CLIENT_ID }}
         run: npm run tauri build
       - uses: actions/upload-artifact@v5
         with:
           name: tiki-windows-installer
-          path: target/release/bundle/nsis/*.exe
+          path: |
+            target/release/bundle/nsis/*-setup.exe
+            target/release/bundle/nsis/*-setup.exe.sig
