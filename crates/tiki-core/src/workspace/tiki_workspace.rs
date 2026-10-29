@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 
 use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, WorkspaceViews};
 use crate::activity::ItemEventRecord;
-use crate::alerts::{AlertScheduler, TikiAlert};
+use crate::alerts::{AlertDelivery, AlertScheduler, DueAlert, TikiAlert};
 use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
 use crate::capture::{CaptureLesson, ConfirmedCapture};
 use crate::domain::{Project, ProjectId, TaskId, TaskStatus};
@@ -24,6 +24,8 @@ pub struct TikiWorkspace {
     preferences: UserPreferences,
     translator: Translator,
     clock: Box<dyn Clock>,
+    /// Another app holds the microphone, as the shell reports it.
+    in_call: bool,
 }
 
 impl TikiWorkspace {
@@ -42,6 +44,7 @@ impl TikiWorkspace {
             preferences,
             translator,
             clock,
+            in_call: false,
         })
     }
 
@@ -84,6 +87,11 @@ impl TikiWorkspace {
             focus_mode: enabled,
             ..self.preferences.clone()
         })
+    }
+
+    /// The shell saw a call start or end: while it lasts, alerts arrive without a sound.
+    pub fn set_in_call(&mut self, in_call: bool) {
+        self.in_call = in_call;
     }
 
     /// What the island shows right now.
@@ -181,6 +189,21 @@ impl TikiWorkspace {
     /// "Meeting in 15 min" alerts for meetings about to start; each is announced once.
     pub fn take_due_meeting_alerts(&self) -> TikiResult<Vec<TikiAlert>> {
         self.alerts().take_due_meeting_alerts()
+    }
+
+    /// Every alert due now (the brief, item reminders and meetings), each with how it may
+    /// reach the user (see `AlertDelivery`).
+    pub fn take_due_alerts(&self) -> TikiResult<Vec<DueAlert>> {
+        let alerts = self.alerts();
+        let mut due: Vec<TikiAlert> = alerts.take_due_brief()?.into_iter().collect();
+        due.extend(alerts.take_due_item_alerts()?);
+        due.extend(alerts.take_due_meeting_alerts()?);
+        let delivery =
+            AlertDelivery::decide(&self.preferences, self.clock.now().time(), self.in_call);
+        Ok(due
+            .into_iter()
+            .map(|alert| DueAlert { alert, delivery })
+            .collect())
     }
 
     pub fn calendar_accounts(&self) -> TikiResult<Vec<CalendarAccount>> {
