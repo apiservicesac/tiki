@@ -39,7 +39,7 @@ impl DailyBrief {
     pub fn reminders_on(&self, day: NaiveDate) -> Vec<BriefItem> {
         self.reminders
             .iter()
-            .filter(|item| item.rings_at().is_some_and(|at| at.date() == day))
+            .filter(|item| item.remind_at.is_some_and(|at| at.date() == day))
             .cloned()
             .collect()
     }

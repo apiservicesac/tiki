@@ -111,6 +111,7 @@ fn the_brief_lists_the_reminders_of_one_day() {
         project_name: None,
         tags: Vec::new(),
         priority: Priority::Normal,
+        remind_at: Some(at),
         detail: BriefDetail::RemindAt {
             at,
             repeat: Repeat::Never,

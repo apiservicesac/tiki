@@ -125,7 +125,7 @@ impl<'context> SnapshotPresenter<'context> {
             detail_label: BriefDetailFormatter::new(self.translator).label(item.detail, brief.date),
             priority: item.priority,
             tags: item.tags.clone(),
-            at: item.rings_at(),
+            at: item.remind_at,
             repeat: item.repeat(),
             urgency,
         }

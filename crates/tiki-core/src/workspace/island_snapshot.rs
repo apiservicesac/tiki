@@ -32,7 +32,8 @@ pub struct SnapshotItem {
     pub detail_label: String,
     pub priority: Priority,
     pub tags: Vec<String>,
-    /// For reminders: when it rings, and how often it comes back (for the Agenda).
+    /// When it rings (a reminder's moment, or the alarm on a task), and how often a
+    /// reminder comes back.
     pub at: Option<NaiveDateTime>,
     pub repeat: Repeat,
     pub urgency: Urgency,
