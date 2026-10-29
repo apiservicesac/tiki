@@ -37,13 +37,23 @@ impl<'context> SessionService<'context> {
         }
     }
 
-    /// Starts a session the user asked for; a meeting gives it its title. Only one session
-    /// records at a time.
-    pub fn start(&self, mode: RecordingMode, meeting: Option<MeetingLink>) -> TikiResult<Session> {
+    /// Starts a session the user asked for; the meeting in progress, if any, gives it its
+    /// title. Only one session records at a time.
+    pub fn start(&self, mode: RecordingMode) -> TikiResult<Session> {
         if self.database.sessions().capturing()?.is_some() {
             return Err(TikiError::AlreadyRecording);
         }
         let now = self.clock.now();
+        let meeting = self
+            .database
+            .calendar()
+            .in_progress(now)?
+            .into_iter()
+            .next()
+            .map(|meeting| MeetingLink {
+                title: meeting.title,
+                starts_at: meeting.starts_at,
+            });
         let title = meeting
             .as_ref()
             .map_or_else(|| self.default_title(now), |meeting| meeting.title.clone());

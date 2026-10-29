@@ -6,7 +6,8 @@ use super::AlertKind;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AlertAction {
-    /// Opens what the alert is about: its item, the brief as a receipt, or the Agenda.
+    /// Opens what the alert is about: its item, the brief as a receipt, the Agenda, or the
+    /// choice of what to record.
     Open,
     /// Puts the alert away: the reminder already rang and is done.
     Done,
@@ -26,7 +27,11 @@ impl AlertAction {
             AlertKind::Reminder => actions.extend([AlertAction::Done, AlertAction::Snooze]),
             AlertKind::Task => actions.push(AlertAction::Snooze),
             AlertKind::Meeting if has_link => actions.push(AlertAction::Join),
-            AlertKind::Meeting | AlertKind::FollowUp | AlertKind::Morning | AlertKind::Evening => {}
+            AlertKind::Meeting
+            | AlertKind::FollowUp
+            | AlertKind::Morning
+            | AlertKind::Evening
+            | AlertKind::Recording => {}
         }
         actions
     }

@@ -4,6 +4,8 @@ use chrono::{Duration, NaiveDateTime, NaiveTime};
 use support::{TestDay, TimedWorkspace};
 use tiki_core::TikiError;
 use tiki_core::activity::ItemEvent;
+use tiki_core::alerts::AlertKind;
+use tiki_core::calendar::{CalendarProvider, Meeting};
 use tiki_core::sessions::{
     MeetingLink, ProposedSessionTask, RecordingMode, RetentionPolicy, SessionId, SessionNotes,
     SessionStatus, Speaker, Transcript, TranscriptSegment,
@@ -32,7 +34,7 @@ fn transcribed(workspace: &TimedWorkspace, lines: Vec<TranscriptSegment>) -> Ses
     let session = workspace
         .at(at(10, 0))
         .sessions()
-        .start(RecordingMode::AudioOnly, None)
+        .start(RecordingMode::AudioOnly)
         .unwrap();
     let session_id = session.id.unwrap();
     let sessions = workspace.at(at(10, 30)).sessions();
@@ -55,7 +57,7 @@ fn a_session_without_a_meeting_is_titled_by_its_start() {
     let workspace = workspace();
     let session = workspace
         .sessions()
-        .start(RecordingMode::AudioOnly, None)
+        .start(RecordingMode::AudioOnly)
         .unwrap();
     assert_eq!(session.title, "Sesión del Mié 21, 10:00");
     assert_eq!(session.status, SessionStatus::Recording);
@@ -65,17 +67,32 @@ fn a_session_without_a_meeting_is_titled_by_its_start() {
 #[test]
 fn a_session_of_a_meeting_takes_its_title() {
     let workspace = workspace();
-    let meeting = MeetingLink {
+    let account = workspace
+        .connect_calendar(CalendarProvider::Google, "ana@example.com")
+        .unwrap();
+    let meeting = Meeting {
+        external_id: "review".to_owned(),
         title: "Revisión con Andeanvet".to_owned(),
-        starts_at: at(10, 0),
+        starts_at: at(9, 55),
+        ends_at: at(10, 30),
+        all_day: false,
+        location: String::new(),
+        join_url: None,
     };
+    workspace.store_meetings(account, &[meeting]).unwrap();
     let session = workspace
         .sessions()
-        .start(RecordingMode::AudioAndVideo, Some(meeting.clone()))
+        .start(RecordingMode::AudioAndVideo)
         .unwrap();
     let stored = workspace.sessions().find(session.id.unwrap()).unwrap();
     assert_eq!(stored.title, "Revisión con Andeanvet");
-    assert_eq!(stored.meeting, Some(meeting));
+    assert_eq!(
+        stored.meeting,
+        Some(MeetingLink {
+            title: "Revisión con Andeanvet".to_owned(),
+            starts_at: at(9, 55),
+        })
+    );
     assert_eq!(stored.mode, RecordingMode::AudioAndVideo);
 }
 
@@ -83,9 +100,9 @@ fn a_session_of_a_meeting_takes_its_title() {
 fn only_one_session_records_at_a_time() {
     let workspace = workspace();
     let sessions = workspace.sessions();
-    sessions.start(RecordingMode::AudioOnly, None).unwrap();
+    sessions.start(RecordingMode::AudioOnly).unwrap();
     assert!(matches!(
-        sessions.start(RecordingMode::AudioOnly, None),
+        sessions.start(RecordingMode::AudioOnly),
         Err(TikiError::AlreadyRecording)
     ));
 }
@@ -95,7 +112,7 @@ fn the_recorded_time_leaves_pauses_out() {
     let workspace = workspace();
     let session_id = workspace
         .sessions()
-        .start(RecordingMode::AudioOnly, None)
+        .start(RecordingMode::AudioOnly)
         .unwrap()
         .id
         .unwrap();
@@ -186,7 +203,7 @@ fn a_failing_transcription_is_retried_then_waits_for_the_user() {
     let workspace = workspace();
     let sessions = workspace.sessions();
     let session_id = sessions
-        .start(RecordingMode::AudioOnly, None)
+        .start(RecordingMode::AudioOnly)
         .unwrap()
         .id
         .unwrap();
@@ -216,7 +233,7 @@ fn a_transcription_cut_short_goes_back_to_the_queue() {
     let workspace = workspace();
     let sessions = workspace.sessions();
     let session_id = sessions
-        .start(RecordingMode::AudioOnly, None)
+        .start(RecordingMode::AudioOnly)
         .unwrap()
         .id
         .unwrap();
@@ -336,4 +353,38 @@ fn old_media_expires_but_the_transcript_stays() {
     let details = workspace.sessions().details(session_id).unwrap();
     assert!(!details.summary.has_media);
     assert_eq!(details.transcript.segments().len(), 1);
+}
+
+#[test]
+fn a_call_brings_a_quiet_offer_to_record_with_the_consent_reminder() {
+    let mut workspace = workspace();
+    assert_eq!(workspace.take_recording_suggestion().unwrap(), None);
+    workspace.set_in_call(true);
+    let offer = workspace.take_recording_suggestion().unwrap().unwrap();
+    assert_eq!(offer.alert.kind, AlertKind::Recording);
+    assert_eq!(offer.alert.title, "¿Grabar esta llamada?");
+    assert_eq!(offer.alert.tips, ["Si grabas, avisa a los participantes."]);
+    assert!(!offer.delivery.sound);
+    assert_eq!(workspace.take_recording_suggestion().unwrap(), None);
+}
+
+#[test]
+fn the_snapshot_shows_the_session_being_recorded() {
+    let workspace = workspace();
+    assert_eq!(workspace.island_snapshot().unwrap().recording, None);
+    let session_id = workspace
+        .sessions()
+        .start(RecordingMode::AudioOnly)
+        .unwrap()
+        .id
+        .unwrap();
+    let recording = workspace
+        .at(at(10, 5))
+        .island_snapshot()
+        .unwrap()
+        .recording
+        .unwrap();
+    assert_eq!(recording.session_id, session_id);
+    assert_eq!(recording.recorded_ms, 5 * 60 * 1_000);
+    assert!(!recording.paused);
 }

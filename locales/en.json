@@ -111,6 +111,10 @@
     "error.save_failed": "Could not save. Try again.",
     "island.row.edit": "Edit task",
 
+    "notify.recording.call.title": "Record this call?",
+    "notify.recording.call.summary": "A call is in progress.",
+    "notify.recording.meeting.title": "Record the meeting?",
+    "notify.recording.consent": "If you record, tell the participants.",
     "notify.morning.title": "Good morning · your day with Tiki",
     "notify.evening.title": "End of the day",
     "notify.counts": "Overdue: {overdue} · Due soon: {due} · Waiting: {waiting}",

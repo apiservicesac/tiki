@@ -111,6 +111,10 @@
     "error.save_failed": "No se pudo guardar. Inténtalo de nuevo.",
     "island.row.edit": "Editar tarea",
 
+    "notify.recording.call.title": "¿Grabar esta llamada?",
+    "notify.recording.call.summary": "Hay una llamada en curso.",
+    "notify.recording.meeting.title": "¿Grabar la reunión?",
+    "notify.recording.consent": "Si grabas, avisa a los participantes.",
     "notify.morning.title": "Buenos días · tu día con Tiki",
     "notify.evening.title": "Cierre del día",
     "notify.counts": "Atrasado: {overdue} · Vence pronto: {due} · Esperando: {waiting}",

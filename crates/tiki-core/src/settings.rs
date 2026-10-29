@@ -37,6 +37,8 @@ pub struct TikiSettings {
     pub delivered_history_limit: usize,
     /// Colors given to new projects, in turn.
     pub project_colors: Vec<String>,
+    /// A meeting that began at most this many minutes ago still gets the offer to record.
+    pub recording_offer_minutes: i64,
     /// A session's media (video or audio) is kept this many days by default; its transcript
     /// and notes stay for good.
     pub session_media_days: u64,
@@ -74,6 +76,7 @@ impl Default for TikiSettings {
             ]
             .map(String::from)
             .to_vec(),
+            recording_offer_minutes: 5,
             session_media_days: 90,
             transcription_attempts: 3,
             session_search_limit: 50,

@@ -127,17 +127,21 @@ impl<'connection> CalendarRepository<'connection> {
               ORDER BY m.all_day DESC, m.starts_at, m.title",
         )?;
         let meetings = statement
-            .query_map(params![from, to], |row| {
-                Ok(MeetingItem {
-                    title: row.get(0)?,
-                    starts_at: row.get(1)?,
-                    ends_at: row.get(2)?,
-                    all_day: row.get(3)?,
-                    location: row.get(4)?,
-                    join_url: row.get(5)?,
-                    account_email: row.get(6)?,
-                })
-            })?
+            .query_map(params![from, to], Self::read_meeting)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(meetings)
+    }
+
+    /// Timed meetings in progress at `now`, earliest first.
+    pub fn in_progress(&self, now: NaiveDateTime) -> TikiResult<Vec<MeetingItem>> {
+        let mut statement = self.connection.prepare(
+            "SELECT m.title, m.starts_at, m.ends_at, m.all_day, m.location, m.join_url, a.email
+               FROM meetings m JOIN calendar_accounts a ON a.id = m.account_id
+              WHERE m.all_day = 0 AND m.starts_at <= ?1 AND m.ends_at > ?1
+              ORDER BY m.starts_at, m.title",
+        )?;
+        let meetings = statement
+            .query_map(params![now], Self::read_meeting)?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(meetings)
     }
@@ -156,20 +160,23 @@ impl<'connection> CalendarRepository<'connection> {
                         (SELECT email FROM calendar_accounts WHERE id = meetings.account_id)",
         )?;
         let mut meetings = statement
-            .query_map(params![now, until], |row| {
-                Ok(MeetingItem {
-                    title: row.get(0)?,
-                    starts_at: row.get(1)?,
-                    ends_at: row.get(2)?,
-                    all_day: row.get(3)?,
-                    location: row.get(4)?,
-                    join_url: row.get(5)?,
-                    account_email: row.get(6)?,
-                })
-            })?
+            .query_map(params![now, until], Self::read_meeting)?
             .collect::<Result<Vec<_>, _>>()?;
         meetings.sort_by_key(|meeting| meeting.starts_at);
         Ok(meetings)
+    }
+
+    /// A meeting row: title, start, end, all day, location, link and the account's email.
+    fn read_meeting(row: &Row<'_>) -> rusqlite::Result<MeetingItem> {
+        Ok(MeetingItem {
+            title: row.get(0)?,
+            starts_at: row.get(1)?,
+            ends_at: row.get(2)?,
+            all_day: row.get(3)?,
+            location: row.get(4)?,
+            join_url: row.get(5)?,
+            account_email: row.get(6)?,
+        })
     }
 
     fn read_account(row: &Row<'_>) -> rusqlite::Result<CalendarAccount> {

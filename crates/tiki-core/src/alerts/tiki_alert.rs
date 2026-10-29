@@ -18,6 +18,8 @@ pub enum AlertKind {
     FollowUp,
     /// A meeting starting soon.
     Meeting,
+    /// A call started or a meeting began: Tiki offers to record it.
+    Recording,
 }
 
 impl From<BriefMoment> for AlertKind {

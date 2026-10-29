@@ -10,6 +10,7 @@ use crate::calendar::MeetingItem;
 use crate::domain::{ItemKind, ProjectDirectory};
 use crate::i18n::{DateFormatter, Translator};
 use crate::mood::Mood;
+use crate::sessions::ActiveRecording;
 
 /// The calendar side of the snapshot: the Agenda's meetings and the next one today.
 pub struct TodaysMeetings {
@@ -37,6 +38,7 @@ impl<'context> SnapshotPresenter<'context> {
         brief: &DailyBrief,
         mood: Mood,
         in_call: bool,
+        recording: Option<ActiveRecording>,
         delivered_today: usize,
         meetings: &TodaysMeetings,
     ) -> IslandSnapshot {
@@ -67,6 +69,7 @@ impl<'context> SnapshotPresenter<'context> {
             mood,
             mood_label: self.translator.text(&format!("mood.label.{}", mood.key())),
             in_call,
+            recording,
             attention_count: brief.pressing_count() + brief.waiting.len(),
             due_count: brief.pressing_count(),
             waiting_count: brief.waiting.len(),

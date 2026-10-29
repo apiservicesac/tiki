@@ -1,8 +1,8 @@
-use chrono::NaiveDateTime;
+use chrono::{Duration, NaiveDateTime};
 
 use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, WorkspaceViews};
 use crate::activity::ItemEventRecord;
-use crate::alerts::{AlertDelivery, AlertScheduler, DueAlert, TikiAlert};
+use crate::alerts::{AlertDelivery, AlertScheduler, DueAlert, NotificationComposer, TikiAlert};
 use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
 use crate::capture::{CaptureLesson, ConfirmedCapture};
 use crate::domain::{Project, ProjectId, TaskId, TaskStatus};
@@ -12,7 +12,7 @@ use crate::i18n::{Locale, Translator};
 use crate::items::ItemService;
 use crate::preferences::UserPreferences;
 use crate::projects::{ProjectBook, ProjectChange, ProjectSummary};
-use crate::sessions::SessionService;
+use crate::sessions::{PresenceSignals, RecordingSuggestionPolicy, SessionService};
 use crate::settings::TikiSettings;
 use crate::storage::Database;
 
@@ -27,6 +27,8 @@ pub struct TikiWorkspace {
     clock: Box<dyn Clock>,
     /// Another app holds the microphone, as the shell reports it.
     in_call: bool,
+    /// Remembers which calls and meetings Tiki already offered to record.
+    recording_suggestions: RecordingSuggestionPolicy,
 }
 
 impl TikiWorkspace {
@@ -46,6 +48,7 @@ impl TikiWorkspace {
             translator,
             clock,
             in_call: false,
+            recording_suggestions: RecordingSuggestionPolicy::default(),
         })
     }
 
@@ -204,6 +207,27 @@ impl TikiWorkspace {
             .into_iter()
             .map(|alert| DueAlert { alert, delivery })
             .collect())
+    }
+
+    /// The offer to record due now, as an alert: once when a call starts or a meeting
+    /// begins, never while recording (see `RecordingSuggestionPolicy`).
+    pub fn take_recording_suggestion(&mut self) -> TikiResult<Option<DueAlert>> {
+        let now = self.clock.now();
+        let meetings_in_progress = self.database.calendar().in_progress(now)?;
+        let recording = self.database.sessions().capturing()?.is_some();
+        let cue = self.recording_suggestions.observe(
+            &PresenceSignals {
+                now,
+                in_call: self.in_call,
+                recording,
+                meetings_in_progress: &meetings_in_progress,
+            },
+            Duration::minutes(self.settings.recording_offer_minutes),
+        );
+        Ok(cue.map(|cue| DueAlert {
+            alert: NotificationComposer::new(&self.translator).compose_recording(&cue),
+            delivery: AlertDelivery::decide(&self.preferences, now.time(), self.in_call),
+        }))
     }
 
     pub fn calendar_accounts(&self) -> TikiResult<Vec<CalendarAccount>> {
