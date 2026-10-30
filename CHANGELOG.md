@@ -6,6 +6,35 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0-rc.1] - 2026-10-30
+
+### Added
+- Recorded sessions. Record audio only, or audio and video of a screen or a window, from
+  the header or Ctrl+Alt+R; when a call or a calendar meeting starts, the notch offers to
+  record it, never without a click. While recording the notch shows a red dot and the
+  time, and the island stays out of the video.
+- Local transcription with Whisper: what you said and what the others said are told
+  apart. The model downloads the first time you record.
+- AI notes for each session: summary, key points, decisions and proposed tasks you create
+  with one click; written automatically when an AI key is set, or on demand.
+- A Sessions tab: a player synced to the transcript, search over what was said, export to
+  Downloads, delete, retry a failed transcript and the disk space used. Media is kept 90
+  days by default; transcripts and notes stay.
+- A session that was recording when Tiki closed is recovered at the next start.
+- With nothing pending, the resting notch shows CPU, memory, temperature and download
+  speed, high figures in amber (Settings › Notch).
+- Joining a Google Meet call opens it with the account the meeting comes from.
+
+### Changed
+- New app icons with Tiki's current face.
+- The page after connecting a calendar shows Tiki's face, says whether it worked and tries
+  to close itself.
+
+### Fixed
+- The end of long panels was cut at the bottom.
+- An open project picker was cut when the card was short.
+- When Google or Microsoft refuse a request, the log keeps their reason.
+
 ## [0.5.1-rc.1] - 2026-10-30
 
 ### Added
