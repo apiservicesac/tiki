@@ -29,6 +29,8 @@ impl DesktopConfig {
     pub const REMINDER_CHECK_INTERVAL: Duration = Duration::from_secs(60);
     /// How often the shell looks whether another app holds the microphone (a call).
     pub const CALL_CHECK_INTERVAL: Duration = Duration::from_secs(5);
+    /// How often the resting notch's CPU, memory, temperature and network figures refresh.
+    pub const SYSTEM_STATS_INTERVAL: Duration = Duration::from_secs(3);
     /// How often Tiki looks for a new signed version.
     pub const UPDATE_CHECK_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
     /// Diagnostics log in the app's log folder, rewritten on every launch.

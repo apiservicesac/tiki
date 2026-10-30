@@ -16,6 +16,7 @@ use crate::commands;
 use crate::diagnostics_log::DiagnosticsLog;
 use crate::island_window::IslandWindow;
 use crate::shortcuts::GlobalShortcuts;
+use crate::system_watch::SystemWatch;
 use crate::tray::IslandTray;
 
 /// Builds and runs the desktop application.
@@ -112,6 +113,7 @@ impl TikiDesktopApp {
         CalendarSync::start(app.handle().clone());
         #[cfg(windows)]
         CallWatch::start(app.handle().clone());
+        SystemWatch::start(app.handle().clone());
         AppUpdates::watch(app.handle().clone(), Translator::new(preferences.locale)?);
         Ok(())
     }

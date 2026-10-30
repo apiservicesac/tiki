@@ -19,6 +19,7 @@ mod registry_consent_store;
 mod settings_window;
 mod shell_events;
 mod shortcuts;
+mod system_watch;
 mod tray;
 
 pub use desktop_app::TikiDesktopApp;

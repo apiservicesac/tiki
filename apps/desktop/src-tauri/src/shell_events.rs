@@ -16,6 +16,8 @@ pub enum ShellEvent {
     CalendarSynced,
     /// A call started or ended: the island redraws the notch.
     InCallChanged,
+    /// A new measure of the computer (the payload is a `SystemStats`).
+    SystemStats,
 }
 
 impl ShellEvent {
@@ -28,6 +30,7 @@ impl ShellEvent {
             ShellEvent::PreferencesChanged => "tiki://preferences-changed",
             ShellEvent::CalendarSynced => "tiki://calendar-synced",
             ShellEvent::InCallChanged => "tiki://in-call-changed",
+            ShellEvent::SystemStats => "tiki://system-stats",
         }
     }
 
