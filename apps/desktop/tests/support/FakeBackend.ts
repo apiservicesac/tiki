@@ -85,6 +85,9 @@ export class FakeBackend implements TikiBackend {
   /** Plays the AI provider: what the official SDK receives back through the shell. */
   aiShell = new FakeShell(() => ({}));
   calendar: CalendarStatus = { accounts: [], available: ["microsoft", "google"] };
+  /** When set, a calendar sign-in waits for the browser until it is cancelled or replaced. */
+  calendarSignInWaits = false;
+  private stopCalendarSignIn: (() => void) | null = null;
   readonly openedLinks: string[] = [];
   /** When set, saving a capture or an edit is refused with it, as the core would. */
   saveFailure: BackendError | null = null;
@@ -261,9 +264,20 @@ export class FakeBackend implements TikiBackend {
   }
 
   async connectCalendar(provider: CalendarProvider): Promise<CalendarAccount> {
+    if (this.calendarSignInWaits) {
+      await this.cancelCalendarSignIn();
+      return new Promise((_, reject) => {
+        this.stopCalendarSignIn = () => reject(new Error("the sign-in was cancelled"));
+      });
+    }
     const account = { accountId: this.calendar.accounts.length + 1, provider, email: `ana@${provider}.test`, displayName: "Ana Pérez", avatar: null };
     this.calendar = { ...this.calendar, accounts: [...this.calendar.accounts, account] };
     return account;
+  }
+
+  async cancelCalendarSignIn(): Promise<void> {
+    this.stopCalendarSignIn?.();
+    this.stopCalendarSignIn = null;
   }
 
   async disconnectCalendar(accountId: number): Promise<void> {

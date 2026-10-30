@@ -32,6 +32,12 @@ pub async fn connect_calendar(
     Ok(CalendarSync::default().connect(&app, provider).await?)
 }
 
+/// Stops waiting for the browser, such as after the user closed it.
+#[tauri::command]
+pub fn cancel_calendar_sign_in(app: AppHandle) {
+    CalendarSync::cancel_sign_in(&app);
+}
+
 #[tauri::command]
 pub fn disconnect_calendar(app: AppHandle, account_id: i64) -> CommandResult<()> {
     Ok(CalendarSync::disconnect(&app, AccountId(account_id))?)

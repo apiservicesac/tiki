@@ -34,6 +34,8 @@ All notable changes to Tiki are documented here. The format follows
 - The end of long panels was cut at the bottom.
 - An open project picker was cut when the card was short.
 - When Google or Microsoft refuse a request, the log keeps their reason.
+- A calendar sign-in waiting for the browser can be cancelled, and starting another one
+  replaces it, so closing the browser no longer leaves Tiki waiting for five minutes.
 
 ## [0.5.1-rc.1] - 2026-10-30
 

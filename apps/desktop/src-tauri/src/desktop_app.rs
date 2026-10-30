@@ -8,7 +8,7 @@ use crate::ai::{AiCredentials, AiProxy};
 use crate::app_state::AppState;
 use crate::app_updates::AppUpdates;
 use crate::brief_reminders::BriefReminders;
-use crate::calendar::CalendarSync;
+use crate::calendar::{CalendarSync, PendingSignIn};
 #[cfg(windows)]
 use crate::call_watch::CallWatch;
 use crate::click_through::ClickThrough;
@@ -84,6 +84,7 @@ impl TikiDesktopApp {
                 commands::system_commands::install_update,
                 commands::calendar_commands::calendar_status,
                 commands::calendar_commands::connect_calendar,
+                commands::calendar_commands::cancel_calendar_sign_in,
                 commands::calendar_commands::disconnect_calendar,
                 commands::calendar_commands::sync_calendars,
                 commands::calendar_commands::open_meeting_link,
@@ -138,6 +139,7 @@ impl TikiDesktopApp {
         app.manage(Arc::clone(&click_through));
         ClickThrough::start(app.handle().clone(), click_through);
         BriefReminders::start(app.handle().clone());
+        app.manage(PendingSignIn::default());
         CalendarSync::start(app.handle().clone());
         SessionRetention::start(app.handle().clone());
         #[cfg(windows)]
