@@ -9,7 +9,7 @@ right moment what needs you. Your data stays on your computer.
 [Privacy policy](https://apiservicesac.github.io/tiki/privacy-policy.html) ·
 [Changelog](CHANGELOG.md)
 
-> Not to be confused with Tiki Wiki CMS: this Tiki is a desktop assistant for Windows.
+![An alert in the notch: a reminder with Done and snooze](docs/assets/screenshots/notch-alert.png)
 
 ## What it does
 
@@ -29,6 +29,14 @@ right moment what needs you. Your data stays on your computer.
 
 Tiki's face in the notch tells the mood of your day at a glance: calm, something due, something
 late, a meeting about to start.
+
+![The notch at rest: Tiki's face and what is pending](docs/assets/screenshots/face-compact.png)
+
+| Today | Tasks |
+| --- | --- |
+| ![Today: what to do now and what is due soon](docs/assets/screenshots/today.png) | ![Tasks grouped by project](docs/assets/screenshots/tasks.png) |
+| **Agenda** | **Capture** |
+| ![Agenda: meetings and reminders with Join](docs/assets/screenshots/agenda.png) | ![Capture a task from one sentence](docs/assets/screenshots/capture.png) |
 
 ## Install
 
