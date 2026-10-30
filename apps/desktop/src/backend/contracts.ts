@@ -273,6 +273,16 @@ export interface TikiAlert {
   taskId: number | null;
   /** A link to open from the alert: the meeting's video call. */
   link: string | null;
+  /** Whose meeting a meeting alert announces and where its call runs. */
+  origin: MeetingOrigin | null;
+}
+
+/** See `MeetingOrigin` in the core. */
+export interface MeetingOrigin {
+  account: AccountIdentity;
+  platform: MeetingPlatform | null;
+  /** Both in one line, already translated: "Google Meet · Ana Pérez · ana@acme.com". */
+  label: string;
 }
 
 /** One line of the Agenda, with the time it shows: "10:00", "10:00–10:30" or "Todo el día". */

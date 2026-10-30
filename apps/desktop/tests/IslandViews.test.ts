@@ -19,6 +19,7 @@ const REMINDER_ALERT: TikiAlert = {
   actions: ["open", "done", "snooze"],
   taskId: 8,
   link: null,
+  origin: null,
 };
 
 /** Every handler a view can call, recording the calls. */
@@ -90,6 +91,7 @@ describe("TodayView", () => {
       actions: ["open", "snooze"],
       taskId: 1,
       link: null,
+      origin: null,
     };
     const element = view.render(
       { snapshot: SNAPSHOT, alert: taskAlarm, dayBrief: null, preparingBrief: false, aiReady: true },

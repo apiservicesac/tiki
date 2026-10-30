@@ -188,6 +188,31 @@ fn a_meeting_about_to_start_is_announced_once_with_its_link() {
 }
 
 #[test]
+fn a_meeting_alert_names_the_account_and_the_platform_of_its_call() {
+    let workspace = workspace_at(at(21, 9, 50));
+    let account = workspace
+        .connect_calendar(CalendarProvider::Google, "ana@acme.com")
+        .unwrap();
+    workspace
+        .update_calendar_identity(account, "Ana Pérez", Some(AVATAR))
+        .unwrap();
+    let mut daily = meeting("a", "Daily", at(21, 10, 0), 15);
+    daily.join_url = Some("https://meet.google.com/abc-defg-hij".into());
+    workspace.store_meetings(account, &[daily]).unwrap();
+
+    let alert = workspace.take_due_meeting_alerts().unwrap().remove(0);
+    let origin = alert.origin.as_ref().unwrap();
+    assert_eq!(origin.platform, Some(MeetingPlatform::GoogleMeet));
+    assert_eq!(origin.account.avatar.as_deref(), Some(AVATAR));
+    assert_eq!(origin.label, "Google Meet · Ana Pérez · ana@acme.com");
+    assert!(
+        alert
+            .notification_body()
+            .ends_with("\nGoogle Meet · Ana Pérez · ana@acme.com")
+    );
+}
+
+#[test]
 fn now_counts_the_free_time_before_the_next_meeting_and_the_brief_names_meetings() {
     let workspace = workspace_at(at(21, 9, 15));
     let account = workspace

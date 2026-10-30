@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 
-use super::{AlertAction, AlertKind, TikiAlert};
+use super::{AlertAction, AlertKind, MeetingOrigin, TikiAlert};
 use crate::briefing::{BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment, DailyBrief};
 use crate::calendar::MeetingItem;
 use crate::domain::{ItemKind, Task};
@@ -84,6 +84,7 @@ impl<'translator> NotificationComposer<'translator> {
             actions: AlertAction::offered_for(kind, false),
             task_id: task.id,
             link: None,
+            origin: None,
         }
     }
 
@@ -107,6 +108,26 @@ impl<'translator> NotificationComposer<'translator> {
             actions: AlertAction::offered_for(AlertKind::Meeting, meeting.join_url.is_some()),
             task_id: None,
             link: meeting.join_url.clone(),
+            origin: Some(self.meeting_origin(meeting)),
+        }
+    }
+
+    /// The meeting's account and platform, and both in one line.
+    fn meeting_origin(&self, meeting: &MeetingItem) -> MeetingOrigin {
+        let platform = meeting.platform.map(|platform| {
+            self.translator
+                .text(&format!("meeting.platform.{}", platform.key()))
+        });
+        let name = Some(meeting.account.display_name.clone()).filter(|name| !name.is_empty());
+        let label = [platform, name, Some(meeting.account.email.clone())]
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>()
+            .join(" · ");
+        MeetingOrigin {
+            account: meeting.account.clone(),
+            platform: meeting.platform,
+            label,
         }
     }
 
@@ -130,6 +151,7 @@ impl<'translator> NotificationComposer<'translator> {
             actions: AlertAction::offered_for(AlertKind::Recording, false),
             task_id: None,
             link: None,
+            origin: None,
         }
     }
 
@@ -171,6 +193,7 @@ impl<'translator> NotificationComposer<'translator> {
             actions: AlertAction::offered_for(kind, false),
             task_id: None,
             link: None,
+            origin: None,
         }
     }
 

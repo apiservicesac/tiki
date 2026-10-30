@@ -438,7 +438,11 @@
     "calendar.provider.google": "Google Calendar",
     "meeting.join": "Join",
     "meeting.all_day": "All day",
-    "meeting.untitled": "(No title)"
+    "meeting.untitled": "(No title)",
+    "meeting.platform.google_meet": "Google Meet",
+    "meeting.platform.teams": "Microsoft Teams",
+    "meeting.platform.zoom": "Zoom",
+    "meeting.platform.other": "Video call"
   },
   "dates": {
     "weekdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],

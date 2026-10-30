@@ -6,7 +6,7 @@ import { AlertSound } from "../src/island/AlertSound";
 import { TikiApp } from "../src/TikiApp";
 import { FakeBackend } from "./support/FakeBackend";
 
-const MEETING_ALERT: TikiAlert = { kind: "meeting", title: "Daily", summary: "En 15 min", tips: [], actions: ["open"], taskId: null, link: null };
+const MEETING_ALERT: TikiAlert = { kind: "meeting", title: "Daily", summary: "En 15 min", tips: [], actions: ["open"], taskId: null, link: null, origin: null };
 const SILENT: AlertDelivery = { sound: false, windowsNotification: false };
 
 describe("Tiki keeping quiet", () => {

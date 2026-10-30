@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use super::AlertAction;
+use super::{AlertAction, MeetingOrigin};
 use crate::briefing::BriefMoment;
 use crate::domain::TaskId;
 
@@ -49,13 +49,17 @@ pub struct TikiAlert {
     pub task_id: Option<TaskId>,
     /// A link to open from the alert: the meeting's video call.
     pub link: Option<String>,
+    /// Whose meeting a meeting alert announces and where its call runs.
+    pub origin: Option<MeetingOrigin>,
 }
 
 impl TikiAlert {
-    /// The text of a system notification: the summary, then each tip on its own line.
+    /// The text of a system notification: the summary, then each tip and the meeting's
+    /// origin on their own lines.
     pub fn notification_body(&self) -> String {
         std::iter::once(&self.summary)
             .chain(&self.tips)
+            .chain(self.origin.as_ref().map(|origin| &origin.label))
             .map(String::as_str)
             .collect::<Vec<_>>()
             .join("\n")

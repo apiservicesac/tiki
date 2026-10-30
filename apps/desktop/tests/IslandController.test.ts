@@ -22,6 +22,7 @@ const EVENING_BRIEF = {
   actions: ["open" as const],
   taskId: null,
   link: null,
+  origin: null,
 };
 
 describe("IslandController", () => {
@@ -486,7 +487,7 @@ describe("IslandController", () => {
 
   it("announces an alert with its kind, its own face and color, then goes back to the day's mood", async () => {
     vi.useFakeTimers();
-    backend.deliverAlert({ kind: "meeting", title: "Daily", summary: "En 15 min", tips: [], actions: ["open"], taskId: null, link: null });
+    backend.deliverAlert({ kind: "meeting", title: "Daily", summary: "En 15 min", tips: [], actions: ["open"], taskId: null, link: null, origin: null });
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
     expect(root.querySelector(".notch-alert")?.getAttribute("data-alert-kind")).toBe("meeting");
     expect(root.querySelector(".notch-alert-kind")?.textContent).toBe("Reunión");
@@ -534,7 +535,7 @@ describe("IslandController", () => {
   });
 
   it("opens the task of a task reminder", async () => {
-    backend.deliverAlert({ kind: "task", title: "Recordatorio", summary: "Tracking de formularios", tips: ["Acme · mañana"], actions: ["open", "snooze"], taskId: 1, link: null });
+    backend.deliverAlert({ kind: "task", title: "Recordatorio", summary: "Tracking de formularios", tips: ["Acme · mañana"], actions: ["open", "snooze"], taskId: 1, link: null, origin: null });
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
 
     notch()?.click();
@@ -551,7 +552,7 @@ describe("IslandController", () => {
 
   it("lets the user mark a reminder done or snooze it from Today", async () => {
     controller.setMode("expanded");
-    backend.deliverAlert({ kind: "reminder", title: "Recordatorio", summary: "Llamar a mamá", tips: [], actions: ["open", "done", "snooze"], taskId: 7, link: null });
+    backend.deliverAlert({ kind: "reminder", title: "Recordatorio", summary: "Llamar a mamá", tips: [], actions: ["open", "done", "snooze"], taskId: 7, link: null, origin: null });
     await vi.waitFor(() => expect(root.querySelector("#alert-snooze-10")).not.toBeNull());
 
     root.querySelector<HTMLButtonElement>("#alert-snooze-10")?.click();
@@ -561,7 +562,7 @@ describe("IslandController", () => {
 
   it("offers Join on a meeting alert and opens the call", async () => {
     controller.setMode("expanded");
-    backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", summary: "Daily", tips: ["09:00–09:30"], actions: ["open", "join"], taskId: null, link: "https://meet.google.com/abc" });
+    backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", summary: "Daily", tips: ["09:00–09:30"], actions: ["open", "join"], taskId: null, link: "https://meet.google.com/abc", origin: null });
     await vi.waitFor(() => expect(root.querySelector("#alert-join")).not.toBeNull());
 
     root.querySelector<HTMLButtonElement>("#alert-join")?.click();
@@ -570,7 +571,7 @@ describe("IslandController", () => {
   });
 
   it("opens the Agenda from a meeting alert in the notch", async () => {
-    backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", summary: "Daily", tips: [], actions: ["open"], taskId: null, link: null });
+    backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", summary: "Daily", tips: [], actions: ["open"], taskId: null, link: null, origin: null });
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
 
     notch()?.click();
@@ -648,7 +649,7 @@ describe("IslandController", () => {
     await vi.waitFor(() => expect(backend.recordingRequests).toEqual(["start:audio_only", "stop"]));
   });
 
-  const recordingOffer = { kind: "recording" as const, title: "¿Grabar esta llamada?", summary: "Hay una llamada en curso.", tips: ["Si grabas, avisa a los participantes."], actions: ["open" as const, "record_audio" as const, "record_video" as const], taskId: null, link: null };
+  const recordingOffer = { kind: "recording" as const, title: "¿Grabar esta llamada?", summary: "Hay una llamada en curso.", tips: ["Si grabas, avisa a los participantes."], actions: ["open" as const, "record_audio" as const, "record_video" as const], taskId: null, link: null, origin: null };
   const quietly = { sound: false, windowsNotification: false };
 
   it("opens the choice of what to record from Tiki's offer when a call starts", async () => {
