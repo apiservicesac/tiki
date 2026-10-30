@@ -52,7 +52,7 @@ By contributing you agree that your contribution is licensed under the [MIT Lice
 - Versions follow Semantic Versioning; release candidates are tagged `vX.Y.Z-rc.N` and carry
   the suffix in the app version (`Cargo.toml`, `apps/desktop/package.json`,
   `apps/desktop/src-tauri/tauri.conf.json`), so installed copies see each one as an update.
-- Releases are titled `Tiki for Windows vX.Y.Z`; their notes reuse the `CHANGELOG.md` entry.
+- Releases are titled `Tiki vX.Y.Z`; their notes reuse the `CHANGELOG.md` entry.
 - Pushing the tag builds and signs the installer on GitHub Actions. The release is published
   with the installer and its signature first, then `updates/latest.json` is regenerated with
   `make update-manifest` and pushed to `main`, where installed copies read it.
