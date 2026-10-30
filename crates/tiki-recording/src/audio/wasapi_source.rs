@@ -56,7 +56,6 @@ pub struct WasapiSource {
 impl WasapiSource {
     const BITS_PER_SAMPLE: usize = 32;
     const MONO: usize = 1;
-    const BYTES_PER_SAMPLE: usize = 4;
     /// How long the thread waits for audio before it looks whether to stop. A loopback
     /// stream sends nothing while nothing plays, so waiting longer is normal.
     const EVENT_WAIT_MS: u32 = 200;
@@ -160,10 +159,9 @@ impl WasapiSource {
             }
         }
         let bytes: Vec<u8> = bytes.into();
-        Ok(bytes
-            .chunks_exact(Self::BYTES_PER_SAMPLE)
-            .map(|sample| f32::from_le_bytes([sample[0], sample[1], sample[2], sample[3]]))
-            .collect())
+        // Each 32-bit float sample is four little-endian bytes.
+        let (samples, _incomplete) = bytes.as_chunks();
+        Ok(samples.iter().copied().map(f32::from_le_bytes).collect())
     }
 
     fn failure(&self, reason: String) -> RecordingError {
