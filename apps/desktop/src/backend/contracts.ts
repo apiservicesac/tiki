@@ -494,6 +494,8 @@ export interface TikiBackend {
   calendarStatus(): Promise<CalendarStatus>;
   /** Signs in in the browser and copies the account's meetings. */
   connectCalendar(provider: CalendarProvider): Promise<CalendarAccount>;
+  /** Stops the sign-in waiting for the browser; its `connectCalendar` then fails. */
+  cancelCalendarSignIn(): Promise<void>;
   disconnectCalendar(accountId: number): Promise<void>;
   syncCalendars(): Promise<void>;
   /** Starts recording a session; a video session records the screen or window chosen. The core refuses a second one. */

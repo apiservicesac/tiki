@@ -429,6 +429,7 @@
     "calendar.connect.microsoft": "Connect Microsoft 365 / Outlook",
     "calendar.connect.google": "Connect Google",
     "calendar.connecting": "Waiting for the browser…",
+    "calendar.cancel": "Cancel",
     "calendar.browser_hint": "Sign in in the browser window that opened, then come back here.",
     "calendar.failed": "Could not connect. Please try again.",
     "calendar.unavailable": "This version of Tiki cannot connect some of these calendars yet.",

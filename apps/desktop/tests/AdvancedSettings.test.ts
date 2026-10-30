@@ -117,6 +117,29 @@ describe("AdvancedSettingsApp", () => {
     await vi.waitFor(() => expect(root.querySelector(".calendar-account")).toBeNull());
   });
 
+  it("cancels a sign-in waiting for the browser and lets a new one start", async () => {
+    backend.calendarSignInWaits = true;
+    await startOn("accounts");
+    const provider = (name: string) => root.querySelector<HTMLButtonElement>(`[data-provider="${name}"]`);
+    await vi.waitFor(() => expect(provider("google")).not.toBeNull());
+    expect(root.querySelector(".calendar-cancel")).toBeNull();
+
+    provider("google")?.click();
+    await vi.waitFor(() => expect(provider("google")?.textContent).toBe("Esperando el navegador…"));
+    expect(provider("google")?.disabled).toBe(true);
+    root.querySelector<HTMLButtonElement>(".calendar-cancel")?.click();
+    await vi.waitFor(() => expect(provider("google")?.textContent).toBe("Conectar Google"));
+    expect(root.querySelector(".calendar-cancel")).toBeNull();
+    expect(root.textContent).not.toContain("No se pudo conectar");
+
+    provider("google")?.click();
+    await vi.waitFor(() => expect(provider("google")?.textContent).toBe("Esperando el navegador…"));
+    provider("microsoft")?.click();
+    await vi.waitFor(() => expect(provider("microsoft")?.textContent).toBe("Esperando el navegador…"));
+    expect(provider("google")?.textContent).toBe("Conectar Google");
+    expect(root.textContent).not.toContain("No se pudo conectar");
+  });
+
   it("disables the providers this build cannot connect", async () => {
     backend.calendar = { accounts: [], available: ["google"] };
     await startOn("accounts");

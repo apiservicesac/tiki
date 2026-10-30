@@ -96,6 +96,7 @@ export class AdvancedSettingsApp {
       onCheckUpdate: () => void this.actions.checkForUpdate(),
       onInstallUpdate: () => void this.actions.installUpdate(),
       onConnectCalendar: (provider) => void this.actions.connectCalendar(provider),
+      onCancelCalendarSignIn: () => void this.actions.cancelCalendarSignIn(),
       onDisconnectCalendar: (accountId) => void this.actions.disconnectCalendar(accountId),
     };
   }

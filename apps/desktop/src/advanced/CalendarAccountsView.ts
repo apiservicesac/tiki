@@ -12,6 +12,7 @@ export interface CalendarSettingsState {
 
 export interface CalendarAccountsHandlers {
   onConnectCalendar: (provider: CalendarProvider) => void;
+  onCancelCalendarSignIn: () => void;
   onDisconnectCalendar: (accountId: number) => void;
 }
 
@@ -38,7 +39,10 @@ export class CalendarAccountsView {
           ElementFactory.create("h3", { text: this.translator.text("calendar.add") }),
           ElementFactory.create("div", {
             className: "settings-options",
-            children: CALENDAR_PROVIDERS.map((provider) => this.connectButton(provider, state, handlers)),
+            children: [
+              ...CALENDAR_PROVIDERS.map((provider) => this.connectButton(provider, state, handlers)),
+              ...this.cancelButton(state, handlers),
+            ],
           }),
           ...this.notes(state),
         ],
@@ -79,9 +83,23 @@ export class CalendarAccountsView {
       text: this.translator.text(connecting ? "calendar.connecting" : `calendar.connect.${provider}`),
       attributes: { type: "button", "data-provider": provider },
     });
-    button.disabled = !available || state.connecting !== null;
+    button.disabled = !available || connecting;
     button.addEventListener("click", () => handlers.onConnectCalendar(provider));
     return button;
+  }
+
+  /** While the browser is open, a way out for when the user closed it. */
+  private cancelButton(state: CalendarSettingsState, handlers: CalendarAccountsHandlers): HTMLElement[] {
+    if (state.connecting === null) {
+      return [];
+    }
+    const cancel = ElementFactory.create("button", {
+      className: "settings-button settings-button-quiet calendar-cancel",
+      text: this.translator.text("calendar.cancel"),
+      attributes: { type: "button" },
+    });
+    cancel.addEventListener("click", () => handlers.onCancelCalendarSignIn());
+    return [cancel];
   }
 
   private notes(state: CalendarSettingsState): HTMLElement[] {

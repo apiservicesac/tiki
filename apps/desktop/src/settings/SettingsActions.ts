@@ -11,6 +11,8 @@ import type { UpdateState } from "./UpdateSettingsView";
 export class SettingsActions {
   /** Counts AI settings loads, so a slow older load never overwrites a newer one. */
   private aiLoads = 0;
+  /** Counts calendar sign-ins, so the end of a cancelled or replaced one changes nothing. */
+  private calendarSignIns = 0;
 
   constructor(
     private readonly store: SettingsStore,
@@ -27,22 +29,37 @@ export class SettingsActions {
     this.store.update({ calendars: { ...this.store.state().calendars, status } });
   }
 
-  /** Signs in in the browser; the section shows that Tiki is waiting for it. */
+  /** Signs in in the browser, replacing a sign-in still waiting; the section shows that Tiki is waiting. */
   async connectCalendar(provider: CalendarProvider): Promise<void> {
-    this.store.update({ calendars: { ...this.store.state().calendars, connecting: provider, failed: false } });
+    const signIn = ++this.calendarSignIns;
+    this.showSignIn(provider, false);
     let failed = false;
     try {
       await this.backend.connectCalendar(provider);
     } catch {
       failed = true;
     }
-    this.store.update({ calendars: { ...this.store.state().calendars, connecting: null, failed } });
+    if (signIn !== this.calendarSignIns) {
+      return;
+    }
+    this.showSignIn(null, failed);
     await this.loadCalendars();
+  }
+
+  /** Stops waiting for the browser, such as after the user closed it. */
+  async cancelCalendarSignIn(): Promise<void> {
+    this.calendarSignIns += 1;
+    this.showSignIn(null, false);
+    await this.backend.cancelCalendarSignIn();
   }
 
   async disconnectCalendar(accountId: number): Promise<void> {
     await this.backend.disconnectCalendar(accountId);
     await this.loadCalendars();
+  }
+
+  private showSignIn(connecting: CalendarProvider | null, failed: boolean): void {
+    this.store.update({ calendars: { ...this.store.state().calendars, connecting, failed } });
   }
 
   async checkForUpdate(): Promise<void> {

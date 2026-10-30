@@ -155,6 +155,10 @@ export class TauriBackend implements TikiBackend {
     return this.call<CalendarAccount>("connect_calendar", { provider });
   }
 
+  async cancelCalendarSignIn(): Promise<void> {
+    await this.call("cancel_calendar_sign_in");
+  }
+
   async disconnectCalendar(accountId: number): Promise<void> {
     await this.call("disconnect_calendar", { accountId });
   }
