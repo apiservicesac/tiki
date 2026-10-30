@@ -4,7 +4,7 @@ use chrono::{NaiveDateTime, NaiveTime};
 use support::{TestDay, TimedWorkspace};
 use tiki_core::agenda::AgendaEntry;
 use tiki_core::alerts::AlertKind;
-use tiki_core::calendar::{CalendarProvider, Meeting, MeetingItem};
+use tiki_core::calendar::{CalendarProvider, Meeting, MeetingItem, MeetingLink};
 use tiki_core::workspace::IslandSnapshot;
 
 fn at(day: u32, hour: u32, minute: u32) -> NaiveDateTime {
@@ -266,4 +266,18 @@ fn meetings_starting_soon_come_once_earliest_first_with_their_account() {
             .len(),
         0
     );
+}
+
+#[test]
+fn a_google_meet_link_opens_with_the_account_the_meeting_comes_from() {
+    assert_eq!(
+        MeetingLink::for_account("https://meet.google.com/abc-defg-hij", "ana@acme.com"),
+        "https://meet.google.com/abc-defg-hij?authuser=ana@acme.com"
+    );
+}
+
+#[test]
+fn other_meeting_links_are_left_as_they_are() {
+    let teams = "https://teams.microsoft.com/l/meetup-join/19%3ameeting";
+    assert_eq!(MeetingLink::for_account(teams, "ana@acme.com"), teams);
 }

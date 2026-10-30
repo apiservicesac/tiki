@@ -1,7 +1,9 @@
 use chrono::NaiveDateTime;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
-use crate::calendar::{AccountId, CalendarAccount, CalendarProvider, Meeting, MeetingItem};
+use crate::calendar::{
+    AccountId, CalendarAccount, CalendarProvider, Meeting, MeetingItem, MeetingLink,
+};
 use crate::error::{TikiError, TikiResult};
 
 /// Reads and writes connected calendar accounts and their local copy of meetings.
@@ -166,16 +168,18 @@ impl<'connection> CalendarRepository<'connection> {
         Ok(meetings)
     }
 
-    /// A meeting row: title, start, end, all day, location, link and the account's email.
+    /// A meeting row read as the Agenda draws it; its join link opens with its own account.
     fn read_meeting(row: &Row<'_>) -> rusqlite::Result<MeetingItem> {
+        let account_email: String = row.get(6)?;
+        let join_url: Option<String> = row.get(5)?;
         Ok(MeetingItem {
             title: row.get(0)?,
             starts_at: row.get(1)?,
             ends_at: row.get(2)?,
             all_day: row.get(3)?,
             location: row.get(4)?,
-            join_url: row.get(5)?,
-            account_email: row.get(6)?,
+            join_url: join_url.map(|url| MeetingLink::for_account(&url, &account_email)),
+            account_email,
         })
     }
 

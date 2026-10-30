@@ -967,6 +967,9 @@ button.island-row-text {
 
 .picker-popover[hidden] { display: none; }
 
+/* While a picker is open the card keeps room for its list, so a short card never cuts it. */
+.island-card-body:has(.picker-open) { min-height: var(--picker-open-room); }
+
 .picker-list {
   display: grid;
   max-height: 200px;
