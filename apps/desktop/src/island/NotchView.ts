@@ -1,5 +1,6 @@
 import type { ActiveRecording, IslandSnapshot, MoodName, SystemStats, TikiAlert } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
+import { AccountBadge } from "../dom/AccountBadge";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
@@ -75,9 +76,10 @@ export class NotchView {
   }
 
   /**
-   * The notch grown to announce something: Tiki's face with ripples, the kind of alert, its
-   * title and one preview line of its summary and tips (cut with "…"), its buttons on the
-   * right (done, the shortest snooze, join), and a thin countdown until the notch folds back.
+   * The notch grown to announce something: Tiki's face with ripples, the kind of alert (with
+   * a meeting's account), its title and one preview line of its summary and tips (cut with
+   * "…"), its buttons on the right (done, the shortest snooze, join), and a thin countdown
+   * until the notch folds back.
    * The aura around the notch comes from the stylesheet (`data-mode="alert"`).
    */
   alert(snapshot: IslandSnapshot, alert: TikiAlert, mood: MoodName, handlers: AlertActionHandlers): HTMLElement {
@@ -94,7 +96,7 @@ export class NotchView {
         ElementFactory.create("span", {
           className: "notch-alert-text",
           children: [
-            ElementFactory.create("span", { className: "notch-alert-kind", text: kindLabel }),
+            ElementFactory.create("span", { className: "notch-alert-kind", text: kindLabel, children: this.origin(alert) }),
             ElementFactory.create("strong", { text: alert.title }),
             ElementFactory.create("span", { className: "notch-alert-preview", text: preview }),
           ],
@@ -103,6 +105,22 @@ export class NotchView {
         ElementFactory.create("span", { className: "notch-alert-countdown", attributes: { "aria-hidden": "true" } }),
       ],
     });
+  }
+
+  /** A meeting's account badge, with its platform's icon, and the account's email. */
+  private origin(alert: TikiAlert): HTMLElement[] {
+    if (alert.origin === null) {
+      return [];
+    }
+    const { account, platform, label } = alert.origin;
+    return [ElementFactory.create("span", {
+      className: "notch-alert-origin",
+      attributes: { title: label },
+      children: [
+        AccountBadge.render(account, platform ?? account.provider),
+        ElementFactory.create("span", { className: "notch-alert-email", text: account.email }),
+      ],
+    })];
   }
 
   compact(snapshot: IslandSnapshot, mood: MoodName): HTMLElement {

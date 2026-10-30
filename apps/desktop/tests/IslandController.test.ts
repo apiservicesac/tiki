@@ -570,6 +570,19 @@ describe("IslandController", () => {
     expect(controller.currentState.alert).toBeNull();
   });
 
+  it("shows in the notch whose account a meeting alert comes from and its platform", async () => {
+    const account = { provider: "google" as const, email: "ana@acme.com", displayName: "Ana Pérez", avatar: "data:image/jpeg;base64,/9j/4AAQ" };
+    const origin = { account, platform: "google_meet" as const, label: "Google Meet · Ana Pérez · ana@acme.com" };
+    backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", summary: "Daily", tips: [], actions: ["open"], taskId: null, link: null, origin });
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
+
+    const shown = notch()?.querySelector(".notch-alert-origin");
+    expect(shown?.getAttribute("title")).toBe(origin.label);
+    expect(shown?.textContent).toBe("ana@acme.com");
+    expect(shown?.querySelector("img")?.getAttribute("src")).toBe(account.avatar);
+    expect(shown?.querySelector<HTMLElement>(".account-service")?.dataset.service).toBe("google_meet");
+  });
+
   it("opens the Agenda from a meeting alert in the notch", async () => {
     backend.deliverAlert({ kind: "meeting", title: "Reunión en 15 min", summary: "Daily", tips: [], actions: ["open"], taskId: null, link: null, origin: null });
     await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
