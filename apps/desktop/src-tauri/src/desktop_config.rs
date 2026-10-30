@@ -26,18 +26,18 @@ impl DesktopConfig {
     pub const SIGN_IN_PAGE_CLOSE_AFTER: Duration = Duration::from_millis(2_500);
     pub const CURSOR_POLL_INTERVAL: Duration = Duration::from_millis(30);
     /// How often the shell asks the core whether a brief notification is due.
-    pub const REMINDER_CHECK_INTERVAL: Duration = Duration::from_secs(60);
+    pub const REMINDER_CHECK_INTERVAL: Duration = Duration::from_mins(1);
     /// How often the shell looks whether another app holds the microphone (a call).
     pub const CALL_CHECK_INTERVAL: Duration = Duration::from_secs(5);
     /// How often the resting notch's CPU, memory, temperature and network figures refresh.
     pub const SYSTEM_STATS_INTERVAL: Duration = Duration::from_secs(3);
     /// How often Tiki looks for a new signed version.
-    pub const UPDATE_CHECK_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
+    pub const UPDATE_CHECK_INTERVAL: Duration = Duration::from_hours(6);
     /// Diagnostics log in the app's log folder, rewritten on every launch.
     pub const LOG_FILE_NAME: &'static str = "tiki.log";
     pub const LOG_LEVEL: &'static str = "info";
     /// How often the calendars are copied.
-    pub const CALENDAR_SYNC_INTERVAL: Duration = Duration::from_secs(5 * 60);
+    pub const CALENDAR_SYNC_INTERVAL: Duration = Duration::from_mins(5);
     /// SQLite file inside the app data folder.
     pub const DATABASE_FILE_NAME: &'static str = "tiki.db";
     pub const TRAY_ID: &'static str = "tiki-tray";

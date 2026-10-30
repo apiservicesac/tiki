@@ -34,7 +34,7 @@ pub struct SignIn {
 
 impl SignIn {
     /// How long Tiki waits for the user to finish signing in in the browser.
-    const TIMEOUT: Duration = Duration::from_secs(300);
+    const TIMEOUT: Duration = Duration::from_mins(5);
     const USERINFO_MICROSOFT: &'static str =
         "https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName";
     const USERINFO_GOOGLE: &'static str = "https://openidconnect.googleapis.com/v1/userinfo";
