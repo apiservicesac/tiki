@@ -5,8 +5,8 @@ meetings and recorded sessions in one place at the top of the screen, and tells 
 right moment what needs you. Your data stays on your computer.
 
 [Download](https://github.com/apiservicesac/tiki/releases) ·
-[Website](https://apiservicesac.github.io/tiki/) ·
-[Privacy policy](https://apiservicesac.github.io/tiki/privacy-policy.html) ·
+[Website](https://tiki.apiservicesac.com/) ·
+[Privacy policy](https://tiki.apiservicesac.com/privacy-policy.html) ·
 [Changelog](CHANGELOG.md)
 
 ![An alert in the notch: a reminder with Done and snooze](docs/assets/screenshots/notch-alert.png)
@@ -52,7 +52,7 @@ Requirements: Windows 10 or 11 (64-bit).
 Tiki runs on your computer and keeps everything in a local database. Calendar access is
 read-only, recordings are transcribed locally, and nothing is sent anywhere unless you add
 your own AI key, in which case only what each feature needs goes to that provider. See the
-[privacy policy](https://apiservicesac.github.io/tiki/privacy-policy.html).
+[privacy policy](https://tiki.apiservicesac.com/privacy-policy.html).
 
 ## Build from source
 
