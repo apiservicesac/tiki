@@ -2,6 +2,7 @@ import { ISLAND_PLACEMENTS, LOCALE_NAMES, type IslandPlacement, type UserPrefere
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
+import { SettingRows } from "../settings/SettingRows";
 import { ReminderSettingsView, type ReminderSettingsHandlers } from "./ReminderSettingsView";
 
 export interface SettingsHandlers extends ReminderSettingsHandlers {
@@ -14,9 +15,11 @@ export interface SettingsHandlers extends ReminderSettingsHandlers {
  */
 export class SettingsView {
   private readonly reminderSettings: ReminderSettingsView;
+  private readonly rows: SettingRows;
 
   constructor(private readonly translator: Translator) {
     this.reminderSettings = new ReminderSettingsView(translator);
+    this.rows = new SettingRows(translator);
   }
 
   render(preferences: UserPreferences, handlers: SettingsHandlers): HTMLElement {
@@ -43,6 +46,10 @@ export class SettingsView {
               () => onChange({ ...preferences, locale }),
             )),
         ),
+        this.rows.section("settings.notch", [
+          this.rows.switchRow({ labelKey: "settings.system_stats", hintKey: "settings.system_stats_hint" },
+            preferences.showSystemStats, (enabled) => onChange({ ...preferences, showSystemStats: enabled })),
+        ]),
         ...this.reminderSettings.render(preferences, handlers),
         this.advancedLink(handlers.onOpenAdvancedSettings),
       ],

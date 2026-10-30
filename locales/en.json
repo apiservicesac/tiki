@@ -137,6 +137,13 @@
     "settings.briefs": "Briefs",
     "settings.morning_brief_hint": "What the day holds.",
     "settings.evening_brief_hint": "What you did and what is left for tomorrow.",
+    "system.cpu": "CPU {value}%",
+    "system.memory": "RAM {value}%",
+    "system.temperature": "{value} °C",
+    "system.download": "↓ {value}",
+    "settings.notch": "Notch",
+    "settings.system_stats": "Computer status",
+    "settings.system_stats_hint": "With nothing pending, the notch shows CPU, RAM, temperature and network.",
 
     "ask.title": "Ask Tiki",
     "ask.placeholder": "What is pending with Altamira?",

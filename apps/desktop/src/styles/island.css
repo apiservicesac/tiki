@@ -171,6 +171,18 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   padding: 0 14px 0 10px;
 }
 
+/* The computer's figures beside the face when nothing is pending; high ones turn amber. */
+.notch-system {
+  display: inline-flex;
+  gap: 12px;
+  font: 500 var(--text-2xs) var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--island-muted);
+  white-space: nowrap;
+}
+
+.notch-figure-high { color: var(--urgency-soon-text); }
+
 .notch-mascot {
   display: inline-flex;
   line-height: 0;
@@ -503,6 +515,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
  */
 .island-card-body {
   position: relative;
+  box-sizing: border-box;
   min-width: 0;
   max-height: var(--card-max-height);
   overflow-x: hidden;

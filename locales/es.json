@@ -137,6 +137,13 @@
     "settings.briefs": "Resúmenes",
     "settings.morning_brief_hint": "Lo que te espera hoy.",
     "settings.evening_brief_hint": "Lo que hiciste y lo que queda para mañana.",
+    "system.cpu": "CPU {value}%",
+    "system.memory": "RAM {value}%",
+    "system.temperature": "{value} °C",
+    "system.download": "↓ {value}",
+    "settings.notch": "Notch",
+    "settings.system_stats": "Estado del equipo",
+    "settings.system_stats_hint": "Sin nada pendiente, el notch muestra CPU, RAM, temperatura y red.",
 
     "ask.title": "Pregúntale a Tiki",
     "ask.placeholder": "¿Qué tengo pendiente con Altamira?",

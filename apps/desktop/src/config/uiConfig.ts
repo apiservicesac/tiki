@@ -15,6 +15,14 @@ export const UI_CONFIG = Object.freeze({
   unfoldDelayMs: 800,
   /** An alert stays in the grown notch this long, then folds leaving an unread dot. */
   alertDurationMs: 12_000,
+  /** The computer's figures in the resting notch: from where each one shows as running high, and the units for speeds. */
+  systemStats: Object.freeze({
+    highCpuPercent: 85,
+    highMemoryPercent: 90,
+    highTemperatureCelsius: 85,
+    bytesPerKilobyte: 1_000,
+    bytesPerMegabyte: 1_000_000,
+  }),
   /**
    * How each kind of alert presents itself in the notch: the face Tiki makes (and so the
    * color of the eyes, the aura and the countdown) and the translation key of its label.
@@ -83,4 +91,5 @@ export const SHELL_EVENTS = Object.freeze({
   preferencesChanged: "tiki://preferences-changed",
   calendarSynced: "tiki://calendar-synced",
   inCallChanged: "tiki://in-call-changed",
+  systemStats: "tiki://system-stats",
 });

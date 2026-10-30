@@ -81,6 +81,7 @@ export class IslandController {
       await this.backend.listen(SHELL_EVENTS.preferencesChanged, () => void this.preferences.reload()),
       await this.backend.listen(SHELL_EVENTS.calendarSynced, () => void this.refresh()),
       await this.backend.listen(SHELL_EVENTS.inCallChanged, () => void this.refresh()),
+      await this.backend.onSystemStats((systemStats) => this.update({ systemStats })),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
     window.addEventListener("resize", this.redrawOnResize);

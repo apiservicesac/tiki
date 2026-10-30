@@ -20,6 +20,7 @@ import type {
   TikiBackend,
   TrashedItem,
   UserPreferences,
+  SystemStats,
 } from "../../src/backend/contracts";
 import { AI_PROVIDERS } from "../../src/backend/contracts";
 import { BackendError } from "../../src/backend/BackendError";
@@ -62,6 +63,7 @@ export class FakeBackend implements TikiBackend {
     windowsNotifications: true,
     focusMode: false,
     quietHours: { enabled: true, from: "22:00:00", until: "07:00:00" },
+    showSystemStats: true,
   };
   autostart = false;
   availableUpdate: AvailableUpdate | null = null;
@@ -296,6 +298,20 @@ export class FakeBackend implements TikiBackend {
   }
 
   private alertHandler: ((alert: DueAlert) => void) | null = null;
+
+  private systemStatsHandler: ((stats: SystemStats) => void) | null = null;
+
+  /** Plays the shell measuring the computer. */
+  deliverSystemStats(stats: SystemStats): void {
+    this.systemStatsHandler?.(stats);
+  }
+
+  async onSystemStats(handler: (stats: SystemStats) => void): Promise<() => void> {
+    this.systemStatsHandler = handler;
+    return () => {
+      this.systemStatsHandler = null;
+    };
+  }
 
   async onAlert(handler: (alert: DueAlert) => void): Promise<() => void> {
     this.alertHandler = handler;

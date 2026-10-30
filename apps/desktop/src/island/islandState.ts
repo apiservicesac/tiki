@@ -6,6 +6,7 @@ import type {
   MoodName,
   TaskDetails,
   TikiAlert,
+  SystemStats,
   TrashedItem,
 } from "../backend/contracts";
 
@@ -46,6 +47,8 @@ export interface IslandState {
   trashed: TrashedItem[];
   /** Days an item stays in the trash before it is deleted forever. */
   trashRetentionDays: number;
+  /** The latest measure of the computer, for the resting notch; `null` until the first one. */
+  systemStats: SystemStats | null;
   /** Pending or delivered, in the Tasks tab. */
   tasksView: TasksView;
   /** A short-lived mood (happy after capturing) that overrides the snapshot's mood. */
@@ -72,6 +75,7 @@ export const ISLAND_STATE_DEFAULTS: Readonly<Omit<IslandState, "placement" | "sn
   delivered: [],
   trashed: [],
   trashRetentionDays: 0,
+  systemStats: null,
   tasksView: "pending",
   reactionMood: null,
   alert: null,

@@ -276,7 +276,12 @@ export class IslandView {
     handlers: IslandViewHandlers,
   ): HTMLElement {
     if (state.mode === "hidden") {
-      return this.notchView.hidden(state.snapshot, mood, state.unreadAlert);
+      return this.notchView.hidden(
+        state.snapshot,
+        mood,
+        state.unreadAlert,
+        preferences.showSystemStats ? state.systemStats : null,
+      );
     }
     if (state.mode === "alert" && state.alert) {
       return this.notchView.alert(state.snapshot, state.alert, mood, handlers);

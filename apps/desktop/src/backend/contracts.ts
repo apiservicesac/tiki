@@ -68,6 +68,15 @@ export interface SnapshotSection {
   items: SnapshotItem[];
 }
 
+/** How the computer is doing, measured by the shell every few seconds (see `SystemStats` in the shell). */
+export interface SystemStats {
+  cpuPercent: number;
+  memoryPercent: number;
+  /** `null` where the computer has no temperature sensor Tiki can read. */
+  temperatureCelsius: number | null;
+  downloadBytesPerSecond: number;
+}
+
 export interface IslandSnapshot {
   mood: MoodName;
   moodLabel: string;
@@ -276,6 +285,8 @@ export interface UserPreferences {
   /** Silences notifications and lets Tiki sleep. */
   focusMode: boolean;
   quietHours: QuietHours;
+  /** With nothing pending, the resting notch shows CPU, memory, temperature and network. */
+  showSystemStats: boolean;
 }
 
 export const AI_PROVIDERS = Object.freeze(["anthropic", "openai"] as const);
@@ -365,6 +376,8 @@ export interface TikiBackend {
   setHitArea(area: HitArea): Promise<void>;
   /** Calls `handler` with each alert the shell delivers; returns a function that stops listening. */
   onAlert(handler: (alert: DueAlert) => void): Promise<() => void>;
+  /** Calls `handler` with each measure of the computer; returns a function that stops listening. */
+  onSystemStats(handler: (stats: SystemStats) => void): Promise<() => void>;
   /** Calls `handler` whenever the shell emits `eventName`; returns a function that stops listening. */
   listen(eventName: string, handler: () => void): Promise<() => void>;
 }

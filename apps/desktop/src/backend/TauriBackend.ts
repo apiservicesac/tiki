@@ -10,12 +10,13 @@ import type {
   CalendarProvider,
   CalendarStatus,
   CaptureLesson,
-  ProjectChange,
-  ProjectSummary,
   DeliveredItem,
   DueAlert,
   HitArea,
   IslandSnapshot,
+  ProjectChange,
+  ProjectSummary,
+  SystemStats,
   TaskDetails,
   TaskEdit,
   TaskStatus,
@@ -188,6 +189,10 @@ export class TauriBackend implements TikiBackend {
 
   onAlert(handler: (alert: DueAlert) => void): Promise<() => void> {
     return listen<DueAlert>(SHELL_EVENTS.alertReady, (event) => handler(event.payload));
+  }
+
+  onSystemStats(handler: (stats: SystemStats) => void): Promise<() => void> {
+    return listen<SystemStats>(SHELL_EVENTS.systemStats, (event) => handler(event.payload));
   }
 
   listen(eventName: string, handler: () => void): Promise<() => void> {
