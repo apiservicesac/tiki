@@ -2,7 +2,9 @@ use std::thread;
 use std::time::Instant;
 
 use serde::Serialize;
-use sysinfo::{Components, CpuRefreshKind, MemoryRefreshKind, NetworkData, Networks, RefreshKind, System};
+use sysinfo::{
+    Components, CpuRefreshKind, MemoryRefreshKind, NetworkData, Networks, RefreshKind, System,
+};
 use tauri::{AppHandle, Manager};
 
 use crate::app_state::AppState;
@@ -96,7 +98,11 @@ impl SystemSampler {
             })
         };
         readings()
-            .filter(|(label, _)| Self::CPU_SENSOR_HINTS.iter().any(|hint| label.contains(hint)))
+            .filter(|(label, _)| {
+                Self::CPU_SENSOR_HINTS
+                    .iter()
+                    .any(|hint| label.contains(hint))
+            })
             .map(|(_, celsius)| celsius)
             .reduce(f32::max)
             .or_else(|| readings().map(|(_, celsius)| celsius).reduce(f32::max))
