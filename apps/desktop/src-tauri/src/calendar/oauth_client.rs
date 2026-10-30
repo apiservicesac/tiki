@@ -42,7 +42,7 @@ impl OAuthClient {
                         client_secret: Self::GOOGLE_CLIENT_SECRET,
                         authorize_url: "https://accounts.google.com/o/oauth2/v2/auth",
                         token_url: "https://oauth2.googleapis.com/token",
-                        scopes: "openid email https://www.googleapis.com/auth/calendar.readonly",
+                        scopes: "openid email profile https://www.googleapis.com/auth/calendar.readonly",
                     })
             }
         }

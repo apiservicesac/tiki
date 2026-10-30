@@ -8,6 +8,7 @@ use tiki_core::{TikiError, TikiResult};
 use super::google_calendar::GoogleCalendar;
 use super::microsoft_calendar::MicrosoftCalendar;
 use super::oauth_client::OAuthClient;
+use super::profile_reader::ProfileReader;
 use super::sign_in::SignIn;
 use super::sign_in_page::SignInPages;
 use super::token_store::TokenStore;
@@ -59,7 +60,8 @@ impl CalendarSync {
             .with_workspace(|workspace| workspace.connect_calendar(provider, &signed_in.email))?;
         TokenStore::save(account_id, &signed_in.refresh_token)?;
         let account = state.with_workspace(|workspace| workspace.calendar_account(account_id))?;
-        self.sync_account(app, &account).await?;
+        // Signing in again may grant what an older sign-in lacked (Google's `profile`).
+        self.sync_account(app, &account, true).await?;
         ShellEvent::CalendarSynced.emit(app);
         Ok(account)
     }
@@ -73,14 +75,16 @@ impl CalendarSync {
         Ok(())
     }
 
-    /// Copies the meetings of every account; one failing account does not stop the others.
+    /// Copies the meetings of every account, and its name and picture once a day; one
+    /// failing account does not stop the others.
     pub async fn sync_all(&self, app: &AppHandle) {
-        let accounts = app
+        let (accounts, now) = app
             .state::<AppState>()
-            .with_workspace(|workspace| workspace.calendar_accounts())
+            .with_workspace(|workspace| Ok((workspace.calendar_accounts()?, workspace.now())))
             .unwrap_or_default();
         for account in &accounts {
-            if let Err(error) = self.sync_account(app, account).await {
+            let identity_due = account.identity_due(now, DesktopConfig::ACCOUNT_IDENTITY_REFRESH);
+            if let Err(error) = self.sync_account(app, account, identity_due).await {
                 tracing::warn!(account = account.account_id.0, %error, "could not sync the calendar");
             }
         }
@@ -100,7 +104,12 @@ impl CalendarSync {
         });
     }
 
-    async fn sync_account(&self, app: &AppHandle, account: &CalendarAccount) -> TikiResult<()> {
+    async fn sync_account(
+        &self,
+        app: &AppHandle,
+        account: &CalendarAccount,
+        identity_due: bool,
+    ) -> TikiResult<()> {
         let client = OAuthClient::of(account.identity.provider).ok_or_else(|| {
             TikiError::Calendar("this build cannot read that calendar".to_owned())
         })?;
@@ -131,6 +140,34 @@ impl CalendarSync {
             meetings = meetings.len(),
             "calendar synced"
         );
-        state.with_workspace(|workspace| workspace.store_meetings(account.account_id, &meetings))
+        state
+            .with_workspace(|workspace| workspace.store_meetings(account.account_id, &meetings))?;
+        if identity_due
+            && let Err(error) = self
+                .refresh_identity(app, account, &tokens.access_token)
+                .await
+        {
+            tracing::warn!(account = account.account_id.0, %error, "could not read the account's name and picture");
+        }
+        Ok(())
+    }
+
+    /// Asks the provider for the account's name and picture and keeps them.
+    async fn refresh_identity(
+        &self,
+        app: &AppHandle,
+        account: &CalendarAccount,
+        access_token: &str,
+    ) -> TikiResult<()> {
+        let profile = ProfileReader::new(&self.http)
+            .read(account.identity.provider, access_token)
+            .await?;
+        app.state::<AppState>().with_workspace(|workspace| {
+            workspace.update_calendar_identity(
+                account.account_id,
+                &profile.display_name,
+                profile.avatar.as_deref(),
+            )
+        })
     }
 }
