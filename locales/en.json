@@ -194,7 +194,7 @@
     "settings.system_stats_hint": "With nothing pending, the notch shows CPU, RAM, temperature and network.",
 
     "ask.title": "Ask Tiki",
-    "ask.placeholder": "What is pending with Altamira?",
+    "ask.placeholder": "What is pending with Acme?",
     "ask.summarize": "Summarize my day",
     "ask.failed": "I could not answer right now. Check your key or try again.",
     "ask.needs_key": "Add an AI key in Settings to ask Tiki.",

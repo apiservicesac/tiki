@@ -19,7 +19,7 @@ impl<'translator> SessionExport<'translator> {
         Self { translator }
     }
 
-    /// "Tiki · 2026-10-21 · Revisión con Andeanvet", safe as a Windows folder name.
+    /// "Tiki · 2026-10-21 · Revisión con Atlas", safe as a Windows folder name.
     pub fn folder_name(&self, details: &SessionDetails) -> String {
         let name = self.translator.format(
             "session.export.folder",

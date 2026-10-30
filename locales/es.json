@@ -194,7 +194,7 @@
     "settings.system_stats_hint": "Sin nada pendiente, el notch muestra CPU, RAM, temperatura y red.",
 
     "ask.title": "Pregúntale a Tiki",
-    "ask.placeholder": "¿Qué tengo pendiente con Altamira?",
+    "ask.placeholder": "¿Qué tengo pendiente con Acme?",
     "ask.summarize": "Resumir mi día",
     "ask.failed": "No pude responder ahora. Revisa tu clave o inténtalo de nuevo.",
     "ask.needs_key": "Agrega una clave de IA en Ajustes para preguntarle a Tiki.",

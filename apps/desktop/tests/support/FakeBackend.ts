@@ -45,19 +45,19 @@ export class FakeBackend implements TikiBackend {
   readonly confirmedCaptures: InterpretedCapture[] = [];
   readonly editedTasks: Array<{ taskId: number; edit: TaskEdit }> = [];
   projects: ProjectSummary[] = [
-    { projectId: 1, name: "Altamira", color: "#2F6BD8", openCount: 2, pressingCount: 2, notes: "" },
-    { projectId: 2, name: "Andeanvet", color: "#17837D", openCount: 3, pressingCount: 1, notes: "" },
-    { projectId: 3, name: "Vapestation", color: "#C2410C", openCount: 1, pressingCount: 0, notes: "" },
+    { projectId: 1, name: "Acme", color: "#2F6BD8", openCount: 2, pressingCount: 2, notes: "" },
+    { projectId: 2, name: "Atlas", color: "#17837D", openCount: 3, pressingCount: 1, notes: "" },
+    { projectId: 3, name: "Vertex", color: "#C2410C", openCount: 1, pressingCount: 0, notes: "" },
   ];
   delivered: DeliveredItem[] = [
-    { taskId: 9, title: "Reporte de ventas de septiembre", projectId: 1, projectName: "Altamira", projectColor: "#2F6BD8", tags: ["ventas"], deliveredLabel: "hoy" },
-    { taskId: 8, title: "Ajuste del acta CAPEX", projectId: null, projectName: null, projectColor: null, tags: [], deliveredLabel: "ayer" },
+    { taskId: 9, title: "Reporte de ventas de septiembre", projectId: 1, projectName: "Acme", projectColor: "#2F6BD8", tags: ["ventas"], deliveredLabel: "hoy" },
+    { taskId: 8, title: "Ajuste del acta de inversiones", projectId: null, projectName: null, projectColor: null, tags: [], deliveredLabel: "ayer" },
   ];
   /** What the user sent to the trash, newest first. */
   trash: TrashedItem[] = [
-    { taskId: 21, kind: "task", title: "Cotización de licencias antiguas", projectName: "Vapestation", projectColor: "#C2410C", trashedLabel: "hoy", deletesInLabel: "se borra en 30 días" },
+    { taskId: 21, kind: "task", title: "Cotización de licencias antiguas", projectName: "Vertex", projectColor: "#C2410C", trashedLabel: "hoy", deletesInLabel: "se borra en 30 días" },
     { taskId: 22, kind: "reminder", title: "Llamar al banco", projectName: null, projectColor: null, trashedLabel: "hace 3 días", deletesInLabel: "se borra en 27 días" },
-    { taskId: 23, kind: "task", title: "Borrador del acta de septiembre", projectName: "Altamira", projectColor: "#2F6BD8", trashedLabel: "hace 29 días", deletesInLabel: "se borra mañana" },
+    { taskId: 23, kind: "task", title: "Borrador del acta de septiembre", projectName: "Acme", projectColor: "#2F6BD8", trashedLabel: "hace 29 días", deletesInLabel: "se borra mañana" },
   ];
   readonly restoredItems: number[] = [];
   savedPreferences: UserPreferences = {
@@ -216,7 +216,7 @@ export class FakeBackend implements TikiBackend {
           taskId: 1,
           kind: "task",
           title: "Tracking de formularios",
-          projectName: "Altamira",
+          projectName: "Acme",
           tags: [],
           status: "to_do",
           priority: "high",
@@ -226,9 +226,9 @@ export class FakeBackend implements TikiBackend {
         },
       ],
       projects: [
-        { name: "Altamira", notes: "Contacto: Lucía." },
-        { name: "Andeanvet", notes: "" },
-        { name: "Vapestation", notes: "" },
+        { name: "Acme", notes: "Contacto: Lucía." },
+        { name: "Atlas", notes: "" },
+        { name: "Vertex", notes: "" },
       ],
     };
   }
@@ -309,7 +309,7 @@ export class FakeBackend implements TikiBackend {
 
   /** A ready session with its transcript, and one whose transcription failed. */
   sessionList: SessionSummary[] = [
-    { sessionId: 2, title: "Revisión con Andeanvet", mode: "audio_and_video", status: "ready", startedAt: "2026-10-21T10:00:00", startedLabel: "Mié 21 · 10:00", recordedMs: 1_830_000, hasMedia: true, mediaBytes: 21_000_000, meetingTitle: "Revisión con Andeanvet" },
+    { sessionId: 2, title: "Revisión con Atlas", mode: "audio_and_video", status: "ready", startedAt: "2026-10-21T10:00:00", startedLabel: "Mié 21 · 10:00", recordedMs: 1_830_000, hasMedia: true, mediaBytes: 21_000_000, meetingTitle: "Revisión con Atlas" },
     { sessionId: 1, title: "Sesión del Mar 20, 16:00", mode: "audio_only", status: "failed", startedAt: "2026-10-20T16:00:00", startedLabel: "Mar 20 · 16:00", recordedMs: 600_000, hasMedia: true, mediaBytes: 3_000_000, meetingTitle: null },
   ];
   readonly sessionTranscripts = new Map<number, TranscriptSegment[]>([
@@ -358,7 +358,7 @@ export class FakeBackend implements TikiBackend {
     const word = text.trim().toLowerCase();
     return [...this.sessionTranscripts].flatMap(([sessionId, lines]) => lines
       .filter((line) => line.text.toLowerCase().includes(word))
-      .map((line) => ({ sessionId, sessionTitle: "Revisión con Andeanvet", startedAt: "2026-10-21T10:00:00", speaker: line.speaker, startMs: line.startMs, text: line.text })));
+      .map((line) => ({ sessionId, sessionTitle: "Revisión con Atlas", startedAt: "2026-10-21T10:00:00", speaker: line.speaker, startMs: line.startMs, text: line.text })));
   }
 
   async deleteSession(sessionId: number): Promise<void> {
@@ -502,18 +502,18 @@ export class FakeBackend implements TikiBackend {
     this.listeners.get(eventName)?.();
   }
 
-  /** The user's real pending work on Wednesday, October 21, 2026. */
+  /** A sample day of pending work on Wednesday, October 21, 2026. */
   static sampleSnapshot(): IslandSnapshot {
-    const altamira = { projectId: 1, projectName: "Altamira", projectColor: "#2F6BD8" };
-    const andeanvet = { projectId: 2, projectName: "Andeanvet", projectColor: "#17837D" };
-    const vapestation = { projectId: 3, projectName: "Vapestation", projectColor: "#C2410C" };
-    const access = { taskId: 3, kind: "task" as const, title: "Acceso solo a análisis de facturas de Almendra", ...andeanvet, detailLabel: "1 día de atraso", urgency: "critical" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
-    const tracking = { taskId: 1, kind: "task" as const, title: "Tracking de formularios comerciales", ...altamira, detailLabel: "mañana", urgency: "soon" as const, priority: "high" as const, tags: [], at: null, repeat: "never" as const };
-    const sales = { taskId: 2, kind: "task" as const, title: "Mejora en el módulo de Ventas", ...altamira, detailLabel: "Vie 23", urgency: "soon" as const, priority: "normal" as const, tags: ["ventas"], at: "2026-10-24T16:00:00", repeat: "never" as const };
-    const vacation = { taskId: 4, kind: "task" as const, title: "Saldo vacacional con solicitud rechazada", ...andeanvet, detailLabel: "En curso", urgency: "normal" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
-    const github = { taskId: 5, kind: "task" as const, title: "Permisos de GitHub para retenciones de IGV", ...vapestation, detailLabel: "esperando 3 días", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const acme = { projectId: 1, projectName: "Acme", projectColor: "#2F6BD8" };
+    const atlas = { projectId: 2, projectName: "Atlas", projectColor: "#17837D" };
+    const vertex = { projectId: 3, projectName: "Vertex", projectColor: "#C2410C" };
+    const access = { taskId: 3, kind: "task" as const, title: "Acceso solo a análisis de facturas de Contoso", ...atlas, detailLabel: "1 día de atraso", urgency: "critical" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const tracking = { taskId: 1, kind: "task" as const, title: "Tracking de formularios comerciales", ...acme, detailLabel: "mañana", urgency: "soon" as const, priority: "high" as const, tags: [], at: null, repeat: "never" as const };
+    const sales = { taskId: 2, kind: "task" as const, title: "Mejora en el módulo de Ventas", ...acme, detailLabel: "Vie 23", urgency: "soon" as const, priority: "normal" as const, tags: ["ventas"], at: "2026-10-24T16:00:00", repeat: "never" as const };
+    const vacation = { taskId: 4, kind: "task" as const, title: "Saldo vacacional con solicitud rechazada", ...atlas, detailLabel: "En curso", urgency: "normal" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const github = { taskId: 5, kind: "task" as const, title: "Permisos de GitHub para impuestos", ...vertex, detailLabel: "esperando 3 días", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
     const water = { taskId: 8, kind: "reminder" as const, title: "Tomar agua", projectId: null, projectName: null, projectColor: null, detailLabel: "Vie 23 · 11:00 · Cada día", urgency: "reminder" as const, priority: "normal" as const, tags: [], at: "2026-10-23T11:00:00", repeat: "daily" as const };
-    const zones = { taskId: 6, kind: "task" as const, title: "Confirmación de zonas del dashboard CxC", ...andeanvet, detailLabel: "esperando 1 día", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
+    const zones = { taskId: 6, kind: "task" as const, title: "Confirmación de zonas del dashboard de cobranzas", ...atlas, detailLabel: "esperando 1 día", urgency: "waiting" as const, priority: "normal" as const, tags: [], at: null, repeat: "never" as const };
     return {
       mood: "worried",
       moodLabel: "ATRASO",
@@ -543,7 +543,7 @@ export class FakeBackend implements TikiBackend {
               kind: "meeting",
               timeLabel: "09:00–09:30",
               meeting: {
-                title: "Daily de Altamira",
+                title: "Daily de Acme",
                 startsAt: "2026-10-23T09:00:00",
                 endsAt: "2026-10-23T09:30:00",
                 allDay: false,

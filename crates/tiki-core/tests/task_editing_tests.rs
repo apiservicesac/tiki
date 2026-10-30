@@ -27,7 +27,7 @@ fn the_edit_form_shows_the_task_with_its_project_name() {
     let workspace = sample_workspace();
     let details = workspace.task_details(first_task_id(&workspace)).unwrap();
 
-    assert_eq!(details.project_name.as_deref(), Some("Andeanvet"));
+    assert_eq!(details.project_name.as_deref(), Some("Atlas"));
     assert_eq!(details.status, TaskStatus::ToDo);
 }
 
@@ -42,7 +42,7 @@ fn editing_a_task_changes_its_fields_and_project() {
             TaskEdit {
                 title: "  Acceso a facturas  ".into(),
                 notes: "Pedir usuario de prueba".into(),
-                project_name: Some("altamira".into()),
+                project_name: Some("acme".into()),
                 due_date: Some(TestDay::october(30)),
                 priority: Priority::Urgent,
                 status: TaskStatus::Waiting,
@@ -58,7 +58,7 @@ fn editing_a_task_changes_its_fields_and_project() {
     let details = workspace.task_details(task_id).unwrap();
     assert_eq!(details.title, "Acceso a facturas");
     assert_eq!(details.notes, "Pedir usuario de prueba");
-    assert_eq!(details.project_name.as_deref(), Some("Altamira"));
+    assert_eq!(details.project_name.as_deref(), Some("Acme"));
     assert_eq!(details.due_date, Some(TestDay::october(30)));
     assert_eq!(details.priority, Priority::Urgent);
     assert_eq!(details.status, TaskStatus::Waiting);
@@ -102,7 +102,7 @@ fn a_delivery_stays_in_the_history_after_reopening() {
     let history = workspace.delivered_tasks().unwrap();
     assert_eq!(history[0].task_id, task_id);
     assert_eq!(history[0].delivered_label, "hoy");
-    assert_eq!(history[0].project_name.as_deref(), Some("Andeanvet"));
+    assert_eq!(history[0].project_name.as_deref(), Some("Atlas"));
     assert_eq!(workspace.island_snapshot().unwrap().delivered_today, 1);
 
     workspace

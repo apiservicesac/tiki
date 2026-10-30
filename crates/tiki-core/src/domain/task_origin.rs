@@ -7,7 +7,7 @@ use crate::sessions::SessionId;
 pub struct ExternalReference {
     /// Plugin that created the task, for example `odoo`.
     pub plugin_id: String,
-    /// Connection inside that plugin, for example the Andeanvet instance.
+    /// Connection inside that plugin, for example the Atlas instance.
     pub connection_id: String,
     /// Identifier of the record in the external system.
     pub record_id: String,

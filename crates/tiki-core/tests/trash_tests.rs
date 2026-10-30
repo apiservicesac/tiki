@@ -46,7 +46,7 @@ fn the_trash_moment_is_saved_with_the_item() {
 fn reminder_at(title: &str, at: NaiveDateTime) -> ConfirmedCapture {
     ConfirmedCapture {
         title: title.into(),
-        project_name: Some("Altamira".into()),
+        project_name: Some("Acme".into()),
         due_date: None,
         priority: Priority::Normal,
         remind_at: Some(at),
@@ -97,7 +97,7 @@ fn a_trashed_item_shows_nowhere_and_never_rings() {
     let call = workspace
         .save_confirmed(reminder_at("Llamar a Lucía", half_past_ten))
         .unwrap();
-    let overdue = id_of(&workspace, "Acceso solo a análisis de facturas de Almendra");
+    let overdue = id_of(&workspace, "Acceso solo a análisis de facturas de Contoso");
     let waiting = id_of(&workspace, "Completar módulo de importaciones");
     workspace.wait_for(waiting, "Lucía").unwrap();
     let trashed = [call, overdue, waiting];
@@ -116,13 +116,13 @@ fn a_trashed_item_shows_nowhere_and_never_rings() {
             .iter()
             .all(|task| !trashed.contains(&task.task_id))
     );
-    let andeanvet = workspace
+    let atlas = workspace
         .project_summaries()
         .unwrap()
         .into_iter()
-        .find(|project| project.name == "Andeanvet")
+        .find(|project| project.name == "Atlas")
         .unwrap();
-    assert_eq!((andeanvet.open_count, andeanvet.pressing_count), (2, 0));
+    assert_eq!((atlas.open_count, atlas.pressing_count), (2, 0));
 
     let follow_up_day = TestDay::october(24).and_hms_opt(10, 0, 0).unwrap();
     assert_eq!(
@@ -331,7 +331,7 @@ fn the_trash_lists_its_items_newest_first_with_when_they_go() {
                 task_id: older,
                 kind: ItemKind::Task,
                 title: "Mejora en el módulo de Ventas".into(),
-                project_name: Some("Altamira".into()),
+                project_name: Some("Acme".into()),
                 project_color: Some("#2F6BD8".into()),
                 trashed_label: "hace 3 días".into(),
                 deletes_in_label: "se borra en 27 días".into(),

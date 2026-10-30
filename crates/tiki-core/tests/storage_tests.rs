@@ -10,16 +10,16 @@ use tiki_core::{TikiError, TikiSettings};
 #[test]
 fn tasks_survive_a_round_trip() {
     let workspace = SampleWorkspace::create();
-    let original = Task::new("Revisar acta CAPEX")
+    let original = Task::new("Revisar acta de inversiones")
         .unwrap()
-        .with_project(workspace.altamira)
+        .with_project(workspace.acme)
         .with_due_date(TestDay::october(23))
         .with_notes("Ajustar generación del acta")
         .with_origin(TaskOrigin::External(ExternalReference {
             plugin_id: "odoo".into(),
-            connection_id: "altamira".into(),
+            connection_id: "acme".into(),
             record_id: "42".into(),
-            url: Some("https://altamira.example/odoo/helpdesk/42".into()),
+            url: Some("https://acme.example/odoo/helpdesk/42".into()),
         }));
 
     let task_id = workspace
@@ -102,21 +102,17 @@ fn finding_a_missing_task_reports_not_found() {
 #[test]
 fn projects_are_found_by_name_ignoring_case() {
     let workspace = SampleWorkspace::create();
-    let project = workspace
-        .database
-        .projects()
-        .find_by_name("andeanvet")
-        .unwrap();
+    let project = workspace.database.projects().find_by_name("atlas").unwrap();
     assert_eq!(
         project.and_then(|project| project.id),
-        Some(workspace.andeanvet)
+        Some(workspace.atlas)
     );
 }
 
 #[test]
 fn updating_a_project_that_was_never_saved_reports_it() {
     let database = Database::open_in_memory().unwrap();
-    let unsaved = tiki_core::domain::Project::new("Altamira", "#2F6BD8");
+    let unsaved = tiki_core::domain::Project::new("Acme", "#2F6BD8");
     assert!(matches!(
         database.projects().update(&unsaved),
         Err(TikiError::UnsavedProject)

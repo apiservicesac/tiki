@@ -286,7 +286,7 @@ All notable changes to Tiki are documented here. The format follows
   waiting, and the island peeks out with the day's summary.
 - Reminder settings: notifications on or off, focus mode (Tiki sleeps and stays quiet), the
   brief times, and start with Windows.
-- Ask Tiki: ask about your pending work ("what is pending with Altamira?") or summarize
+- Ask Tiki: ask about your pending work ("what is pending with Acme?") or summarize
   your day. The AI brief also appears on the Today tab. Titles, clients and dates of open
   tasks are sent; notes never are.
 - Signed automatic updates: Tiki checks GitHub every few hours, announces a new version and

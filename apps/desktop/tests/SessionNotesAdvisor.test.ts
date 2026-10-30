@@ -3,10 +3,10 @@ import { SessionNotesAdvisor, type NotesLine, type SessionNotesContext } from ".
 import { AI_CONFIG } from "../src/ai/aiConfig";
 
 const context: SessionNotesContext = {
-  title: "Revisión con Andeanvet",
+  title: "Revisión con Atlas",
   startedAt: "2026-10-21T10:00:00",
   language: "Spanish",
-  projects: [{ name: "Andeanvet", notes: "Contacto: Lucía." }],
+  projects: [{ name: "Atlas", notes: "Contacto: Lucía." }],
 };
 
 const written = {

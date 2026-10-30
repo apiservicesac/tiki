@@ -3,9 +3,9 @@ import { ItemContext } from "../src/island/ItemContext";
 
 describe("ItemContext", () => {
   it("joins the project and the tags", () => {
-    expect(ItemContext.describe("Altamira", ["billing", "cierre"])).toBe("Altamira · #billing · #cierre");
+    expect(ItemContext.describe("Acme", ["billing", "cierre"])).toBe("Acme · #billing · #cierre");
     expect(ItemContext.describe(null, ["billing"])).toBe("#billing");
-    expect(ItemContext.describe("Altamira", [])).toBe("Altamira");
+    expect(ItemContext.describe("Acme", [])).toBe("Acme");
   });
 
   it("is empty for an item without project or tags", () => {

@@ -62,7 +62,7 @@ fn the_snapshot_is_translated_and_ready_to_draw() {
 #[test]
 fn snapshot_items_say_what_they_are_and_which_project_they_belong_to() {
     let sample = SampleWorkspace::create();
-    let altamira = sample.altamira;
+    let acme = sample.acme;
     let workspace = TimedWorkspace::open(sample.database, TestDay::start());
     workspace
         .save_confirmed(ConfirmedCapture {
@@ -90,7 +90,7 @@ fn snapshot_items_say_what_they_are_and_which_project_they_belong_to() {
     assert_eq!(item("Tomar agua").project_id, None);
     let tracking = item("Tracking de formularios comerciales");
     assert_eq!(tracking.kind, ItemKind::Task);
-    assert_eq!(tracking.project_id, Some(altamira));
+    assert_eq!(tracking.project_id, Some(acme));
     // The reminder is not open work.
     assert_eq!(snapshot.open_count, snapshot.open_items.len() - 1);
 }
@@ -158,8 +158,8 @@ fn a_confirmed_capture_is_saved_with_its_project_priority_and_date() {
     let workspace = sample_workspace();
     workspace
         .save_confirmed(ConfirmedCapture {
-            title: "Revisar acceso de Almendra".into(),
-            project_name: Some("andeanvet".into()),
+            title: "Revisar acceso de Contoso".into(),
+            project_name: Some("atlas".into()),
             due_date: Some(TestDay::october(22)),
             priority: Priority::High,
             remind_at: None,
@@ -179,9 +179,9 @@ fn a_confirmed_capture_is_saved_with_its_project_priority_and_date() {
     let saved = due_soon
         .items
         .iter()
-        .find(|item| item.title == "Revisar acceso de Almendra")
+        .find(|item| item.title == "Revisar acceso de Contoso")
         .unwrap();
-    assert_eq!(saved.project_name.as_deref(), Some("Andeanvet"));
+    assert_eq!(saved.project_name.as_deref(), Some("Atlas"));
 }
 
 #[test]
@@ -226,7 +226,7 @@ fn tags_are_normalized_and_standalone_reminders_list_apart_from_work() {
     let task_id = workspace
         .save_confirmed(ConfirmedCapture {
             title: "Facturar septiembre".into(),
-            project_name: Some("Altamira".into()),
+            project_name: Some("Acme".into()),
             due_date: Some(TestDay::october(30)),
             priority: Priority::Normal,
             remind_at: None,
@@ -287,30 +287,30 @@ fn tags_are_normalized_and_standalone_reminders_list_apart_from_work() {
 #[test]
 fn the_assistant_reads_project_notes_and_task_ids() {
     let workspace = sample_workspace();
-    let altamira = workspace
+    let acme = workspace
         .project_summaries()
         .unwrap()
         .into_iter()
-        .find(|project| project.name == "Altamira")
+        .find(|project| project.name == "Acme")
         .unwrap();
     workspace
         .change_project(
-            altamira.project_id,
+            acme.project_id,
             tiki_core::projects::ProjectChange {
-                name: altamira.name.clone(),
-                color: altamira.color.clone(),
+                name: acme.name.clone(),
+                color: acme.color.clone(),
                 notes: "Contacto: Lucía, prefiere correos cortos.".into(),
             },
         )
         .unwrap();
 
     let context = workspace.assistant_context().unwrap();
-    let altamira = context
+    let acme = context
         .projects
         .iter()
-        .find(|project| project.name == "Altamira")
+        .find(|project| project.name == "Acme")
         .unwrap();
-    assert_eq!(altamira.notes, "Contacto: Lucía, prefiere correos cortos.");
+    assert_eq!(acme.notes, "Contacto: Lucía, prefiere correos cortos.");
     assert_eq!(context.projects.len(), 3);
     assert!(context.open_tasks.iter().all(|task| task.task_id.0 > 0));
 }
@@ -323,12 +323,12 @@ fn capture_lessons_keep_only_the_most_recent() {
             .record_capture_lesson(&tiki_core::capture::CaptureLesson {
                 sentence: format!("frase {index}"),
                 understood: serde_json::json!({ "projectName": null }),
-                corrected: serde_json::json!({ "projectName": "Andeanvet" }),
+                corrected: serde_json::json!({ "projectName": "Atlas" }),
             })
             .unwrap();
     }
     let lessons = workspace.capture_lessons().unwrap();
     assert_eq!(lessons.len(), 20);
     assert_eq!(lessons[0].sentence, "frase 24");
-    assert_eq!(lessons[0].corrected["projectName"], "Andeanvet");
+    assert_eq!(lessons[0].corrected["projectName"], "Atlas");
 }

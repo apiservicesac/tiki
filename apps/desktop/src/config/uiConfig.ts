@@ -72,7 +72,7 @@ export const UI_CONFIG = Object.freeze({
   urgencyOrder: Object.freeze<Urgency[]>(["critical", "soon", "waiting", "normal", "reminder"]),
   /** Marks set between or before pieces of text; the same in every language. */
   textMarks: Object.freeze({
-    /** Between the parts of one line: "Altamira · #billing". */
+    /** Between the parts of one line: "Acme · #billing". */
     separator: " · ",
     /** Between the sentences of one paragraph: the tips of a brief on the receipt. */
     sentences: " ",

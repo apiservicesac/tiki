@@ -8,15 +8,15 @@ use tiki_core::{TikiError, TikiSettings};
 
 /// The sample projects' ids, kept after the database moves into the workspace.
 struct SampleIds {
-    andeanvet: ProjectId,
-    vapestation: ProjectId,
+    atlas: ProjectId,
+    vertex: ProjectId,
 }
 
 fn sample_workspace() -> (TikiWorkspace, SampleIds) {
     let SampleWorkspace {
         database,
-        andeanvet,
-        vapestation,
+        atlas,
+        vertex,
         ..
     } = SampleWorkspace::create();
     let workspace = TikiWorkspace::new(
@@ -25,13 +25,7 @@ fn sample_workspace() -> (TikiWorkspace, SampleIds) {
         Box::new(FixedClock::new(TestDay::today())),
     )
     .unwrap();
-    (
-        workspace,
-        SampleIds {
-            andeanvet,
-            vapestation,
-        },
-    )
+    (workspace, SampleIds { atlas, vertex })
 }
 
 #[test]
@@ -43,13 +37,13 @@ fn projects_are_listed_busiest_first_with_their_workload() {
         .iter()
         .map(|project| project.name.as_str())
         .collect();
-    assert_eq!(names, ["Altamira", "Andeanvet", "Vapestation"]);
-    let andeanvet = summaries
+    assert_eq!(names, ["Acme", "Atlas", "Vertex"]);
+    let atlas = summaries
         .iter()
-        .find(|project| project.project_id == ids.andeanvet)
+        .find(|project| project.project_id == ids.atlas)
         .unwrap();
-    assert_eq!(andeanvet.open_count, 3);
-    assert_eq!(andeanvet.pressing_count, 1);
+    assert_eq!(atlas.open_count, 3);
+    assert_eq!(atlas.pressing_count, 1);
 }
 
 #[test]
@@ -57,7 +51,7 @@ fn a_project_can_be_renamed_and_recolored_but_not_to_a_taken_name() {
     let (workspace, ids) = sample_workspace();
     workspace
         .change_project(
-            ids.vapestation,
+            ids.vertex,
             ProjectChange {
                 name: "  Vape Station  ".into(),
                 color: "#0E7490".into(),
@@ -69,22 +63,22 @@ fn a_project_can_be_renamed_and_recolored_but_not_to_a_taken_name() {
         .project_summaries()
         .unwrap()
         .into_iter()
-        .find(|project| project.project_id == ids.vapestation)
+        .find(|project| project.project_id == ids.vertex)
         .unwrap();
     assert_eq!(renamed.name, "Vape Station");
     assert_eq!(renamed.color, "#0E7490");
 
     let taken = workspace.change_project(
-        ids.vapestation,
+        ids.vertex,
         ProjectChange {
-            name: "altamira".into(),
+            name: "acme".into(),
             color: "#0E7490".into(),
             notes: String::new(),
         },
     );
     assert!(matches!(taken, Err(TikiError::DuplicateProjectName(_))));
     assert!(matches!(
-        workspace.add_project("ALTAMIRA"),
+        workspace.add_project("ACME"),
         Err(TikiError::DuplicateProjectName(_))
     ));
 }
@@ -102,14 +96,14 @@ fn removing_a_project_sends_its_items_to_the_trash_without_project() {
         .task_id;
     workspace.deliver(in_progress).unwrap();
 
-    workspace.remove_project(ids.andeanvet).unwrap();
+    workspace.remove_project(ids.atlas).unwrap();
 
     assert!(
         workspace
             .project_summaries()
             .unwrap()
             .iter()
-            .all(|project| project.project_id != ids.andeanvet)
+            .all(|project| project.project_id != ids.atlas)
     );
     assert_eq!(workspace.island_snapshot().unwrap().open_items.len(), 4);
     assert_eq!(workspace.delivered_tasks().unwrap(), Vec::new());
@@ -131,7 +125,7 @@ fn reminders_do_not_count_as_work_in_a_project() {
     workspace
         .save_confirmed(ConfirmedCapture {
             title: "Llamar a Lucía".into(),
-            project_name: Some("Altamira".into()),
+            project_name: Some("Acme".into()),
             due_date: None,
             priority: Priority::Normal,
             remind_at: Some(TestDay::today().and_hms_opt(17, 0, 0).unwrap()),
@@ -142,11 +136,11 @@ fn reminders_do_not_count_as_work_in_a_project() {
         })
         .unwrap();
 
-    let altamira = workspace
+    let acme = workspace
         .project_summaries()
         .unwrap()
         .into_iter()
-        .find(|project| project.name == "Altamira")
+        .find(|project| project.name == "Acme")
         .unwrap();
-    assert_eq!(altamira.open_count, 2);
+    assert_eq!(acme.open_count, 2);
 }

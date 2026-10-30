@@ -39,30 +39,30 @@ impl TestDay {
 /// A database filled with the projects and tasks from the user's list.
 pub struct SampleWorkspace {
     pub database: Database,
-    pub altamira: ProjectId,
-    pub andeanvet: ProjectId,
-    pub vapestation: ProjectId,
+    pub acme: ProjectId,
+    pub atlas: ProjectId,
+    pub vertex: ProjectId,
 }
 
 impl SampleWorkspace {
     pub fn create() -> Self {
         let database = Database::open_in_memory().expect("in-memory database");
         let projects = database.projects();
-        let altamira = projects
-            .insert(&Project::new("Altamira", "#2F6BD8"))
+        let acme = projects
+            .insert(&Project::new("Acme", "#2F6BD8"))
             .expect("insert");
-        let andeanvet = projects
-            .insert(&Project::new("Andeanvet", "#17837D"))
+        let atlas = projects
+            .insert(&Project::new("Atlas", "#17837D"))
             .expect("insert");
-        let vapestation = projects
-            .insert(&Project::new("Vapestation", "#C2410C"))
+        let vertex = projects
+            .insert(&Project::new("Vertex", "#C2410C"))
             .expect("insert");
 
         let workspace = Self {
             database,
-            altamira,
-            andeanvet,
-            vapestation,
+            acme,
+            atlas,
+            vertex,
         };
         workspace.insert_sample_tasks();
         workspace
@@ -77,34 +77,34 @@ impl SampleWorkspace {
         let tasks = vec![
             Task::new("Tracking de formularios comerciales")
                 .unwrap()
-                .with_project(self.altamira)
+                .with_project(self.acme)
                 .with_due_date(TestDay::october(22)),
             Task::new("Mejora en el módulo de Ventas")
                 .unwrap()
-                .with_project(self.altamira)
+                .with_project(self.acme)
                 .with_due_date(TestDay::october(23)),
-            Task::new("Acceso solo a análisis de facturas de Almendra")
+            Task::new("Acceso solo a análisis de facturas de Contoso")
                 .unwrap()
-                .with_project(self.andeanvet)
+                .with_project(self.atlas)
                 .with_due_date(TestDay::october(20)),
             Self::moved(
                 Task::new("Saldo vacacional con solicitud rechazada")
                     .unwrap()
-                    .with_project(self.andeanvet),
+                    .with_project(self.atlas),
                 TaskStatus::InProgress,
                 today,
             ),
             Self::moved(
-                Task::new("Permisos de GitHub para retenciones de IGV")
+                Task::new("Permisos de GitHub para impuestos")
                     .unwrap()
-                    .with_project(self.vapestation),
+                    .with_project(self.vertex),
                 TaskStatus::Waiting,
                 TestDay::october(18),
             ),
             Self::moved(
-                Task::new("Confirmación de zonas del dashboard CxC")
+                Task::new("Confirmación de zonas del dashboard de cobranzas")
                     .unwrap()
-                    .with_project(self.andeanvet),
+                    .with_project(self.atlas),
                 TaskStatus::Waiting,
                 TestDay::october(20),
             ),

@@ -26,7 +26,7 @@ fn every_change_to_an_item_is_recorded_in_its_history() {
     let nine = TestDay::today().and_hms_opt(9, 0, 0).unwrap();
     let workspace = TimedWorkspace::sample_at(nine);
     let report = workspace
-        .save_confirmed(capture("Informe", Some("Altamira")))
+        .save_confirmed(capture("Informe", Some("Acme")))
         .unwrap();
     let details = workspace.task_details(report).unwrap();
     workspace
@@ -193,9 +193,9 @@ fn reports_read_the_deliveries_between_two_days_by_project() {
             .unwrap();
         task_id
     };
-    let early = deliver("Antes", Some(sample.altamira), 19);
-    let altamira = deliver("Altamira", Some(sample.altamira), 20);
-    let andeanvet = deliver("Andeanvet", Some(sample.andeanvet), 21);
+    let early = deliver("Antes", Some(sample.acme), 19);
+    let acme = deliver("Acme", Some(sample.acme), 20);
+    let atlas = deliver("Atlas", Some(sample.atlas), 21);
 
     let activity = database.activity();
     let week: Vec<_> = activity
@@ -204,18 +204,18 @@ fn reports_read_the_deliveries_between_two_days_by_project() {
         .into_iter()
         .map(|delivery| delivery.item_id)
         .collect();
-    assert_eq!(week, [altamira, andeanvet]);
-    let for_altamira: Vec<_> = activity
+    assert_eq!(week, [acme, atlas]);
+    let for_acme: Vec<_> = activity
         .deliveries_between(
             TestDay::october(19),
             TestDay::october(21),
-            Some(sample.altamira),
+            Some(sample.acme),
         )
         .unwrap()
         .into_iter()
         .map(|delivery| delivery.item_id)
         .collect();
-    assert_eq!(for_altamira, [early, altamira]);
+    assert_eq!(for_acme, [early, acme]);
     assert_eq!(
         activity.count_delivered_on(TestDay::october(21)).unwrap(),
         1

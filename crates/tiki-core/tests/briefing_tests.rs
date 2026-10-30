@@ -20,7 +20,7 @@ fn every_open_task_lands_in_one_section() {
     };
     assert_eq!(
         titles(&brief.overdue),
-        ["Acceso solo a análisis de facturas de Almendra"]
+        ["Acceso solo a análisis de facturas de Contoso"]
     );
     assert_eq!(
         titles(&brief.due_soon),
@@ -46,7 +46,7 @@ fn waiting_past_the_threshold_needs_a_follow_up() {
     assert_eq!(brief.needs_follow_up.len(), 1);
     assert_eq!(
         brief.needs_follow_up[0].title,
-        "Permisos de GitHub para retenciones de IGV"
+        "Permisos de GitHub para impuestos"
     );
     assert_eq!(
         brief.needs_follow_up[0].detail,
@@ -72,7 +72,7 @@ fn the_spanish_narration_reads_like_a_morning_brief() {
 
     assert!(narration.starts_with("Buenos días. Hoy es miércoles 21 de octubre."));
     assert!(narration.contains(
-        "Vence pronto: Tracking de formularios comerciales de Altamira y Mejora en el módulo de Ventas de Altamira."
+        "Vence pronto: Tracking de formularios comerciales de Acme y Mejora en el módulo de Ventas de Acme."
     ));
     assert!(narration.contains("Esperando respuesta:"));
 }
@@ -142,7 +142,7 @@ fn each_brief_line_keeps_the_id_of_its_project() {
         TestDay::today(),
     );
 
-    assert_eq!(brief.overdue[0].project_id, Some(workspace.andeanvet));
+    assert_eq!(brief.overdue[0].project_id, Some(workspace.atlas));
     assert_eq!(brief.your_turn[1].project_id, None);
 }
 
@@ -156,7 +156,7 @@ fn what_now_starts_with_the_overdue_item_then_today_then_important_work() {
     assert_eq!(pick.reason, FocusReason::Overdue);
     assert_eq!(
         pick.item.title,
-        "Acceso solo a análisis de facturas de Almendra"
+        "Acceso solo a análisis de facturas de Contoso"
     );
 
     brief.overdue.clear();

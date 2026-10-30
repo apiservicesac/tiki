@@ -6,7 +6,7 @@ import { FakeShell } from "./support/FakeShell";
 const item = {
   kind: "task",
   title: "Revisar acceso de facturas",
-  projectName: "andeanvet",
+  projectName: "atlas",
   dueDate: "2026-10-23",
   remindAt: "2026-10-23T09:00",
   repeat: "never",
@@ -23,11 +23,11 @@ const context: CommandContext = {
   advisor: {
     now: "2026-10-21T17:30:00",
     openTasks: [
-      { taskId: 7, kind: "task", title: "Acta CAPEX", projectName: "Altamira", tags: [], status: "to_do", priority: "normal", dueDate: null, remindAt: null, waitingFor: null, waitingDays: null } as never,
+      { taskId: 7, kind: "task", title: "Acta de inversiones", projectName: "Acme", tags: [], status: "to_do", priority: "normal", dueDate: null, remindAt: null, waitingFor: null, waitingDays: null } as never,
     ],
-    projects: [{ name: "Andeanvet", notes: "Contacto: Lucía." }],
+    projects: [{ name: "Atlas", notes: "Contacto: Lucía." }],
   },
-  lessons: [{ sentence: "revisar almendra", understood: { projectName: null }, corrected: { projectName: "Andeanvet" } }],
+  lessons: [{ sentence: "revisar contoso", understood: { projectName: null }, corrected: { projectName: "Atlas" } }],
 };
 
 const fakeModel = (answer: object) => {
@@ -58,7 +58,7 @@ describe("TikiAi with Anthropic", () => {
   it("sends a structured request through the shell, without the real key", async () => {
     const shell = new FakeShell(claudeAnswer);
     const reply = await new CommandInterpreter(new TikiAi(shell.send).model("anthropic", null))
-      .read("revisar acceso facturas andeanvet viernes, importante", context);
+      .read("revisar acceso facturas atlas viernes, importante", context);
 
     const request = shell.requests[0];
     expect(request?.url.startsWith("https://api.anthropic.com/v1/messages")).toBe(true);
@@ -68,12 +68,12 @@ describe("TikiAi with Anthropic", () => {
     expect(body.model).toBe("claude-opus-5-5");
     expect(body.fallbacks).toBe("default");
     expect(body.output_config).toMatchObject({ effort: "low", format: { type: "json_schema" } });
-    expect(JSON.stringify(body)).toContain("revisar almendra");
+    expect(JSON.stringify(body)).toContain("revisar contoso");
     expect(JSON.stringify(body)).toContain("Contacto: Lucía.");
 
     expect(reply).toEqual({
       kind: "capture",
-      item: { ...item, projectName: "Andeanvet", remindAt: "2026-10-23T09:00:00", tags: ["accesos"] },
+      item: { ...item, projectName: "Atlas", remindAt: "2026-10-23T09:00:00", tags: ["accesos"] },
     });
   });
 
@@ -112,7 +112,7 @@ describe("TikiAi with OpenAI", () => {
     const body = shell.lastBody();
     expect(body.model).toBe("gpt-5.5");
     expect(body.text).toMatchObject({ format: { type: "json_schema", name: "tiki_command" } });
-    expect(reply.kind === "capture" && reply.item.projectName).toBe("Andeanvet");
+    expect(reply.kind === "capture" && reply.item.projectName).toBe("Atlas");
   });
 });
 
@@ -148,9 +148,9 @@ describe("CommandInterpreter", () => {
       item: null,
       answer: "Te propongo dos cambios.",
       actions: [
-        { type: "set_due_date", summary: "Acta CAPEX vence el viernes", taskId: 7, title: null, projectName: null, dueDate: "2026-10-23", remindAt: null, status: null },
+        { type: "set_due_date", summary: "Acta de inversiones vence el viernes", taskId: 7, title: null, projectName: null, dueDate: "2026-10-23", remindAt: null, status: null },
         { type: "move_task", summary: "Mover una tarea que no existe", taskId: 99, title: null, projectName: null, dueDate: null, remindAt: null, status: "done" },
-        { type: "create_reminder", summary: "Recordarte llamar a Lucía", taskId: null, title: "Llamar a Lucía", projectName: "altamira", dueDate: null, remindAt: "2026-10-22T10:00", status: null },
+        { type: "create_reminder", summary: "Recordarte llamar a Lucía", taskId: null, title: "Llamar a Lucía", projectName: "acme", dueDate: null, remindAt: "2026-10-22T10:00", status: null },
       ],
     });
     const reply = await new CommandInterpreter(model).read("mueve el acta al viernes", context);
@@ -159,7 +159,7 @@ describe("CommandInterpreter", () => {
     if (reply.kind === "answer") {
       expect(reply.text).toBe("Te propongo dos cambios.");
       expect(reply.actions.map((action) => action.type)).toEqual(["set_due_date", "create_reminder"]);
-      expect(reply.actions[1]).toMatchObject({ projectName: "Altamira", remindAt: "2026-10-22T10:00:00" });
+      expect(reply.actions[1]).toMatchObject({ projectName: "Acme", remindAt: "2026-10-22T10:00:00" });
     }
     expect(seen.instructions).toContain("You never change anything yourself");
     expect(seen.instructions).toContain("never invent one");

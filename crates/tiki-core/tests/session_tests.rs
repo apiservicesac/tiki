@@ -73,7 +73,7 @@ fn a_session_of_a_meeting_takes_its_title() {
         .unwrap();
     let meeting = Meeting {
         external_id: "review".to_owned(),
-        title: "Revisión con Andeanvet".to_owned(),
+        title: "Revisión con Atlas".to_owned(),
         starts_at: at(9, 55),
         ends_at: at(10, 30),
         all_day: false,
@@ -86,11 +86,11 @@ fn a_session_of_a_meeting_takes_its_title() {
         .start(RecordingMode::AudioAndVideo)
         .unwrap();
     let stored = workspace.sessions().find(session.id.unwrap()).unwrap();
-    assert_eq!(stored.title, "Revisión con Andeanvet");
+    assert_eq!(stored.title, "Revisión con Atlas");
     assert_eq!(
         stored.meeting,
         Some(MeetingLink {
-            title: "Revisión con Andeanvet".to_owned(),
+            title: "Revisión con Atlas".to_owned(),
             starts_at: at(9, 55),
         })
     );

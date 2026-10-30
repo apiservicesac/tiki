@@ -20,10 +20,10 @@ describe("ItemFieldsBuilder", () => {
   it("keeps the project the user picks", () => {
     const picker = new ProjectPicker();
     const choice = { value: null as string | null };
-    builder.drawProjectPicker(picker, "project", [{ projectId: 1, name: "Altamira", color: "#2F6BD8", notes: "", openCount: 2, pressingCount: 0 }], choice);
+    builder.drawProjectPicker(picker, "project", [{ projectId: 1, name: "Acme", color: "#2F6BD8", notes: "", openCount: 2, pressingCount: 0 }], choice);
     picker.element.querySelector<HTMLButtonElement>(".picker-trigger")?.click();
-    picker.element.querySelector<HTMLButtonElement>('[data-value="Altamira"]')?.click();
-    expect(choice.value).toBe("Altamira");
+    picker.element.querySelector<HTMLButtonElement>('[data-value="Acme"]')?.click();
+    expect(choice.value).toBe("Acme");
   });
 
   it("puts a wide field across the form and the picker in a plain block", () => {

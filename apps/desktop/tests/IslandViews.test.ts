@@ -86,7 +86,7 @@ describe("TodayView", () => {
       kind: "task",
       title: "Aviso de tarea",
       summary: "Llamar",
-      tips: ["Altamira · mañana"],
+      tips: ["Acme · mañana"],
       actions: ["open", "snooze"],
       taskId: 1,
       link: null,
@@ -96,7 +96,7 @@ describe("TodayView", () => {
       recordingHandlers(),
     );
     const lines = [...element.querySelectorAll(".island-notice p")].map((line) => line.textContent);
-    expect(lines).toEqual(["Llamar", "Altamira · mañana"]);
+    expect(lines).toEqual(["Llamar", "Acme · mañana"]);
     expect(element.querySelector("#alert-done")).toBeNull();
     expect(element.querySelector("#alert-snooze-10")).not.toBeNull();
   });

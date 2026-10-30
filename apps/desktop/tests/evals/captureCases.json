@@ -1,18 +1,18 @@
 {
   "now": "2026-10-21T17:30:00",
   "projects": [
-    "Altamira",
-    "Andeanvet",
-    "Vapestation",
+    "Acme",
+    "Atlas",
+    "Vertex",
     "Constructora Sur",
     "Personal"
   ],
   "cases": [
     {
-      "sentence": "revisar acceso facturas andeanvet viernes, importante",
+      "sentence": "revisar acceso facturas atlas viernes, importante",
       "expect": {
         "kind": "task",
-        "projectName": "Andeanvet",
+        "projectName": "Atlas",
         "dueDate": "2026-10-23",
         "priority": "high"
       }
@@ -32,9 +32,9 @@
       }
     },
     {
-      "sentence": "revisar informe del lunes con altamira",
+      "sentence": "revisar informe del lunes con acme",
       "expect": {
-        "projectName": "Altamira"
+        "projectName": "Acme"
       }
     },
     {
@@ -72,9 +72,9 @@
       }
     },
     {
-      "sentence": "urgente: corregir el reporte de retenciones de vapestation hoy #impuestos",
+      "sentence": "urgente: corregir el reporte de retenciones de vertex hoy #impuestos",
       "expect": {
-        "projectName": "Vapestation",
+        "projectName": "Vertex",
         "dueDate": "2026-10-21",
         "priority": "urgent",
         "tags": [
@@ -113,11 +113,11 @@
       }
     },
     {
-      "sentence": "¿qué tengo pendiente con Altamira?",
+      "sentence": "¿qué tengo pendiente con Acme?",
       "answer": true
     },
     {
-      "sentence": "mueve todo lo de Vapestation a la próxima semana",
+      "sentence": "mueve todo lo de Vertex a la próxima semana",
       "answer": true
     }
   ]

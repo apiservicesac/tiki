@@ -57,7 +57,7 @@ fn a_connected_calendar_fills_the_agenda_and_signing_in_again_reuses_the_account
             work,
             &[
                 meeting("a", "Daily", at(21, 10, 0), 15),
-                meeting("b", "CAPEX Claro", at(23, 14, 30), 30),
+                meeting("b", "Comité de inversiones", at(23, 14, 30), 30),
             ],
         )
         .unwrap();
@@ -68,12 +68,15 @@ fn a_connected_calendar_fills_the_agenda_and_signing_in_again_reuses_the_account
         .iter()
         .map(|meeting| meeting.title.as_str())
         .collect();
-    assert_eq!(titles, ["Daily", "CAPEX Claro"]);
+    assert_eq!(titles, ["Daily", "Comité de inversiones"]);
     assert_eq!(meetings[0].account_email, "yo@empresa.com");
 
     // A meeting removed from the calendar disappears from Tiki at the next sync.
     workspace
-        .store_meetings(work, &[meeting("b", "CAPEX Claro", at(23, 14, 30), 30)])
+        .store_meetings(
+            work,
+            &[meeting("b", "Comité de inversiones", at(23, 14, 30), 30)],
+        )
         .unwrap();
     assert_eq!(
         agenda_meetings(&workspace.island_snapshot().unwrap()).len(),
@@ -163,14 +166,14 @@ fn now_counts_the_free_time_before_the_next_meeting_and_the_brief_names_meetings
     workspace
         .store_meetings(
             account,
-            &[meeting("a", "Revisión con Altamira", at(21, 10, 0), 30)],
+            &[meeting("a", "Revisión con Acme", at(21, 10, 0), 30)],
         )
         .unwrap();
 
     let focus = workspace.island_snapshot().unwrap().focus.unwrap();
     assert_eq!(
         focus.reason,
-        "Está atrasada · 45 min libres antes de «Revisión con Altamira»"
+        "Está atrasada · 45 min libres antes de «Revisión con Acme»"
     );
 
     let morning = workspace

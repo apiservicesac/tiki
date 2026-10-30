@@ -208,7 +208,7 @@ fn a_task_reminder_rings_once_at_its_time() {
     workspace
         .save_confirmed(ConfirmedCapture {
             title: "Llamar".into(),
-            project_name: Some("Altamira".into()),
+            project_name: Some("Acme".into()),
             due_date: Some(TestDay::october(22)),
             priority: Priority::Normal,
             remind_at: Some(TestDay::october(22).and_hms_opt(10, 0, 0).unwrap()),
@@ -229,11 +229,7 @@ fn a_task_reminder_rings_once_at_its_time() {
     assert_eq!(alerts.len(), 1);
     assert_eq!(alerts[0].kind, AlertKind::Task);
     assert_eq!(alerts[0].title, "Aviso de tarea");
-    assert!(
-        alerts[0]
-            .notification_body()
-            .starts_with("Llamar\nAltamira · ")
-    );
+    assert!(alerts[0].notification_body().starts_with("Llamar\nAcme · "));
     assert_eq!(alerts[0].summary, "Llamar");
     assert_eq!(alerts[0].actions, [AlertAction::Open, AlertAction::Snooze]);
     assert!(alerts[0].task_id.is_some());
