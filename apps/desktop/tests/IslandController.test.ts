@@ -446,7 +446,7 @@ describe("IslandController", () => {
   it("keeps only the island's own settings and links to the advanced ones", () => {
     controller.openPanel("settings");
     const groups = [...root.querySelectorAll(".settings-group h3")].map((title) => title.textContent);
-    expect(groups).toEqual(["Dónde aparece Tiki", "Idioma", "Avisos", "Silencio", "Resúmenes"]);
+    expect(groups).toEqual(["Dónde aparece Tiki", "Idioma", "Notch", "Avisos", "Silencio", "Resúmenes"]);
     expect(root.querySelector(".settings-ai")).toBeNull();
 
     root.querySelector<HTMLButtonElement>("#open-advanced-settings")?.click();

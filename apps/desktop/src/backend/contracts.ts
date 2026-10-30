@@ -191,6 +191,15 @@ export interface ModelDownload {
   totalBytes: number;
 }
 
+/** How the computer is doing, measured by the shell every few seconds (see `SystemStats` in the shell). */
+export interface SystemStats {
+  cpuPercent: number;
+  memoryPercent: number;
+  /** `null` where the computer has no temperature sensor Tiki can read. */
+  temperatureCelsius: number | null;
+  downloadBytesPerSecond: number;
+}
+
 export interface IslandSnapshot {
   mood: MoodName;
   moodLabel: string;
@@ -407,6 +416,8 @@ export interface UserPreferences {
   sessionNotesAutomatic: boolean;
   /** Days a session's media is kept; its transcript and notes stay. */
   sessionMediaDays: number;
+  /** With nothing pending, the resting notch shows CPU, memory, temperature and network. */
+  showSystemStats: boolean;
 }
 
 /** How carefully sessions are transcribed (see `TranscriptionQuality` in the core). */
@@ -529,6 +540,8 @@ export interface TikiBackend {
   setHitArea(area: HitArea): Promise<void>;
   /** Calls `handler` with each alert the shell delivers; returns a function that stops listening. */
   onAlert(handler: (alert: DueAlert) => void): Promise<() => void>;
+  /** Calls `handler` with each measure of the computer; returns a function that stops listening. */
+  onSystemStats(handler: (stats: SystemStats) => void): Promise<() => void>;
   /** Calls `handler` whenever the shell emits `eventName`; returns a function that stops listening. */
   listen(eventName: string, handler: () => void): Promise<() => void>;
 }

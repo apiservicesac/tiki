@@ -21,6 +21,7 @@ use crate::session_recorder::SessionRecorder;
 use crate::session_recovery::SessionRecovery;
 use crate::session_retention::SessionRetention;
 use crate::shortcuts::GlobalShortcuts;
+use crate::system_watch::SystemWatch;
 use crate::transcription_runner::TranscriptionRunner;
 use crate::tray::IslandTray;
 
@@ -141,6 +142,7 @@ impl TikiDesktopApp {
         SessionRetention::start(app.handle().clone());
         #[cfg(windows)]
         CallWatch::start(app.handle().clone());
+        SystemWatch::start(app.handle().clone());
         AppUpdates::watch(app.handle().clone(), Translator::new(preferences.locale)?);
         Ok(())
     }

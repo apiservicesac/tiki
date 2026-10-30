@@ -313,7 +313,12 @@ export class IslandView {
     handlers: IslandViewHandlers,
   ): HTMLElement {
     if (state.mode === "hidden") {
-      return this.notchView.hidden(state.snapshot, mood, state.unreadAlert);
+      return this.notchView.hidden(
+        state.snapshot,
+        mood,
+        state.unreadAlert,
+        preferences.showSystemStats ? state.systemStats : null,
+      );
     }
     if (state.mode === "recording" && state.snapshot.recording) {
       return this.notchView.recording(state.snapshot, state.snapshot.recording, mood, state.unreadAlert);

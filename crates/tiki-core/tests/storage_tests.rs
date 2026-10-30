@@ -197,3 +197,18 @@ fn session_preferences_survive_a_round_trip() {
 
     assert_eq!(database.preferences().load(defaults).unwrap(), changed);
 }
+
+#[test]
+fn turning_off_the_system_stats_survives_a_restart() {
+    let sample = SampleWorkspace::create();
+    let defaults = UserPreferences::defaults(&TikiSettings::default());
+    assert!(defaults.show_system_stats);
+    let custom = UserPreferences {
+        show_system_stats: false,
+        ..defaults.clone()
+    };
+    sample.database.preferences().save(&custom).unwrap();
+
+    let loaded = sample.database.preferences().load(defaults).unwrap();
+    assert!(!loaded.show_system_stats);
+}

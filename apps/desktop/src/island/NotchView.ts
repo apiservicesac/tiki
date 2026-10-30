@@ -1,10 +1,11 @@
-import type { ActiveRecording, TikiAlert, IslandSnapshot, MoodName } from "../backend/contracts";
+import type { ActiveRecording, IslandSnapshot, MoodName, SystemStats, TikiAlert } from "../backend/contracts";
 import { UI_CONFIG } from "../config/uiConfig";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 import type { MascotRenderer } from "../mascot/MascotRenderer";
 import { AlertActionButtons, type AlertActionHandlers, type AlertButtonsPlace } from "./AlertActionButtons";
 import type { RecordingIndicator } from "./RecordingIndicator";
+import { SystemStatsText } from "./SystemStatsText";
 
 /**
  * Content of the folded island. Resting, it shows Tiki's face with the day's summary when
@@ -19,6 +20,7 @@ export class NotchView {
   /** The alert's buttons on the right of the notch, with only the shortest snooze. */
   private static readonly NOTCH_BUTTONS: AlertButtonsPlace = Object.freeze({ idPrefix: "notch-alert", className: "notch-alert-button", everySnooze: false });
   private readonly alertButtons: AlertActionButtons;
+  private readonly statsText: SystemStatsText;
 
   constructor(
     private readonly mascot: MascotRenderer,
@@ -26,6 +28,7 @@ export class NotchView {
     private readonly recordingIndicator: RecordingIndicator,
   ) {
     this.alertButtons = new AlertActionButtons(translator);
+    this.statsText = new SystemStatsText(translator);
   }
 
   /** The resting notch while a session records: Tiki, the red dot and the timer. */
@@ -40,13 +43,24 @@ export class NotchView {
     });
   }
 
-  hidden(snapshot: IslandSnapshot, mood: MoodName, unread: boolean): HTMLElement {
+
+  /**
+   * The resting notch. With nothing pending it shows the computer's figures beside the face
+   * (when the user wants them), so the notch is never just an empty face.
+   */
+  hidden(snapshot: IslandSnapshot, mood: MoodName, unread: boolean, systemStats: SystemStats | null): HTMLElement {
     const mascot = this.mascotOf(snapshot, mood, UI_CONFIG.faceWidth.hidden);
     const unreadDot = this.unreadDot(unread);
     // Hovering the resting notch during a call says why Tiki is quiet.
     const callNote: Record<string, string> = snapshot.inCall ? { title: this.translator.text("island.in_call") } : {};
     if (snapshot.attentionCount === 0) {
-      return ElementFactory.create("div", { className: "notch-hidden", attributes: callNote, children: [mascot, ...unreadDot] });
+      return systemStats
+        ? ElementFactory.create("div", {
+          className: "notch-hidden notch-hidden-busy",
+          attributes: callNote,
+          children: [mascot, this.systemFigures(systemStats), ...unreadDot],
+        })
+        : ElementFactory.create("div", { className: "notch-hidden", attributes: callNote, children: [mascot, ...unreadDot] });
     }
     return ElementFactory.create("div", {
       className: "notch-hidden notch-hidden-busy",
@@ -110,6 +124,18 @@ export class NotchView {
 
   private unreadDot(unread: boolean): HTMLElement[] {
     return unread ? [ElementFactory.create("span", { className: "notch-unread", attributes: { "aria-hidden": "true" } })] : [];
+  }
+
+  /** "CPU 23%  RAM 61%  54 °C  ↓ 1.2 MB/s", each figure warning when it runs high. */
+  private systemFigures(stats: SystemStats): HTMLElement {
+    return ElementFactory.create("span", {
+      className: "notch-system",
+      children: this.statsText.figures(stats).map((figure) => ElementFactory.create("span", {
+        className: figure.high ? "notch-figure notch-figure-high" : "notch-figure",
+        text: figure.text,
+        attributes: { "data-figure": figure.kind },
+      })),
+    });
   }
 
   private mascotOf(snapshot: IslandSnapshot, mood: MoodName, size: number): HTMLElement {

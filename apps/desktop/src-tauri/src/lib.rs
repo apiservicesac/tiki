@@ -26,6 +26,7 @@ mod session_retention;
 mod settings_window;
 mod shell_events;
 mod shortcuts;
+mod system_watch;
 mod transcription_runner;
 mod tray;
 mod video_choice;

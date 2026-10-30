@@ -100,6 +100,7 @@ export class IslandController {
       await this.backend.listen(SHELL_EVENTS.toggleRecording, () => void this.recording.toggle()),
       await this.backend.onTranscriptReady((sessionId) => void this.sessionNotes.transcriptReady(sessionId)),
       await this.backend.onModelDownload((progress) => this.sessions.followDownload(progress)),
+      await this.backend.onSystemStats((systemStats) => this.update({ systemStats })),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
     window.addEventListener("resize", this.redrawOnResize);

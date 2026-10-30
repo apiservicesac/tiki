@@ -25,6 +25,8 @@ pub enum ShellEvent {
     TranscriptReady,
     /// The transcription model is downloading (the payload says how far it got).
     ModelDownloadProgress,
+    /// A new measure of the computer (the payload is a `SystemStats`).
+    SystemStats,
 }
 
 impl ShellEvent {
@@ -41,6 +43,7 @@ impl ShellEvent {
             ShellEvent::ToggleRecording => "tiki://toggle-recording",
             ShellEvent::TranscriptReady => "tiki://transcript-ready",
             ShellEvent::ModelDownloadProgress => "tiki://model-download-progress",
+            ShellEvent::SystemStats => "tiki://system-stats",
         }
     }
 
