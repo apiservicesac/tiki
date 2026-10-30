@@ -172,6 +172,15 @@ describe("IslandController", () => {
     await vi.waitFor(() => expect(controller.currentState.panel).toBe("tabs"));
   });
 
+  it("fades a new tab in, but redraws the same tab instantly", async () => {
+    controller.setMode("expanded");
+    expect(root.querySelector(".island-tab-entering")).toBeNull();
+    controller.selectTab("agenda");
+    expect(root.querySelector(".island-card-body.island-tab-entering")).not.toBeNull();
+    await controller.refresh();
+    expect(root.querySelector(".island-tab-entering")).toBeNull();
+  });
+
   it("lists every pending task by project in the Tasks tab, with search and project filter", () => {
     controller.selectTab("all_tasks");
     const groups = () => [...root.querySelectorAll(".tasks-group span:first-of-type")].map((group) => group.textContent);

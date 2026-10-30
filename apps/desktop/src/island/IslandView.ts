@@ -79,6 +79,7 @@ export class IslandView {
   private notchSize: ContentSize = { width: 0, height: 0 };
   private shownMode: IslandMode | null = null;
   private shownPanel = "";
+  private shownTab: IslandTab | null = null;
   /** The alert drawn in the notch, kept until another one comes or the notch changes shape. */
   private shownAlert: TikiAlert | null = null;
   private assistantReady = false;
@@ -204,8 +205,15 @@ export class IslandView {
     this.shownMode = state.mode;
     this.shownPanel = panelKey;
 
+    // A new tab fades in briefly; it starts half visible, so the card never looks empty.
+    const tabChanged = !animate && state.mode === "expanded" && this.shownTab !== null && state.tab !== this.shownTab;
+    this.shownTab = state.mode === "expanded" ? state.tab : null;
+
     const focus = FocusKeeper.remember(this.root.ownerDocument);
     const content = this.content(state, mood, preferences, handlers);
+    if (tabChanged) {
+      content.querySelector(".island-card-body")?.classList.add("island-tab-entering");
+    }
     this.resizeNotch(this.contentTransition.swap(content, animate));
     focus.restore();
   }
