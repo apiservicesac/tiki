@@ -54,6 +54,9 @@ impl<'connection> PreferencesRepository<'connection> {
             alert_sound: self
                 .flag(UserPreferences::ALERT_SOUND_KEY)?
                 .unwrap_or(defaults.alert_sound),
+            show_system_stats: self
+                .flag(UserPreferences::SHOW_SYSTEM_STATS_KEY)?
+                .unwrap_or(defaults.show_system_stats),
             windows_notifications: self
                 .flag(UserPreferences::WINDOWS_NOTIFICATIONS_KEY)?
                 .unwrap_or(defaults.windows_notifications),
@@ -111,6 +114,10 @@ impl<'connection> PreferencesRepository<'connection> {
                 preferences.notifications_enabled,
             ),
             (UserPreferences::ALERT_SOUND_KEY, preferences.alert_sound),
+            (
+                UserPreferences::SHOW_SYSTEM_STATS_KEY,
+                preferences.show_system_stats,
+            ),
             (
                 UserPreferences::WINDOWS_NOTIFICATIONS_KEY,
                 preferences.windows_notifications,

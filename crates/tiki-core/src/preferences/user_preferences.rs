@@ -32,6 +32,9 @@ pub struct UserPreferences {
     pub focus_mode: bool,
     /// The night: Tiki sleeps, and alerts still reach the island but without a sound.
     pub quiet_hours: QuietHours,
+    /// With nothing pending, the resting notch shows how the computer is doing (CPU,
+    /// memory, temperature, network) instead of the face alone.
+    pub show_system_stats: bool,
 }
 
 impl UserPreferences {
@@ -49,6 +52,7 @@ impl UserPreferences {
     pub const QUIET_HOURS_ENABLED_KEY: &'static str = "quiet_hours_enabled";
     pub const QUIET_HOURS_FROM_KEY: &'static str = "quiet_hours_from";
     pub const QUIET_HOURS_UNTIL_KEY: &'static str = "quiet_hours_until";
+    pub const SHOW_SYSTEM_STATS_KEY: &'static str = "show_system_stats";
     /// How times are written in storage.
     pub const TIME_FORMAT: &'static str = "%H:%M";
 
@@ -66,6 +70,7 @@ impl UserPreferences {
             windows_notifications: true,
             focus_mode: false,
             quiet_hours: settings.quiet_hours,
+            show_system_stats: true,
         }
     }
 

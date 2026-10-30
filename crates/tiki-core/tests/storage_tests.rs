@@ -1,9 +1,10 @@
 mod support;
 
 use support::{SampleWorkspace, TestDay};
-use tiki_core::TikiError;
 use tiki_core::domain::{ExternalReference, Task, TaskId, TaskOrigin, TaskStatus};
+use tiki_core::preferences::UserPreferences;
 use tiki_core::storage::Database;
+use tiki_core::{TikiError, TikiSettings};
 
 #[test]
 fn tasks_survive_a_round_trip() {
@@ -155,4 +156,19 @@ fn a_task_remembers_when_it_was_created_and_last_changed() {
         (changed.created_at, changed.updated_at),
         (Some(nine), Some(ten))
     );
+}
+
+#[test]
+fn turning_off_the_system_stats_survives_a_restart() {
+    let sample = SampleWorkspace::create();
+    let defaults = UserPreferences::defaults(&TikiSettings::default());
+    assert!(defaults.show_system_stats);
+    let custom = UserPreferences {
+        show_system_stats: false,
+        ..defaults.clone()
+    };
+    sample.database.preferences().save(&custom).unwrap();
+
+    let loaded = sample.database.preferences().load(defaults).unwrap();
+    assert!(!loaded.show_system_stats);
 }
