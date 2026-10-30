@@ -15,7 +15,7 @@ pub struct AccountProfile {
     pub avatar: Option<String>,
 }
 
-/// Google's OpenID user info. `name` and `picture` need the `profile` scope, which accounts
+/// Google's user info. `name` and `picture` need the `profile` scope, which accounts
 /// connected before Tiki asked for it lack until they sign in again.
 #[derive(Deserialize)]
 struct GoogleUserInfo {
