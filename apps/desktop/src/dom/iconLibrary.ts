@@ -32,4 +32,12 @@ export const ICONS = Object.freeze({
   play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>',
   stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg>',
   back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
+  /* Services an account or a meeting comes from: simple glyphs in Tiki's stroke style. */
+  googleMeet: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l4-4h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M16 10.5l5-3.5v10l-5-3.5"/></svg>',
+  teams:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="11" height="11" rx="2"/><path d="M6 10.5h5M8.5 10.5V15"/><circle cx="18" cy="6.5" r="2"/><path d="M16 10.5h4a1 1 0 0 1 1 1v3a3 3 0 0 1-5 2.2"/></svg>',
+  zoom: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="6"/><path d="M6.5 9.5h6a1 1 0 0 1 1 1v4h-6a1 1 0 0 1-1-1zM15.5 11.5l2.5-2v5l-2.5-2"/></svg>',
+  google: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M12.5 12h7"/></svg>',
+  outlook:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-8"/><path d="M12 9l4.5 3L21 9"/><rect x="3" y="7" width="9" height="10" rx="1.5"/><circle cx="7.5" cy="12" r="2"/></svg>',
 });
