@@ -18,11 +18,14 @@
   color: var(--mood-color, var(--mood-calm));
 }
 
+/* A soft edge and halo in the mood color draw the rounded body, even on a black notch. */
 .mascot-visor {
   fill: var(--face-visor);
-  stroke: var(--face-visor-edge);
-  stroke-width: 1;
+  stroke: color-mix(in srgb, currentColor var(--face-edge-mix), transparent);
+  stroke-width: 1.2;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, currentColor var(--face-halo-mix), transparent));
 }
+.mascot-sleep .mascot-visor { filter: none; }
 
 /* The eyes glow softly, so Tiki reads as present even at a glance. */
 .mascot-eyes { filter: drop-shadow(0 0 2.5px color-mix(in srgb, currentColor 70%, transparent)); }

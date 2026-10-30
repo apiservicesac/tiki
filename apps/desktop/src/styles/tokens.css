@@ -56,8 +56,9 @@
   --recording-dot-size: 8px;
 
   /* Tiki's visor stays dark in both themes, so the face looks the same everywhere. */
-  --face-visor: #050506;
-  --face-visor-edge: rgba(255, 255, 255, 0.08);
+  --face-visor: #101217;
+  --face-edge-mix: 45%;
+  --face-halo-mix: 28%;
 
   --urgency-critical-background: rgba(244, 80, 94, 0.18);
   --urgency-critical-text: #ff8d97;
@@ -147,7 +148,8 @@
     --mood-glow-mix: 45%;
     --mood-ink-mix: 62%;
     --face-visor: #14171c;
-    --face-visor-edge: rgba(255, 255, 255, 0.04);
+    --face-edge-mix: 60%;
+    --face-halo-mix: 22%;
     --urgency-critical-background: rgba(176, 42, 55, 0.1);
     --urgency-critical-text: #b02a37;
     --urgency-soon-background: rgba(196, 120, 12, 0.14);
