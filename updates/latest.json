@@ -1,11 +1,11 @@
 {
-  "version": "0.5.1-rc.1",
-  "notes": "A trash for items you don't want, with restore and automatic cleanup after 30 days. Tiki is bigger and easier to read, every panel fits the window, settings explain each option, and alerts have Done and Snooze buttons right in the notch.",
-  "pub_date": "2026-10-29T23:40:51.173Z",
+  "version": "0.6.0-rc.1",
+  "notes": "Recorded sessions with local transcription and AI notes, linked accounts with picture and platform, system stats in the resting notch, cancellable calendar sign-in and many fixes.",
+  "pub_date": "2026-10-30T01:42:31.721Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXU3RnJYSWc0czNiYnNLd1ZneHpvaTdVZzNMZlRGbnY3enRFWkhwSE5TanRmd09HMHNjdkFMeFN1NXB5VlRITjYzaG9jTXV2em8zSzhyaFNSai9PSWdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMzE3MjEwCWZpbGU6VGlraV8wLjUuMS1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjUuMS1yYy4xCmR6RGZweVp6ZXNqMG1YWkFwMUVudWt0OVN2QkRyZmRkd09ScEN4RmVUR2tXZXNwVG5HaTJRRmo2VTNqcVZRa0dmSzFpcHgzZ2VOWmZYRXVBTlBQakFnPT0K",
-      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.5.1-rc.1/Tiki_0.5.1-rc.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUSmF3eWtIZ29VbXVXeTNCU0ZmekFrRTROVUJ5cW8zZ3Rla0pGWGV5aW9FWkkxdzBLQ2ZmWEtBczVEUVZkSkVXaFZ6VEpNUGs2RmpvSXdpajhXcTcrd2JnTTRSQ2o1SndrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMzI0NTEzCWZpbGU6VGlraV8wLjYuMC1yYy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjYuMC1yYy4xCitBR083dWtnQlBKaUhXeTBDRy9CcWI1RllzeVNuZkJKa1h0Uk9ueFRmZk1VYVZtOEFxU01sQTZ0WXJZTEh3OVJMYVladExkYWFSb2dnOSs4RnVkbUFBPT0K",
+      "url": "https://github.com/apiservicesac/tiki/releases/download/v0.6.0-rc.1/Tiki_0.6.0-rc.1_x64-setup.exe"
     }
   }
 }
