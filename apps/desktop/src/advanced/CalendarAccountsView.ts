@@ -1,4 +1,6 @@
 import { CALENDAR_PROVIDERS, type CalendarAccount, type CalendarProvider, type CalendarStatus } from "../backend/contracts";
+import { UI_CONFIG } from "../config/uiConfig";
+import { AccountBadge } from "../dom/AccountBadge";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 
@@ -16,8 +18,8 @@ export interface CalendarAccountsHandlers {
 }
 
 /**
- * Connected calendars and the buttons to add one. Tiki only reads them: meetings show in the
- * Agenda and Tiki warns before each one.
+ * Connected calendars, each with its picture, name, email and provider, and the buttons to
+ * add one. Tiki only reads them: meetings show in the Agenda and Tiki warns before each one.
  */
 export class CalendarAccountsView {
   constructor(private readonly translator: Translator) {}
@@ -57,13 +59,16 @@ export class CalendarAccountsView {
         attributes: { type: "button", "data-account": String(account.accountId) },
       });
       remove.addEventListener("click", () => handlers.onDisconnectCalendar(account.accountId));
+      const provider = this.translator.text(`calendar.provider.${account.provider}`);
+      const details = account.displayName === "" ? [provider] : [account.email, provider];
       return ElementFactory.create("div", {
         className: "settings-row calendar-account",
         children: [
+          AccountBadge.render(account, account.provider),
           ElementFactory.create("span", {
             className: "settings-connected",
-            text: account.email,
-            children: [ElementFactory.create("small", { text: this.translator.text(`calendar.provider.${account.provider}`) })],
+            text: account.displayName || account.email,
+            children: [ElementFactory.create("small", { text: details.join(UI_CONFIG.textMarks.separator) })],
           }),
           remove,
         ],

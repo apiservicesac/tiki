@@ -9,6 +9,7 @@ mod loopback_receiver;
 mod microsoft_calendar;
 mod oauth_client;
 mod pkce;
+mod profile_reader;
 mod provider_answer;
 mod sign_in;
 mod sign_in_page;

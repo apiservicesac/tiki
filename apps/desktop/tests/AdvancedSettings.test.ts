@@ -111,7 +111,10 @@ describe("AdvancedSettingsApp", () => {
     expect(root.querySelector(".settings-calendars")?.textContent).toContain("Aún no hay ninguno.");
 
     root.querySelector<HTMLButtonElement>('[data-provider="google"]')?.click();
-    await vi.waitFor(() => expect(root.querySelector(".calendar-account")?.textContent).toContain("ana@google.test"));
+    await vi.waitFor(() => expect(root.querySelector(".calendar-account")).not.toBeNull());
+    expect(root.querySelector(".calendar-account .settings-connected")?.firstChild?.textContent).toBe("Ana Pérez");
+    expect(root.querySelector(".calendar-account small")?.textContent).toBe("ana@google.test · Google Calendar");
+    expect(root.querySelector<HTMLElement>(".calendar-account .account-service")?.dataset.service).toBe("google");
 
     root.querySelector<HTMLButtonElement>('[data-account="1"]')?.click();
     await vi.waitFor(() => expect(root.querySelector(".calendar-account")).toBeNull());

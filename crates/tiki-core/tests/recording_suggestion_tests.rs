@@ -2,7 +2,7 @@ mod support;
 
 use chrono::{Duration, NaiveDateTime, NaiveTime};
 use support::TestDay;
-use tiki_core::calendar::MeetingItem;
+use tiki_core::calendar::{AccountIdentity, CalendarProvider, MeetingItem};
 use tiki_core::sessions::{PresenceSignals, RecordingCue, RecordingSuggestionPolicy};
 
 const FRESH_MEETING_MINUTES: i64 = 5;
@@ -19,7 +19,13 @@ fn meeting(title: &str, starts_at: NaiveDateTime) -> MeetingItem {
         all_day: false,
         location: String::new(),
         join_url: None,
-        account_email: "ana@example.com".to_owned(),
+        platform: None,
+        account: AccountIdentity {
+            provider: CalendarProvider::Google,
+            email: "ana@example.com".to_owned(),
+            display_name: String::new(),
+            avatar: None,
+        },
     }
 }
 

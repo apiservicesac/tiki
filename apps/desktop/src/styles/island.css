@@ -286,6 +286,7 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font: 700 var(--text-label)/1.2 var(--font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -299,6 +300,26 @@ body[data-placement="right"] { justify-content: flex-end; align-items: center; }
   border-radius: 50%;
   background: var(--mood-color);
   box-shadow: 0 0 6px var(--mood-color);
+}
+
+/* A meeting's account after the kind: its badge and email, in the alert's quieter voice. */
+.notch-alert-origin {
+  --account-badge-size: var(--account-badge-tiny);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--island-muted);
+}
+
+.notch-alert-email {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .notch-alert-text strong {

@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use chrono::TimeDelta;
+
 /// Fixed values of the desktop shell, kept in one place.
 pub struct DesktopConfig;
 
@@ -38,6 +40,10 @@ impl DesktopConfig {
     pub const LOG_LEVEL: &'static str = "info";
     /// How often the calendars are copied.
     pub const CALENDAR_SYNC_INTERVAL: Duration = Duration::from_mins(5);
+    /// A calendar account's name and picture are asked again this often.
+    pub const ACCOUNT_IDENTITY_REFRESH: TimeDelta = TimeDelta::days(1);
+    /// Side of the square account pictures Tiki keeps, in pixels.
+    pub const AVATAR_PIXELS: u32 = 64;
     /// SQLite file inside the app data folder.
     pub const DATABASE_FILE_NAME: &'static str = "tiki.db";
     /// Folder inside the app data folder with one folder per recorded session.

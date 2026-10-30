@@ -438,7 +438,11 @@
     "calendar.provider.google": "Google Calendar",
     "meeting.join": "Unirse",
     "meeting.all_day": "Todo el día",
-    "meeting.untitled": "(Sin título)"
+    "meeting.untitled": "(Sin título)",
+    "meeting.platform.google_meet": "Google Meet",
+    "meeting.platform.teams": "Microsoft Teams",
+    "meeting.platform.zoom": "Zoom",
+    "meeting.platform.other": "Videollamada"
   },
   "dates": {
     "weekdays": ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"],

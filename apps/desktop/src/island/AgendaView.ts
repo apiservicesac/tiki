@@ -1,4 +1,5 @@
 import type { AgendaDay, AgendaEntry, MeetingItem, SnapshotItem } from "../backend/contracts";
+import { AccountBadge } from "../dom/AccountBadge";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
@@ -14,7 +15,7 @@ export interface AgendaHandlers extends TaskListHandlers {
  * Agenda: everything that happens at a time, by day, as the core lays it out: calendar
  * meetings, reminders and the alarms set on tasks, each day under its title and each line
  * with its time. A reminder or a task opens on click and has a check; a meeting shows its
- * place, and a Join button when it has a video call.
+ * place, its account's badge, and a Join button when it has a video call.
  */
 export class AgendaView {
   private readonly itemRow: ItemRow;
@@ -55,16 +56,16 @@ export class AgendaView {
     }
   }
 
-  /** A meeting: its time range, title and place, and Join when it has a video call. */
+  /** A meeting: its time range, title, place and account's badge, and Join when it has a video call. */
   private meetingRow(meeting: MeetingItem, timeLabel: string, handlers: AgendaHandlers): HTMLElement {
     const joinUrl = meeting.joinUrl;
     return this.itemRow.render({
       variant: "agenda-row agenda-meeting",
-      attributes: { title: meeting.accountEmail },
+      attributes: { title: meeting.account.email },
       lead: this.itemRow.time(timeLabel),
       title: meeting.title || this.translator.text("meeting.untitled"),
       context: meeting.location || null,
-      badge: this.itemRow.kindIcon(ICONS.calendar),
+      badge: AccountBadge.render(meeting.account, meeting.platform ?? meeting.account.provider),
       trailing: joinUrl === null
         ? null
         : ElementFactory.textButton({ className: "agenda-join", text: this.translator.text("meeting.join") }, () => handlers.onJoinMeeting(joinUrl)),

@@ -55,6 +55,18 @@
   --recording-text: #ff8a80;
   --recording-dot-size: 8px;
 
+  /* The services an account or a meeting comes from, each tinted with one color. */
+  --service-google-meet: #34a853;
+  --service-teams: #7b83eb;
+  --service-zoom: #2d8cff;
+  --service-google: #4285f4;
+  --service-outlook: #1490df;
+  --service-other: var(--island-muted);
+  /* Account badges: in a settings row, in an Agenda line and in the notch alert. */
+  --account-badge-large: 32px;
+  --account-badge-small: 20px;
+  --account-badge-tiny: 16px;
+
   /* Tiki's visor stays dark in both themes, so the face looks the same everywhere. */
   --face-visor: #101217;
   --face-edge-mix: 45%;

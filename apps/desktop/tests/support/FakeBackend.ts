@@ -261,7 +261,7 @@ export class FakeBackend implements TikiBackend {
   }
 
   async connectCalendar(provider: CalendarProvider): Promise<CalendarAccount> {
-    const account = { accountId: this.calendar.accounts.length + 1, provider, email: `ana@${provider}.test` };
+    const account = { accountId: this.calendar.accounts.length + 1, provider, email: `ana@${provider}.test`, displayName: "Ana Pérez", avatar: null };
     this.calendar = { ...this.calendar, accounts: [...this.calendar.accounts, account] };
     return account;
   }
@@ -549,7 +549,8 @@ export class FakeBackend implements TikiBackend {
                 allDay: false,
                 location: "Teams",
                 joinUrl: "https://teams.microsoft.com/l/meetup-join/daily",
-                accountEmail: "ana@microsoft.test",
+                platform: "teams",
+                account: { provider: "microsoft", email: "ana@microsoft.test", displayName: "Ana Pérez", avatar: null },
               },
             },
             { kind: "reminder", timeLabel: "11:00", item: water },

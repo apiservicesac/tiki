@@ -19,6 +19,7 @@ const REMINDER_ALERT: TikiAlert = {
   actions: ["open", "done", "snooze"],
   taskId: 8,
   link: null,
+  origin: null,
 };
 
 /** Every handler a view can call, recording the calls. */
@@ -90,6 +91,7 @@ describe("TodayView", () => {
       actions: ["open", "snooze"],
       taskId: 1,
       link: null,
+      origin: null,
     };
     const element = view.render(
       { snapshot: SNAPSHOT, alert: taskAlarm, dayBrief: null, preparingBrief: false, aiReady: true },
@@ -201,6 +203,12 @@ describe("AgendaView", () => {
   it("draws meetings, reminders and task alarms by day and time", () => {
     const element = view.render(SNAPSHOT.agenda, recordingHandlers());
     expect(element.outerHTML).toMatchSnapshot();
+  });
+
+  it("shows whose account a meeting comes from and the platform of its call", () => {
+    const meeting = view.render(SNAPSHOT.agenda, recordingHandlers()).querySelector(".agenda-meeting");
+    expect(meeting?.getAttribute("title")).toBe("ana@microsoft.test");
+    expect(meeting?.querySelector<HTMLElement>(".account-service")?.dataset.service).toBe("teams");
   });
 
   it("opens and delivers a reminder and joins a meeting without letting the click reach the island", () => {

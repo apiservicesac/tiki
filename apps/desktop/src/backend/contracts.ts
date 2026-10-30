@@ -273,6 +273,16 @@ export interface TikiAlert {
   taskId: number | null;
   /** A link to open from the alert: the meeting's video call. */
   link: string | null;
+  /** Whose meeting a meeting alert announces and where its call runs. */
+  origin: MeetingOrigin | null;
+}
+
+/** See `MeetingOrigin` in the core. */
+export interface MeetingOrigin {
+  account: AccountIdentity;
+  platform: MeetingPlatform | null;
+  /** Both in one line, already translated: "Google Meet · Ana Pérez · ana@acme.com". */
+  label: string;
 }
 
 /** One line of the Agenda, with the time it shows: "10:00", "10:00–10:30" or "Todo el día". */
@@ -309,16 +319,30 @@ export interface MeetingItem {
   allDay: boolean;
   location: string;
   joinUrl: string | null;
-  accountEmail: string;
+  /** Where its video call runs, when it has one. */
+  platform: MeetingPlatform | null;
+  /** The account it comes from. */
+  account: AccountIdentity;
 }
+
+/** The service a meeting's video call runs on (see `MeetingPlatform` in the core). */
+export type MeetingPlatform = "google_meet" | "teams" | "zoom" | "other";
 
 export const CALENDAR_PROVIDERS = Object.freeze(["microsoft", "google"] as const);
 export type CalendarProvider = (typeof CALENDAR_PROVIDERS)[number];
 
-export interface CalendarAccount {
-  accountId: number;
+/** Who an account belongs to (see `AccountIdentity` in the core). */
+export interface AccountIdentity {
   provider: CalendarProvider;
   email: string;
+  /** Empty until Tiki learns it. */
+  displayName: string;
+  /** A small picture as a `data:` URL, when the provider gave one. */
+  avatar: string | null;
+}
+
+export interface CalendarAccount extends AccountIdentity {
+  accountId: number;
 }
 
 /** Connected accounts, and the providers this build can connect. */

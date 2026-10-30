@@ -225,9 +225,56 @@
   stroke-linejoin: round;
 }
 
-/* Calendar accounts: the email, then which calendar it is. */
+/* Calendar accounts: the badge, the name (or the email), then the email and which calendar it is. */
+.calendar-account { --account-badge-size: var(--account-badge-large); }
+
 .calendar-account small {
   display: block;
   font-size: var(--text-2xs);
   color: var(--island-faint);
 }
+
+/* Account badges: the account's picture with the service's icon on its corner, or the icon alone. */
+.account-badge {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: var(--account-badge-size, var(--account-badge-small));
+  height: var(--account-badge-size, var(--account-badge-small));
+}
+
+.account-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.account-service { display: flex; width: 100%; height: 100%; }
+
+.account-avatar + .account-service {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 55%;
+  height: 55%;
+  border-radius: 50%;
+  background: var(--island-card);
+}
+
+.account-service svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.account-service[data-service="google_meet"] { color: var(--service-google-meet); }
+.account-service[data-service="teams"] { color: var(--service-teams); }
+.account-service[data-service="zoom"] { color: var(--service-zoom); }
+.account-service[data-service="other"] { color: var(--service-other); }
+.account-service[data-service="google"] { color: var(--service-google); }
+.account-service[data-service="microsoft"] { color: var(--service-outlook); }
