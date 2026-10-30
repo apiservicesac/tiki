@@ -10,20 +10,26 @@ scope, `calendar.readonly`, so the review needs no security assessment.
 |---|---|
 | App name | Tiki |
 | User support email | principal@apiservicesac.com |
-| App logo | `apps/desktop/assets/tiki-icon.svg` exported as a 120×120 PNG |
-| Application home page | https://apiservicesac.github.io/tiki/ |
-| Privacy policy | https://apiservicesac.github.io/tiki/privacy-policy.html |
-| Authorized domain | `apiservicesac.github.io` |
+| App logo | `docs/assets/tiki-logo-120.png` (120×120 PNG; Google does not take SVG) |
+| Application home page | https://tiki.apiservicesac.com/ |
+| Privacy policy | https://tiki.apiservicesac.com/privacy-policy.html (the policy page itself, not the home page) |
+| Authorized domain | `apiservicesac.com` |
 | Developer contact | principal@apiservicesac.com |
 | Publishing status | In production |
 
-## Verify the domain first
+## Serve the site from apiservicesac.com
 
-1. Open Google Search Console and add a **URL prefix** property: `https://apiservicesac.github.io/tiki/`.
-2. Choose **HTML tag** and copy the `<meta name="google-site-verification" …>` line.
-3. Add that line inside `<head>` of `docs/index.html`, commit and push to `main`.
-4. Wait a minute for GitHub Pages and press **Verify** in Search Console.
-5. Back in the OAuth consent screen, add `apiservicesac.github.io` under Authorized domains.
+Google rejects `github.io` addresses: the policy must live on a domain the developer owns.
+The site stays on GitHub Pages under the subdomain `tiki.apiservicesac.com`.
+
+1. At the DNS provider of `apiservicesac.com`, add a `CNAME` record: name `tiki`, value
+   `apiservicesac.github.io`.
+2. Add the file `docs/CNAME` containing `tiki.apiservicesac.com`, push it, and turn on
+   **Enforce HTTPS** in the repository's Settings › Pages once the certificate is ready.
+3. In Google Search Console add a **Domain** property for `apiservicesac.com` and verify it
+   with the `TXT` record it gives, at the same DNS provider.
+4. In the OAuth consent screen add `apiservicesac.com` under Authorized domains, and set the
+   home page and privacy policy to the addresses in the table above.
 
 Use the same Google account in Search Console and in Cloud Console.
 
