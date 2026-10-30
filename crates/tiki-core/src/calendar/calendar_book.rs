@@ -26,6 +26,19 @@ impl<'context> CalendarBook<'context> {
         self.database.calendar().add_account(provider, email.trim())
     }
 
+    /// Saves the name and picture the shell learned for an account at `now`.
+    pub fn update_identity(
+        &self,
+        account_id: AccountId,
+        display_name: &str,
+        avatar: Option<&str>,
+        now: NaiveDateTime,
+    ) -> TikiResult<()> {
+        self.database
+            .calendar()
+            .update_identity(account_id, display_name, avatar, now)
+    }
+
     pub fn disconnect(&self, account_id: AccountId) -> TikiResult<()> {
         self.database.calendar().remove_account(account_id)
     }

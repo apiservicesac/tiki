@@ -2,7 +2,8 @@ use chrono::NaiveDateTime;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::calendar::{
-    AccountId, CalendarAccount, CalendarProvider, Meeting, MeetingItem, MeetingLink,
+    AccountId, AccountIdentity, CalendarAccount, CalendarProvider, Meeting, MeetingItem,
+    MeetingLink,
 };
 use crate::error::{TikiError, TikiResult};
 
@@ -36,9 +37,10 @@ impl<'connection> CalendarRepository<'connection> {
     }
 
     pub fn accounts(&self) -> TikiResult<Vec<CalendarAccount>> {
-        let mut statement = self
-            .connection
-            .prepare("SELECT id, provider, email FROM calendar_accounts ORDER BY id")?;
+        let mut statement = self.connection.prepare(
+            "SELECT id, provider, email, display_name, avatar, identity_checked_at
+                   FROM calendar_accounts ORDER BY id",
+        )?;
         let accounts = statement
             .query_map([], Self::read_account)?
             .collect::<Result<Vec<_>, _>>()?;
@@ -48,7 +50,8 @@ impl<'connection> CalendarRepository<'connection> {
     pub fn find_account(&self, account_id: AccountId) -> TikiResult<CalendarAccount> {
         self.connection
             .query_row(
-                "SELECT id, provider, email FROM calendar_accounts WHERE id = ?1",
+                "SELECT id, provider, email, display_name, avatar, identity_checked_at
+                   FROM calendar_accounts WHERE id = ?1",
                 params![account_id.0],
                 Self::read_account,
             )
@@ -57,6 +60,22 @@ impl<'connection> CalendarRepository<'connection> {
                 entity: "calendar account",
                 id: account_id.0,
             })
+    }
+
+    /// Saves the name and picture the provider gave for an account, asked at `checked_at`.
+    pub fn update_identity(
+        &self,
+        account_id: AccountId,
+        display_name: &str,
+        avatar: Option<&str>,
+        checked_at: NaiveDateTime,
+    ) -> TikiResult<()> {
+        self.connection.execute(
+            "UPDATE calendar_accounts SET display_name = ?2, avatar = ?3, identity_checked_at = ?4
+              WHERE id = ?1",
+            params![account_id.0, display_name, avatar, checked_at],
+        )?;
+        Ok(())
     }
 
     /// Removes an account and its meetings.
@@ -184,17 +203,28 @@ impl<'connection> CalendarRepository<'connection> {
     }
 
     fn read_account(row: &Row<'_>) -> rusqlite::Result<CalendarAccount> {
-        let provider: String = row.get(1)?;
         Ok(CalendarAccount {
             account_id: AccountId(row.get(0)?),
+            identity: Self::read_identity(row, 1)?,
+            identity_checked_at: row.get(5)?,
+        })
+    }
+
+    /// An account's provider, email, name and picture, read from four columns starting at
+    /// `first`.
+    fn read_identity(row: &Row<'_>, first: usize) -> rusqlite::Result<AccountIdentity> {
+        let provider: String = row.get(first)?;
+        Ok(AccountIdentity {
             provider: CalendarProvider::from_key(&provider).map_err(|error| {
                 rusqlite::Error::FromSqlConversionFailure(
-                    1,
+                    first,
                     rusqlite::types::Type::Text,
                     Box::new(error),
                 )
             })?,
-            email: row.get(2)?,
+            email: row.get(first + 1)?,
+            display_name: row.get(first + 2)?,
+            avatar: row.get(first + 3)?,
         })
     }
 }

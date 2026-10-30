@@ -1,11 +1,13 @@
 mod support;
 
-use chrono::{NaiveDateTime, NaiveTime};
+use chrono::{NaiveDateTime, NaiveTime, TimeDelta};
 use support::{TestDay, TimedWorkspace};
 use tiki_core::agenda::AgendaEntry;
 use tiki_core::alerts::AlertKind;
 use tiki_core::calendar::{CalendarProvider, Meeting, MeetingItem, MeetingLink, MeetingPlatform};
 use tiki_core::workspace::IslandSnapshot;
+
+const AVATAR: &str = "data:image/jpeg;base64,/9j/4AAQ";
 
 fn at(day: u32, hour: u32, minute: u32) -> NaiveDateTime {
     TestDay::october(day).and_time(NaiveTime::from_hms_opt(hour, minute, 0).unwrap())
@@ -89,6 +91,33 @@ fn a_connected_calendar_fills_the_agenda_and_signing_in_again_reuses_the_account
         0
     );
     assert_eq!(workspace.calendar_accounts().unwrap().len(), 0);
+}
+
+#[test]
+fn an_account_keeps_the_name_and_picture_its_provider_gave() {
+    let workspace = workspace_at(at(21, 9, 0));
+    let account_id = workspace
+        .connect_calendar(CalendarProvider::Google, "ana@acme.com")
+        .unwrap();
+    let day = TimeDelta::days(1);
+    let account = workspace.calendar_account(account_id).unwrap();
+    assert_eq!(account.identity.display_name, "");
+    assert_eq!(account.identity.avatar, None);
+    assert!(account.identity_due(at(21, 9, 0), day));
+
+    workspace
+        .update_calendar_identity(account_id, "Ana Pérez", Some(AVATAR))
+        .unwrap();
+    // Signing in again keeps what Tiki learned.
+    workspace
+        .connect_calendar(CalendarProvider::Google, "ana@acme.com")
+        .unwrap();
+
+    let account = workspace.calendar_account(account_id).unwrap();
+    assert_eq!(account.identity.display_name, "Ana Pérez");
+    assert_eq!(account.identity.avatar.as_deref(), Some(AVATAR));
+    assert!(!account.identity_due(at(22, 8, 59), day));
+    assert!(account.identity_due(at(22, 9, 0), day));
 }
 
 #[test]

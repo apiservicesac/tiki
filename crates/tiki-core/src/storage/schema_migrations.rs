@@ -19,8 +19,16 @@ impl SchemaMigrations {
             M::up(Self::ITEM_EVENTS),
             M::up(Self::TRASH),
             M::up(Self::SESSIONS),
+            M::up(Self::ACCOUNT_IDENTITY),
         ])
     }
+
+    /// The name and small picture of each calendar account, and when they were last asked.
+    const ACCOUNT_IDENTITY: &'static str = "
+        ALTER TABLE calendar_accounts ADD COLUMN display_name TEXT NOT NULL DEFAULT '';
+        ALTER TABLE calendar_accounts ADD COLUMN avatar TEXT;
+        ALTER TABLE calendar_accounts ADD COLUMN identity_checked_at TEXT;
+    ";
 
     /// Recorded sessions: the session, its transcript (searchable with FTS5, accents
     /// ignored), the AI notes and the tasks they propose, and the transcription queue. A
@@ -387,5 +395,27 @@ mod tests {
             )
         };
         assert_eq!(events, [delivery("Primera"), delivery("Segunda")]);
+    }
+
+    #[test]
+    fn accounts_connected_before_identities_have_no_name_nor_picture_yet() {
+        let mut connection = migrated_through(12);
+        connection
+            .execute(
+                "INSERT INTO calendar_accounts (provider, email) VALUES ('google', 'ana@acme.com')",
+                [],
+            )
+            .unwrap();
+
+        finish(&mut connection);
+
+        let identity: (String, Option<String>, Option<String>) = connection
+            .query_row(
+                "SELECT display_name, avatar, identity_checked_at FROM calendar_accounts",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(identity, (String::new(), None, None));
     }
 }

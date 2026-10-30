@@ -1,6 +1,7 @@
+use chrono::{NaiveDateTime, TimeDelta};
 use serde::{Deserialize, Serialize};
 
-use super::CalendarProvider;
+use super::AccountIdentity;
 
 /// Database identifier of a connected calendar account.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -13,7 +14,17 @@ pub struct AccountId(pub i64);
 #[serde(rename_all = "camelCase")]
 pub struct CalendarAccount {
     pub account_id: AccountId,
-    pub provider: CalendarProvider,
-    /// The address the user signed in with.
-    pub email: String,
+    #[serde(flatten)]
+    pub identity: AccountIdentity,
+    /// When the shell last asked the provider for the name and picture.
+    #[serde(skip)]
+    pub identity_checked_at: Option<NaiveDateTime>,
+}
+
+impl CalendarAccount {
+    /// Whether the name and picture should be asked again: never asked, or `every` passed.
+    pub fn identity_due(&self, now: NaiveDateTime, every: TimeDelta) -> bool {
+        self.identity_checked_at
+            .is_none_or(|checked_at| now - checked_at >= every)
+    }
 }

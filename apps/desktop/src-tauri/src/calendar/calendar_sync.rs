@@ -101,7 +101,7 @@ impl CalendarSync {
     }
 
     async fn sync_account(&self, app: &AppHandle, account: &CalendarAccount) -> TikiResult<()> {
-        let client = OAuthClient::of(account.provider).ok_or_else(|| {
+        let client = OAuthClient::of(account.identity.provider).ok_or_else(|| {
             TikiError::Calendar("this build cannot read that calendar".to_owned())
         })?;
         let refresh_token = TokenStore::refresh_token(account.account_id)?
@@ -114,7 +114,7 @@ impl CalendarSync {
         }
         let state = app.state::<AppState>();
         let (from, to) = state.with_workspace(|workspace| Ok(workspace.calendar_window()))?;
-        let meetings = match account.provider {
+        let meetings = match account.identity.provider {
             CalendarProvider::Microsoft => {
                 MicrosoftCalendar::new(&self.http)
                     .meetings(&tokens.access_token, from, to)

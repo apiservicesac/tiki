@@ -289,6 +289,17 @@ impl TikiWorkspace {
         self.calendar_book().connect(provider, email)
     }
 
+    /// Saves the name and picture the provider gave for an account, asked now.
+    pub fn update_calendar_identity(
+        &self,
+        account_id: AccountId,
+        display_name: &str,
+        avatar: Option<&str>,
+    ) -> TikiResult<()> {
+        self.calendar_book()
+            .update_identity(account_id, display_name, avatar, self.clock.now())
+    }
+
     /// Forgets an account and its meetings.
     pub fn disconnect_calendar(&self, account_id: AccountId) -> TikiResult<()> {
         self.calendar_book().disconnect(account_id)
