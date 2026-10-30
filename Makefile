@@ -10,7 +10,7 @@ help:
 	@echo "make eval-ai            Measure the AI on real sentences with your key"
 	@echo "make update-manifest    Write updates/latest.json after building the installer"
 	@echo "make images             Build the Docker images"
-	@echo "make test               Run every test (Rust core + TypeScript interface)"
+	@echo "make test               Run every test (Rust core and recording + TypeScript interface)"
 	@echo "make lint               Check formatting, clippy and TypeScript types"
 	@echo "make format             Format the Rust code"
 	@echo "make ui-install         Install the interface dependencies"
@@ -23,8 +23,11 @@ images:
 
 test: test-core test-ui
 
+# The Rust core and the recording crate (its Windows sources are checked in GitHub Actions).
+RUST_PACKAGES := -p tiki-core -p tiki-recording
+
 test-core:
-	$(COMPOSE) core cargo test -p tiki-core
+	$(COMPOSE) core cargo test $(RUST_PACKAGES)
 
 test-ui:
 	$(COMPOSE) ui npm test
@@ -32,7 +35,7 @@ test-ui:
 lint: lint-core lint-ui
 
 lint-core:
-	$(COMPOSE) core sh -c "cargo fmt -p tiki-core --check && cargo clippy -p tiki-core --all-targets -- -D warnings"
+	$(COMPOSE) core sh -c "cargo fmt $(RUST_PACKAGES) --check && cargo clippy $(RUST_PACKAGES) --all-targets -- -D warnings"
 
 lint-ui:
 	$(COMPOSE) ui npm run typecheck

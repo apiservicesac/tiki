@@ -23,9 +23,9 @@ impl<'connection> TaskRepository<'connection> {
                                 completed_on, remind_at,
                                 origin_plugin, origin_connection, origin_record, origin_url,
                                 kind, tags, repeat, waiting_for, follow_up_at, trashed_at,
-                                created_at, updated_at)
+                                origin_session_id, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?20, ?20)",
+                     ?18, ?19, ?20, ?21, ?21)",
             params![
                 task.title,
                 task.notes,
@@ -46,6 +46,7 @@ impl<'connection> TaskRepository<'connection> {
                 task.waiting_for,
                 task.follow_up_at,
                 task.trashed_at,
+                TaskRowMapper::origin_session_column(&task.origin),
                 now,
             ],
         )?;

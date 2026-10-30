@@ -13,10 +13,16 @@ use crate::calendar::CalendarSync;
 use crate::call_watch::CallWatch;
 use crate::click_through::ClickThrough;
 use crate::commands;
+use crate::desktop_config::DesktopConfig;
 use crate::diagnostics_log::DiagnosticsLog;
 use crate::island_window::IslandWindow;
+use crate::session_files::SessionFiles;
+use crate::session_recorder::SessionRecorder;
+use crate::session_recovery::SessionRecovery;
+use crate::session_retention::SessionRetention;
 use crate::shortcuts::GlobalShortcuts;
 use crate::system_watch::SystemWatch;
+use crate::transcription_runner::TranscriptionRunner;
 use crate::tray::IslandTray;
 
 /// Builds and runs the desktop application.
@@ -81,6 +87,20 @@ impl TikiDesktopApp {
                 commands::calendar_commands::disconnect_calendar,
                 commands::calendar_commands::sync_calendars,
                 commands::calendar_commands::open_meeting_link,
+                commands::session_commands::start_recording,
+                commands::session_commands::capture_targets,
+                commands::session_commands::pause_recording,
+                commands::session_commands::resume_recording,
+                commands::session_commands::stop_recording,
+                commands::session_commands::sessions,
+                commands::session_commands::session_details,
+                commands::session_commands::search_sessions,
+                commands::session_commands::delete_session,
+                commands::session_commands::retry_transcription,
+                commands::session_commands::session_storage,
+                commands::session_commands::save_session_notes,
+                commands::session_commands::apply_session_task,
+                commands::session_commands::export_session,
                 commands::ai_commands::ai_status,
                 commands::ai_commands::save_ai_key,
                 commands::ai_commands::remove_ai_key,
@@ -94,9 +114,17 @@ impl TikiDesktopApp {
     fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         DiagnosticsLog::start(&app.path().app_log_dir()?)?;
         tracing::info!(version = %app.package_info().version, "Tiki started");
-        let state = AppState::open(&app.path().app_data_dir()?)?;
+        let app_data_folder = app.path().app_data_dir()?;
+        let state = AppState::open(&app_data_folder)?;
         let preferences = state.with_workspace(|workspace| Ok(workspace.preferences().clone()))?;
         app.manage(state);
+        app.manage(SessionFiles::new(&app_data_folder));
+        app.manage(SessionRecorder::default());
+        SessionRecovery::run(app.handle());
+        app.manage(TranscriptionRunner::start(
+            app.handle().clone(),
+            &app_data_folder.join(DesktopConfig::MODELS_FOLDER),
+        )?);
         AiCredentials::use_system_store()?;
         app.manage(AiProxy::new());
 
@@ -111,6 +139,7 @@ impl TikiDesktopApp {
         ClickThrough::start(app.handle().clone(), click_through);
         BriefReminders::start(app.handle().clone());
         CalendarSync::start(app.handle().clone());
+        SessionRetention::start(app.handle().clone());
         #[cfg(windows)]
         CallWatch::start(app.handle().clone());
         SystemWatch::start(app.handle().clone());

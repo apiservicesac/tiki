@@ -2,6 +2,12 @@ import { CoreDateTimeText } from "../backend/CoreDateTimeText";
 import { ElementFactory } from "../dom/ElementFactory";
 import type { Translator } from "../i18n/Translator";
 
+/** One choice of a row with several: its value and its translated label. */
+export interface SettingChoice<Value> {
+  value: Value;
+  label: string;
+}
+
 /** What one settings row says: its name and, under it, what it does. */
 export interface SettingText {
   labelKey: string;
@@ -38,6 +44,25 @@ export class SettingRows {
       },
     }, () => onToggle(!enabled));
     return this.row(text, [control], inactive);
+  }
+
+  /** One of a few choices, as pills; the chosen one is checked. */
+  choiceRow<Value>(
+    text: SettingText,
+    choices: readonly SettingChoice<Value>[],
+    chosen: Value,
+    onChoose: (value: Value) => void,
+  ): HTMLElement {
+    const pills = choices.map((choice) => ElementFactory.textButton({
+      className: "settings-option",
+      text: choice.label,
+      attributes: { role: "radio", "aria-checked": String(choice.value === chosen) },
+    }, () => onChoose(choice.value)));
+    return this.row(text, [ElementFactory.create("span", {
+      className: "settings-options",
+      attributes: { role: "radiogroup", "aria-label": this.translator.text(text.labelKey) },
+      children: pills,
+    })]);
   }
 
   /** A time of day; `onPick` receives it as the core writes it ("07:45:00"). */

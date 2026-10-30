@@ -4,7 +4,7 @@ use rusqlite::{Connection, OptionalExtension, params};
 use crate::ai::AiProvider;
 use crate::error::{TikiError, TikiResult};
 use crate::i18n::Locale;
-use crate::preferences::{IslandPlacement, QuietHours, UserPreferences};
+use crate::preferences::{IslandPlacement, QuietHours, TranscriptionQuality, UserPreferences};
 
 /// Reads and writes the user's preferences as key/value rows.
 pub struct PreferencesRepository<'connection> {
@@ -34,6 +34,17 @@ impl<'connection> PreferencesRepository<'connection> {
             .value(UserPreferences::AI_MODEL_KEY)?
             .filter(|model| !model.is_empty())
             .or(defaults.ai_model);
+        let transcription_quality = match self.value(UserPreferences::TRANSCRIPTION_QUALITY_KEY)? {
+            Some(key) => TranscriptionQuality::from_key(&key)?,
+            None => defaults.transcription_quality,
+        };
+        let session_media_days = match self.value(UserPreferences::SESSION_MEDIA_DAYS_KEY)? {
+            Some(text) => text.parse::<u64>().map_err(|_| TikiError::UnknownValue {
+                kind: "days",
+                value: text,
+            })?,
+            None => defaults.session_media_days,
+        };
         Ok(UserPreferences {
             locale,
             island_placement,
@@ -71,6 +82,11 @@ impl<'connection> PreferencesRepository<'connection> {
                     .time(UserPreferences::QUIET_HOURS_UNTIL_KEY)?
                     .unwrap_or(defaults.quiet_hours.until),
             },
+            transcription_quality,
+            session_notes_automatic: self
+                .flag(UserPreferences::SESSION_NOTES_AUTOMATIC_KEY)?
+                .unwrap_or(defaults.session_notes_automatic),
+            session_media_days,
         })
     }
 
@@ -126,9 +142,21 @@ impl<'connection> PreferencesRepository<'connection> {
                 UserPreferences::QUIET_HOURS_ENABLED_KEY,
                 preferences.quiet_hours.enabled,
             ),
+            (
+                UserPreferences::SESSION_NOTES_AUTOMATIC_KEY,
+                preferences.session_notes_automatic,
+            ),
         ] {
             self.store(key, &flag.to_string())?;
         }
+        self.store(
+            UserPreferences::TRANSCRIPTION_QUALITY_KEY,
+            preferences.transcription_quality.key(),
+        )?;
+        self.store(
+            UserPreferences::SESSION_MEDIA_DAYS_KEY,
+            &preferences.session_media_days.to_string(),
+        )?;
         self.store(
             UserPreferences::FOCUS_MODE_KEY,
             &preferences.focus_mode.to_string(),

@@ -7,7 +7,7 @@ use crate::editing::TaskEdit;
 use crate::error::{TikiError, TikiResult};
 use crate::projects::ProjectBook;
 use crate::settings::TikiSettings;
-use crate::storage::Database;
+use crate::storage::{Database, Repositories};
 use crate::workspace::Clock;
 
 /// Applies the user's changes to items. Every change follows the same path: the item's own
@@ -37,7 +37,18 @@ impl<'context> ItemService<'context> {
     pub fn capture(&self, capture: ConfirmedCapture) -> TikiResult<TaskId> {
         let project_id = ProjectBook::new(self.database, self.settings)
             .find_or_create(capture.project_name.as_deref())?;
-        let mut task = capture.into_task(project_id, self.clock.today())?;
+        let task = capture.into_task(project_id, self.clock.today())?;
+        self.create(task, |_, _| Ok(()))
+    }
+
+    /// Saves a new item with its first nudge and its creation event; `alongside` saves what
+    /// points to the new item (such as the session proposal it came from) in the same
+    /// transaction.
+    pub fn create(
+        &self,
+        mut task: Task,
+        alongside: impl FnOnce(&Repositories<'_>, TaskId) -> TikiResult<()>,
+    ) -> TikiResult<TaskId> {
         FollowUpPolicy::new(self.settings).schedule_first_nudge(&mut task, false);
         task.normalize()?;
         let now = self.clock.now();
@@ -46,6 +57,7 @@ impl<'context> ItemService<'context> {
             repositories
                 .activity()
                 .record(task_id, now, &[ItemEvent::Created])?;
+            alongside(repositories, task_id)?;
             Ok(task_id)
         })
     }

@@ -34,6 +34,8 @@ function recordingHandlers(): TodayHandlers & TasksTabHandlers & AgendaHandlers 
     onDismissAlert: vi.fn(),
     onSnooze: vi.fn(),
     onJoinMeeting: vi.fn(),
+    onStartAudioRecording: vi.fn(),
+    onChooseVideo: vi.fn(),
     onPrepareBrief: vi.fn(),
     onShowDelivered: vi.fn(),
     onSelectTasksView: vi.fn(),

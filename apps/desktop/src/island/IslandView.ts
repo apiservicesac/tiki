@@ -18,9 +18,20 @@ import { TodayView, type TodayHandlers } from "./TodayView";
 import type { HitArea, TikiAlert } from "../backend/contracts";
 import { ContentTransition, type ContentSize } from "./ContentTransition";
 import { FocusKeeper } from "../dom/FocusKeeper";
+import { RecordingIndicator } from "./RecordingIndicator";
+import { RecordingPrompt, type RecordingPromptHandlers } from "./RecordingPrompt";
+import { SessionDetailView, type SessionDetailHandlers } from "./SessionDetailView";
+import { SessionsTabView, type SessionsTabHandlers } from "./SessionsTabView";
 
 export interface IslandViewHandlers
-  extends HeaderHandlers, SettingsHandlers, TasksTabHandlers, ProjectsPanelHandlers, TodayHandlers {
+  extends HeaderHandlers,
+    SettingsHandlers,
+    TasksTabHandlers,
+    ProjectsPanelHandlers,
+    TodayHandlers,
+    RecordingPromptHandlers,
+    SessionsTabHandlers,
+    SessionDetailHandlers {
   onExpand: () => void;
   /** The island changed size without a redraw: the click-through area must follow. */
   onContentResize: () => void;
@@ -52,6 +63,10 @@ export class IslandView {
   private readonly agenda: AgendaView;
   private readonly projectsPanel: ProjectsPanelView;
   private readonly receipt: ReceiptView;
+  private readonly recordingIndicator: RecordingIndicator;
+  private readonly recordingPrompt: RecordingPrompt;
+  private readonly sessionsTab: SessionsTabView;
+  private readonly sessionDetail: SessionDetailView;
   /** The tabs in display order; a new tab (Tickets) is one more entry. */
   private readonly tabs: Readonly<Record<IslandTab, IslandTabEntry>>;
   private readonly tabLabels: readonly IslandTabLabel[];
@@ -74,8 +89,12 @@ export class IslandView {
     private readonly mascot: MascotRenderer,
     private readonly captureView: CaptureView,
   ) {
-    this.notchView = new NotchView(mascot, translator);
-    this.header = new HeaderView(translator);
+    this.recordingIndicator = new RecordingIndicator(translator);
+    this.recordingPrompt = new RecordingPrompt(translator);
+    this.sessionsTab = new SessionsTabView(translator);
+    this.sessionDetail = new SessionDetailView(translator);
+    this.notchView = new NotchView(mascot, translator, this.recordingIndicator);
+    this.header = new HeaderView(translator, this.recordingIndicator);
     this.taskList = new TaskListView(translator);
     this.settings = new SettingsView(translator);
     this.taskEdit = new TaskEditView(translator);
@@ -113,6 +132,15 @@ export class IslandView {
         labelKey: "island.tab.agenda",
         render: (state, handlers) => this.agenda.render(state.snapshot.agenda, handlers),
       },
+      sessions: {
+        labelKey: "island.tab.sessions",
+        render: (state, handlers) => this.sessionsTab.render({
+          sessions: state.sessions,
+          hits: state.sessionHits,
+          storage: state.sessionStorage,
+          modelDownload: state.modelDownload,
+        }, handlers),
+      },
     });
     // Object keys keep their order; they are exactly the tabs, as the record's type requires.
     this.tabLabels = (Object.keys(this.tabs) as IslandTab[]).map((tab) => ({ tab, labelKey: this.tabs[tab].labelKey }));
@@ -142,6 +170,9 @@ export class IslandView {
     } else {
       delete this.notch.dataset.activity;
     }
+    // While a session records, even an alert keeps a red dot in a corner of the notch.
+    this.notch.dataset.recording = String(state.snapshot.recording !== null);
+    this.recordingIndicator.follow(state.snapshot.recording);
     // The root carries the mood too: the alert aura behind the notch takes its color.
     this.root.dataset.mood = mood;
 
@@ -160,9 +191,14 @@ export class IslandView {
       this.captureView.reset();
       this.taskEdit.reset();
       this.projectsPanel.reset();
+      if (state.panel !== "session") {
+        this.sessionDetail.reset();
+      }
+      this.recordingPrompt.reset();
     }
     if (this.translator.localeCode !== this.shownLocale) {
       this.tasksTab.reset();
+      this.sessionsTab.reset();
       this.shownLocale = this.translator.localeCode;
     }
     this.shownMode = state.mode;
@@ -214,6 +250,7 @@ export class IslandView {
 
   stop(): void {
     this.contentTransition.stop();
+    this.recordingIndicator.stop();
   }
 
   /**
@@ -283,6 +320,9 @@ export class IslandView {
         preferences.showSystemStats ? state.systemStats : null,
       );
     }
+    if (state.mode === "recording" && state.snapshot.recording) {
+      return this.notchView.recording(state.snapshot, state.snapshot.recording, mood, state.unreadAlert);
+    }
     if (state.mode === "alert" && state.alert) {
       return this.notchView.alert(state.snapshot, state.alert, mood, handlers);
     }
@@ -300,6 +340,7 @@ export class IslandView {
           state.panel,
           this.tabLabels,
           state.tab,
+          state.snapshot.recording,
           handlers,
         ),
         ElementFactory.create("div", {
@@ -330,6 +371,12 @@ export class IslandView {
         return this.projectsPanel.render(state.projects, state.projectColors, handlers);
       case "brief":
         return this.receipt.render(state.snapshot, state.alert, state.dayBrief);
+      case "record":
+        return this.recordingPrompt.render(state.videoTargets, handlers);
+      case "session":
+        return state.openSession
+          ? this.sessionDetail.render(state.openSession, { aiReady: this.assistantReady, writingNotes: state.writingNotes }, handlers)
+          : this.tabContent(state, handlers);
       case "tabs":
         return this.tabContent(state, handlers);
     }

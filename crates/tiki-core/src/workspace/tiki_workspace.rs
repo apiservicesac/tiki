@@ -1,8 +1,8 @@
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::{Duration, NaiveDate, NaiveDateTime};
 
 use super::{AssistantContext, Clock, DeliveredItem, IslandSnapshot, TrashedItem, WorkspaceViews};
 use crate::activity::ItemEventRecord;
-use crate::alerts::{AlertDelivery, AlertScheduler, DueAlert, TikiAlert};
+use crate::alerts::{AlertDelivery, AlertScheduler, DueAlert, NotificationComposer, TikiAlert};
 use crate::calendar::{AccountId, CalendarAccount, CalendarBook, CalendarProvider, Meeting};
 use crate::capture::{CaptureLesson, ConfirmedCapture};
 use crate::domain::{Project, ProjectId, TaskId, TaskStatus};
@@ -12,12 +12,13 @@ use crate::i18n::{Locale, Translator};
 use crate::items::{ItemService, TrashBin};
 use crate::preferences::UserPreferences;
 use crate::projects::{ProjectBook, ProjectChange, ProjectSummary};
+use crate::sessions::{PresenceSignals, RecordingSuggestionPolicy, SessionService};
 use crate::settings::TikiSettings;
 use crate::storage::Database;
 
 /// The entry point every platform uses: it owns the user's data, settings, preferences and
 /// clock, and hands each request to the part that owns the rules (`ItemService`, `TrashBin`,
-/// `AlertScheduler`, `CalendarBook`, `ProjectBook`, `WorkspaceViews`).
+/// `AlertScheduler`, `CalendarBook`, `ProjectBook`, `SessionService`, `WorkspaceViews`).
 pub struct TikiWorkspace {
     database: Database,
     settings: TikiSettings,
@@ -28,6 +29,8 @@ pub struct TikiWorkspace {
     in_call: bool,
     /// The day the expired trash was last purged; empty until the first purge since start.
     trash_purged_on: Option<NaiveDate>,
+    /// Remembers which calls and meetings Tiki already offered to record.
+    recording_suggestions: RecordingSuggestionPolicy,
 }
 
 impl TikiWorkspace {
@@ -48,6 +51,7 @@ impl TikiWorkspace {
             clock,
             in_call: false,
             trash_purged_on: None,
+            recording_suggestions: RecordingSuggestionPolicy::default(),
         })
     }
 
@@ -247,6 +251,27 @@ impl TikiWorkspace {
             .collect())
     }
 
+    /// The offer to record due now, as an alert: once when a call starts or a meeting
+    /// begins, never while recording (see `RecordingSuggestionPolicy`).
+    pub fn take_recording_suggestion(&mut self) -> TikiResult<Option<DueAlert>> {
+        let now = self.clock.now();
+        let meetings_in_progress = self.database.calendar().in_progress(now)?;
+        let recording = self.database.sessions().capturing()?.is_some();
+        let cue = self.recording_suggestions.observe(
+            &PresenceSignals {
+                now,
+                in_call: self.in_call,
+                recording,
+                meetings_in_progress: &meetings_in_progress,
+            },
+            Duration::minutes(self.settings.recording_offer_minutes),
+        );
+        Ok(cue.map(|cue| DueAlert {
+            alert: NotificationComposer::new(&self.translator).compose_recording(&cue),
+            delivery: AlertDelivery::decide(&self.preferences, now.time(), self.in_call),
+        }))
+    }
+
     pub fn calendar_accounts(&self) -> TikiResult<Vec<CalendarAccount>> {
         self.calendar_book().accounts()
     }
@@ -308,6 +333,16 @@ impl TikiWorkspace {
     /// The colors new projects get, offered when changing one.
     pub fn project_colors(&self) -> &[String] {
         &self.settings.project_colors
+    }
+
+    /// Recorded sessions: recording, the transcription queue, notes, search and retention.
+    pub fn sessions(&self) -> SessionService<'_> {
+        SessionService::new(
+            &self.database,
+            &self.settings,
+            &self.translator,
+            self.clock.as_ref(),
+        )
     }
 
     fn views(&self) -> WorkspaceViews<'_> {

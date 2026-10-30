@@ -1,15 +1,23 @@
-import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../../src/ai";
+import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse, WrittenSessionNotes } from "../../src/ai";
 import type {
   AiProviderStatus,
   AlertDelivery,
   AvailableUpdate,
   CalendarAccount,
+  CaptureTarget,
   CalendarProvider,
   CalendarStatus,
   CaptureLesson,
   TikiAlert,
   ProjectChange,
   ProjectSummary,
+  ModelDownload,
+  RecordingMode,
+  SessionDetails,
+  SessionSearchHit,
+  SessionStorage,
+  SessionSummary,
+  TranscriptSegment,
   DeliveredItem,
   DueAlert,
   HitArea,
@@ -20,6 +28,7 @@ import type {
   TikiBackend,
   TrashedItem,
   UserPreferences,
+  VideoChoice,
   SystemStats,
 } from "../../src/backend/contracts";
 import { AI_PROVIDERS } from "../../src/backend/contracts";
@@ -63,6 +72,9 @@ export class FakeBackend implements TikiBackend {
     windowsNotifications: true,
     focusMode: false,
     quietHours: { enabled: true, from: "22:00:00", until: "07:00:00" },
+    transcriptionQuality: "balanced",
+    sessionNotesAutomatic: true,
+    sessionMediaDays: 90,
     showSystemStats: true,
   };
   autostart = false;
@@ -260,6 +272,163 @@ export class FakeBackend implements TikiBackend {
 
   async syncCalendars(): Promise<void> {}
 
+  /** What the island asked the recorder, in order: `start:audio_only`, `pause`, `stop`… */
+  readonly recordingRequests: string[] = [];
+
+  /** The screen or window the last video session records. */
+  lastVideoChoice: VideoChoice | null = null;
+  readonly screensAndWindows: CaptureTarget[] = [
+    { kind: "screen", id: 1, name: "" },
+    { kind: "window", id: 1_311_754, name: "Reunión de Teams" },
+  ];
+
+  async startRecording(mode: RecordingMode, video: VideoChoice | null): Promise<void> {
+    this.recordingRequests.push(`start:${mode}`);
+    this.lastVideoChoice = video;
+    this.snapshot.recording = { sessionId: 1, mode, paused: false, recordedMs: 0 };
+  }
+
+  async captureTargets(): Promise<CaptureTarget[]> {
+    return this.screensAndWindows;
+  }
+
+  async pauseRecording(): Promise<void> {
+    this.recordingRequests.push("pause");
+    this.changeRecording(true);
+  }
+
+  async resumeRecording(): Promise<void> {
+    this.recordingRequests.push("resume");
+    this.changeRecording(false);
+  }
+
+  async stopRecording(): Promise<void> {
+    this.recordingRequests.push("stop");
+    this.snapshot.recording = null;
+  }
+
+  /** A ready session with its transcript, and one whose transcription failed. */
+  sessionList: SessionSummary[] = [
+    { sessionId: 2, title: "Revisión con Andeanvet", mode: "audio_and_video", status: "ready", startedAt: "2026-10-21T10:00:00", startedLabel: "Mié 21 · 10:00", recordedMs: 1_830_000, hasMedia: true, mediaBytes: 21_000_000, meetingTitle: "Revisión con Andeanvet" },
+    { sessionId: 1, title: "Sesión del Mar 20, 16:00", mode: "audio_only", status: "failed", startedAt: "2026-10-20T16:00:00", startedLabel: "Mar 20 · 16:00", recordedMs: 600_000, hasMedia: true, mediaBytes: 3_000_000, meetingTitle: null },
+  ];
+  readonly sessionTranscripts = new Map<number, TranscriptSegment[]>([
+    [2, [
+      { speaker: "others", startMs: 0, endMs: 4_000, text: "Revisemos la facturación de octubre" },
+      { speaker: "you", startMs: 5_000, endMs: 8_000, text: "Mañana envío el informe" },
+      { speaker: "others", startMs: 9_000, endMs: 12_000, text: "Perfecto, gracias" },
+    ]],
+  ]);
+  readonly deletedSessions: number[] = [];
+  /** Notes saved per session, and the proposed tasks applied, in order. */
+  readonly savedSessionNotes = new Map<number, WrittenSessionNotes>();
+  readonly appliedSessionTasks: number[] = [];
+  private transcriptReadyHandler: ((sessionId: number) => void) | null = null;
+  readonly retriedTranscriptions: number[] = [];
+  private modelDownloadHandler: ((progress: ModelDownload) => void) | null = null;
+
+  async sessions(): Promise<SessionSummary[]> {
+    return this.sessionList;
+  }
+
+  async sessionDetails(sessionId: number): Promise<SessionDetails> {
+    const summary = this.sessionList.find((session) => session.sessionId === sessionId);
+    if (!summary) {
+      throw new BackendError("not_found", "no such session");
+    }
+    return {
+      summary,
+      language: "es",
+      transcript: this.sessionTranscripts.get(sessionId) ?? [],
+      notes: this.savedSessionNotes.get(sessionId) ?? null,
+      actionItems: (this.savedSessionNotes.get(sessionId)?.tasks ?? []).map((task, index) => {
+        const actionItemId = index + 1;
+        return {
+          actionItemId,
+          title: task.title,
+          dueDate: task.dueDate,
+          taskId: this.appliedSessionTasks.includes(actionItemId) ? FakeBackend.taskOf(actionItemId) : null,
+        };
+      }),
+      mediaPath: summary.hasMedia ? `C:\\Tiki\\sessions\\${sessionId}\\session.mp4` : null,
+    };
+  }
+
+  async searchSessions(text: string): Promise<SessionSearchHit[]> {
+    const word = text.trim().toLowerCase();
+    return [...this.sessionTranscripts].flatMap(([sessionId, lines]) => lines
+      .filter((line) => line.text.toLowerCase().includes(word))
+      .map((line) => ({ sessionId, sessionTitle: "Revisión con Andeanvet", startedAt: "2026-10-21T10:00:00", speaker: line.speaker, startMs: line.startMs, text: line.text })));
+  }
+
+  async deleteSession(sessionId: number): Promise<void> {
+    this.deletedSessions.push(sessionId);
+    this.sessionList = this.sessionList.filter((session) => session.sessionId !== sessionId);
+  }
+
+  async retryTranscription(sessionId: number): Promise<void> {
+    this.retriedTranscriptions.push(sessionId);
+  }
+
+  readonly exportedSessions: number[] = [];
+
+  async exportSession(sessionId: number): Promise<void> {
+    this.exportedSessions.push(sessionId);
+  }
+
+  async sessionStorage(): Promise<SessionStorage> {
+    return { mediaBytes: 24_000_000, mediaDays: 90 };
+  }
+
+  async saveSessionNotes(sessionId: number, notes: WrittenSessionNotes): Promise<void> {
+    this.savedSessionNotes.set(sessionId, notes);
+  }
+
+  async applySessionTask(actionItemId: number): Promise<number> {
+    this.appliedSessionTasks.push(actionItemId);
+    return FakeBackend.taskOf(actionItemId);
+  }
+
+  /** The task a proposed task becomes, numbered after the sample tasks. */
+  private static taskOf(actionItemId: number): number {
+    const firstFreeTaskId = 100;
+    return firstFreeTaskId + actionItemId;
+  }
+
+  async onTranscriptReady(handler: (sessionId: number) => void): Promise<() => void> {
+    this.transcriptReadyHandler = handler;
+    return () => {
+      this.transcriptReadyHandler = null;
+    };
+  }
+
+  /** Simulates the shell saying a session's transcript is ready. */
+  reportTranscriptReady(sessionId: number): void {
+    this.transcriptReadyHandler?.(sessionId);
+  }
+
+  mediaUrl(mediaPath: string): string {
+    return `http://asset.localhost/${encodeURIComponent(mediaPath)}`;
+  }
+
+  async onModelDownload(handler: (progress: ModelDownload) => void): Promise<() => void> {
+    this.modelDownloadHandler = handler;
+    return () => {
+      this.modelDownloadHandler = null;
+    };
+  }
+
+  /** Simulates the shell reporting the model download. */
+  reportModelDownload(progress: ModelDownload): void {
+    this.modelDownloadHandler?.(progress);
+  }
+
+  private changeRecording(paused: boolean): void {
+    if (this.snapshot.recording) {
+      this.snapshot.recording = { ...this.snapshot.recording, paused };
+    }
+  }
+
   async openMeetingLink(url: string): Promise<void> {
     this.openedLinks.push(url);
   }
@@ -349,6 +518,7 @@ export class FakeBackend implements TikiBackend {
       mood: "worried",
       moodLabel: "ATRASO",
       inCall: false,
+      recording: null,
       attentionCount: 5,
       dueCount: 3,
       waitingCount: 2,

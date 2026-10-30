@@ -40,8 +40,19 @@ impl DesktopConfig {
     pub const CALENDAR_SYNC_INTERVAL: Duration = Duration::from_mins(5);
     /// SQLite file inside the app data folder.
     pub const DATABASE_FILE_NAME: &'static str = "tiki.db";
+    /// Folder inside the app data folder with one folder per recorded session.
+    pub const SESSIONS_FOLDER: &'static str = "sessions";
+    /// How often the media of sessions past their retention is removed.
+    pub const RETENTION_CHECK_INTERVAL: Duration = Duration::from_hours(6);
+    /// Folder inside the app data folder with the Whisper models.
+    pub const MODELS_FOLDER: &'static str = "models";
+    /// Besides being woken when a session starts or stops, the transcription queue is
+    /// looked at this often (a failed download or transcription is tried again).
+    pub const TRANSCRIPTION_CHECK_INTERVAL: Duration = Duration::from_mins(5);
     pub const TRAY_ID: &'static str = "tiki-tray";
 
     pub const SHORTCUT_QUICK_CAPTURE: &'static str = "ctrl+alt+space";
     pub const SHORTCUT_TOGGLE_ISLAND: &'static str = "ctrl+alt+n";
+    /// Stops the session being recorded, or asks what to record.
+    pub const SHORTCUT_TOGGLE_RECORDING: &'static str = "ctrl+alt+r";
 }

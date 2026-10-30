@@ -1,15 +1,22 @@
-import { invoke, type InvokeArgs } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke, type InvokeArgs } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { SHELL_EVENTS } from "../config/uiConfig";
 import { BackendError } from "./BackendError";
-import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
+import type { AdvisorContext, AiProviderName, InterpretedCapture, ProxiedRequest, ProxiedResponse, WrittenSessionNotes } from "../ai";
 import type {
   AiProviderStatus,
   AvailableUpdate,
   CalendarAccount,
+  CaptureTarget,
   CalendarProvider,
   CalendarStatus,
   CaptureLesson,
+  ModelDownload,
+  RecordingMode,
+  SessionDetails,
+  SessionSearchHit,
+  SessionStorage,
+  SessionSummary,
   DeliveredItem,
   DueAlert,
   HitArea,
@@ -23,6 +30,7 @@ import type {
   TikiBackend,
   TrashedItem,
   UserPreferences,
+  VideoChoice,
 } from "./contracts";
 
 /** Talks to the Rust core through Tauri commands (see `src-tauri/src/commands`). */
@@ -153,6 +161,75 @@ export class TauriBackend implements TikiBackend {
 
   async syncCalendars(): Promise<void> {
     await this.call("sync_calendars");
+  }
+
+  async startRecording(mode: RecordingMode, video: VideoChoice | null): Promise<void> {
+    await this.call("start_recording", { mode, video });
+  }
+
+  captureTargets(): Promise<CaptureTarget[]> {
+    return this.call<CaptureTarget[]>("capture_targets");
+  }
+
+  async pauseRecording(): Promise<void> {
+    await this.call("pause_recording");
+  }
+
+  async resumeRecording(): Promise<void> {
+    await this.call("resume_recording");
+  }
+
+  async stopRecording(): Promise<void> {
+    await this.call("stop_recording");
+  }
+
+  sessions(): Promise<SessionSummary[]> {
+    return this.call<SessionSummary[]>("sessions");
+  }
+
+  sessionDetails(sessionId: number): Promise<SessionDetails> {
+    return this.call<SessionDetails>("session_details", { sessionId });
+  }
+
+  searchSessions(text: string): Promise<SessionSearchHit[]> {
+    return this.call<SessionSearchHit[]>("search_sessions", { text });
+  }
+
+  async deleteSession(sessionId: number): Promise<void> {
+    await this.call("delete_session", { sessionId });
+  }
+
+  async retryTranscription(sessionId: number): Promise<void> {
+    await this.call("retry_transcription", { sessionId });
+  }
+
+  async exportSession(sessionId: number): Promise<void> {
+    await this.call("export_session", { sessionId });
+  }
+
+  sessionStorage(): Promise<SessionStorage> {
+    return this.call<SessionStorage>("session_storage");
+  }
+
+  async saveSessionNotes(sessionId: number, notes: WrittenSessionNotes): Promise<void> {
+    const { tasks, ...written } = notes;
+    await this.call("save_session_notes", { sessionId, notes: written, tasks });
+  }
+
+  applySessionTask(actionItemId: number): Promise<number> {
+    return this.call<number>("apply_session_task", { actionItemId });
+  }
+
+  onTranscriptReady(handler: (sessionId: number) => void): Promise<() => void> {
+    return listen<number>(SHELL_EVENTS.transcriptReady, (event) => handler(event.payload));
+  }
+
+  mediaUrl(mediaPath: string): string {
+    return convertFileSrc(mediaPath);
+  }
+
+  onModelDownload(handler: (progress: ModelDownload) => void): Promise<() => void> {
+    return listen<ModelDownload>(SHELL_EVENTS.modelDownloadProgress, (event) => handler(event.payload));
   }
 
   async openMeetingLink(url: string): Promise<void> {

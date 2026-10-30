@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::sessions::SessionId;
+
 /// Points to the record a task came from in an external system.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExternalReference {
@@ -21,4 +23,6 @@ pub enum TaskOrigin {
     Manual,
     /// Imported from a ticket source plugin.
     External(ExternalReference),
+    /// Proposed by the AI from a recorded session and applied by the user.
+    Session { session_id: SessionId },
 }

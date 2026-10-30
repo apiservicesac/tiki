@@ -20,6 +20,11 @@ export const AI_CONFIG = Object.freeze({
   extractionEffort: "low" as const,
   /** A reminder asked for without a time rings at this time (as `default_reminder_time` in the core). */
   defaultReminderTime: "09:00",
+  /**
+   * A session's notes: a transcript longer than this (about an hour of talk) is read in
+   * parts, and the parts' notes joined.
+   */
+  sessionNotesPartCharacters: 40_000,
   providers: Object.freeze<Record<AiProviderName, ProviderConfig>>({
     anthropic: {
       defaultModel: "claude-opus-5-5",

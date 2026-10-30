@@ -1,7 +1,7 @@
 use chrono::NaiveTime;
 use serde::{Deserialize, Serialize};
 
-use super::{IslandPlacement, QuietHours};
+use super::{IslandPlacement, QuietHours, TranscriptionQuality};
 use crate::ai::AiProvider;
 use crate::i18n::Locale;
 use crate::settings::TikiSettings;
@@ -32,6 +32,12 @@ pub struct UserPreferences {
     pub focus_mode: bool,
     /// The night: Tiki sleeps, and alerts still reach the island but without a sound.
     pub quiet_hours: QuietHours,
+    /// The Whisper model sessions are transcribed with.
+    pub transcription_quality: TranscriptionQuality,
+    /// The AI writes a session's notes as soon as its transcript is ready (with a key).
+    pub session_notes_automatic: bool,
+    /// Days a session's media is kept; its transcript and notes stay for good.
+    pub session_media_days: u64,
     /// With nothing pending, the resting notch shows how the computer is doing (CPU,
     /// memory, temperature, network) instead of the face alone.
     pub show_system_stats: bool,
@@ -52,6 +58,9 @@ impl UserPreferences {
     pub const QUIET_HOURS_ENABLED_KEY: &'static str = "quiet_hours_enabled";
     pub const QUIET_HOURS_FROM_KEY: &'static str = "quiet_hours_from";
     pub const QUIET_HOURS_UNTIL_KEY: &'static str = "quiet_hours_until";
+    pub const TRANSCRIPTION_QUALITY_KEY: &'static str = "transcription_quality";
+    pub const SESSION_NOTES_AUTOMATIC_KEY: &'static str = "session_notes_automatic";
+    pub const SESSION_MEDIA_DAYS_KEY: &'static str = "session_media_days";
     pub const SHOW_SYSTEM_STATS_KEY: &'static str = "show_system_stats";
     /// How times are written in storage.
     pub const TIME_FORMAT: &'static str = "%H:%M";
@@ -70,6 +79,9 @@ impl UserPreferences {
             windows_notifications: true,
             focus_mode: false,
             quiet_hours: settings.quiet_hours,
+            transcription_quality: TranscriptionQuality::default(),
+            session_notes_automatic: true,
+            session_media_days: settings.session_media_days,
             show_system_stats: true,
         }
     }

@@ -5,6 +5,7 @@ use crate::briefing::{BriefDetail, BriefDetailFormatter, BriefItem, BriefMoment,
 use crate::calendar::MeetingItem;
 use crate::domain::{ItemKind, Task};
 use crate::i18n::{DateFormatter, Translator};
+use crate::sessions::RecordingCue;
 
 /// Writes every alert in the user's language: the morning brief and the end-of-day close,
 /// item reminders, follow-up nudges and meetings starting soon.
@@ -106,6 +107,29 @@ impl<'translator> NotificationComposer<'translator> {
             actions: AlertAction::offered_for(AlertKind::Meeting, meeting.join_url.is_some()),
             task_id: None,
             link: meeting.join_url.clone(),
+        }
+    }
+
+    /// "Record this call?": what it is about, and the reminder to tell the participants.
+    pub fn compose_recording(&self, cue: &RecordingCue) -> TikiAlert {
+        let (title, summary) = match cue {
+            RecordingCue::Call => (
+                self.translator.text("notify.recording.call.title"),
+                self.translator.text("notify.recording.call.summary"),
+            ),
+            RecordingCue::Meeting { title } => (
+                self.translator.text("notify.recording.meeting.title"),
+                title.clone(),
+            ),
+        };
+        TikiAlert {
+            kind: AlertKind::Recording,
+            title,
+            summary,
+            tips: vec![self.translator.text("notify.recording.consent")],
+            actions: AlertAction::offered_for(AlertKind::Recording, false),
+            task_id: None,
+            link: None,
         }
     }
 

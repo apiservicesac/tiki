@@ -2,7 +2,7 @@
  * What the advanced settings list: sections and plugins. Plugins are shown with their real
  * availability; none of them is connected yet.
  */
-export const ADVANCED_SECTIONS = Object.freeze(["general", "ai", "plugins", "accounts", "shortcuts"] as const);
+export const ADVANCED_SECTIONS = Object.freeze(["general", "ai", "sessions", "plugins", "accounts", "shortcuts"] as const);
 export type AdvancedSection = (typeof ADVANCED_SECTIONS)[number];
 
 export type PluginKind = "ticket_source" | "client_instance";
@@ -28,4 +28,5 @@ export const PLUGIN_CATALOG: readonly CatalogEntry[] = Object.freeze([
 export const SHORTCUTS = Object.freeze([
   { keys: ["Ctrl", "Alt", "Space"], labelKey: "advanced.shortcuts.capture" },
   { keys: ["Ctrl", "Alt", "N"], labelKey: "advanced.shortcuts.toggle" },
+  { keys: ["Ctrl", "Alt", "R"], labelKey: "advanced.shortcuts.recording" },
 ]);

@@ -16,6 +16,15 @@ pub enum ShellEvent {
     CalendarSynced,
     /// A call started or ended: the island redraws the notch.
     InCallChanged,
+    /// A session started, paused, resumed or stopped recording, or its transcript or notes
+    /// moved on: the notch and the Sessions tab refresh.
+    RecordingChanged,
+    /// The recording shortcut: the island stops the session or asks what to record.
+    ToggleRecording,
+    /// A session's transcript is ready (the payload is its id): the AI may write its notes.
+    TranscriptReady,
+    /// The transcription model is downloading (the payload says how far it got).
+    ModelDownloadProgress,
     /// A new measure of the computer (the payload is a `SystemStats`).
     SystemStats,
 }
@@ -30,6 +39,10 @@ impl ShellEvent {
             ShellEvent::PreferencesChanged => "tiki://preferences-changed",
             ShellEvent::CalendarSynced => "tiki://calendar-synced",
             ShellEvent::InCallChanged => "tiki://in-call-changed",
+            ShellEvent::RecordingChanged => "tiki://recording-changed",
+            ShellEvent::ToggleRecording => "tiki://toggle-recording",
+            ShellEvent::TranscriptReady => "tiki://transcript-ready",
+            ShellEvent::ModelDownloadProgress => "tiki://model-download-progress",
             ShellEvent::SystemStats => "tiki://system-stats",
         }
     }

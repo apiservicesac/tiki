@@ -42,3 +42,17 @@ a local transcript and notes written by the AI. Nothing is recorded without the 
 Windows N editions without Media Foundation; GPUs without a hardware encoder (software fallback);
 echo when the user is on speakers; an unfinished MP4 after a crash (the WAV survives); whisper.cpp
 build time in CI; CPU load after long meetings.
+
+## As built
+
+- Opus comes from libopus through the `opus` crate (bundled, built with cmake); the core image
+  gained cmake, make and g++ for it. Whisper builds only with the `whisper` feature, which the
+  desktop shell enables; the tests use a fake transcriber.
+- `windows-capture`'s encoder drives Windows' `MediaTranscoder` (Media Foundation). It does not
+  scale, so a video keeps the size of the screen or window captured; the presets set the frame
+  rate and bit rate.
+- A video session does not pause (its frames keep their own clock); audio-only sessions do.
+- After a crash an audio-only session keeps its Ogg Opus (it plays up to its last page); a
+  video's unfinished MP4 is removed and its audio rebuilt from the WAV tracks.
+- The WAV tracks are removed once the transcript is saved. Export writes the media,
+  the transcript as SRT and text and the notes as Markdown to a folder in Downloads.

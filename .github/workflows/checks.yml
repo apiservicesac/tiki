@@ -38,4 +38,7 @@ jobs:
         working-directory: apps/desktop
         run: npm run build
       - name: Lint the desktop shell
+        env:
+          # whisper-rs generates its MSVC bindings with bindgen, from the runner's LLVM.
+          LIBCLANG_PATH: C:\Program Files\LLVM\bin
         run: cargo clippy -p tiki-desktop -- -D warnings

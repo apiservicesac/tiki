@@ -10,10 +10,10 @@ use crate::desktop_config::DesktopConfig;
 use crate::shell_events::ShellEvent;
 
 /// Delivers every alert (the morning brief, the end-of-day close, item reminders, follow-up
-/// nudges and meetings starting soon): always to the island, which shows them in the notch,
-/// and as Windows notifications when the core says so (see `AlertDelivery`). The core
-/// decides when each one is due, what it says and how it reaches the user; this loop only
-/// asks it every minute. The same minute also lets the core delete the trash past its
+/// nudges, meetings starting soon and the offer to record a meeting that began): always to
+/// the island, which shows them in the notch, and as Windows notifications when the core
+/// says so (see `AlertDelivery`). The core decides when each one is due, what it says and
+/// how it reaches the user; this loop only asks it every minute. The same minute also lets the core delete the trash past its
 /// retention, which it does on start and then once a day.
 pub struct BriefReminders;
 
@@ -40,9 +40,11 @@ impl BriefReminders {
     }
 
     fn send_due(app: &AppHandle) {
-        let due = app
-            .state::<AppState>()
-            .with_workspace(|workspace| Ok((workspace.take_due_alerts()?, workspace.now())));
+        let due = app.state::<AppState>().with_workspace(|workspace| {
+            let mut alerts = workspace.take_due_alerts()?;
+            alerts.extend(workspace.take_recording_suggestion()?);
+            Ok((alerts, workspace.now()))
+        });
         match due {
             Ok((alerts, now)) => {
                 for due in alerts {

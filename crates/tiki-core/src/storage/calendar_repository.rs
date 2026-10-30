@@ -134,6 +134,20 @@ impl<'connection> CalendarRepository<'connection> {
         Ok(meetings)
     }
 
+    /// Timed meetings in progress at `now`, earliest first.
+    pub fn in_progress(&self, now: NaiveDateTime) -> TikiResult<Vec<MeetingItem>> {
+        let mut statement = self.connection.prepare(
+            "SELECT m.title, m.starts_at, m.ends_at, m.all_day, m.location, m.join_url, a.email
+               FROM meetings m JOIN calendar_accounts a ON a.id = m.account_id
+              WHERE m.all_day = 0 AND m.starts_at <= ?1 AND m.ends_at > ?1
+              ORDER BY m.starts_at, m.title",
+        )?;
+        let meetings = statement
+            .query_map(params![now], Self::read_meeting)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(meetings)
+    }
+
     /// Timed meetings starting after `now` and up to `until` that were not announced yet,
     /// earliest first. One statement marks them as announced and returns them.
     pub fn take_starting(

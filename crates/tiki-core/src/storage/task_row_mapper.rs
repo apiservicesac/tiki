@@ -4,6 +4,7 @@ use rusqlite::types::Type;
 use crate::domain::{
     ExternalReference, ItemKind, Priority, ProjectId, Repeat, Task, TaskId, TaskOrigin, TaskStatus,
 };
+use crate::sessions::SessionId;
 
 /// Converts between `tasks` table rows and `Task` values.
 pub struct TaskRowMapper;
@@ -12,7 +13,7 @@ impl TaskRowMapper {
     /// Columns in the order `read_row` expects them.
     pub const COLUMNS: &'static str = "id, kind, tags, repeat, waiting_for, title, notes, project_id, status, priority, due_date, \
         waiting_since, completed_on, remind_at, follow_up_at, origin_plugin, origin_connection, origin_record, \
-        origin_url, created_at, updated_at, trashed_at";
+        origin_url, origin_session_id, created_at, updated_at, trashed_at";
 
     pub fn read_row(row: &Row<'_>) -> rusqlite::Result<Task> {
         Ok(Task {
@@ -43,13 +44,21 @@ impl TaskRowMapper {
         origin: &TaskOrigin,
     ) -> (Option<&str>, Option<&str>, Option<&str>, Option<&str>) {
         match origin {
-            TaskOrigin::Manual => (None, None, None, None),
+            TaskOrigin::Manual | TaskOrigin::Session { .. } => (None, None, None, None),
             TaskOrigin::External(reference) => (
                 Some(reference.plugin_id.as_str()),
                 Some(reference.connection_id.as_str()),
                 Some(reference.record_id.as_str()),
                 reference.url.as_deref(),
             ),
+        }
+    }
+
+    /// The session a task came from, in `origin_session_id`.
+    pub fn origin_session_column(origin: &TaskOrigin) -> Option<i64> {
+        match origin {
+            TaskOrigin::Session { session_id } => Some(session_id.0),
+            TaskOrigin::Manual | TaskOrigin::External(_) => None,
         }
     }
 
@@ -86,6 +95,11 @@ impl TaskRowMapper {
     }
 
     fn read_origin(row: &Row<'_>) -> rusqlite::Result<TaskOrigin> {
+        if let Some(session_id) = row.get::<_, Option<i64>>("origin_session_id")? {
+            return Ok(TaskOrigin::Session {
+                session_id: SessionId(session_id),
+            });
+        }
         let plugin_id: Option<String> = row.get("origin_plugin")?;
         let Some(plugin_id) = plugin_id else {
             return Ok(TaskOrigin::Manual);

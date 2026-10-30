@@ -2,7 +2,15 @@
  * Shapes the Rust core sends to the interface (see `tiki_core`).
  * Field names are camelCase because the core serializes them that way.
  */
-import type { AdvisorContext, AiProviderName, HarnessLesson, InterpretedCapture, ProxiedRequest, ProxiedResponse } from "../ai";
+import type {
+  AdvisorContext,
+  AiProviderName,
+  HarnessLesson,
+  InterpretedCapture,
+  ProxiedRequest,
+  ProxiedResponse,
+  WrittenSessionNotes,
+} from "../ai";
 import type { LocaleCode } from "../i18n/LocaleCode";
 
 export type MoodName =
@@ -68,6 +76,121 @@ export interface SnapshotSection {
   items: SnapshotItem[];
 }
 
+/** What a session records, chosen by the user each time; both are always transcribed. */
+export const RECORDING_MODES = Object.freeze(["audio_only", "audio_and_video"] as const);
+export type RecordingMode = (typeof RECORDING_MODES)[number];
+
+/** How a video session is encoded: normal (light) or high (smoother and sharper). */
+export const VIDEO_QUALITIES = Object.freeze(["normal", "high"] as const);
+export type VideoQuality = (typeof VIDEO_QUALITIES)[number];
+
+/** A screen or a window a video session can record (see `CaptureTargetView` in the shell). */
+export interface CaptureTarget {
+  kind: "screen" | "window";
+  /** A screen's number, from 1, or a window's handle. */
+  id: number;
+  /** A window's title; screens are named by their number. */
+  name: string;
+}
+
+/** What a video session records and how. */
+export interface VideoChoice {
+  kind: CaptureTarget["kind"];
+  id: number;
+  quality: VideoQuality;
+}
+
+/** The session being recorded (see `ActiveRecording` in the core). */
+export interface ActiveRecording {
+  sessionId: number;
+  mode: RecordingMode;
+  paused: boolean;
+  /** Recorded so far, pauses excluded; the interface keeps counting from here. */
+  recordedMs: number;
+}
+
+/** Where a session stands, from the click that starts it to its transcript. */
+export const SESSION_STATUSES = Object.freeze(["recording", "paused", "queued", "transcribing", "ready", "failed"] as const);
+export type SessionStatus = (typeof SESSION_STATUSES)[number];
+
+/** Who said a line: the microphone is the user, the system audio everyone else. */
+export const SPEAKERS = Object.freeze(["you", "others"] as const);
+export type Speaker = (typeof SPEAKERS)[number];
+
+/** A session as the Sessions tab lists it (see `SessionSummary` in the core). */
+export interface SessionSummary {
+  sessionId: number;
+  title: string;
+  mode: RecordingMode;
+  status: SessionStatus;
+  startedAt: string;
+  /** "Mié 29 · 10:30", in the user's language. */
+  startedLabel: string;
+  /** What the media lasts, pauses excluded. */
+  recordedMs: number;
+  /** The media is still on disk (the retention policy has not removed it). */
+  hasMedia: boolean;
+  mediaBytes: number;
+  meetingTitle: string | null;
+}
+
+export interface TranscriptSegment {
+  speaker: Speaker;
+  startMs: number;
+  endMs: number;
+  text: string;
+}
+
+/** What the AI wrote about a session. */
+export interface SessionNotes {
+  summary: string;
+  keyPoints: string[];
+  decisions: string[];
+}
+
+/** A task the AI proposed from a session; once applied it points to the task. */
+export interface SessionActionItem {
+  actionItemId: number;
+  title: string;
+  /** ISO date, for example `2026-10-23`. */
+  dueDate: string | null;
+  taskId: number | null;
+}
+
+/** Everything the detail of a session shows (see `SessionView` in the shell). */
+export interface SessionDetails {
+  summary: SessionSummary;
+  /** The detected language ("es", "en"), once transcribed. */
+  language: string | null;
+  transcript: TranscriptSegment[];
+  notes: SessionNotes | null;
+  actionItems: SessionActionItem[];
+  /** The media on disk for the player; `null` once it was removed. */
+  mediaPath: string | null;
+}
+
+/** A transcript line that matches a search. */
+export interface SessionSearchHit {
+  sessionId: number;
+  sessionTitle: string;
+  startedAt: string;
+  speaker: Speaker;
+  startMs: number;
+  text: string;
+}
+
+/** What the sessions take on disk and how long their media is kept. */
+export interface SessionStorage {
+  mediaBytes: number;
+  mediaDays: number;
+}
+
+/** How far the transcription model download got. */
+export interface ModelDownload {
+  downloadedBytes: number;
+  totalBytes: number;
+}
+
 /** How the computer is doing, measured by the shell every few seconds (see `SystemStats` in the shell). */
 export interface SystemStats {
   cpuPercent: number;
@@ -82,6 +205,8 @@ export interface IslandSnapshot {
   moodLabel: string;
   /** Another app holds the microphone: Tiki keeps quiet until the call ends. */
   inCall: boolean;
+  /** The session being recorded: the notch keeps a red dot and its timer in sight. */
+  recording: ActiveRecording | null;
   /** Tasks that need attention: overdue, due soon or waiting on others. */
   attentionCount: number;
   /** Overdue or due soon. */
@@ -132,11 +257,11 @@ export interface TaskDetails extends TaskEdit {
  * What the user can do with an alert, decided by the core (see `AlertAction`): open what it
  * is about, put a reminder that rang away, snooze the item's reminder, or join the call.
  */
-export type AlertAction = "open" | "done" | "snooze" | "join";
+export type AlertAction = "open" | "done" | "snooze" | "join" | "record_audio" | "record_video";
 
 /** An alert already written in the user's language (see `TikiAlert` in the core). */
 export interface TikiAlert {
-  kind: "morning" | "evening" | "task" | "reminder" | "follow_up" | "meeting";
+  kind: "morning" | "evening" | "task" | "reminder" | "follow_up" | "meeting" | "recording";
   title: string;
   /** What it is about, in one line: the brief's counts, or the item's or meeting's title. */
   summary: string;
@@ -285,9 +410,19 @@ export interface UserPreferences {
   /** Silences notifications and lets Tiki sleep. */
   focusMode: boolean;
   quietHours: QuietHours;
+  /** The Whisper model sessions are transcribed with. */
+  transcriptionQuality: TranscriptionQuality;
+  /** The AI writes a session's notes as soon as its transcript is ready (with a key). */
+  sessionNotesAutomatic: boolean;
+  /** Days a session's media is kept; its transcript and notes stay. */
+  sessionMediaDays: number;
   /** With nothing pending, the resting notch shows CPU, memory, temperature and network. */
   showSystemStats: boolean;
 }
+
+/** How carefully sessions are transcribed (see `TranscriptionQuality` in the core). */
+export const TRANSCRIPTION_QUALITIES = Object.freeze(["fast", "balanced", "precise"] as const);
+export type TranscriptionQuality = (typeof TRANSCRIPTION_QUALITIES)[number];
 
 export const AI_PROVIDERS = Object.freeze(["anthropic", "openai"] as const);
 
@@ -361,6 +496,35 @@ export interface TikiBackend {
   connectCalendar(provider: CalendarProvider): Promise<CalendarAccount>;
   disconnectCalendar(accountId: number): Promise<void>;
   syncCalendars(): Promise<void>;
+  /** Starts recording a session; a video session records the screen or window chosen. The core refuses a second one. */
+  startRecording(mode: RecordingMode, video: VideoChoice | null): Promise<void>;
+  /** The screens and windows a video session can record. */
+  captureTargets(): Promise<CaptureTarget[]>;
+  pauseRecording(): Promise<void>;
+  resumeRecording(): Promise<void>;
+  /** Stops recording; the session waits for its transcript. */
+  stopRecording(): Promise<void>;
+  /** Every session, newest first. */
+  sessions(): Promise<SessionSummary[]>;
+  sessionDetails(sessionId: number): Promise<SessionDetails>;
+  /** Transcript lines with every word of `text`. */
+  searchSessions(text: string): Promise<SessionSearchHit[]>;
+  /** Forgets a session and its files; tasks made from it stay. */
+  deleteSession(sessionId: number): Promise<void>;
+  retryTranscription(sessionId: number): Promise<void>;
+  /** Writes the session (media, transcript and notes) to the user's Downloads and shows the folder. */
+  exportSession(sessionId: number): Promise<void>;
+  sessionStorage(): Promise<SessionStorage>;
+  /** Saves the notes the AI wrote for a session and the tasks they propose. */
+  saveSessionNotes(sessionId: number, notes: WrittenSessionNotes): Promise<void>;
+  /** Turns a proposed task into a task of the user; returns its id. */
+  applySessionTask(actionItemId: number): Promise<number>;
+  /** Calls `handler` with the id of each session whose transcript is ready; returns a function that stops listening. */
+  onTranscriptReady(handler: (sessionId: number) => void): Promise<() => void>;
+  /** The URL the web view plays a session's media from. */
+  mediaUrl(mediaPath: string): string;
+  /** Calls `handler` with each step of the model download; returns a function that stops listening. */
+  onModelDownload(handler: (progress: ModelDownload) => void): Promise<() => void>;
   /** Opens a meeting's video call (https only). */
   openMeetingLink(url: string): Promise<void>;
   /** Opens the advanced settings window, optionally on one section. */

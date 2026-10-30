@@ -37,12 +37,17 @@ export class AlertFlow {
     }
   }
 
-  /** Opens what the alert is about: its task, the Agenda for a meeting, or the brief as a receipt. */
+  /**
+   * Opens what the alert is about: its task, the Agenda for a meeting, the choice of what to
+   * record for an offer to record, or the brief as a receipt.
+   */
   async open(): Promise<void> {
     const alert = this.store.state().alert;
     this.modes.cancel();
     if (alert && alert.taskId !== null) {
       await this.items.open(alert.taskId);
+    } else if (alert?.kind === "recording") {
+      this.store.update({ mode: "expanded", panel: "record", videoTargets: null });
     } else if (alert?.kind === "meeting") {
       this.store.update({ mode: "expanded", panel: "tabs", tab: "agenda" });
     } else {

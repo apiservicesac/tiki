@@ -5,6 +5,7 @@ use chrono::NaiveDateTime;
 use crate::agenda::AgendaDay;
 use crate::domain::{ItemKind, Priority, ProjectId, Repeat, TaskId};
 use crate::mood::Mood;
+use crate::sessions::ActiveRecording;
 
 /// How pressing a line is; the interface turns it into a color.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -66,6 +67,8 @@ pub struct IslandSnapshot {
     pub mood_label: String,
     /// Another app holds the microphone: Tiki keeps quiet until the call ends.
     pub in_call: bool,
+    /// The session being recorded: the notch keeps a red dot and its timer in sight.
+    pub recording: Option<ActiveRecording>,
     /// Tasks that need attention: overdue, due soon or waiting on others.
     pub attention_count: usize,
     /// Overdue or due soon.

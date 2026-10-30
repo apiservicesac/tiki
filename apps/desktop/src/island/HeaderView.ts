@@ -1,7 +1,9 @@
+import type { ActiveRecording } from "../backend/contracts";
 import { ElementFactory } from "../dom/ElementFactory";
 import { ICONS } from "../dom/iconLibrary";
 import type { Translator } from "../i18n/Translator";
 import type { IslandPanel, IslandTab } from "./islandState";
+import type { RecordingIndicator } from "./RecordingIndicator";
 
 /** A tab as the header shows it. */
 export interface IslandTabLabel {
@@ -16,12 +18,17 @@ export interface HeaderHandlers {
   onSelectTab: (tab: IslandTab) => void;
   onOpenPanel: (panel: IslandPanel) => void;
   onClose: () => void;
+  onPauseRecording: () => void;
+  onResumeRecording: () => void;
+  onStopRecording: () => void;
 }
 
 /**
  * Top row of the expanded island: Tiki's face, then the tabs (or a back button and the
  * panel's title), and on the right the actions that make sense there. On the tabs: new and
  * settings; inside a panel only close, since the back button already leads out.
+ * While a session records, its red dot and timer stay in the header everywhere, with pause
+ * and stop on the tabs.
  */
 export class HeaderView {
   private static readonly PANEL_TITLES: Readonly<Record<TitledPanel, string>> = Object.freeze({
@@ -30,15 +37,21 @@ export class HeaderView {
     edit: "edit.title",
     projects: "projects.title",
     brief: "receipt.title",
+    record: "record.title",
+    session: "session.title",
   });
 
-  constructor(private readonly translator: Translator) {}
+  constructor(
+    private readonly translator: Translator,
+    private readonly recordingIndicator: RecordingIndicator,
+  ) {}
 
   render(
     face: HTMLElement,
     panel: IslandPanel,
     tabs: readonly IslandTabLabel[],
     activeTab: IslandTab,
+    recording: ActiveRecording | null,
     handlers: HeaderHandlers,
   ): HTMLElement {
     const leading = panel === "tabs"
@@ -47,18 +60,37 @@ export class HeaderView {
     const close = ElementFactory.iconButton(ICONS.close, this.translator.text("island.action.close"), handlers.onClose);
     const actions = panel === "tabs"
       ? [
+        ...this.recordingControls(recording, handlers),
         ElementFactory.iconButton(ICONS.plus, this.translator.text("island.action.new"), () =>
           handlers.onOpenPanel("capture")),
         ElementFactory.iconButton(ICONS.settings, this.translator.text("island.action.settings"), () =>
           handlers.onOpenPanel("settings")),
         close,
       ]
-      : [close];
+      : [...(recording ? [this.recordingIndicator.render(recording)] : []), close];
 
     return ElementFactory.create("header", {
       className: "island-head",
       children: [face, leading, ElementFactory.create("span", { className: "island-head-spacer" }), ...actions],
     });
+  }
+
+  /** On the tabs: the record button, or the session's dot and timer with pause and stop. */
+  private recordingControls(recording: ActiveRecording | null, handlers: HeaderHandlers): HTMLElement[] {
+    if (!recording) {
+      return [ElementFactory.iconButton(ICONS.record, this.translator.text("recording.start"), () => handlers.onOpenPanel("record"))];
+    }
+    // A video keeps its frames' own clock, so only an audio-only session pauses.
+    const pauseOrResume = recording.mode !== "audio_only"
+      ? []
+      : [recording.paused
+        ? ElementFactory.iconButton(ICONS.play, this.translator.text("recording.resume"), handlers.onResumeRecording)
+        : ElementFactory.iconButton(ICONS.pause, this.translator.text("recording.pause"), handlers.onPauseRecording)];
+    return [
+      this.recordingIndicator.render(recording),
+      ...pauseOrResume,
+      ElementFactory.iconButton(ICONS.stop, this.translator.text("recording.stop"), handlers.onStopRecording),
+    ];
   }
 
   private tabs(tabs: readonly IslandTabLabel[], activeTab: IslandTab, onSelect: (tab: IslandTab) => void): HTMLElement {

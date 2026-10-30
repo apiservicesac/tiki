@@ -6,11 +6,17 @@ import type { IslandMode } from "./islandState";
  * What moves the island between modes. `arrived` happens right after the machine itself
  * moves the island, so one move can follow another (compact, then expanded).
  */
-export type ModeEvent = "pointerEnter" | "pointerLeave" | "alertArrived" | "arrived";
+export type ModeEvent = "pointerEnter" | "pointerLeave" | "alertArrived" | "arrived" | "recordingStarted" | "recordingStopped";
+
+/**
+ * Where a move goes: a mode, or `resting`, the folded notch of the moment (`recording` while
+ * a session records, `hidden` otherwise).
+ */
+export type ModeTarget = IslandMode | "resting";
 
 /** Where an event takes the island, and after how long; without a delay it moves at once. */
 export interface ModeTransition {
-  to: IslandMode;
+  to: ModeTarget;
   afterMs?: number;
   /** Folding waits while something holds the island open, such as typing. */
   holdable?: boolean;
@@ -29,20 +35,26 @@ export const MODE_TRANSITIONS: Readonly<Record<IslandMode, Readonly<Partial<Reco
     hidden: {
       pointerEnter: { to: "compact", afterMs: UI_CONFIG.peekDelayMs },
       alertArrived: { to: "alert" },
+      recordingStarted: { to: "recording" },
+    },
+    recording: {
+      pointerEnter: { to: "compact", afterMs: UI_CONFIG.peekDelayMs },
+      alertArrived: { to: "alert" },
+      recordingStopped: { to: "hidden" },
     },
     compact: {
       arrived: { to: "expanded", afterMs: UI_CONFIG.unfoldDelayMs },
-      pointerLeave: { to: "hidden", afterMs: UI_CONFIG.foldDelayMs, holdable: true },
+      pointerLeave: { to: "resting", afterMs: UI_CONFIG.foldDelayMs, holdable: true },
       alertArrived: { to: "alert" },
     },
     alert: {
-      arrived: { to: "hidden", afterMs: UI_CONFIG.alertDurationMs },
+      arrived: { to: "resting", afterMs: UI_CONFIG.alertDurationMs },
       pointerEnter: { to: "expanded", afterMs: UI_CONFIG.peekDelayMs },
-      pointerLeave: { to: "hidden", afterMs: UI_CONFIG.foldDelayMs, holdable: true },
+      pointerLeave: { to: "resting", afterMs: UI_CONFIG.foldDelayMs, holdable: true },
       alertArrived: { to: "alert" },
     },
     expanded: {
-      pointerLeave: { to: "hidden", afterMs: UI_CONFIG.foldDelayMs, holdable: true },
+      pointerLeave: { to: "resting", afterMs: UI_CONFIG.foldDelayMs, holdable: true },
     },
   });
 
@@ -58,6 +70,7 @@ export class IslandModeMachine {
     private readonly currentMode: () => IslandMode,
     private readonly move: (mode: IslandMode) => void,
     private readonly holds: FoldHolds,
+    private readonly isRecording: () => boolean,
   ) {}
 
   /** Something happened: moves the island now or later, as the table says. */
@@ -69,25 +82,34 @@ export class IslandModeMachine {
       return;
     }
     if (transition.afterMs === undefined) {
-      this.arrive(transition.to);
+      this.arrive(this.resolve(transition.to));
       return;
     }
     this.pending.schedule(transition.afterMs, () => {
       if (this.currentMode() === from) {
-        this.arrive(transition.to);
+        this.arrive(this.resolve(transition.to));
       }
     });
   }
 
   /** The user or the app chose a mode: the move waiting to happen no longer does. */
-  moveTo(mode: IslandMode): void {
+  moveTo(target: ModeTarget): void {
     this.pending.cancel();
-    this.move(mode);
+    this.move(this.resolve(target));
+  }
+
+  /** The folded notch of the moment: with the red dot while a session records. */
+  get restingMode(): IslandMode {
+    return this.isRecording() ? "recording" : "hidden";
   }
 
   /** Drops the move waiting to happen, such as folding an alert the user opened. */
   cancel(): void {
     this.pending.cancel();
+  }
+
+  private resolve(target: ModeTarget): IslandMode {
+    return target === "resting" ? this.restingMode : target;
   }
 
   private isHeld(): boolean {

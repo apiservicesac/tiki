@@ -8,5 +8,12 @@ export { CommandInterpreter, type CommandContext, type CommandReply, type Interp
 export { DayAdvisor, type AdvisorContext, type AdvisorLanguage, type AdvisorTask } from "./DayAdvisor";
 export type { HarnessLesson } from "./harness/HarnessPieces";
 export { ACTION_TYPES, type ProposedAction } from "./ProposedAction";
+export {
+  SessionNotesAdvisor,
+  type NotesLine,
+  type ProposedSessionTask,
+  type SessionNotesContext,
+  type WrittenSessionNotes,
+} from "./SessionNotesAdvisor";
 export type { AiModelOption, AiProviderName, ProxiedRequest, ProxiedResponse, StructuredModel } from "./contracts";
 export { TikiAi } from "./TikiAi";

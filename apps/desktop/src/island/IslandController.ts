@@ -1,4 +1,5 @@
 import { ActionApplier } from "../assistant/ActionApplier";
+import { SessionNotesFlow } from "../assistant/SessionNotesFlow";
 import { AssistantActions } from "../assistant/AssistantActions";
 import type { TikiAssistant } from "../assistant/TikiAssistant";
 import type { IslandSnapshot, MoodName, TikiBackend, UserPreferences } from "../backend/contracts";
@@ -9,12 +10,14 @@ import type { Translator } from "../i18n/Translator";
 import { AlertFlow } from "./AlertFlow";
 import { DelayedAction } from "./DelayedAction";
 import type { HitAreaReporter } from "./HitAreaReporter";
-import { IslandModeMachine } from "./IslandModeMachine";
-import { ISLAND_STATE_DEFAULTS, type IslandMode, type IslandPanel, type IslandState, type IslandTab } from "./islandState";
+import { IslandModeMachine, type ModeTarget } from "./IslandModeMachine";
+import { ISLAND_STATE_DEFAULTS, RESTING_MODES, type IslandMode, type IslandPanel, type IslandState, type IslandTab } from "./islandState";
 import type { IslandStore } from "./IslandStore";
 import type { IslandView, IslandViewHandlers } from "./IslandView";
 import { ItemActions } from "./ItemActions";
 import { PreferencesFlow } from "./PreferencesFlow";
+import { RecordingFlow } from "./RecordingFlow";
+import { SessionsFlow } from "./SessionsFlow";
 
 /** The views the controller drives directly, besides the island itself. */
 export interface IslandViews {
@@ -38,6 +41,9 @@ export class IslandController {
   private readonly captureFlow: CaptureFlow;
   private readonly items: ItemActions;
   private readonly alerts: AlertFlow;
+  private readonly recording: RecordingFlow;
+  private readonly sessions: SessionsFlow;
+  private readonly sessionNotes: SessionNotesFlow;
   private readonly stopListening: Array<() => void> = [];
   /** The window changes size when the island moves to another orientation. */
   private readonly redrawOnResize = () => this.render();
@@ -53,17 +59,26 @@ export class IslandController {
   ) {
     this.view = views.island;
     this.state = { ...ISLAND_STATE_DEFAULTS, placement: initialPreferences.islandPlacement, snapshot: initialSnapshot };
-    // Leaving the island folds it, unless the user is in a panel or typing.
-    this.modes = new IslandModeMachine(() => this.state.mode, (mode) => this.showMode(mode), {
-      panel: () => this.state.panel !== "tabs",
-      typing: () => this.view.isTyping(),
-    });
+    // Leaving the island folds it, unless the user is in a panel or typing; while a session
+    // records, it folds to the notch with the red dot.
+    this.modes = new IslandModeMachine(
+      () => this.state.mode,
+      (mode) => this.showMode(mode),
+      {
+        panel: () => this.state.panel !== "tabs",
+        typing: () => this.view.isTyping(),
+      },
+      () => this.state.snapshot.recording !== null,
+    );
     const store = this.store();
     this.preferences = new PreferencesFlow(initialPreferences, backend, translator, views.capture, assistant, store);
     this.assistantActions = new AssistantActions(store, assistant, new ActionApplier(backend));
     this.captureFlow = new CaptureFlow(views.capture, backend, assistant, this.assistantActions, store);
     this.items = new ItemActions(backend, store);
     this.alerts = new AlertFlow(store, this.modes, this.items, this.assistantActions);
+    this.recording = new RecordingFlow(backend, store, this.modes);
+    this.sessions = new SessionsFlow(backend, store);
+    this.sessionNotes = new SessionNotesFlow(backend, store, assistant);
   }
 
   get currentState(): Readonly<IslandState> {
@@ -76,11 +91,15 @@ export class IslandController {
     this.stopListening.push(
       await this.backend.listen(SHELL_EVENTS.openCapture, () => this.openPanel("capture")),
       await this.backend.listen(SHELL_EVENTS.openSettings, () => this.openPanel("settings")),
-      await this.backend.listen(SHELL_EVENTS.toggleIsland, () => this.setMode(this.state.mode === "expanded" ? "hidden" : "expanded")),
+      await this.backend.listen(SHELL_EVENTS.toggleIsland, () => this.setMode(this.state.mode === "expanded" ? "resting" : "expanded")),
       await this.backend.onAlert((alert) => void this.alerts.announce(alert)),
       await this.backend.listen(SHELL_EVENTS.preferencesChanged, () => void this.preferences.reload()),
       await this.backend.listen(SHELL_EVENTS.calendarSynced, () => void this.refresh()),
       await this.backend.listen(SHELL_EVENTS.inCallChanged, () => void this.refresh()),
+      await this.backend.listen(SHELL_EVENTS.recordingChanged, () => void this.refresh()),
+      await this.backend.listen(SHELL_EVENTS.toggleRecording, () => void this.recording.toggle()),
+      await this.backend.onTranscriptReady((sessionId) => void this.sessionNotes.transcriptReady(sessionId)),
+      await this.backend.onModelDownload((progress) => this.sessions.followDownload(progress)),
       await this.backend.onSystemStats((systemStats) => this.update({ systemStats })),
     );
     this.refreshTimer = setInterval(() => void this.refresh(), UI_CONFIG.snapshotRefreshIntervalMs);
@@ -103,28 +122,35 @@ export class IslandController {
     window.removeEventListener("resize", this.redrawOnResize);
   }
 
-  /** The day, the projects and the history, fresh from the core. */
+  /** The day, the projects, the history and the sessions, fresh from the core. */
   async refresh(): Promise<void> {
-    const [snapshot, projects, delivered, trashed, trashRetentionDays] = await Promise.all([
+    const [snapshot, projects, delivered, trashed, trashRetentionDays, sessions] = await Promise.all([
       this.backend.islandSnapshot(),
       this.backend.projectSummaries(),
       this.backend.deliveredTasks(),
       this.backend.trashedItems(),
       this.backend.trashRetentionDays(),
+      this.sessions.load(),
     ]);
-    this.update({ snapshot, projects, delivered, trashed, trashRetentionDays });
+    this.update({ snapshot, projects, delivered, trashed, trashRetentionDays, ...sessions });
+    this.recording.followSnapshot();
   }
 
-  setMode(mode: IslandMode): void {
+  setMode(mode: ModeTarget): void {
     this.modes.moveTo(mode);
   }
 
   openPanel(panel: IslandPanel): void {
-    this.update({ mode: "expanded", panel });
+    this.update({ mode: "expanded", panel, videoTargets: null });
   }
 
   selectTab(tab: IslandTab): void {
     this.update({ tab, panel: "tabs", mode: "expanded" });
+  }
+
+  /** Opens a recorded session in its panel. */
+  openSession(sessionId: number): Promise<void> {
+    return this.sessions.open(sessionId);
   }
 
   submitCapture(): Promise<void> {
@@ -138,7 +164,7 @@ export class IslandController {
 
   /** Folds the island back to its notch, so it never covers the advanced settings window. */
   private openAdvancedSettings(section?: string): void {
-    this.setMode("hidden");
+    this.setMode("resting");
     void this.backend.openAdvancedSettings(section);
   }
 
@@ -169,7 +195,7 @@ export class IslandController {
     // Opening the island reads the alert; folding it afterwards puts the alert away.
     if (next.mode === "expanded") {
       next.unreadAlert = false;
-    } else if (next.mode === "hidden" && this.state.mode === "expanded") {
+    } else if (RESTING_MODES.includes(next.mode) && this.state.mode === "expanded") {
       next.alert = null;
     }
     // An alert handled from the notch (done, snoozed, joined) leaves it at once.
@@ -204,7 +230,20 @@ export class IslandController {
       onPointerLeave: () => this.modes.send("pointerLeave"),
       onSelectTab: (tab) => this.selectTab(tab),
       onOpenPanel: (panel) => this.openPanel(panel),
-      onClose: () => this.setMode("hidden"),
+      onClose: () => this.setMode("resting"),
+      onStartAudioRecording: () => void this.recording.startAudio(),
+      onChooseVideo: () => void this.recording.chooseVideo(),
+      onStartVideoRecording: (target, quality) => void this.recording.startVideo(target, quality),
+      onPauseRecording: () => void this.recording.pause(),
+      onResumeRecording: () => void this.recording.resume(),
+      onStopRecording: () => void this.recording.stop(),
+      onOpenSession: (sessionId, startAtMs) => void this.sessions.open(sessionId, startAtMs),
+      onSearchSessions: (text) => void this.sessions.search(text),
+      onRetryTranscription: (sessionId) => void this.sessions.retry(sessionId),
+      onDeleteSession: (sessionId) => void this.sessions.delete(sessionId),
+      onExportSession: (sessionId) => void this.sessions.export(sessionId),
+      onWriteSessionNotes: (sessionId) => void this.sessionNotes.write(sessionId),
+      onApplySessionTask: (actionItemId) => void this.sessionNotes.applyTask(actionItemId),
       onDeliverTask: (taskId) => void this.items.deliver(taskId),
       onReopenTask: (taskId) => void this.items.reopen(taskId),
       onRestoreTask: (taskId) => void this.items.restore(taskId),

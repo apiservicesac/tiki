@@ -11,6 +11,7 @@ use crate::i18n::Translator;
 use crate::mood::{MoodResolver, MoodSignals};
 use crate::preferences::UserPreferences;
 use crate::projects::ProjectBook;
+use crate::sessions::ActiveRecording;
 use crate::settings::TikiSettings;
 use crate::storage::Database;
 
@@ -63,10 +64,17 @@ impl<'context> WorkspaceViews<'context> {
             quiet_hours: self.preferences.quiet_hours.covers(now.time()),
         });
         let delivered_today = self.database.activity().count_delivered_on(now.date())?;
+        let recording = self
+            .database
+            .sessions()
+            .capturing()?
+            .map(|session| ActiveRecording::of(&session, now))
+            .transpose()?;
         Ok(SnapshotPresenter::new(self.translator, &projects).present(
             &brief,
             mood,
             self.in_call,
+            recording,
             delivered_today,
             &TodaysMeetings {
                 now,

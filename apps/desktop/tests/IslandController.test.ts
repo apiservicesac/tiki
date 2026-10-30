@@ -361,10 +361,10 @@ describe("IslandController", () => {
     expect(notch()?.dataset.mode).toBe("expanded");
   });
 
-  it("shows Today, Tasks and Agenda, and no Tickets tab until a ticket connector exists", () => {
+  it("shows Today, Tasks, Agenda and Sessions, and no Tickets tab until a ticket connector exists", () => {
     controller.setMode("expanded");
     const tabs = [...root.querySelectorAll<HTMLElement>(".island-tab[data-tab]")].map((tab) => tab.dataset.tab);
-    expect(tabs).toEqual(["today", "all_tasks", "agenda"]);
+    expect(tabs).toEqual(["today", "all_tasks", "agenda", "sessions"]);
 
     root.querySelector<HTMLButtonElement>('[data-tab="agenda"]')?.click();
     expect(controller.currentState.tab).toBe("agenda");
@@ -583,6 +583,200 @@ describe("IslandController", () => {
     expect(root.querySelector(".island-content-leaving")).toBeNull();
   });
 
+  it("records only after the user picks a mode, reminding them to tell the participants", async () => {
+    controller.setMode("expanded");
+    root.querySelector<HTMLButtonElement>('[aria-label="Grabar"]')?.click();
+    expect(controller.currentState.panel).toBe("record");
+    expect(root.querySelector(".record-consent")?.textContent).toBe("Antes de grabar, avisa a los participantes.");
+    expect(backend.recordingRequests).toEqual([]);
+
+    root.querySelector<HTMLButtonElement>('.record-option[data-mode="audio_only"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector(".island-head .recording-indicator")).not.toBeNull());
+    expect(backend.recordingRequests).toEqual(["start:audio_only"]);
+    expect(controller.currentState.panel).toBe("tabs");
+  });
+
+  it("records a screen or a window in the quality chosen, and a video does not pause", async () => {
+    controller.openPanel("record");
+    root.querySelector<HTMLButtonElement>('.record-option[data-mode="audio_and_video"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector(".record-target")).not.toBeNull());
+    const targets = [...root.querySelectorAll(".record-target")].map((target) => target.textContent);
+    expect(targets).toEqual(["Pantalla 1", "Reunión de Teams"]);
+    expect(backend.recordingRequests).toEqual([]);
+
+    root.querySelector<HTMLButtonElement>('[data-quality="high"]')?.click();
+    root.querySelector<HTMLButtonElement>('.record-target[data-kind="window"]')?.click();
+    await vi.waitFor(() => expect(backend.recordingRequests).toEqual(["start:audio_and_video"]));
+    expect(backend.lastVideoChoice).toEqual({ kind: "window", id: 1_311_754, quality: "high" });
+    await vi.waitFor(() => expect(root.querySelector(".island-head .recording-indicator")).not.toBeNull());
+    expect(root.querySelector('[aria-label="Pausar la grabación"]')).toBeNull();
+  });
+
+  it("keeps the red dot and the timer in the folded notch while recording", async () => {
+    vi.useFakeTimers();
+    await backend.startRecording("audio_only", null);
+    await controller.refresh();
+    expect(notch()?.dataset.mode).toBe("recording");
+    expect(root.querySelector(".notch-recording .recording-timer")?.textContent).toBe("00:00");
+    await vi.advanceTimersByTimeAsync(UI_CONFIG.recordingTimerTickMs * 65);
+    expect(root.querySelector(".notch-recording .recording-timer")?.textContent).toBe("01:05");
+
+    await backend.stopRecording();
+    await controller.refresh();
+    expect(notch()?.dataset.mode).toBe("hidden");
+  });
+
+  it("pauses, resumes and stops from the header", async () => {
+    await backend.startRecording("audio_only", null);
+    await controller.refresh();
+    controller.setMode("expanded");
+    root.querySelector<HTMLButtonElement>('[aria-label="Pausar la grabación"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector('.recording-indicator[data-paused="true"]')).not.toBeNull());
+    root.querySelector<HTMLButtonElement>('[aria-label="Seguir grabando"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector('.recording-indicator[data-paused="false"]')).not.toBeNull());
+    root.querySelector<HTMLButtonElement>('[aria-label="Terminar la grabación"]')?.click();
+    await vi.waitFor(() => expect(root.querySelector(".recording-indicator")).toBeNull());
+    expect(backend.recordingRequests).toEqual(["start:audio_only", "pause", "resume", "stop"]);
+  });
+
+  it("stops with the shortcut while recording, and otherwise asks what to record", async () => {
+    backend.emit(SHELL_EVENTS.toggleRecording);
+    await vi.waitFor(() => expect(controller.currentState.panel).toBe("record"));
+    await backend.startRecording("audio_only", null);
+    await controller.refresh();
+    backend.emit(SHELL_EVENTS.toggleRecording);
+    await vi.waitFor(() => expect(backend.recordingRequests).toEqual(["start:audio_only", "stop"]));
+  });
+
+  const recordingOffer = { kind: "recording" as const, title: "¿Grabar esta llamada?", summary: "Hay una llamada en curso.", tips: ["Si grabas, avisa a los participantes."], actions: ["open" as const, "record_audio" as const, "record_video" as const], taskId: null, link: null };
+  const quietly = { sound: false, windowsNotification: false };
+
+  it("opens the choice of what to record from Tiki's offer when a call starts", async () => {
+    backend.deliverAlert(recordingOffer, quietly);
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("alert"));
+    expect(root.querySelector(".notch-alert-kind")?.textContent).toBe("Grabar");
+
+    notch()?.click();
+    await vi.waitFor(() => expect(controller.currentState.panel).toBe("record"));
+    expect(backend.recordingRequests).toEqual([]);
+  });
+
+  it("records audio from the offer's button in the notch and rests with the red dot", async () => {
+    backend.deliverAlert(recordingOffer, quietly);
+    await vi.waitFor(() => expect(root.querySelector("#notch-alert-record-audio")).not.toBeNull());
+    expect(root.querySelector("#notch-alert-record-video")?.textContent).toBe("Audio y video");
+
+    root.querySelector<HTMLButtonElement>("#notch-alert-record-audio")?.click();
+    await vi.waitFor(() => expect(notch()?.dataset.mode).toBe("recording"));
+    expect(backend.recordingRequests).toEqual(["start:audio_only"]);
+    expect(controller.currentState.alert).toBeNull();
+  });
+
+  it("asks which screen or window to record from the offer's video button", async () => {
+    backend.deliverAlert(recordingOffer, quietly);
+    await vi.waitFor(() => expect(root.querySelector("#notch-alert-record-video")).not.toBeNull());
+    root.querySelector<HTMLButtonElement>("#notch-alert-record-video")?.click();
+    await vi.waitFor(() => expect(root.querySelector(".record-target")).not.toBeNull());
+    expect(backend.recordingRequests).toEqual([]);
+  });
+
+  it("lists the recorded sessions with their status and what their media takes", () => {
+    controller.selectTab("sessions");
+    const rows = [...root.querySelectorAll<HTMLElement>(".session-row")];
+    expect(rows.map((row) => row.dataset.sessionId)).toEqual(["2", "1"]);
+    expect(rows[0]?.querySelector(".island-when")?.textContent).toBe("Lista");
+    expect(rows[0]?.querySelector("small")?.textContent).toBe("Mié 21 · 10:00 · 30:30");
+    expect(rows[1]?.querySelector(".session-retry")).not.toBeNull();
+    expect(root.querySelector(".sessions-storage")?.textContent).toBe("El audio y el video ocupan 24 MB y se borran a los 90 días.");
+  });
+
+  it("retries a transcription that failed", async () => {
+    controller.selectTab("sessions");
+    root.querySelector<HTMLButtonElement>(".session-retry")?.click();
+    await vi.waitFor(() => expect(backend.retriedTranscriptions).toEqual([1]));
+  });
+
+  it("opens a session with its player and the transcript labelled You and Others", async () => {
+    controller.selectTab("sessions");
+    root.querySelector<HTMLButtonElement>('.session-row[data-session-id="2"] .island-row-text')?.click();
+    await vi.waitFor(() => expect(root.querySelector(".session-detail")).not.toBeNull());
+
+    const player = root.querySelector<HTMLVideoElement>("video.session-player");
+    expect(player?.getAttribute("src")).toBe("http://asset.localhost/C%3A%5CTiki%5Csessions%5C2%5Csession.mp4");
+    const speakers = [...root.querySelectorAll(".session-line-speaker")].map((speaker) => speaker.textContent);
+    expect(speakers).toEqual(["Otros", "Tú", "Otros"]);
+  });
+
+  it("follows the player in the transcript and plays from a clicked line", async () => {
+    await controller.openSession(2);
+    const player = root.querySelector<HTMLVideoElement>("video.session-player");
+    if (!player) {
+      throw new Error("no player");
+    }
+    player.play = () => Promise.resolve();
+    root.querySelectorAll<HTMLButtonElement>(".session-line")[1]?.click();
+    expect(player.currentTime).toBe(5);
+    expect(root.querySelector(".session-line-now .session-line-text")?.textContent).toBe("Mañana envío el informe");
+
+    player.currentTime = 10;
+    player.dispatchEvent(new Event("timeupdate"));
+    expect(root.querySelector(".session-line-now .session-line-text")?.textContent).toBe("Perfecto, gracias");
+  });
+
+  it("keeps the same player when the island refreshes, so playback goes on", async () => {
+    await controller.openSession(2);
+    const player = root.querySelector("video.session-player");
+    await controller.refresh();
+    expect(root.querySelector("video.session-player")).toBe(player);
+  });
+
+  it("finds what was said and opens the session at that moment", async () => {
+    controller.selectTab("sessions");
+    const search = root.querySelector<HTMLInputElement>("#sessions-search");
+    if (!search) {
+      throw new Error("no search box");
+    }
+    search.value = "informe";
+    search.dispatchEvent(new Event("input"));
+    await vi.waitFor(() => expect(root.querySelector(".session-hit")).not.toBeNull());
+    expect(root.querySelector(".session-hit .island-row-text")?.firstChild?.textContent).toBe("Mañana envío el informe");
+
+    root.querySelector<HTMLButtonElement>(".session-hit .island-row-text")?.click();
+    await vi.waitFor(() => expect(root.querySelector(".session-detail")).not.toBeNull());
+    expect(root.querySelector<HTMLVideoElement>("video.session-player")?.currentTime).toBe(5);
+  });
+
+  it("exports a session to the user's Downloads", async () => {
+    await controller.openSession(2);
+    root.querySelector<HTMLButtonElement>(".session-export")?.click();
+    await vi.waitFor(() => expect(backend.exportedSessions).toEqual([2]));
+  });
+
+  it("deletes a session only after a second press", async () => {
+    await controller.openSession(2);
+    root.querySelector<HTMLButtonElement>(".session-delete")?.click();
+    expect(backend.deletedSessions).toEqual([]);
+    expect(root.querySelector(".session-delete")?.textContent).toBe("¿Borrar? Pulsa otra vez");
+    root.querySelector<HTMLButtonElement>(".session-delete")?.click();
+    await vi.waitFor(() => expect(backend.deletedSessions).toEqual([2]));
+    expect(controller.currentState.panel).toBe("tabs");
+  });
+
+  it("keeps only the transcript of a session without an AI key", async () => {
+    backend.reportTranscriptReady(2);
+    await controller.openSession(2);
+    expect(backend.savedSessionNotes.size).toBe(0);
+    expect(root.querySelector(".session-notes .session-note")?.textContent).toBe("Con una clave de IA, Tiki escribe el resumen, las decisiones y las tareas de cada sesión.");
+  });
+
+  it("says how far the transcription model download got", async () => {
+    controller.selectTab("sessions");
+    backend.reportModelDownload({ downloadedBytes: 35, totalBytes: 100 });
+    expect(root.querySelector(".sessions-download")?.textContent).toBe("Preparando la transcripción: 35\u00a0%");
+    backend.reportModelDownload({ downloadedBytes: 100, totalBytes: 100 });
+    expect(root.querySelector<HTMLElement>(".sessions-download")?.hidden).toBe(true);
+  });
+
   it("shows only Tiki while resting when the day is clear", async () => {
     controller.stop();
     const clearDay = { ...FakeBackend.sampleSnapshot(), attentionCount: 0, sections: [] };
@@ -638,6 +832,43 @@ describe("IslandController with the AI assistant", () => {
     typeCapture(root, text);
     await controller.submitCapture();
   };
+
+  const sessionNotes = {
+    summary: "Se revisó la facturación de octubre.",
+    keyPoints: ["Octubre cerrado"],
+    decisions: ["Enviar el informe mañana"],
+    tasks: [{ title: "Enviar el informe", dueDate: "2026-10-22" }],
+  };
+
+  it("writes a session's notes as soon as its transcript is ready", async () => {
+    backend.aiShell = new FakeShell(claudeReads(sessionNotes));
+    backend.reportTranscriptReady(2);
+    await vi.waitFor(() => expect(backend.savedSessionNotes.get(2)?.summary).toBe("Se revisó la facturación de octubre."));
+    expect(JSON.stringify(backend.aiShell.lastBody())).toContain("Mañana envío el informe");
+  });
+
+  it("does not write notes by itself when the user turned that off, but writes them on request", async () => {
+    await controller.changePreferences({ ...backend.savedPreferences, sessionNotesAutomatic: false });
+    backend.aiShell = new FakeShell(claudeReads(sessionNotes));
+    backend.reportTranscriptReady(2);
+    await controller.refresh();
+    expect(backend.savedSessionNotes.size).toBe(0);
+
+    await controller.openSession(2);
+    root.querySelector<HTMLButtonElement>(".session-write-notes")?.click();
+    await vi.waitFor(() => expect(backend.savedSessionNotes.has(2)).toBe(true));
+  });
+
+  it("shows the notes and creates a proposed task with one click", async () => {
+    await backend.saveSessionNotes(2, sessionNotes);
+    await controller.openSession(2);
+    expect(root.querySelector(".session-summary")?.textContent).toBe("Se revisó la facturación de octubre.");
+    expect([...root.querySelectorAll(".session-notes h4")].map((title) => title.textContent)).toEqual(["Puntos clave", "Decisiones", "Tareas propuestas"]);
+
+    root.querySelector<HTMLButtonElement>(".session-task-apply")?.click();
+    await vi.waitFor(() => expect(root.querySelector(".session-task-created")).not.toBeNull());
+    expect(backend.appliedSessionTasks).toEqual([1]);
+  });
 
   it("fills the fields of an item with AI and saves them on the second Enter, learning from changes", async () => {
     backend.aiShell = new FakeShell(captureReply(item({

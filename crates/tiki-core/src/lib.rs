@@ -20,6 +20,7 @@ pub mod plugins;
 pub mod preferences;
 pub mod presence;
 pub mod projects;
+pub mod sessions;
 pub mod settings;
 pub mod storage;
 pub mod workspace;

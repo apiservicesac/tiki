@@ -44,7 +44,7 @@ describe("AdvancedSettingsApp", () => {
 
     root.querySelector<HTMLButtonElement>('[data-section="shortcuts"]')?.click();
     expect(app.currentSection).toBe("shortcuts");
-    expect(root.querySelectorAll(".shortcut-row")).toHaveLength(2);
+    expect(root.querySelectorAll(".shortcut-row")).toHaveLength(3);
   });
 
   it("falls back to General for an unknown section", async () => {
@@ -122,5 +122,17 @@ describe("AdvancedSettingsApp", () => {
     await startOn("accounts");
     await vi.waitFor(() => expect(root.querySelector<HTMLButtonElement>('[data-provider="microsoft"]')?.disabled).toBe(true));
     expect(root.querySelector<HTMLButtonElement>('[data-provider="google"]')?.disabled).toBe(false);
+  });
+
+  it("chooses the transcription model, the automatic notes and how long media is kept", async () => {
+    await startOn("sessions");
+    const option = (label: string) => [...root.querySelectorAll<HTMLButtonElement>(".settings-option")]
+      .find((button) => button.textContent === label);
+    option("Precisa")?.click();
+    await vi.waitFor(() => expect(backend.savedPreferences.transcriptionQuality).toBe("precise"));
+    root.querySelector<HTMLButtonElement>('[data-setting="advanced.sessions.notes_automatic"]')?.click();
+    await vi.waitFor(() => expect(backend.savedPreferences.sessionNotesAutomatic).toBe(false));
+    option("30 días")?.click();
+    await vi.waitFor(() => expect(backend.savedPreferences.sessionMediaDays).toBe(30));
   });
 });

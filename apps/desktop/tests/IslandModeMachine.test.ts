@@ -6,15 +6,17 @@ import { IslandModeMachine } from "../src/island/IslandModeMachine";
 describe("IslandModeMachine", () => {
   let mode: IslandMode;
   let typing: boolean;
+  let recording: boolean;
   let machine: IslandModeMachine;
 
   beforeEach(() => {
     vi.useFakeTimers();
     mode = "hidden";
     typing = false;
+    recording = false;
     machine = new IslandModeMachine(() => mode, (next) => {
       mode = next;
-    }, { typing: () => typing });
+    }, { typing: () => typing }, () => recording);
   });
 
   afterEach(() => vi.useRealTimers());
@@ -82,5 +84,33 @@ describe("IslandModeMachine", () => {
     machine.moveTo("alert");
     vi.advanceTimersByTime(UI_CONFIG.alertDurationMs);
     expect(mode).toBe("alert");
+  });
+
+  it("rests with the red dot while a session records, and without it once it stops", () => {
+    recording = true;
+    machine.send("recordingStarted");
+    expect(mode).toBe("recording");
+    recording = false;
+    machine.send("recordingStopped");
+    expect(mode).toBe("hidden");
+  });
+
+  it("folds back to the notch with the red dot while recording", () => {
+    recording = true;
+    mode = "recording";
+    machine.send("pointerEnter");
+    vi.advanceTimersByTime(UI_CONFIG.peekDelayMs + UI_CONFIG.unfoldDelayMs);
+    expect(mode).toBe("expanded");
+    machine.send("pointerLeave");
+    vi.advanceTimersByTime(UI_CONFIG.foldDelayMs);
+    expect(mode).toBe("recording");
+  });
+
+  it("ends an alert in the notch with the red dot while recording", () => {
+    recording = true;
+    mode = "recording";
+    machine.send("alertArrived");
+    vi.advanceTimersByTime(UI_CONFIG.alertDurationMs);
+    expect(mode).toBe("recording");
   });
 });

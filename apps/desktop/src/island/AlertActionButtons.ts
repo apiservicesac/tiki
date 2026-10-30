@@ -10,6 +10,9 @@ export interface AlertActionHandlers {
   onSnooze: (taskId: number, minutes: number) => void;
   /** Opens a meeting's video call. */
   onJoinMeeting: (url: string) => void;
+  /** Tiki's offer to record: audio right away, or the screen or window to record first. */
+  onStartAudioRecording: () => void;
+  onChooseVideo: () => void;
 }
 
 /** Where the buttons go: Today's notice offers every snooze, the notch only the shortest. */
@@ -19,7 +22,7 @@ export interface AlertButtonsPlace {
   everySnooze: boolean;
 }
 
-/** The buttons an alert offers (done, snooze, join), the same wherever the alert shows. */
+/** The buttons an alert offers (done, snooze, join, record), the same wherever the alert shows. */
 export class AlertActionButtons {
   constructor(private readonly translator: Translator) {}
 
@@ -44,6 +47,10 @@ export class AlertActionButtons {
       }
       case "join":
         return link === null ? [] : [this.button("meeting.join", `${place.idPrefix}-join`, place, () => handlers.onJoinMeeting(link))];
+      case "record_audio":
+        return [this.button("alert.record_audio", `${place.idPrefix}-record-audio`, place, handlers.onStartAudioRecording)];
+      case "record_video":
+        return [this.button("alert.record_video", `${place.idPrefix}-record-video`, place, handlers.onChooseVideo)];
     }
   }
 

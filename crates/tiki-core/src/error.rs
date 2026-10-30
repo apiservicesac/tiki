@@ -42,6 +42,21 @@ pub enum TikiError {
     #[error("the item is in the trash: restore it to change it")]
     ItemInTrash,
 
+    #[error("the session has not been saved yet")]
+    UnsavedSession,
+
+    #[error("a session cannot go from {from} to {to}")]
+    SessionTransition {
+        from: &'static str,
+        to: &'static str,
+    },
+
+    #[error("a session is already being recorded")]
+    AlreadyRecording,
+
+    #[error("only an audio-only session can pause")]
+    PauseNeedsAudioOnly,
+
     #[error("AI request failed: {0}")]
     Ai(String),
 
@@ -70,6 +85,10 @@ impl TikiError {
             TikiError::EmptyTaskTitle => "empty_task_title",
             TikiError::ReminderNeedsTime => "reminder_needs_time",
             TikiError::ItemInTrash => "item_in_trash",
+            TikiError::UnsavedSession => "unsaved_session",
+            TikiError::SessionTransition { .. } => "session_transition",
+            TikiError::AlreadyRecording => "already_recording",
+            TikiError::PauseNeedsAudioOnly => "pause_needs_audio_only",
             TikiError::Ai(_) => "ai",
             TikiError::Calendar(_) => "calendar",
             TikiError::Plugin(_) => "plugin",
