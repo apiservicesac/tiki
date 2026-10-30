@@ -61,7 +61,7 @@ export class ItemRow {
     return ElementFactory.create("span", { className: `island-when island-when-${tone}`, text: label });
   }
 
-  /** A bell for a reminder, a calendar for a meeting. */
+  /** An icon of what the line is: a bell for a reminder, how a session was recorded. */
   kindIcon(iconMarkup: string): HTMLElement {
     return ElementFactory.fromTrustedMarkup("agenda-bell", iconMarkup);
   }

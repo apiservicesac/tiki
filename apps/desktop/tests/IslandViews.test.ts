@@ -205,6 +205,12 @@ describe("AgendaView", () => {
     expect(element.outerHTML).toMatchSnapshot();
   });
 
+  it("shows whose account a meeting comes from and the platform of its call", () => {
+    const meeting = view.render(SNAPSHOT.agenda, recordingHandlers()).querySelector(".agenda-meeting");
+    expect(meeting?.getAttribute("title")).toBe("ana@microsoft.test");
+    expect(meeting?.querySelector<HTMLElement>(".account-service")?.dataset.service).toBe("teams");
+  });
+
   it("opens and delivers a reminder and joins a meeting without letting the click reach the island", () => {
     const handlers = recordingHandlers();
     const element = view.render(SNAPSHOT.agenda, handlers);
