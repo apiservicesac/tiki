@@ -24,9 +24,19 @@ All notable changes to Tiki are documented here. The format follows
 - With nothing pending, the resting notch shows CPU, memory, temperature and download
   speed, high figures in amber (Settings › Notch).
 - Joining a Google Meet call opens it with the account the meeting comes from.
+- Linked accounts show who they are: picture, name and email with the Google or Microsoft
+  icon in Settings, and each meeting shows its account and platform (Google Meet, Teams,
+  Zoom) in the Agenda, the notch alert and Windows notifications. Google accounts linked
+  before this sign in again once to show their name and picture.
+- Tiki for Windows is open source under the MIT License, with a new website at
+  tiki.apiservicesac.com.
 
 ### Changed
 - New app icons with Tiki's current face.
+- Tiki's rounded body has a soft edge in the mood color, so it reads as a face and not
+  only two eyes on a black notch.
+- Switching between Today, Tasks and Agenda fades the new tab in instead of swapping it
+  at once.
 - The page after connecting a calendar shows Tiki's face, says whether it worked and tries
   to close itself.
 
