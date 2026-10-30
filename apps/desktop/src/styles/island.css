@@ -1533,7 +1533,7 @@ button.island-row-text {
 }
 
 [data-orientation="vertical"] .notch-hidden {
-  width: var(--notch-hidden-thickness);
+  width: var(--notch-side-thickness);
   height: var(--notch-hidden-length);
 }
 
@@ -1549,7 +1549,7 @@ button.island-row-text {
 }
 
 [data-orientation="vertical"] .notch-compact {
-  width: var(--notch-head-height);
+  width: var(--notch-side-thickness);
 }
 
 [data-orientation="vertical"] .notch-summary {

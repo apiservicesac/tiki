@@ -6,6 +6,10 @@ All notable changes to Tiki are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- On the left and right edges the folded notch is wide enough for Tiki's face, which was
+  cut against the screen edge.
+
 ## [0.6.0-rc.1] - 2026-10-30
 
 ### Added
