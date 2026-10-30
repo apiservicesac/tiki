@@ -8,6 +8,7 @@ use tiki_core::{TikiError, TikiResult};
 use super::google_calendar::GoogleCalendar;
 use super::microsoft_calendar::MicrosoftCalendar;
 use super::oauth_client::OAuthClient;
+use super::pending_sign_in::PendingSignIn;
 use super::sign_in::SignIn;
 use super::sign_in_page::SignInPages;
 use super::token_store::TokenStore;
@@ -37,7 +38,8 @@ impl CalendarSync {
             .collect()
     }
 
-    /// Signs in in the browser, remembers the account and copies its meetings.
+    /// Signs in in the browser, remembers the account and copies its meetings. A sign-in
+    /// still waiting for the browser is replaced by this one.
     pub async fn connect(
         &self,
         app: &AppHandle,
@@ -52,8 +54,9 @@ impl CalendarSync {
                 workspace.preferences().locale,
             )?))
         })?;
+        let cancelled = app.state::<PendingSignIn>().begin();
         let signed_in = SignIn::new(self.http.clone())
-            .sign_in(app, client, pages)
+            .sign_in(app, client, pages, cancelled)
             .await?;
         let account_id = state
             .with_workspace(|workspace| workspace.connect_calendar(provider, &signed_in.email))?;
@@ -62,6 +65,11 @@ impl CalendarSync {
         self.sync_account(app, &account).await?;
         ShellEvent::CalendarSynced.emit(app);
         Ok(account)
+    }
+
+    /// Stops the sign-in waiting for the browser, if any.
+    pub fn cancel_sign_in(app: &AppHandle) {
+        app.state::<PendingSignIn>().cancel();
     }
 
     /// Forgets an account: its sign-in and its meetings.

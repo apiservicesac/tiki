@@ -8,6 +8,7 @@ mod google_calendar;
 mod loopback_receiver;
 mod microsoft_calendar;
 mod oauth_client;
+mod pending_sign_in;
 mod pkce;
 mod provider_answer;
 mod sign_in;
@@ -15,3 +16,4 @@ mod sign_in_page;
 mod token_store;
 
 pub use calendar_sync::CalendarSync;
+pub use pending_sign_in::PendingSignIn;

@@ -1,5 +1,6 @@
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use url::Url;
@@ -26,15 +27,20 @@ impl LoopbackReceiver {
         ))
     }
 
-    /// Waits for the browser to come back with `code` and the expected `state`.
+    /// Waits for the browser to come back with `code` and the expected `state`, until the
+    /// timeout or until `cancelled` is set.
     pub fn wait_for_code(
         &self,
         state: &str,
         timeout: Duration,
+        cancelled: &AtomicBool,
         pages: &SignInPages,
     ) -> Result<String, String> {
         let deadline = Instant::now() + timeout;
         while Instant::now() < deadline {
+            if cancelled.load(Ordering::Relaxed) {
+                return Err("the sign-in was cancelled".to_owned());
+            }
             match self.listener.accept() {
                 Ok((stream, _)) => {
                     if let Some(answer) = Self::read_answer(stream, state, pages) {

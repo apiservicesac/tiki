@@ -1,3 +1,5 @@
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use serde::Deserialize;
@@ -43,12 +45,14 @@ impl SignIn {
         Self { http }
     }
 
-    /// Opens the provider's sign-in page and waits for the user to come back.
+    /// Opens the provider's sign-in page and waits for the user to come back, or for
+    /// `cancelled` to be set.
     pub async fn sign_in(
         &self,
         app: &AppHandle,
         client: OAuthClient,
         pages: SignInPages,
+        cancelled: Arc<AtomicBool>,
     ) -> TikiResult<SignedIn> {
         let pkce = Pkce::new().map_err(|error| Self::error(&error))?;
         let receiver = LoopbackReceiver::bind()?;
@@ -84,7 +88,7 @@ impl SignIn {
 
         let state = pkce.state.clone();
         let code = tauri::async_runtime::spawn_blocking(move || {
-            receiver.wait_for_code(&state, Self::TIMEOUT, &pages)
+            receiver.wait_for_code(&state, Self::TIMEOUT, &cancelled, &pages)
         })
         .await
         .map_err(|error| Self::error(&error))?
