@@ -9,7 +9,7 @@ right moment what needs you. Your data stays on your computer.
 [Privacy policy](https://tiki.apiservicesac.com/privacy-policy.html) ·
 [Changelog](CHANGELOG.md)
 
-![An alert in the notch: a reminder with Done and snooze](docs/assets/screenshots/notch-alert.png)
+![A reminder and a meeting alert arriving in the notch](docs/assets/media/alerts.gif)
 
 ## What it does
 
@@ -31,6 +31,14 @@ Tiki's face in the notch tells the mood of your day at a glance: calm, something
 late, a meeting about to start.
 
 ![The notch at rest: Tiki's face and what is pending](docs/assets/screenshots/face-compact.png)
+
+**Capture a task from one sentence**
+
+![Typing a task in the capture box](docs/assets/media/capture.gif)
+
+**Today, Tasks and Agenda**
+
+![Moving between Today, Tasks and Agenda](docs/assets/media/tour.gif)
 
 | Today | Tasks |
 | --- | --- |
