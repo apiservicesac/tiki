@@ -9,13 +9,13 @@ scope, `calendar.readonly`, so the review needs no security assessment.
 | Field | Value |
 |---|---|
 | App name | Tiki |
-| User support email | principal@apiservicesac.com |
+| User support email | soporte@apiservicesac.com / josuesp1620@gmail.com |
 | App logo | `docs/assets/tiki-logo-120.png` (120×120 PNG; Google does not take SVG) |
 | Application home page | https://tiki.apiservicesac.com/ |
 | Privacy policy | https://tiki.apiservicesac.com/privacy-policy.html (the policy page itself, not the home page) |
 | Terms of service | https://tiki.apiservicesac.com/terms.html |
 | Authorized domain | `apiservicesac.com` |
-| Developer contact | principal@apiservicesac.com |
+| Developer contact | soporte@apiservicesac.com / josuesp1620@gmail.com |
 | Publishing status | In production |
 
 ## Serve the site from apiservicesac.com
