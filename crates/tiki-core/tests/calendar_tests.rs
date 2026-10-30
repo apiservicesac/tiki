@@ -4,7 +4,7 @@ use chrono::{NaiveDateTime, NaiveTime};
 use support::{TestDay, TimedWorkspace};
 use tiki_core::agenda::AgendaEntry;
 use tiki_core::alerts::AlertKind;
-use tiki_core::calendar::{CalendarProvider, Meeting, MeetingItem, MeetingLink};
+use tiki_core::calendar::{CalendarProvider, Meeting, MeetingItem, MeetingLink, MeetingPlatform};
 use tiki_core::workspace::IslandSnapshot;
 
 fn at(day: u32, hour: u32, minute: u32) -> NaiveDateTime {
@@ -283,4 +283,26 @@ fn a_google_meet_link_opens_with_the_account_the_meeting_comes_from() {
 fn other_meeting_links_are_left_as_they_are() {
     let teams = "https://teams.microsoft.com/l/meetup-join/19%3ameeting";
     assert_eq!(MeetingLink::for_account(teams, "ana@acme.com"), teams);
+}
+
+#[test]
+fn the_platform_of_a_meeting_comes_from_the_host_of_its_link() {
+    let platforms = [
+        "https://meet.google.com/abc-defg-hij?authuser=ana@acme.com",
+        "https://teams.microsoft.com/l/meetup-join/19%3ameeting",
+        "https://teams.live.com/meet/9341",
+        "https://acme.zoom.us/j/123456",
+        "https://acme.webex.com/meet/ana",
+    ]
+    .map(MeetingPlatform::of);
+    assert_eq!(
+        platforms,
+        [
+            MeetingPlatform::GoogleMeet,
+            MeetingPlatform::Teams,
+            MeetingPlatform::Teams,
+            MeetingPlatform::Zoom,
+            MeetingPlatform::Other,
+        ]
+    );
 }
