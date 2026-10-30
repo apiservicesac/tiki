@@ -1,0 +1,39 @@
+name: Bug report
+description: Something in Tiki does not work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what Tiki did instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the island
+        2. …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Tiki version
+      description: Advanced settings › General.
+      placeholder: 0.6.0-rc.1
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 23H2
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: Relevant lines from %LOCALAPPDATA%\pe.apiservice.tiki\logs\tiki.log. Remove anything private.
+      render: text

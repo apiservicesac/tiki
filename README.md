@@ -1,106 +1,93 @@
-# Tiki
+# Tiki for Windows
 
-A desktop assistant for support work: your tickets, tasks, reminders and daily brief in an
-island at the top of the screen, with Tiki the mascot showing how your day is going.
+**Tiki is a work assistant that lives in your Windows notch.** It keeps your tasks, reminders,
+meetings and recorded sessions in one place at the top of the screen, and tells you at the
+right moment what needs you. Your data stays on your computer.
 
-Platforms: Windows first; Linux, macOS, Android and iOS later. There is no web version.
+[Download](https://github.com/apiservicesac/tiki/releases) ·
+[Website](https://apiservicesac.github.io/tiki/) ·
+[Privacy policy](https://apiservicesac.github.io/tiki/privacy-policy.html) ·
+[Changelog](CHANGELOG.md)
+
+> Not to be confused with Tiki Wiki CMS: this Tiki is a desktop assistant for Windows.
+
+## What it does
+
+- **Captures** a task or a reminder from one sentence, the way you would say it; an optional
+  AI fills in the project, date and priority.
+- **Organizes** your work by project, with tags, follow-ups, a delivered history and a trash
+  you can restore from.
+- **Reminds you at the right moment**: reminders, follow-ups, a morning brief, an end-of-day
+  close and an alert before each meeting, with Join.
+- **Reads your calendars** (Google and Microsoft 365, read-only) and shows your meetings in
+  the Agenda.
+- **Records sessions**: audio, or audio and video of a screen or a window, transcribed on
+  your computer with Whisper, with AI notes and proposed tasks.
+- **Keeps quiet when it should**: at night, during calls and in focus mode.
+- With nothing pending, the notch shows how the computer is doing: CPU, memory,
+  temperature and network.
+
+Tiki's face in the notch tells the mood of your day at a glance: calm, something due, something
+late, a meeting about to start.
+
+## Install
+
+Download the latest `Tiki_*_x64-setup.exe` from
+[Releases](https://github.com/apiservicesac/tiki/releases) and run it. The installer is ready
+to use, calendar sign-in included: there is nothing to configure. Tiki updates itself: each
+new version is signed and offered from its settings.
+
+Requirements: Windows 10 or 11 (64-bit).
+
+## Privacy
+
+Tiki runs on your computer and keeps everything in a local database. Calendar access is
+read-only, recordings are transcribed locally, and nothing is sent anywhere unless you add
+your own AI key, in which case only what each feature needs goes to that provider. See the
+[privacy policy](https://apiservicesac.github.io/tiki/privacy-policy.html).
+
+## Build from source
+
+Nothing is installed on the host: every toolchain runs in Docker, as your user.
+
+```bash
+make images        # build the toolchain images
+make ui-install    # install the interface dependencies
+make test          # Rust core and interface tests
+make lint          # rustfmt, clippy (pedantic, warnings as errors), TypeScript types
+make format        # format the Rust code
+```
+
+Windows builds run on GitHub Actions: the `Checks` workflow lints the desktop shell on
+Windows for every push and pull request, and the `Windows installer` workflow builds the
+signed installer for every `v*` tag.
+
+The official installer comes with its own calendar sign-in. A build of your own does not:
+to connect calendars, create your own OAuth clients (Google Cloud and Microsoft Entra) and
+set them in the environment variables `TIKI_GOOGLE_CLIENT_ID`, `TIKI_GOOGLE_CLIENT_SECRET` and
+`TIKI_MICROSOFT_CLIENT_ID`.
 
 ## Layout
 
 ```text
-crates/tiki-core/        Rust core, no UI: domain, SQLite storage, daily brief, mood,
-                         projects, reminders, plugin contracts, i18n, workspace facade
+crates/tiki-core/        Rust core, no UI: items, activity history, alerts, agenda,
+                         calendars, sessions, preferences, i18n, SQLite storage
+crates/tiki-recording/   Audio and video capture, mixing, writers and local transcription
 apps/desktop/            Desktop app
-  src/                   TypeScript interface (island, mascot, quick capture)
-  src-tauri/             Tauri 2 shell: window, tray, global shortcuts, commands
+  src/                   TypeScript interface: the island, Tiki's face, panels, AI
+  src-tauri/             Tauri 2 shell: window, tray, shortcuts, calendars, recorder
   tests/                 Interface tests (Vitest)
 locales/                 es.json and en.json, shared by Rust and TypeScript
-docker/                  Toolchains: core (Rust), ui (Node), windows (cross-compile)
+docs/                    Website (GitHub Pages) and design notes
+docker/                  Toolchains: core (Rust), ui (Node)
 ```
 
-### Core modules (`crates/tiki-core/src`)
+## Contributing
 
-| Module | Responsibility |
-| --- | --- |
-| `domain` | Task, Project, statuses, priorities, origin of a task |
-| `storage` | SQLite database, migrations and one repository per entity |
-| `briefing` | Sorts open tasks into overdue / due soon / your turn / waiting, and narrates them |
-| `mood` | Picks the mascot's mood from the day |
-| `capture` | A confirmed quick capture: fields the AI filled from a sentence or the user picked (no word rules) |
-| `projects` | Projects (a client, a product, a team or personal): workload, create, change, remove |
-| `editing` | Task details and edits |
-| `reminders` | When the briefs and task reminders are due, and the alerts they produce |
-| `plugins` | Contracts for the two connection kinds: `TicketSource` and `ClientInstance` |
-| `i18n` | Locale catalogs, translator, date formatting |
-| `workspace` | `TikiWorkspace`, the single entry point every client uses |
-| `settings` | `TikiSettings`, the only place with tunable values |
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[code of conduct](CODE_OF_CONDUCT.md). To report a security problem, see
+[SECURITY.md](SECURITY.md).
 
-## AI
+## License
 
-The AI library (`apps/desktop/src/ai`) wraps the official Anthropic and OpenAI SDKs; the
-shell adds the key, which never reaches the interface. Prompts are built from harness pieces
-(`ai/harness`): persona, guardrails, memory (project notes and the user's capture
-corrections), the guide of actions Tiki may propose, and one skill per job (the single box,
-which captures items or answers and proposes changes, and the brief). Tiki never changes
-anything by itself: proposed actions wait for the user's click. There are no word rules:
-without an AI key, the text is the title and the user picks the fields.
-
-Tiki keeps no lists to maintain: projects are created the first time they are named, tags
-are free, and who a task waits for is free text.
-
-## Plugins
-
-Every external system is a plugin offering one or both connection kinds:
-
-- **Ticket source** (type 1): where tickets and project tasks come from.
-- **Client instance** (type 2): a client's system that Tiki inspects read-only while
-  investigating a ticket. The trait has no write methods.
-
-Odoo will be the first plugin and implements both; Slack, Jira and GitHub can follow
-without touching the rest of the app.
-
-## Working with Docker
-
-Nothing is installed on the host. Containers run as your user, caches live in `.cache/`.
-
-```bash
-make images            # build the toolchain images
-make ui-install        # install the interface dependencies
-make test              # Rust core + interface tests
-make lint              # rustfmt, clippy (pedantic, warnings as errors), TypeScript types
-make windows-check     # compile and lint the desktop shell for Windows
-make windows-installer # build the Windows installer (.exe)
-```
-
-`make windows-installer` cross-compiles with `cargo-xwin`; the first run downloads the
-Microsoft C runtime and Windows SDK headers (about 1.5 GB) and accepts Microsoft's license.
-The `Windows installer` GitHub workflow builds the same installer natively on Windows.
-
-## Releases
-
-- Versions follow Semantic Versioning. The app version lives in `Cargo.toml`,
-  `apps/desktop/package.json` and `apps/desktop/src-tauri/tauri.conf.json`.
-- Release candidates are tagged `vX.Y.Z-rc.N` and published as GitHub pre-releases titled
-  `Tiki vX.Y.Z-rc.N`; the final release is tagged `vX.Y.Z` and titled `Tiki vX.Y.Z`.
-- Release candidates carry the suffix in the app version too (`0.2.0-rc.1`), so installed
-  copies see each new candidate as an update.
-- Every release adds its entry to `CHANGELOG.md`; release notes reuse that entry.
-- Updates are signed. The private key lives outside the repository in
-  `~/.tauri/tiki-updater.key` (back it up: without it, installed copies cannot be updated);
-  the public key is in `tauri.conf.json`. Release steps:
-  1. `ANTHROPIC_API_KEY=… make eval-ai` measures the AI on real sentences
-     (`apps/desktop/tests/evals`); it should stay at 85% or more.
-  2. `make windows-installer` builds and signs the installer.
-  3. `make update-manifest VERSION=X.Y.Z-rc.N NOTES='…'` writes `updates/latest.json`.
-  4. Publish the GitHub release with the installer, then commit and push `updates/latest.json`
-     (installed copies read it from `main`).
-- Everything in the repository is written in English: code, comments, commits, changelog
-  and release notes. Only the interface texts in `locales/` are translated.
-
-## Code rules
-
-- Classes (structs + traits in Rust) with a single responsibility; small files.
-- Descriptive names; no one-to-three-letter identifiers.
-- Constants only where needed and centralized (`TikiSettings`, `DesktopConfig`, `uiConfig.ts`,
-  `mascotAppearance.ts`, `tokens.css`).
-- Code and comments in English; every visible text comes from `locales/`.
+[MIT](LICENSE) © 2026 API SERVICE SAC
