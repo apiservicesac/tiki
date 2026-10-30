@@ -7,9 +7,11 @@ mod calendar_book;
 mod calendar_provider;
 mod meeting;
 mod meeting_item;
+mod meeting_link;
 
 pub use calendar_account::{AccountId, CalendarAccount};
 pub use calendar_book::CalendarBook;
 pub use calendar_provider::CalendarProvider;
 pub use meeting::Meeting;
 pub use meeting_item::MeetingItem;
+pub use meeting_link::MeetingLink;
