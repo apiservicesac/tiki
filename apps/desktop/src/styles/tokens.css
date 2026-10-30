@@ -88,6 +88,9 @@
   --radius-pill: 999px;
   /* Height of a row's badges and the small buttons beside them. */
   --row-pill-height: 28px;
+  /* What an open project picker needs below the top of the card: its trigger, the search,
+     the list and the footer. */
+  --picker-open-room: 400px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
