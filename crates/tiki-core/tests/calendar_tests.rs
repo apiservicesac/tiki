@@ -71,7 +71,8 @@ fn a_connected_calendar_fills_the_agenda_and_signing_in_again_reuses_the_account
         .map(|meeting| meeting.title.as_str())
         .collect();
     assert_eq!(titles, ["Daily", "Comité de inversiones"]);
-    assert_eq!(meetings[0].account_email, "yo@empresa.com");
+    assert_eq!(meetings[0].account.email, "yo@empresa.com");
+    assert_eq!(meetings[0].platform, Some(MeetingPlatform::Teams));
 
     // A meeting removed from the calendar disappears from Tiki at the next sync.
     workspace
@@ -249,7 +250,7 @@ fn the_calendar_window_starts_today_and_covers_the_agenda_days() {
 
 #[test]
 fn the_meetings_of_a_day_are_picked_from_the_agenda() {
-    use tiki_core::calendar::{CalendarBook, MeetingItem};
+    use tiki_core::calendar::{AccountIdentity, CalendarBook, MeetingItem};
     let item = |starts_at| MeetingItem {
         title: "Daily".into(),
         starts_at,
@@ -257,7 +258,13 @@ fn the_meetings_of_a_day_are_picked_from_the_agenda() {
         all_day: false,
         location: String::new(),
         join_url: None,
-        account_email: "yo@example.com".into(),
+        platform: None,
+        account: AccountIdentity {
+            provider: CalendarProvider::Microsoft,
+            email: "yo@example.com".into(),
+            display_name: String::new(),
+            avatar: None,
+        },
     };
     let agenda = [item(at(21, 10, 0)), item(at(22, 10, 0))];
 
@@ -272,6 +279,9 @@ fn meetings_starting_soon_come_once_earliest_first_with_their_account() {
     let calendar = database.calendar();
     let account = calendar
         .add_account(CalendarProvider::Google, "yo@gmail.com")
+        .unwrap();
+    calendar
+        .update_identity(account, "Yo", Some(AVATAR), at(21, 9, 0))
         .unwrap();
     calendar
         .replace_meetings(
@@ -290,7 +300,9 @@ fn meetings_starting_soon_come_once_earliest_first_with_their_account() {
         .unwrap();
     let titles: Vec<&str> = taken.iter().map(|meeting| meeting.title.as_str()).collect();
     assert_eq!(titles, ["Primera", "Segunda"]);
-    assert_eq!(taken[0].account_email, "yo@gmail.com");
+    assert_eq!(taken[0].account.email, "yo@gmail.com");
+    assert_eq!(taken[0].account.display_name, "Yo");
+    assert_eq!(taken[0].account.avatar.as_deref(), Some(AVATAR));
     assert_eq!(
         calendar
             .take_starting(at(21, 10, 0), at(21, 10, 15))

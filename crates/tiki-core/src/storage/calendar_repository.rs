@@ -3,7 +3,7 @@ use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::calendar::{
     AccountId, AccountIdentity, CalendarAccount, CalendarProvider, Meeting, MeetingItem,
-    MeetingLink,
+    MeetingLink, MeetingPlatform,
 };
 use crate::error::{TikiError, TikiResult};
 
@@ -142,7 +142,8 @@ impl<'connection> CalendarRepository<'connection> {
         to: NaiveDateTime,
     ) -> TikiResult<Vec<MeetingItem>> {
         let mut statement = self.connection.prepare(
-            "SELECT m.title, m.starts_at, m.ends_at, m.all_day, m.location, m.join_url, a.email
+            "SELECT m.title, m.starts_at, m.ends_at, m.all_day, m.location, m.join_url,
+                    a.provider, a.email, a.display_name, a.avatar
                FROM meetings m JOIN calendar_accounts a ON a.id = m.account_id
               WHERE m.ends_at > ?1 AND m.starts_at < ?2
               ORDER BY m.all_day DESC, m.starts_at, m.title",
@@ -156,7 +157,8 @@ impl<'connection> CalendarRepository<'connection> {
     /// Timed meetings in progress at `now`, earliest first.
     pub fn in_progress(&self, now: NaiveDateTime) -> TikiResult<Vec<MeetingItem>> {
         let mut statement = self.connection.prepare(
-            "SELECT m.title, m.starts_at, m.ends_at, m.all_day, m.location, m.join_url, a.email
+            "SELECT m.title, m.starts_at, m.ends_at, m.all_day, m.location, m.join_url,
+                    a.provider, a.email, a.display_name, a.avatar
                FROM meetings m JOIN calendar_accounts a ON a.id = m.account_id
               WHERE m.all_day = 0 AND m.starts_at <= ?1 AND m.ends_at > ?1
               ORDER BY m.starts_at, m.title",
@@ -168,28 +170,39 @@ impl<'connection> CalendarRepository<'connection> {
     }
 
     /// Timed meetings starting after `now` and up to `until` that were not announced yet,
-    /// earliest first. One statement marks them as announced and returns them.
+    /// earliest first. One statement marks them as announced and returns their ids; the
+    /// next reads them with their account.
     pub fn take_starting(
         &self,
         now: NaiveDateTime,
         until: NaiveDateTime,
     ) -> TikiResult<Vec<MeetingItem>> {
+        let taken: Vec<i64> = self
+            .connection
+            .prepare(
+                "UPDATE meetings SET alerted = 1
+                  WHERE all_day = 0 AND alerted = 0 AND starts_at > ?1 AND starts_at <= ?2
+                  RETURNING id",
+            )?
+            .query_map(params![now, until], |row| row.get(0))?
+            .collect::<Result<_, _>>()?;
+        let taken_json = serde_json::to_string(&taken).unwrap_or_else(|_| "[]".to_owned());
         let mut statement = self.connection.prepare(
-            "UPDATE meetings SET alerted = 1
-              WHERE all_day = 0 AND alerted = 0 AND starts_at > ?1 AND starts_at <= ?2
-              RETURNING title, starts_at, ends_at, all_day, location, join_url,
-                        (SELECT email FROM calendar_accounts WHERE id = meetings.account_id)",
+            "SELECT m.title, m.starts_at, m.ends_at, m.all_day, m.location, m.join_url,
+                    a.provider, a.email, a.display_name, a.avatar
+               FROM meetings m JOIN calendar_accounts a ON a.id = m.account_id
+              WHERE m.id IN (SELECT value FROM json_each(?1))
+              ORDER BY m.starts_at, m.title",
         )?;
-        let mut meetings = statement
-            .query_map(params![now, until], Self::read_meeting)?
+        let meetings = statement
+            .query_map(params![taken_json], Self::read_meeting)?
             .collect::<Result<Vec<_>, _>>()?;
-        meetings.sort_by_key(|meeting| meeting.starts_at);
         Ok(meetings)
     }
 
     /// A meeting row read as the Agenda draws it; its join link opens with its own account.
     fn read_meeting(row: &Row<'_>) -> rusqlite::Result<MeetingItem> {
-        let account_email: String = row.get(6)?;
+        let account = Self::read_identity(row, 6)?;
         let join_url: Option<String> = row.get(5)?;
         Ok(MeetingItem {
             title: row.get(0)?,
@@ -197,8 +210,9 @@ impl<'connection> CalendarRepository<'connection> {
             ends_at: row.get(2)?,
             all_day: row.get(3)?,
             location: row.get(4)?,
-            join_url: join_url.map(|url| MeetingLink::for_account(&url, &account_email)),
-            account_email,
+            platform: join_url.as_deref().map(MeetingPlatform::of),
+            join_url: join_url.map(|url| MeetingLink::for_account(&url, &account.email)),
+            account,
         })
     }
 

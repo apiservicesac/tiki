@@ -309,16 +309,30 @@ export interface MeetingItem {
   allDay: boolean;
   location: string;
   joinUrl: string | null;
-  accountEmail: string;
+  /** Where its video call runs, when it has one. */
+  platform: MeetingPlatform | null;
+  /** The account it comes from. */
+  account: AccountIdentity;
 }
+
+/** The service a meeting's video call runs on (see `MeetingPlatform` in the core). */
+export type MeetingPlatform = "google_meet" | "teams" | "zoom" | "other";
 
 export const CALENDAR_PROVIDERS = Object.freeze(["microsoft", "google"] as const);
 export type CalendarProvider = (typeof CALENDAR_PROVIDERS)[number];
 
-export interface CalendarAccount {
-  accountId: number;
+/** Who an account belongs to (see `AccountIdentity` in the core). */
+export interface AccountIdentity {
   provider: CalendarProvider;
   email: string;
+  /** Empty until Tiki learns it. */
+  displayName: string;
+  /** A small picture as a `data:` URL, when the provider gave one. */
+  avatar: string | null;
+}
+
+export interface CalendarAccount extends AccountIdentity {
+  accountId: number;
 }
 
 /** Connected accounts, and the providers this build can connect. */

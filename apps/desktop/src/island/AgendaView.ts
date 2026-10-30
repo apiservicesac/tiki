@@ -60,7 +60,7 @@ export class AgendaView {
     const joinUrl = meeting.joinUrl;
     return this.itemRow.render({
       variant: "agenda-row agenda-meeting",
-      attributes: { title: meeting.accountEmail },
+      attributes: { title: meeting.account.email },
       lead: this.itemRow.time(timeLabel),
       title: meeting.title || this.translator.text("meeting.untitled"),
       context: meeting.location || null,
